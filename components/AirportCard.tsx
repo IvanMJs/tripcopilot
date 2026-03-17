@@ -59,7 +59,7 @@ function MetarRow({ metar }: { metar: MetarData }) {
       <Wind className="h-3 w-3 text-gray-600 shrink-0" />
       <span className="text-gray-400 font-medium">{wind}</span>
       {extras.map((e, i) => (
-        <span key={i} className="text-gray-600">· {e}</span>
+        <span key={i} className="text-gray-500">· {e}</span>
       ))}
     </div>
   );

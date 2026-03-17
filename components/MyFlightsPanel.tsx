@@ -233,7 +233,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
           <div>
             <div className="flex items-center gap-2 mb-1">
               {hasIssue && <AlertTriangle className="h-4 w-4 text-orange-400 shrink-0" />}
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                 {locale === "en" ? "Departure Airport" : "Aeropuerto de salida"}
               </span>
             </div>
@@ -367,7 +367,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
                 <span>
                   {locale === "en" ? "Arrive at airport by" : "Llegar al aeropuerto:"}{" "}
                   <span className="font-bold text-yellow-400">{flight.arrivalRecommendation}</span>
-                  <span className="text-gray-600 ml-1">({arrivalNote})</span>
+                  <span className="text-gray-500 ml-1">({arrivalNote})</span>
                 </span>
               </span>
             </div>
@@ -544,7 +544,7 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
                       <span className="font-semibold">{cf.flightCode}</span>
                       <span className="text-gray-500 ml-1">{cf.originCode}→{cf.destinationCode}</span>
                     </span>
-                    <span className="text-gray-600 shrink-0">
+                    <span className="text-gray-500 shrink-0">
                       {new Date(cf.isoDate + "T00:00:00").toLocaleDateString(locale === "en" ? "en-US" : "es-AR", { day: "numeric", month: "short" })}
                     </span>
                   </a>
@@ -601,7 +601,7 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
         ))}
       </div>
 
-      <p className="text-xs text-gray-700 pt-1">{t.flightLinkNote}</p>
+      <p className="text-xs text-gray-500 pt-1">{t.flightLinkNote}</p>
     </div>
   );
 }

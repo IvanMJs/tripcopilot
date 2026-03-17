@@ -185,7 +185,7 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
               }}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               placeholder={L.placeholder}
-              className="w-full rounded-lg border border-gray-700 bg-gray-950 pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -199,7 +199,7 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               placeholder={L.airportPlaceholder}
               maxLength={3}
-              className="w-full rounded-lg border border-gray-700 bg-gray-950 pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -215,7 +215,7 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
           <p className="text-xs text-red-400">{error}</p>
         )}
 
-        <p className="text-xs text-gray-600 flex items-start gap-1.5">
+        <p className="text-xs text-gray-500 flex items-start gap-1.5">
           <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           {L.faaNote}
         </p>
@@ -223,10 +223,10 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
 
       {/* Resultados */}
       {tracked.length === 0 ? (
-        <p className="text-sm text-gray-600 text-center py-6">{L.empty}</p>
+        <p className="text-sm text-gray-500 text-center py-6">{L.empty}</p>
       ) : (
         <div className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
             {L.trackedFlights}
           </h3>
           {tracked.map(({ parsed, airportCode }) => {

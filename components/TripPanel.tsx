@@ -593,7 +593,7 @@ function FlightCard({
             <div className="flex items-center gap-2 mb-1">
               {hasIssue && <AlertTriangle className="h-4 w-4 text-orange-400 shrink-0" />}
               {isNonFAA && <Globe className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                 {L.sectionAirport}
               </span>
             </div>
@@ -601,7 +601,7 @@ function FlightCard({
               <span className="text-3xl font-black text-white tracking-tight">{flight.originCode}</span>
               <span className="text-sm text-gray-400">{originName}</span>
               {originInfo?.country && (
-                <span className="text-xs text-gray-600">{originInfo.country}</span>
+                <span className="text-xs text-gray-500">{originInfo.country}</span>
               )}
             </div>
             {weather && (
@@ -685,7 +685,7 @@ function FlightCard({
               <Plane className="h-3.5 w-3.5 text-gray-700" />
               <span className="font-bold text-gray-400">{flight.destinationCode}</span>
               <span className="text-gray-700">·</span>
-              <span className="text-gray-600 text-xs">{originName} → {destName}</span>
+              <span className="text-gray-500 text-xs">{originName} → {destName}</span>
             </div>
           </div>
           <LinkButton href={routeUrl} variant="default">
@@ -723,7 +723,7 @@ function FlightCard({
                       <span>
                         {L.arriveAt}{" "}
                         <span className="font-bold text-yellow-400">{arrivalRec}</span>
-                        <span className="text-gray-600 ml-1">({arrivalNote})</span>
+                        <span className="text-gray-500 ml-1">({arrivalNote})</span>
                       </span>
                     </span>
                   )}
@@ -867,7 +867,7 @@ function FlightCard({
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-gray-600 mt-1.5">{issuedAgo}</p>
+            <p className="text-[11px] text-gray-500 mt-1.5">{issuedAgo}</p>
           </div>
         );
       })()}
@@ -915,7 +915,7 @@ function FlightCard({
               <Radar className="h-3 w-3" />
               {L.sectionTracking}
             </p>
-            <p className="text-[11px] text-gray-600">{L.trackNote}</p>
+            <p className="text-[11px] text-gray-500">{L.trackNote}</p>
           </div>
           <div className="flex flex-col gap-1.5 items-end shrink-0">
             <LinkButton href={flightUrl} variant="blue">
@@ -1161,7 +1161,7 @@ export function TripPanel({
                         <span className="font-semibold">{cf.flightCode}</span>
                         <span className="text-gray-500 ml-1">{cf.originCode}→{cf.destinationCode}</span>
                       </span>
-                      <span className="text-gray-600 shrink-0">
+                      <span className="text-gray-500 shrink-0">
                         {new Date(cf.isoDate + "T00:00:00").toLocaleDateString(
                           locale === "en" ? "en-US" : "es-AR",
                           { day: "numeric", month: "short" }
@@ -1199,8 +1199,8 @@ export function TripPanel({
       {/* Flight cards */}
       {sorted.length === 0 ? (
         <div className="rounded-xl border border-white/6 py-12 text-center">
-          <Plane className="h-8 w-8 text-gray-700 mx-auto mb-3" />
-          <p className="text-sm text-gray-600">{L.noFlights}</p>
+          <Plane className="h-8 w-8 text-gray-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-500">{L.noFlights}</p>
         </div>
       ) : (
         <div className="space-y-4">
