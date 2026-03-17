@@ -196,7 +196,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
       className={`rounded-xl border overflow-hidden transition-shadow ${
         hasIssue
           ? "border-orange-500/40 shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_20px_rgba(0,0,0,0.35)]"
-          : "border-white/[0.08] bg-white/[0.05] shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_20px_rgba(0,0,0,0.35)]"
+          : "border-white/[0.10] bg-white/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_20px_rgba(0,0,0,0.35)]"
       }`}
     >
       {/* Check-in banner */}
@@ -230,7 +230,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
       )}
 
       {/* SECCIÓN 1: AEROPUERTO */}
-      <div className={`px-4 py-3 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.04]"}`}>
+      <div className={`px-4 py-3 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.06]"}`}>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <div className="flex items-center gap-2 mb-1">
