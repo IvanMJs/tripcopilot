@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { AirportStatusMap } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
-import { ExternalLink, Clock, MapPin, Plane, AlertTriangle, Calendar, Share2, DoorOpen } from "lucide-react";
+import { ExternalLink, Clock, MapPin, Plane, AlertTriangle, Calendar, Share2, DoorOpen, ChevronDown, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { WeatherData } from "@/hooks/useWeather";
 import { TripTimeline } from "./TripTimeline";
+import { TripSummaryHero } from "./TripSummaryHero";
 import { CalendarFlight, generateICS, downloadICS, buildGoogleCalendarURL } from "@/lib/calendarExport";
 import { buildWhatsAppMessage, buildWhatsAppURL, WhatsAppFlight } from "@/lib/tripShare";
 import { FlightStatusBadge } from "@/components/FlightStatusBadge";
@@ -201,6 +202,9 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index 
   const airlineCode = flight.flightNum.split(" ")[0];
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
 
+  // Accordion: expanded for future/today flights; collapsed for past flights
+  const [isExpanded, setIsExpanded] = useState(daysUntil >= 0 || hasIssue);
+
   return (
     <div
       className={`relative rounded-xl border overflow-hidden transition-shadow shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_20px_rgba(0,0,0,0.35)] ${
@@ -211,7 +215,42 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index 
     >
       {/* Left accent bar */}
       <div className={`absolute left-0 inset-y-0 w-[3px] ${hasIssue ? "bg-orange-500" : accent.bar}`} />
-      {/* Check-in banner */}
+
+      {/* ── Accordion header — always visible, tap to expand/collapse ─────── */}
+      <button
+        onClick={() => setIsExpanded((v) => !v)}
+        className="w-full pl-5 pr-4 py-3.5 flex items-center justify-between gap-3 text-left tap-scale"
+      >
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base font-black text-white">{flight.flightNum}</span>
+              <div className="flex items-center gap-1 text-sm">
+                <span className="font-bold text-white">{flight.originCode}</span>
+                <ArrowRight className="h-3 w-3 text-gray-600 shrink-0" />
+                <span className="font-bold text-gray-300">{flight.destinationCode}</span>
+              </div>
+              <DaysCountdown days={daysUntil} locale={locale} />
+            </div>
+            <p className="text-[11px] text-gray-500 mt-0.5 tabular">
+              {date} · {flight.departureTime}
+              {hasIssue && (
+                <span className="ml-2 text-orange-400 font-semibold">
+                  ⚠ {locale === "es" ? "Demora activa" : "Active delay"}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`h-2 w-2 rounded-full ${hasIssue ? "bg-orange-400 animate-pulse" : "bg-emerald-500"}`} />
+          <ChevronDown
+            className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+          />
+        </div>
+      </button>
+
+      {/* Check-in banner — always visible when applicable */}
       {daysUntil === 1 && (
         <div className="px-4 py-2.5 bg-emerald-950/30 border-b border-emerald-800/40 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
@@ -240,6 +279,10 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index 
           )}
         </div>
       )}
+
+      {/* ── Expandable content ─────────────────────────────────────────────── */}
+      {isExpanded && (
+      <div className="border-t border-white/[0.05]">
 
       {/* SECCIÓN 1: AEROPUERTO */}
       <div className={`px-4 py-3 ${hasIssue ? "bg-orange-950/25" : "bg-white/[0.03]"}`}>
@@ -465,6 +508,9 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index 
         isoDate={flight.isoDate}
         locale={locale}
       />
+
+      </div>
+      )}
     </div>
   );
 }
@@ -520,12 +566,13 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
 
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <p className="text-sm text-gray-500">{t.trip}</p>
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Trip summary hero */}
+      <TripSummaryHero statusMap={statusMap} locale={locale} />
+
+      {/* Action bar */}
+      <div className="flex items-center justify-end flex-wrap gap-2">
           {/* ICS */}
           <button
             onClick={handleExportICS}
@@ -580,7 +627,6 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
             <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
             {t.faaButton}
           </LinkButton>
-        </div>
       </div>
 
       {/* Timeline */}

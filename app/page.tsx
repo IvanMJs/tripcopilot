@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Toaster } from "react-hot-toast";
-import { RefreshCw, Plane, Pencil, X, Plus, Bell, HelpCircle } from "lucide-react";
+import { RefreshCw, Plane, Pencil, X, Plus, Bell, HelpCircle, MapPin, Search, Map } from "lucide-react";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
 import { AirportSearch } from "@/components/AirportSearch";
@@ -62,7 +62,7 @@ function loadTrips(): TripTab[] {
 export default function HomePage() {
   const { t, locale, setLocale } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<string>("airports");
+  const [activeTab, setActiveTab] = useState<string>("flights");
   const [refreshInterval, setRefreshInterval] = useState(5);
   const [watchedAirports, setWatchedAirports] = useState<string[]>(DEFAULT_AIRPORTS);
   const [userTrips, setUserTrips] = useState<TripTab[]>([]);
@@ -273,104 +273,105 @@ export default function HomePage() {
         }}
       />
 
-      <div className="min-h-screen bg-gray-950 px-4 py-6">
-        <div className="mx-auto max-w-6xl space-y-6">
+      <div className="min-h-screen bg-gray-950 px-4 py-4 md:py-6 pb-nav md:pb-6">
+        <div className="mx-auto max-w-6xl space-y-4 md:space-y-6">
 
-          {/* Header */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-white">
-                <Plane className="h-8 w-8 text-blue-400" />
-                {t.appTitle}
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between gap-3">
+
+            {/* Title — large on desktop, compact on mobile */}
+            <div className="min-w-0">
+              <h1 className="flex items-center gap-2 md:gap-3 text-xl md:text-3xl font-black tracking-tight text-white">
+                <Plane className="h-5 w-5 md:h-8 md:w-8 text-blue-400 shrink-0" />
+                <span className="truncate">{t.appTitle}</span>
               </h1>
-              <p className="mt-1 text-sm text-gray-400 font-medium">{t.appSubtitle}</p>
+              <p className="hidden md:block mt-1 text-sm text-gray-400 font-medium">{t.appSubtitle}</p>
             </div>
 
-            <div className="flex flex-col gap-3 items-end">
-              <div className="flex items-center gap-2">
-                {/* Language toggle */}
-                <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
-                  {(["es", "en"] as Locale[]).map((l) => (
-                    <button
-                      key={l}
-                      onClick={() => setLocale(l)}
-                      className={`px-3 py-1.5 transition-colors ${
-                        locale === l
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-900 text-gray-400 hover:text-gray-200"
-                      }`}
-                    >
-                      {l.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
+            {/* Controls */}
+            <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
 
-                {/* Help button */}
+              {/* Language toggle */}
+              <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
+                {(["es", "en"] as Locale[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLocale(l)}
+                    className={`px-2.5 py-1.5 md:px-3 transition-colors ${
+                      locale === l
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-900 text-gray-400 hover:text-gray-200"
+                    }`}
+                  >
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              {/* Notification bell */}
+              {mounted && typeof window !== "undefined" && "Notification" in window && (
                 <button
-                  onClick={() => setActiveTab(activeTab === "help" ? "airports" : "help")}
-                  title={locale === "en" ? "Help & documentation" : "Ayuda y documentación"}
-                  className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
-                    activeTab === "help"
+                  onClick={notificationsEnabled ? disableNotifications : requestNotifications}
+                  title={
+                    notificationsEnabled
+                      ? (locale === "en" ? "Notifications ON — click to disable" : "Notificaciones activas — click para desactivar")
+                      : (locale === "en" ? "Enable notifications" : "Activar notificaciones")
+                  }
+                  className={`flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                    notificationsEnabled
                       ? "border-blue-700/60 bg-blue-900/20 text-blue-400"
                       : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300"
                   }`}
                 >
-                  <HelpCircle className="h-3.5 w-3.5" />
+                  <Bell className={`h-3.5 w-3.5 ${notificationsEnabled ? "text-blue-400" : ""}`} />
+                  {notificationsEnabled && <span className="text-[10px] font-semibold hidden sm:inline">ON</span>}
                 </button>
+              )}
 
-                {/* Notification bell button */}
-                {mounted && typeof window !== "undefined" && "Notification" in window && (
-                  <button
-                    onClick={notificationsEnabled ? disableNotifications : requestNotifications}
-                    title={
-                      notificationsEnabled
-                        ? (locale === "en"
-                            ? "Notifications ON — click to disable"
-                            : "Notificaciones activas — click para desactivar")
-                        : (locale === "en"
-                            ? "Enable notifications (desktop & mobile)"
-                            : "Activar notificaciones (escritorio y móvil)")
-                    }
-                    className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
-                      notificationsEnabled
-                        ? "border-blue-700/60 bg-blue-900/20 text-blue-400"
-                        : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300"
-                    }`}
-                  >
-                    <Bell className={`h-3.5 w-3.5 ${notificationsEnabled ? "text-blue-400" : ""}`} />
-                    {notificationsEnabled && (
-                      <span className="text-[10px] font-semibold">ON</span>
-                    )}
-                  </button>
-                )}
+              {/* Refresh interval — hidden on mobile */}
+              <select
+                value={refreshInterval}
+                onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                className="hidden sm:block rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {REFRESH_OPTIONS.map((min) => (
+                  <option key={min} value={min}>{min}m</option>
+                ))}
+              </select>
 
-                <span className="text-xs text-gray-500">{t.autoRefresh}</span>
-                <select
-                  value={refreshInterval}
-                  onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                  className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {REFRESH_OPTIONS.map((min) => (
-                    <option key={min} value={min}>{min} min</option>
-                  ))}
-                </select>
-                <button
-                  onClick={refresh}
-                  disabled={loading}
-                  className="flex items-center gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-                  {loading ? t.updating : t.update}
-                </button>
-              </div>
+              {/* Refresh button */}
+              <button
+                onClick={refresh}
+                disabled={loading}
+                className="flex items-center gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">{loading ? t.updating : t.update}</span>
+              </button>
 
-              <RefreshCountdown
-                secondsUntilRefresh={secondsUntilRefresh}
-                totalSeconds={totalSeconds}
-                lastUpdated={lastUpdated}
-                isStale={isStale}
-              />
+              {/* Help — desktop only */}
+              <button
+                onClick={() => setActiveTab(activeTab === "help" ? "flights" : "help")}
+                title={locale === "en" ? "Help & documentation" : "Ayuda y documentación"}
+                className={`hidden md:flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                  activeTab === "help"
+                    ? "border-blue-700/60 bg-blue-900/20 text-blue-400"
+                    : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
             </div>
+          </div>
+
+          {/* RefreshCountdown — desktop only */}
+          <div className="hidden sm:block -mt-2">
+            <RefreshCountdown
+              secondsUntilRefresh={secondsUntilRefresh}
+              totalSeconds={totalSeconds}
+              lastUpdated={lastUpdated}
+              isStale={isStale}
+            />
           </div>
 
           {/* Global Status Bar */}
@@ -383,15 +384,15 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* ── Tab bar ── */}
-          <div className="border-b border-gray-800">
+          {/* ── Tab bar — desktop only; mobile uses bottom nav ── */}
+          <div className="hidden md:block border-b border-gray-800">
             <div className="flex gap-1 overflow-x-auto overflow-y-hidden">
 
-              {/* Static tabs — order: Aeropuertos | Buscar vuelo | Mis vuelos */}
+              {/* Static tabs — order: Mi viaje | Aeropuertos | Vuelos */}
               {([
+                { id: "flights",  label: t.tabFlights  },
                 { id: "airports", label: t.tabAirports },
                 { id: "search",   label: t.tabSearch   },
-                { id: "flights",  label: t.tabFlights  },
               ] as const).map(({ id, label }) => (
                 <button
                   key={id}
@@ -530,12 +531,91 @@ export default function HomePage() {
             )}
           </ErrorBoundary>
 
-          {/* Footer */}
-          <div className="pt-4 border-t border-gray-900 text-center text-xs text-gray-700">
+          {/* Footer — desktop only */}
+          <div className="hidden md:block pt-4 border-t border-gray-900 text-center text-xs text-gray-700">
             {t.footer}
           </div>
         </div>
       </div>
+
+      {/* ── Mobile bottom navigation ─────────────────────────────────────────── */}
+      {mounted && (
+        <nav
+          className="fixed bottom-0 inset-x-0 z-50 md:hidden bottom-nav-bg"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div className="flex h-[60px]">
+
+            {/* Static tabs */}
+            {([
+              { id: "flights",  Icon: Plane,   label: t.tabFlights  },
+              { id: "airports", Icon: MapPin,  label: t.tabAirports },
+              { id: "search",   Icon: Search,  label: t.tabSearch   },
+            ] as const).map(({ id, Icon, label }) => {
+              const isActive = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${
+                    isActive ? "text-blue-400" : "text-gray-500"
+                  }`}
+                >
+                  {isActive && (
+                    <span className="absolute top-0 inset-x-0 flex justify-center">
+                      <span className="h-0.5 w-8 rounded-full bg-blue-400" />
+                    </span>
+                  )}
+                  <Icon className="h-[22px] w-[22px]" />
+                  <span className="text-[10px] font-semibold leading-none">{label}</span>
+                </button>
+              );
+            })}
+
+            {/* Trips / New trip button */}
+            {(() => {
+              const hasTrips = userTrips.length > 0;
+              const tripActive = userTrips.some((t) => t.id === activeTab);
+              return (
+                <button
+                  onClick={() => {
+                    if (!hasTrips) {
+                      createTrip();
+                    } else {
+                      const stillActive = userTrips.find((t) => t.id === activeTab);
+                      setActiveTab(stillActive ? activeTab : userTrips[0].id);
+                    }
+                  }}
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${
+                    tripActive ? "text-blue-400" : "text-gray-500"
+                  }`}
+                >
+                  {tripActive && (
+                    <span className="absolute top-0 inset-x-0 flex justify-center">
+                      <span className="h-0.5 w-8 rounded-full bg-blue-400" />
+                    </span>
+                  )}
+                  <div className="relative">
+                    {hasTrips ? (
+                      <>
+                        <Map className="h-[22px] w-[22px]" />
+                        <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                          {userTrips.length}
+                        </span>
+                      </>
+                    ) : (
+                      <Plus className="h-[22px] w-[22px]" />
+                    )}
+                  </div>
+                  <span className="text-[10px] font-semibold leading-none">
+                    {hasTrips ? (locale === "es" ? "Viajes" : "Trips") : (locale === "es" ? "Nuevo" : "New")}
+                  </span>
+                </button>
+              );
+            })()}
+          </div>
+        </nav>
+      )}
     </>
   );
 }

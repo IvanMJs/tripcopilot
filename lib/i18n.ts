@@ -3,25 +3,25 @@ export type Locale = "es" | "en";
 export const translations = {
   es: {
     // Header
-    appTitle: "Airport Monitor",
-    appSubtitle: "Sabé si tu aeropuerto está en riesgo antes de salir · Datos FAA en tiempo real",
+    appTitle: "Copiloto de Viaje",
+    appSubtitle: "Tu viaje completo · Riesgo de conexión y estado de aeropuertos en tiempo real",
     autoRefresh: "Auto-refresh:",
     updating: "Actualizando...",
     update: "Actualizar",
     nextRefresh: "Próximo chequeo en",
 
     // Global status bar
-    noDelays: "Todo en orden — sin demoras en tus aeropuertos seguidos",
+    noDelays: "Sin demoras activas · Tu itinerario está en orden",
     airportsWithIssues: (n: number) =>
       `${n} aeropuerto${n > 1 ? "s" : ""} con demoras activas:`,
     airportsCritical: (n: number) =>
       `🚨 Situación crítica en ${n} aeropuerto${n > 1 ? "s" : ""}:`,
 
     // Tabs
-    tabAirports: "✈ Mis aeropuertos",
-    tabFlights: "🗓 Mis vuelos",
-    tabSearch: "🔍 Buscar vuelo",
-    tabHelp: "❓ Ayuda",
+    tabAirports: "Aeropuertos",
+    tabFlights: "Mi viaje",
+    tabSearch: "Vuelos",
+    tabHelp: "Ayuda",
 
     // Airport card
     noDelaysReported: "Sin incidentes activos",
@@ -107,25 +107,25 @@ export const translations = {
 
   en: {
     // Header
-    appTitle: "Airport Monitor",
-    appSubtitle: "Know your airport's status before you leave · Real-time FAA data",
+    appTitle: "Flight Copilot",
+    appSubtitle: "Your full trip · Connection risk & real-time airport status",
     autoRefresh: "Auto-refresh:",
     updating: "Updating...",
     update: "Refresh",
     nextRefresh: "Next check in",
 
     // Global status bar
-    noDelays: "All clear — no delays at your tracked airports",
+    noDelays: "All clear · Your itinerary looks good",
     airportsWithIssues: (n: number) =>
       `${n} airport${n > 1 ? "s" : ""} with active delays:`,
     airportsCritical: (n: number) =>
       `🚨 Critical situation at ${n} airport${n > 1 ? "s" : ""}:`,
 
     // Tabs
-    tabAirports: "✈ My airports",
-    tabFlights: "🗓 My flights",
-    tabSearch: "🔍 Flight search",
-    tabHelp: "❓ Help",
+    tabAirports: "Airports",
+    tabFlights: "My trip",
+    tabSearch: "Flights",
+    tabHelp: "Help",
 
     // Airport card
     noDelaysReported: "No active incidents",

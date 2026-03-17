@@ -3,18 +3,21 @@ import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 export const metadata: Metadata = {
-  title: "✈ Airport Monitor",
-  description: "Airport status monitor — FAA real-time data",
+  title: "✈ Copiloto de Viaje",
+  description: "Tu viaje completo · Riesgo de conexión y estado de aeropuertos en tiempo real",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Airport Monitor",
+    title: "Copiloto",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1e3a5f",
+  themeColor: "#080810",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",   // enables safe-area-inset-* on iOS
 };
 
 export default function RootLayout({
