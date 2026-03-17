@@ -172,15 +172,24 @@ function LinkButton({
   );
 }
 
+const CARD_ACCENTS = [
+  { bar: "bg-blue-400/80",   border: "border-blue-500/25",   bg: "bg-blue-950/35"   },
+  { bar: "bg-violet-400/80", border: "border-violet-500/25", bg: "bg-violet-950/35" },
+  { bar: "bg-teal-400/80",   border: "border-teal-500/25",   bg: "bg-teal-950/35"   },
+  { bar: "bg-amber-400/80",  border: "border-amber-500/25",  bg: "bg-amber-950/35"  },
+  { bar: "bg-rose-400/80",   border: "border-rose-500/25",   bg: "bg-rose-950/35"   },
+] as const;
+
 interface FlightCardItemProps {
   flight: FlightData;
   statusMap: AirportStatusMap;
   weatherMap?: Record<string, WeatherData>;
   locale: "es" | "en";
   tsaData?: TsaAirportData;
+  index: number;
 }
 
-function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: FlightCardItemProps) {
+function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index }: FlightCardItemProps) {
   const originStatus = statusMap[flight.originCode];
   const status = originStatus?.status ?? "ok";
   const hasIssue = status !== "ok";
@@ -190,15 +199,18 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
   const arrivalNote = locale === "en" ? flight.arrivalNoteEn : flight.arrivalNoteEs;
   const daysUntil = getDaysUntil(flight.isoDate);
   const airlineCode = flight.flightNum.split(" ")[0];
+  const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
 
   return (
     <div
-      className={`rounded-xl border overflow-hidden transition-shadow ${
+      className={`relative rounded-xl border overflow-hidden transition-shadow shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_20px_rgba(0,0,0,0.35)] ${
         hasIssue
-          ? "border-orange-500/40 shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_20px_rgba(0,0,0,0.35)]"
-          : "border-white/[0.10] bg-white/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_20px_rgba(0,0,0,0.35)]"
+          ? "border-orange-500/40 bg-orange-950/15"
+          : `${accent.border} ${accent.bg}`
       }`}
     >
+      {/* Left accent bar */}
+      <div className={`absolute left-0 inset-y-0 w-[3px] ${hasIssue ? "bg-orange-500" : accent.bar}`} />
       {/* Check-in banner */}
       {daysUntil === 1 && (
         <div className="px-4 py-2.5 bg-emerald-950/30 border-b border-emerald-800/40 flex items-center justify-between gap-3 flex-wrap">
@@ -230,7 +242,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
       )}
 
       {/* SECCIÓN 1: AEROPUERTO */}
-      <div className={`px-4 py-3 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.06]"}`}>
+      <div className={`px-4 py-3 ${hasIssue ? "bg-orange-950/25" : "bg-white/[0.03]"}`}>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -598,6 +610,7 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
               weatherMap={weatherMap}
               locale={locale}
               tsaData={tsaData[flight.originCode]}
+              index={idx}
             />
           </div>
         ))}
