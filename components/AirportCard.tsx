@@ -239,7 +239,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight 
       )}
 
       {status?.lastChecked && (
-        <p className="mt-3 text-[10px] text-gray-700 tabular">
+        <p className="mt-3 text-[10px] text-gray-500 tabular">
           {t.updated}:{" "}
           {status.lastChecked.toLocaleTimeString(locale === "en" ? "en-US" : "es-AR", { hour: "2-digit", minute: "2-digit" })}
         </p>

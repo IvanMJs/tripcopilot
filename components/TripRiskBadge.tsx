@@ -131,7 +131,7 @@ export function TripRiskBadge({ risk, locale }: TripRiskBadgeProps) {
               {cfg.label[locale]}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-400 mt-0.5">
             {locale === "en"
               ? `Risk score for this trip · ${risk.factors.length} factor${risk.factors.length !== 1 ? "s" : ""}`
               : `Score de riesgo del viaje · ${risk.factors.length} factor${risk.factors.length !== 1 ? "es" : ""}`}

@@ -153,7 +153,7 @@ export function AirportSearch({ watchedAirports, onAdd }: AirportSearchProps) {
                   <span className="flex-1 text-xs text-gray-400 leading-tight">
                     {info.name}
                     <br />
-                    <span className="text-gray-600">
+                    <span className="text-gray-500">
                       {info.country
                         ? `${COUNTRY_FLAGS[info.country] ?? "🌐"} ${info.city}`
                         : `🇺🇸 ${info.city}, ${info.state}`}

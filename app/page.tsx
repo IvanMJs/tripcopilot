@@ -256,7 +256,7 @@ export default function HomePage() {
   const tabBase =
     "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap";
   const tabActive   = "border-blue-500 text-blue-400";
-  const tabInactive = "border-transparent text-gray-500 hover:text-gray-300";
+  const tabInactive = "border-transparent text-gray-400 hover:text-gray-200";
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -283,7 +283,7 @@ export default function HomePage() {
                 <Plane className="h-8 w-8 text-blue-400" />
                 {t.appTitle}
               </h1>
-              <p className="mt-1 text-sm text-gray-500">{t.appSubtitle}</p>
+              <p className="mt-1 text-sm text-gray-400 font-medium">{t.appSubtitle}</p>
             </div>
 
             <div className="flex flex-col gap-3 items-end">

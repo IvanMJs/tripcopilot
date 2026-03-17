@@ -677,7 +677,7 @@ function FlightCard({
       <div className="px-4 py-3 border-t border-white/5">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <p className="text-xs text-gray-600 mb-1 font-semibold uppercase tracking-wider">
+            <p className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">
               {L.sectionRoute}
             </p>
             <div className="flex items-center gap-2 text-sm">
@@ -698,7 +698,7 @@ function FlightCard({
       <div className="px-4 py-3 border-t border-white/5 bg-white/[0.01]">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-600 mb-2 font-semibold uppercase tracking-wider">
+            <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wider">
               {L.sectionFlight}
             </p>
             <div className="space-y-2">
@@ -748,7 +748,7 @@ function FlightCard({
 
         return (
           <div className={`px-4 py-3 border-t border-white/5 ${isToday ? "bg-yellow-950/15" : "bg-transparent"}`}>
-            <p className="text-xs text-gray-600 mb-2 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+            <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wider flex items-center gap-1.5">
               <DoorOpen className="h-3 w-3" />
               {L.sectionGate}
               {isToday && (
@@ -851,7 +851,7 @@ function FlightCard({
 
         return (
           <div className="px-4 py-3 border-t border-white/5 bg-blue-950/20">
-            <p className="text-xs text-gray-600 mb-2 font-semibold uppercase tracking-wider">
+            <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wider">
               {L.sectionForecast}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
@@ -911,7 +911,7 @@ function FlightCard({
       }`}>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <p className="text-xs text-gray-600 mb-2 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+            <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wider flex items-center gap-1.5">
               <Radar className="h-3 w-3" />
               {L.sectionTracking}
             </p>
@@ -1103,6 +1103,20 @@ export function TripPanel({
         statusMap={statusMap}
         connectionMap={connectionMap}
       />
+
+      {/* Empty state — shown before the form when no flights yet */}
+      {sorted.length === 0 && (
+        <div className="rounded-xl border border-white/6 bg-white/[0.02] px-5 py-6 text-center">
+          <p className="text-sm text-gray-300 font-medium mb-1">
+            {locale === "en" ? "No flights added yet" : "Todavía no hay vuelos"}
+          </p>
+          <p className="text-xs text-gray-500 leading-relaxed max-w-sm mx-auto">
+            {locale === "en"
+              ? "Add your flights to see connection risk, weather forecast, and airport status — all in one place."
+              : "Agregá tus vuelos para ver riesgo de conexión, pronóstico meteorológico y estado de cada aeropuerto — todo en una sola vista."}
+          </p>
+        </div>
+      )}
 
       {/* Add flight form */}
       <AddFlightForm

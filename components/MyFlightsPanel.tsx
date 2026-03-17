@@ -325,7 +325,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
       <div className="px-4 py-3 border-t border-gray-800 bg-gray-900/30">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+            <p className="text-xs text-gray-400 mb-1 font-medium uppercase tracking-wider">
               {locale === "en" ? "Route" : "Ruta"}
             </p>
             <div className="flex items-center gap-2 text-sm">
@@ -344,7 +344,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
 
       {/* SECCIÓN 3: MI VUELO */}
       <div className="px-4 py-3 border-t border-gray-800 bg-gray-950/40">
-        <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">
+        <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wider">
           {locale === "en" ? "My Flight" : "Mi vuelo"}
         </p>
         <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -384,7 +384,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData }: Flig
         const isToday = daysUntil === 0;
         return (
           <div className={`px-4 py-3 border-t border-gray-800 ${isToday ? "bg-yellow-950/15" : ""}`}>
-            <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider flex items-center gap-1.5">
+            <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wider flex items-center gap-1.5">
               <DoorOpen className="h-3 w-3" />
               {locale === "en" ? "Gate / Terminal" : "Puerta / Terminal"}
               {isToday && (
