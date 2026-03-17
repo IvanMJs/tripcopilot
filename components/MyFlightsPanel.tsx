@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AirportStatusMap } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
-import { ExternalLink, Clock, MapPin, Plane, AlertTriangle, Calendar, Share2 } from "lucide-react";
+import { ExternalLink, Clock, MapPin, Plane, AlertTriangle, Calendar, Share2, DoorOpen } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { WeatherData } from "@/hooks/useWeather";
 import { TripTimeline } from "./TripTimeline";
@@ -69,6 +69,16 @@ function DaysCountdown({ days, locale }: { days: number; locale: "es" | "en" }) 
     </span>
   );
 }
+
+const AIRLINE_APP_URLS: Record<string, string> = {
+  AA: "https://www.aa.com/travelInformation/flightStatus/aa",
+  UA: "https://www.united.com/en/us/flightstatus",
+  DL: "https://www.delta.com/us/en/flight-search/check-in",
+  B6: "https://www.jetblue.com/manage-trips/check-in",
+  WN: "https://www.southwest.com/air/check-in/index.html",
+  LA: "https://www.latamairlines.com/us/en/check-in",
+  AR: "https://www.aerolineas.com.ar/ar/es/check-in-online",
+};
 
 const MY_FLIGHTS: FlightData[] = [
   {
@@ -446,6 +456,74 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
                   </LinkButton>
                 </div>
               </div>
+
+              {/* SECCIÓN 4: PUERTA / TERMINAL */}
+              {daysUntil >= 0 && (() => {
+                const airlineCode = flight.flightNum.split(" ")[0];
+                const airlineAppUrl = AIRLINE_APP_URLS[airlineCode] ?? null;
+                const isToday = daysUntil === 0;
+                return (
+                  <div className={`px-4 py-3 border-t border-gray-800 ${isToday ? "bg-yellow-950/15" : ""}`}>
+                    <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider flex items-center gap-1.5">
+                      <DoorOpen className="h-3 w-3" />
+                      {locale === "en" ? "Gate / Terminal" : "Puerta / Terminal"}
+                      {isToday && (
+                        <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-600/50 bg-yellow-900/40 text-yellow-400 animate-pulse">
+                          LIVE
+                        </span>
+                      )}
+                    </p>
+                    {daysUntil > 3 && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-500">
+                          {locale === "en"
+                            ? "Gates typically assigned 24–48h before departure"
+                            : "Las puertas se asignan 24–48h antes de la salida"}
+                        </p>
+                        <LinkButton href={flight.flightUrl} variant="blue">
+                          {locale === "en" ? "Live status FlightAware" : "Estado en vivo FlightAware"}
+                        </LinkButton>
+                      </div>
+                    )}
+                    {daysUntil >= 1 && daysUntil <= 3 && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-500">
+                          {locale === "en"
+                            ? "Usually confirmed the day before · Verify at airport"
+                            : "Se confirma normalmente el día anterior · Verificar en el aeropuerto"}
+                        </p>
+                        <LinkButton href={flight.flightUrl} variant="blue">
+                          {locale === "en" ? "Live status FlightAware" : "Estado en vivo FlightAware"}
+                        </LinkButton>
+                      </div>
+                    )}
+                    {isToday && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-yellow-300/80">
+                          {locale === "en"
+                            ? "Gates can change up to 30 min before boarding"
+                            : "Las puertas pueden cambiar hasta 30 min antes del embarque"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {locale === "en"
+                            ? "Check airline app or airport departure board"
+                            : "Verificar en app de la aerolínea o panel del aeropuerto"}
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                          <LinkButton href={flight.flightUrl} variant="blue">
+                            {locale === "en" ? "Live status FlightAware" : "Estado en vivo FlightAware"}
+                          </LinkButton>
+                          {airlineAppUrl && (
+                            <LinkButton href={airlineAppUrl} variant="default">
+                              {locale === "en" ? "Airline app" : "App aerolínea"}
+                            </LinkButton>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
             </div>
           );

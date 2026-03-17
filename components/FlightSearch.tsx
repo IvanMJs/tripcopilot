@@ -32,6 +32,12 @@ function loadTracked(): TrackedFlight[] {
   }
 }
 
+// Build sorted airline list (IATA codes only — 2-char or digit-prefixed, exclude ICAO duplicates)
+const airlineList = Object.entries(AIRLINES)
+  .filter(([code]) => code.length <= 2 || /^\d/.test(code))
+  .map(([code, info]) => ({ code, name: info.name }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
 interface FlightSearchProps {
   statusMap: AirportStatusMap;
 }
@@ -54,6 +60,7 @@ const LABELS = {
     empty: "Ingresá un código de vuelo arriba para rastrearlo.",
     airportLabel: "Aeropuerto:",
     unknownAirport: "Aeropuerto no reconocido. Verificá el código IATA.",
+    airlineFilter: "Aerolínea...",
   },
   en: {
     title: "Search flight by code",
@@ -72,6 +79,7 @@ const LABELS = {
     empty: "Enter a flight code above to track it.",
     airportLabel: "Airport:",
     unknownAirport: "Airport not recognized. Check the IATA code.",
+    airlineFilter: "Airline...",
   },
 };
 
@@ -83,6 +91,7 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
   const [airportInput, setAirportInput] = useState("");
   const [error, setError] = useState("");
   const [tracked, setTracked] = useState<TrackedFlight[]>([]);
+  const [selectedAirline, setSelectedAirline] = useState<string>("");
 
   useEffect(() => { setTracked(loadTracked()); }, []);
 
@@ -126,6 +135,7 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
     ]);
     setInput("");
     setAirportInput("");
+    setSelectedAirline("");
   }
 
   function handleRemove(fullCode: string) {
@@ -140,17 +150,46 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
         <h3 className="text-sm font-semibold text-gray-300">{L.title}</h3>
 
         <div className="flex gap-2 flex-wrap">
+          {/* Airline filter select */}
+          <select
+            value={selectedAirline}
+            onChange={(e) => {
+              setSelectedAirline(e.target.value);
+              if (e.target.value) {
+                setInput(e.target.value);
+                setError("");
+              }
+            }}
+            className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[140px]"
+          >
+            <option value="">{L.airlineFilter}</option>
+            {airlineList.map(({ code, name }) => (
+              <option key={code} value={code}>{code} — {name}</option>
+            ))}
+          </select>
+
+          {/* Flight code input */}
           <div className="relative flex-1 min-w-[140px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
             <input
               type="text"
               value={input}
-              onChange={(e) => { setInput(e.target.value); setError(""); }}
+              onChange={(e) => {
+                const val = e.target.value;
+                setInput(val);
+                setError("");
+                // Clear airline selection if user removes the prefix
+                if (selectedAirline && !val.toUpperCase().startsWith(selectedAirline)) {
+                  setSelectedAirline("");
+                }
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               placeholder={L.placeholder}
               className="w-full rounded-lg border border-gray-700 bg-gray-950 pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
+
+          {/* Airport input */}
           <div className="relative flex-1 min-w-[120px]">
             <Plane className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
             <input
@@ -163,6 +202,7 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
               className="w-full rounded-lg border border-gray-700 bg-gray-950 pl-9 pr-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
+
           <button
             onClick={handleAdd}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors"
@@ -202,9 +242,12 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2.5 flex-wrap">
                       <span className="text-2xl font-black text-white">{parsed.fullCode}</span>
+                      <span className="inline-flex items-center rounded-md border border-gray-700 bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-300">
+                        {parsed.airlineCode}
+                      </span>
                       <span className="text-sm text-gray-500">{parsed.airlineName}</span>
                     </div>
                     {airportCode ? (

@@ -1,4 +1,15 @@
-export const AIRPORTS: Record<string, { name: string; city: string; state: string; lat: number; lng: number; icao: string }> = {
+export const AIRPORTS: Record<string, {
+  name: string;
+  city: string;
+  state: string;
+  lat: number;
+  lng: number;
+  icao: string;
+  /** Country name — defaults to USA when omitted */
+  country?: string;
+  /** false = no FAA ASWS coverage (international airports) */
+  isFAA?: boolean;
+}> = {
   ATL: { name: "Hartsfield-Jackson Atlanta",          city: "Atlanta",       state: "GA", lat: 33.6407,  lng: -84.4277,  icao: "KATL" },
   LAX: { name: "Los Angeles International",            city: "Los Angeles",   state: "CA", lat: 33.9425,  lng: -118.4081, icao: "KLAX" },
   ORD: { name: "O'Hare International",                 city: "Chicago",       state: "IL", lat: 41.9742,  lng: -87.9073,  icao: "KORD" },
@@ -29,8 +40,23 @@ export const AIRPORTS: Record<string, { name: string; city: string; state: strin
   SAN: { name: "San Diego International",              city: "San Diego",     state: "CA", lat: 32.7338,  lng: -117.1933, icao: "KSAN" },
   TPA: { name: "Tampa International",                  city: "Tampa",         state: "FL", lat: 27.9756,  lng: -82.5333,  icao: "KTPA" },
   PDX: { name: "Portland International",               city: "Portland",      state: "OR", lat: 45.5898,  lng: -122.5951, icao: "KPDX" },
-  EZE: { name: "Ministro Pistarini International",     city: "Buenos Aires",  state: "AR", lat: -34.8222, lng: -58.5358,  icao: "SAEZ" },
-  GCM: { name: "Owen Roberts International",           city: "Grand Cayman",  state: "KY", lat: 19.2928,  lng: -81.3577,  icao: "MWCR" },
+  EZE: { name: "Ministro Pistarini International",     city: "Buenos Aires",  state: "AR", lat: -34.8222, lng: -58.5358,  icao: "SAEZ", country: "Argentina",  isFAA: false },
+  GCM: { name: "Owen Roberts International",           city: "Grand Cayman",  state: "KY", lat: 19.2928,  lng: -81.3577,  icao: "MWCR", country: "Cayman Islands", isFAA: false },
+
+  // ── Latin America & Caribbean ─────────────────────────────────────────────
+  BOG: { name: "El Dorado International",              city: "Bogotá",        state: "CO", lat:  4.7016,  lng: -74.1469,  icao: "SKBO", country: "Colombia",    isFAA: false },
+  LIM: { name: "Jorge Chávez International",           city: "Lima",          state: "PE", lat: -12.0219, lng: -77.1143,  icao: "SPJC", country: "Peru",        isFAA: false },
+  GRU: { name: "São Paulo/Guarulhos International",    city: "São Paulo",     state: "SP", lat: -23.4356, lng: -46.4731,  icao: "SBGR", country: "Brazil",      isFAA: false },
+  GIG: { name: "Rio de Janeiro/Galeão International",  city: "Rio de Janeiro",state: "RJ", lat: -22.8099, lng: -43.2505,  icao: "SBGL", country: "Brazil",      isFAA: false },
+  SCL: { name: "Arturo Merino Benítez International",  city: "Santiago",      state: "CL", lat: -33.3930, lng: -70.7858,  icao: "SCEL", country: "Chile",       isFAA: false },
+  MVD: { name: "Carrasco International",               city: "Montevideo",    state: "UY", lat: -34.8383, lng: -56.0308,  icao: "SUMU", country: "Uruguay",     isFAA: false },
+  PTY: { name: "Tocumen International",                city: "Panama City",   state: "PA", lat:  9.0714,  lng: -79.3835,  icao: "MPTO", country: "Panama",      isFAA: false },
+  CUN: { name: "Cancún International",                 city: "Cancún",        state: "QR", lat: 21.0365,  lng: -86.8771,  icao: "MMUN", country: "Mexico",      isFAA: false },
+  MEX: { name: "Benito Juárez International",          city: "Mexico City",   state: "MX", lat: 19.4363,  lng: -99.0721,  icao: "MMMX", country: "Mexico",      isFAA: false },
+  NAS: { name: "Lynden Pindling International",        city: "Nassau",        state: "BS", lat: 25.0389,  lng: -77.4662,  icao: "MYNN", country: "Bahamas",     isFAA: false },
+  ANU: { name: "V.C. Bird International",              city: "St. John's",    state: "AG", lat: 17.1367,  lng: -61.7926,  icao: "TAPA", country: "Antigua",     isFAA: false },
+  UIO: { name: "Mariscal Sucre International",         city: "Quito",         state: "EC", lat: -0.1292,  lng: -78.3575,  icao: "SEQM", country: "Ecuador",     isFAA: false },
+  VVI: { name: "Viru Viru International",              city: "Santa Cruz",    state: "BO", lat: -17.6448, lng: -63.1354,  icao: "SLVR", country: "Bolivia",     isFAA: false },
 };
 
 export const DEFAULT_AIRPORTS = ["MIA", "JFK", "EZE", "GCM"];

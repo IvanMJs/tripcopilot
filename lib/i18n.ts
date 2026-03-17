@@ -19,6 +19,7 @@ export const translations = {
     tabAirports: "✈ Mis aeropuertos",
     tabFlights: "🗓 Mis vuelos",
     tabSearch: "🔍 Buscar vuelo",
+    tabHelp: "❓ Ayuda",
 
     // Airport card
     noDelaysReported: "Sin demoras reportadas",
@@ -120,6 +121,7 @@ export const translations = {
     tabAirports: "✈ My airports",
     tabFlights: "🗓 My flights",
     tabSearch: "🔍 Flight search",
+    tabHelp: "❓ Help",
 
     // Airport card
     noDelaysReported: "No delays reported",

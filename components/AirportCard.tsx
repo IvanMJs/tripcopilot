@@ -3,39 +3,120 @@
 import { AirportStatus } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { cn } from "@/lib/utils";
-import { X, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { X, TrendingUp, TrendingDown, Minus, Wind } from "lucide-react";
 import { AIRPORTS } from "@/lib/airports";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { WeatherData } from "@/hooks/useWeather";
+import { MetarData, FlightCategory } from "@/hooks/useMetar";
 
 interface AirportCardProps {
   iata: string;
   status?: AirportStatus;
   onRemove?: () => void;
   weather?: WeatherData;
+  metar?: MetarData;
   highlight?: boolean;
 }
 
-const BORDER_COLOR: Record<string, string> = {
-  ok:             "border-green-500/40",
-  delay_minor:    "border-yellow-500/60",
-  delay_moderate: "border-orange-500/60",
-  delay_severe:   "border-red-500/70",
-  ground_delay:   "border-red-600/80",
-  ground_stop:    "border-red-700 animate-pulse",
-  closure:        "border-gray-500/60",
-  unknown:        "border-gray-700",
+// ── METAR display helpers ─────────────────────────────────────────────────────
+
+const FC_STYLE: Record<FlightCategory, { pill: string; dot: string }> = {
+  VFR:  { pill: "bg-emerald-950/70 text-emerald-300 border-emerald-700/30", dot: "bg-emerald-400" },
+  MVFR: { pill: "bg-blue-950/70    text-blue-300    border-blue-700/30",    dot: "bg-blue-400"    },
+  IFR:  { pill: "bg-orange-950/70  text-orange-300  border-orange-700/30",  dot: "bg-orange-400"  },
+  LIFR: { pill: "bg-red-950/70     text-red-300     border-red-700/30",     dot: "bg-red-400 animate-pulse" },
 };
 
-const BG_COLOR: Record<string, string> = {
-  ok:             "bg-green-900/10",
-  delay_minor:    "bg-yellow-900/10",
-  delay_moderate: "bg-orange-900/15",
-  delay_severe:   "bg-red-900/20",
-  ground_delay:   "bg-red-900/25",
-  ground_stop:    "bg-red-950/40",
-  closure:        "bg-gray-900/40",
-  unknown:        "bg-gray-900/20",
+function formatWind(dirDeg: number, isVRB: boolean, speedKt: number, gustKt?: number): string {
+  if (speedKt === 0) return "CALM";
+  const dir  = isVRB ? "VRB" : `${String(dirDeg).padStart(3, "0")}°`;
+  const gust = gustKt ? ` G${gustKt}` : "";
+  return `${dir}/${speedKt}${gust}kt`;
+}
+
+function MetarRow({ metar }: { metar: MetarData }) {
+  const fc    = metar.flightCategory;
+  const style = FC_STYLE[fc];
+  const wind  = formatWind(metar.windDirDeg, metar.isVRB, metar.windSpeedKt, metar.windGustKt);
+
+  const extras: string[] = [];
+  if (metar.visibilitySM < 5)
+    extras.push(`vis ${metar.visibilitySM < 1 ? `${metar.visibilitySM}` : Math.round(metar.visibilitySM)}SM`);
+  if (metar.ceilingFt !== undefined && metar.ceilingFt < 3000)
+    extras.push(`ceil ${(metar.ceilingFt / 100).toFixed(0)}00ft`);
+  if (metar.weatherString)
+    extras.push(metar.weatherString);
+
+  return (
+    <div className="mt-2 flex items-center gap-2 flex-wrap text-xs">
+      <span className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold border",
+        style.pill,
+      )}>
+        <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", style.dot)} />
+        {fc}
+      </span>
+      <Wind className="h-3 w-3 text-gray-600 shrink-0" />
+      <span className="text-gray-400 font-medium">{wind}</span>
+      {extras.map((e, i) => (
+        <span key={i} className="text-gray-600">· {e}</span>
+      ))}
+    </div>
+  );
+}
+
+// ── 2025 design pattern: subtle full border + colored left-accent (4px) ────────
+// Research source: Carbon Design System / Stripe / Linear inline alert pattern.
+// Critical cards use ambient glow (box-shadow) for added visual weight.
+const CARD_STYLE: Record<string, { border: string; bg: string; leftBar: string; glow: string }> = {
+  ok: {
+    border:  "border-emerald-500/20",
+    bg:      "bg-[rgba(16,185,129,0.04)]",
+    leftBar: "bg-emerald-500/60",
+    glow:    "",
+  },
+  delay_minor: {
+    border:  "border-yellow-500/25",
+    bg:      "bg-[rgba(234,179,8,0.05)]",
+    leftBar: "bg-yellow-400/70",
+    glow:    "",
+  },
+  delay_moderate: {
+    border:  "border-orange-500/30",
+    bg:      "bg-[rgba(249,115,22,0.07)]",
+    leftBar: "bg-orange-400/80",
+    glow:    "shadow-[0_0_0_1px_rgba(249,115,22,0.15),0_0_20px_rgba(249,115,22,0.06)]",
+  },
+  delay_severe: {
+    border:  "border-red-500/35",
+    bg:      "bg-[rgba(239,68,68,0.09)]",
+    leftBar: "bg-red-400",
+    glow:    "shadow-[0_0_0_1px_rgba(239,68,68,0.2),0_0_24px_rgba(239,68,68,0.08)]",
+  },
+  ground_delay: {
+    border:  "border-red-500/40",
+    bg:      "bg-[rgba(239,68,68,0.12)]",
+    leftBar: "bg-red-500 animate-pulse",
+    glow:    "shadow-[0_0_0_1px_rgba(239,68,68,0.25),0_0_28px_rgba(239,68,68,0.1)]",
+  },
+  ground_stop: {
+    border:  "border-red-600/50",
+    bg:      "bg-[rgba(239,68,68,0.16)]",
+    leftBar: "bg-red-500 animate-pulse",
+    glow:    "shadow-[0_0_0_1px_rgba(239,68,68,0.3),0_0_32px_rgba(239,68,68,0.12)]",
+  },
+  closure: {
+    border:  "border-zinc-600/40",
+    bg:      "bg-zinc-900/40",
+    leftBar: "bg-zinc-500",
+    glow:    "",
+  },
+  unknown: {
+    border:  "border-zinc-700/30",
+    bg:      "bg-zinc-900/20",
+    leftBar: "bg-zinc-700",
+    glow:    "",
+  },
 };
 
 // All translations of "increasing/worsening" and "decreasing/improving" trends
@@ -49,7 +130,7 @@ function TrendIcon({ trend }: { trend?: string }) {
   return <Minus className="h-3.5 w-3.5 text-yellow-400 inline" />;
 }
 
-export function AirportCard({ iata, status, onRemove, weather, highlight }: AirportCardProps) {
+export function AirportCard({ iata, status, onRemove, weather, metar, highlight }: AirportCardProps) {
   const { t, locale } = useLanguage();
   const s = status?.status ?? "ok";
   const info = AIRPORTS[iata];
@@ -57,34 +138,41 @@ export function AirportCard({ iata, status, onRemove, weather, highlight }: Airp
   const city  = status?.city  || info?.city  || "";
   const state = status?.state || info?.state || "";
 
+  const cs = CARD_STYLE[s] ?? CARD_STYLE.unknown;
+
   return (
     <div
       className={cn(
-        "relative rounded-xl border-2 p-4 transition-all duration-300",
-        BORDER_COLOR[s] ?? BORDER_COLOR.unknown,
-        BG_COLOR[s]     ?? BG_COLOR.unknown,
+        // Outer wrapper: border + bg + glow + hover lift
+        "relative rounded-xl border overflow-hidden transition-all duration-200",
+        "hover:-translate-y-0.5 hover:shadow-card-hover",
+        cs.border, cs.bg, cs.glow,
         highlight && "animate-highlight-flash"
       )}
     >
+      {/* Left-accent bar — 2025 Carbon/Stripe inline alert pattern */}
+      <div className={cn("absolute left-0 inset-y-0 w-[3px] rounded-l-xl", cs.leftBar)} />
+
       {onRemove && (
         <button
           onClick={onRemove}
-          className="absolute right-2 top-2 rounded-full p-1 text-gray-500 hover:bg-gray-700/50 hover:text-gray-300 transition-colors"
+          className="absolute right-2 top-2 rounded-full p-1 text-gray-600 hover:bg-white/8 hover:text-gray-300 transition-colors z-10"
           aria-label={`Remove ${iata}`}
         >
           <X className="h-3.5 w-3.5" />
         </button>
       )}
 
-      <div className="mb-3 pr-6">
-        <span className="block text-4xl font-black tracking-tight text-white">{iata}</span>
-        <span className="text-xs text-gray-400 leading-tight">
-          {name}
-          {city && state ? ` · ${city}, ${state}` : city ? ` · ${city}` : ""}
-        </span>
-      </div>
+      <div className="pl-5 pr-4 pt-4 pb-0">
+        <div className="mb-3 pr-6">
+          <span className="block text-4xl font-black tracking-tight text-white tabular">{iata}</span>
+          <span className="text-xs text-gray-500 leading-tight">
+            {name}
+            {city && state ? ` · ${city}, ${state}` : city ? ` · ${city}` : ""}
+          </span>
+        </div>
 
-      <StatusBadge status={s} className="mb-3" />
+        <StatusBadge status={s} className="mb-3" />
 
       {s === "ok" && (
         <p className="text-xs text-green-400/80">{t.noDelaysReported}</p>
@@ -97,6 +185,8 @@ export function AirportCard({ iata, status, onRemove, weather, highlight }: Airp
           <span className="text-gray-500">{weather.description}</span>
         </div>
       )}
+
+      {metar && <MetarRow metar={metar} />}
 
       {status?.delays && (
         <div className="mt-2 space-y-1 text-xs text-gray-300">
@@ -149,11 +239,15 @@ export function AirportCard({ iata, status, onRemove, weather, highlight }: Airp
       )}
 
       {status?.lastChecked && (
-        <p className="mt-3 text-[10px] text-gray-600">
+        <p className="mt-3 text-[10px] text-gray-700 tabular">
           {t.updated}:{" "}
           {status.lastChecked.toLocaleTimeString(locale === "en" ? "en-US" : "es-AR", { hour: "2-digit", minute: "2-digit" })}
         </p>
       )}
+      </div>
+
+      {/* Bottom padding spacer */}
+      <div className="pb-4" />
     </div>
   );
 }

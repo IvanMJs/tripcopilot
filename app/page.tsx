@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Toaster } from "react-hot-toast";
-import { RefreshCw, Plane, Pencil, X, Plus, Bell } from "lucide-react";
+import { RefreshCw, Plane, Pencil, X, Plus, Bell, HelpCircle } from "lucide-react";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
 import { AirportSearch } from "@/components/AirportSearch";
@@ -11,12 +11,14 @@ import { RefreshCountdown } from "@/components/RefreshCountdown";
 import { MyFlightsPanel } from "@/components/MyFlightsPanel";
 import { FlightSearch } from "@/components/FlightSearch";
 import { TripPanel } from "@/components/TripPanel";
+import { HelpPanel } from "@/components/HelpPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DEFAULT_AIRPORTS } from "@/lib/airports";
 import { DelayStatus, TripFlight, TripTab } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Locale } from "@/lib/i18n";
 import { useWeather } from "@/hooks/useWeather";
+import { useMetar } from "@/hooks/useMetar";
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -115,6 +117,7 @@ export default function HomePage() {
     new Set([...watchedAirports, ...FLIGHT_AIRPORTS, ...tripAirports])
   );
   const weatherMap = useWeather(allAirportsForWeather, locale);
+  const metarMap   = useMetar(watchedAirports);
 
   // ── Watched airports ──────────────────────────────────────────────────────
 
@@ -254,6 +257,19 @@ export default function HomePage() {
                     </button>
                   ))}
                 </div>
+
+                {/* Help button */}
+                <button
+                  onClick={() => setActiveTab(activeTab === "help" ? "airports" : "help")}
+                  title={locale === "en" ? "Help & documentation" : "Ayuda y documentación"}
+                  className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                    activeTab === "help"
+                      ? "border-blue-700/60 bg-blue-900/20 text-blue-400"
+                      : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300"
+                  }`}
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
 
                 {/* Notification bell button */}
                 {mounted && typeof window !== "undefined" && "Notification" in window && (
@@ -419,6 +435,7 @@ export default function HomePage() {
                         status={statusMap[iata]}
                         onRemove={() => removeAirport(iata)}
                         weather={weatherMap[iata]}
+                        metar={metarMap[iata]}
                         highlight={changedAirports.has(iata)}
                       />
                     </div>
@@ -442,6 +459,10 @@ export default function HomePage() {
 
             {activeTab === "search" && (
               <FlightSearch statusMap={statusMap} />
+            )}
+
+            {activeTab === "help" && (
+              <HelpPanel />
             )}
 
             {userTrips.map((trip) =>
