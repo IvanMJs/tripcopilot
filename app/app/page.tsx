@@ -982,12 +982,11 @@ export default function HomePage() {
 
           <div className="flex h-[60px]">
 
-            {/* Mi viaje / Mis viajes — first, opens picker or navigates directly */}
+            {/* 1. Mi viaje / Mis viajes */}
             {(() => {
-              const tripsActive =
-                activeTab === "trips" || activeTab === DRAFT_ID || userTrips.some((t) => t.id === activeTab);
+              const tripsActive = activeTab === "trips" || activeTab === DRAFT_ID || userTrips.some((t) => t.id === activeTab);
               const totalTrips = userTrips.length + (draftTrip ? 1 : 0);
-              const label = totalTrips === 1
+              const label = totalTrips <= 1
                 ? (locale === "es" ? "Mi viaje" : "My trip")
                 : (locale === "es" ? "Mis viajes" : "My trips");
               return (
@@ -1001,15 +1000,9 @@ export default function HomePage() {
                       setRenameInPickerId(null);
                     }
                   }}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${
-                    tripsActive ? "text-blue-400" : "text-gray-500"
-                  }`}
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${tripsActive ? "text-blue-400" : "text-gray-500"}`}
                 >
-                  {tripsActive && (
-                    <span className="absolute top-0 inset-x-0 flex justify-center">
-                      <span className="h-0.5 w-8 rounded-full bg-blue-400" />
-                    </span>
-                  )}
+                  {tripsActive && <span className="absolute top-0 inset-x-0 flex justify-center"><span className="h-0.5 w-8 rounded-full bg-blue-400" /></span>}
                   <div className="relative">
                     <Map className="h-[22px] w-[22px]" />
                     {totalTrips > 1 && (
@@ -1018,14 +1011,12 @@ export default function HomePage() {
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] font-semibold leading-none truncate max-w-[56px] text-center">
-                    {label}
-                  </span>
+                  <span className="text-[10px] font-semibold leading-none">{label}</span>
                 </button>
               );
             })()}
 
-            {/* Aeropuertos */}
+            {/* 2. Aeropuertos */}
             {(() => {
               const isActive = activeTab === "airports";
               return (
@@ -1040,7 +1031,7 @@ export default function HomePage() {
               );
             })()}
 
-            {/* Vuelos */}
+            {/* 3. Vuelos */}
             {(() => {
               const isActive = activeTab === "flights";
               return (
@@ -1055,16 +1046,15 @@ export default function HomePage() {
               );
             })()}
 
-            {/* + Nuevo viaje */}
+            {/* 4. Nuevo */}
             <button
               onClick={() => { setShowTripPicker(false); openCreateTripModal(); }}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors text-gray-500 hover:text-blue-400"
             >
               <Plus className="h-[22px] w-[22px]" />
-              <span className="text-[10px] font-semibold leading-none">
-                {locale === "es" ? "Nuevo" : "New"}
-              </span>
+              <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Nuevo" : "New"}</span>
             </button>
+
           </div>
 
           </div>
