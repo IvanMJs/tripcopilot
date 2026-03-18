@@ -3,13 +3,13 @@ import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 export const metadata: Metadata = {
-  title: "✈ Copiloto de Viaje",
+  title: "TripCopilot",
   description: "Tu viaje completo · Riesgo de conexión y estado de aeropuertos en tiempo real",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Copiloto",
+    title: "TripCopilot",
   },
 };
 
@@ -28,7 +28,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="icon" href="/tripcopliot-avatar.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/tripcopliot-avatar.svg" />
       </head>
       <body className="min-h-screen bg-gray-950 text-gray-100 antialiased">
         <LanguageProvider>{children}</LanguageProvider>

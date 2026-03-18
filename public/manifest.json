@@ -1,6 +1,6 @@
 {
-  "name": "Copiloto de Viaje",
-  "short_name": "Copiloto",
+  "name": "TripCopilot",
+  "short_name": "TripCopilot",
   "description": "Tu viaje completo · Riesgo de conexión y estado de aeropuertos en tiempo real",
   "start_url": "/",
   "display": "standalone",
@@ -8,6 +8,6 @@
   "theme_color": "#080810",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "/tripcopliot-avatar.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }
