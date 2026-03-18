@@ -16,6 +16,29 @@ export function useServiceWorker() {
     navigator.serviceWorker.ready
       .then((reg) => {
         regRef.current = reg;
+        // Auto-subscribe if permission already granted (handles reinstalls)
+        if ("Notification" in window && Notification.permission === "granted") {
+          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+          if (publicKey) {
+            reg.pushManager
+              .getSubscription()
+              .then((existing) =>
+                existing ??
+                reg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
+                }),
+              )
+              .then((subscription) =>
+                fetch("/api/push/subscribe", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(subscription.toJSON()),
+                }),
+              )
+              .catch(() => {});
+          }
+        }
       })
       .catch(() => {});
   }, []);
