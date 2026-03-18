@@ -1,691 +1,510 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Toaster } from "react-hot-toast";
-import { RefreshCw, Plane, Pencil, X, Plus, Bell, HelpCircle, MapPin, Search, Map } from "lucide-react";
-import { useAirportStatus } from "@/hooks/useAirportStatus";
-import { AirportCard } from "@/components/AirportCard";
-import { AirportSearch } from "@/components/AirportSearch";
-import { GlobalStatusBar } from "@/components/GlobalStatusBar";
-import { RefreshCountdown } from "@/components/RefreshCountdown";
-import { MyFlightsPanel } from "@/components/MyFlightsPanel";
-import { FlightSearch } from "@/components/FlightSearch";
-import { TripPanel } from "@/components/TripPanel";
-import { TripListView } from "@/components/TripListView";
-import { HelpPanel } from "@/components/HelpPanel";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { DelayStatus, TripFlight, TripTab } from "@/lib/types";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { Locale } from "@/lib/i18n";
-import { useWeather } from "@/hooks/useWeather";
-import { useMetar } from "@/hooks/useMetar";
-import { useServiceWorker } from "@/hooks/useServiceWorker";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-import { useWatchedAirports } from "@/hooks/useWatchedAirports";
-import { useUserTrips } from "@/hooks/useUserTrips";
-import { NotificationSetupSheet } from "@/components/NotificationSetupSheet";
+import { useState, useRef } from "react";
+import { createClient } from "@/utils/supabase/client";
+import {
+  Plane, Shield, Brain, Bell, Calendar, Search,
+  ArrowRight, Mail, Loader2, MapPin, Clock,
+  Zap, Star, CheckCircle, ChevronDown, LogIn
+} from "lucide-react";
 
-const SEVERITY_ORDER: Record<DelayStatus, number> = {
-  closure:        0,
-  ground_stop:    1,
-  ground_delay:   2,
-  delay_severe:   3,
-  delay_moderate: 4,
-  delay_minor:    5,
-  ok:             6,
-  unknown:        7,
-};
+export default function LandingPage() {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const loginRef = useRef<HTMLDivElement>(null);
 
-const REFRESH_OPTIONS = [5, 10, 15, 30];
-
-// Always include these airports for weather regardless of watchedAirports
-const FLIGHT_AIRPORTS = ["EZE", "MIA", "GCM", "JFK"];
-
-export default function HomePage() {
-  const { t, locale, setLocale } = useLanguage();
-  const { showSwNotification } = useServiceWorker();
-  const isOnline = useOnlineStatus();
-  const [showNotifSheet, setShowNotifSheet] = useState(false);
-
-  const [activeTab, setActiveTab] = useState<string>("flights");
-  const [refreshInterval, setRefreshInterval] = useState(5);
-  const [mounted, setMounted] = useState(false);
-
-  // DB-backed state
-  const { airports: watchedAirports, add: addAirportDB, remove: removeAirportDB } = useWatchedAirports();
-  const {
-    trips: userTrips,
-    createTrip: createTripDB,
-    deleteTrip: deleteTripDB,
-    renameTrip: renameTripDB,
-    addFlight:  addFlightDB,
-    removeFlight: removeFlightDB,
-  } = useUserTrips();
-
-  // Tab rename state
-  const [editingTabId, setEditingTabId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
-  const editInputRef = useRef<HTMLInputElement>(null);
-
-  // Create trip modal
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newTripName, setNewTripName] = useState("");
-  const createModalInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => { setMounted(true); }, []);
-
-  // Check-in push notifications
-  useEffect(() => {
-    if (!mounted) return;
-    if (typeof window === "undefined") return;
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
-
-    const MY_FLIGHT_DATES = [
-      { code: "AA 900",  isoDate: "2026-03-29", route: "EZE→MIA",  time: "20:30" },
-      { code: "AA 956",  isoDate: "2026-03-31", route: "MIA→GCM",  time: "12:55" },
-      { code: "B6 766",  isoDate: "2026-04-05", route: "GCM→JFK",  time: "15:40" },
-      { code: "DL 1514", isoDate: "2026-04-11", route: "JFK→MIA",  time: "11:10" },
-      { code: "AA 931",  isoDate: "2026-04-11", route: "MIA→EZE",  time: "21:15" },
-    ];
-
-    const allFlights = [
-      ...MY_FLIGHT_DATES,
-      ...userTrips.flatMap(t => t.flights.map(f => ({
-        code: f.flightCode,
-        isoDate: f.isoDate,
-        route: `${f.originCode}→${f.destinationCode}`,
-        time: f.departureTime ?? "",
-      }))),
-    ];
-
-    for (const f of allFlights) {
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const flightDay = new Date(f.isoDate + "T00:00:00");
-      const diff = Math.ceil((flightDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      if (diff !== 1) continue;
-
-      const key = `checkin-notified-${f.code}-${f.isoDate}`;
-      if (localStorage.getItem(key)) continue;
-
-      const notifTitle = locale === "en"
-        ? `✈ Check-in open · ${f.code}`
-        : `✈ Check-in disponible · ${f.code}`;
-      const notifBody = locale === "en"
-        ? `Your flight ${f.route} departs tomorrow at ${f.time}`
-        : `Tu vuelo ${f.route} sale mañana a las ${f.time}`;
-      showSwNotification(notifTitle, { body: notifBody, tag: key });
-      localStorage.setItem(key, "1");
-    }
-  }, [mounted, locale, userTrips]);
-
-  const {
-    statusMap,
-    loading,
-    error,
-    lastUpdated,
-    secondsUntilRefresh,
-    totalSeconds,
-    refresh,
-    changedAirports,
-    isStale,
-    notificationsEnabled,
-    requestNotifications,
-    disableNotifications,
-  } = useAirportStatus(refreshInterval, locale, showSwNotification);
-
-  // Aggregate airports for weather: watched + hardcoded flight airports + all user trip airports
-  const tripAirports = userTrips.flatMap((t) =>
-    t.flights.flatMap((f) => [f.originCode, f.destinationCode])
-  );
-  const allAirportsForWeather = Array.from(
-    new Set([...watchedAirports, ...FLIGHT_AIRPORTS, ...tripAirports])
-  );
-  const weatherMap = useWeather(allAirportsForWeather, locale);
-  const metarMap   = useMetar(watchedAirports);
-
-  // ── Watched airports ──────────────────────────────────────────────────────
-
-  function addAirport(iata: string) { addAirportDB(iata); }
-  function removeAirport(iata: string) { removeAirportDB(iata); }
-
-  const sortedAirports = [...watchedAirports].sort((a, b) => {
-    const sa = statusMap[a]?.status ?? "ok";
-    const sb = statusMap[b]?.status ?? "ok";
-    return (SEVERITY_ORDER[sa] ?? 7) - (SEVERITY_ORDER[sb] ?? 7);
-  });
-
-  // ── Trip management ───────────────────────────────────────────────────────
-
-  function openCreateTripModal() {
-    setNewTripName("");
-    setShowCreateModal(true);
-    setTimeout(() => createModalInputRef.current?.focus(), 60);
+  function scrollToLogin() {
+    loginRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  async function confirmCreateTrip() {
-    const tripName =
-      newTripName.trim() ||
-      (locale === "en" ? `Trip ${userTrips.length + 1}` : `Viaje ${userTrips.length + 1}`);
-    const id = await createTripDB(tripName);
-    if (id) setActiveTab(id);
-    setShowCreateModal(false);
+  async function handleGoogle() {
+    setLoading(true);
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${location.origin}/auth/callback?next=/app` },
+    });
   }
 
-  function renameTrip(id: string, newName: string) { renameTripDB(id, newName); }
-
-  function deleteTrip(id: string) {
-    const trip = userTrips.find((t) => t.id === id);
-    if (!trip) return;
-    if (
-      trip.flights.length > 0 &&
-      !window.confirm(
-        locale === "en"
-          ? `Delete trip "${trip.name}" and its ${trip.flights.length} flight(s)?`
-          : `¿Eliminar el viaje "${trip.name}" con ${trip.flights.length} vuelo(s)?`
-      )
-    ) return;
-    deleteTripDB(id);
-    if (activeTab === id) setActiveTab("trips");
+  async function handleMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${location.origin}/auth/callback?next=/app` },
+    });
+    setLoading(false);
+    if (error) setError(error.message);
+    else setSent(true);
   }
 
-  function addFlightToTrip(tripId: string, flight: TripFlight) { addFlightDB(tripId, flight); }
-  function removeFlightFromTrip(tripId: string, flightId: string) { removeFlightDB(tripId, flightId); }
+  // Features data
+  const features = [
+    {
+      icon: Shield,
+      color: "text-blue-400",
+      bg: "bg-blue-950/40",
+      border: "border-blue-800/30",
+      title: "Estado FAA en tiempo real",
+      desc: "Alertas de demoras, ground stops y cierres de aeropuertos directamente de la FAA oficial, actualizadas cada 5 minutos.",
+    },
+    {
+      icon: Brain,
+      color: "text-violet-400",
+      bg: "bg-violet-950/40",
+      border: "border-violet-800/30",
+      title: "TripCopilot IA",
+      desc: "Inteligencia artificial que analiza tu itinerario completo: clima en cada destino, qué empacar, alertas personalizadas y guía de viaje.",
+    },
+    {
+      icon: Zap,
+      color: "text-orange-400",
+      bg: "bg-orange-950/40",
+      border: "border-orange-800/30",
+      title: "Riesgo de conexión",
+      desc: "Detecta si una demora puede hacerte perder una conexión. Te avisa con tiempo para actuar antes de que sea tarde.",
+    },
+    {
+      icon: Bell,
+      color: "text-emerald-400",
+      bg: "bg-emerald-950/40",
+      border: "border-emerald-800/30",
+      title: "Alertas push",
+      desc: "Notificaciones de check-in y cambios de estado directamente en tu dispositivo, sin tener que abrir la app.",
+    },
+    {
+      icon: Calendar,
+      color: "text-pink-400",
+      bg: "bg-pink-950/40",
+      border: "border-pink-800/30",
+      title: "Export a calendario",
+      desc: "Exportá todos tus vuelos a Google Calendar o cualquier app de calendario con un solo clic.",
+    },
+    {
+      icon: Search,
+      color: "text-teal-400",
+      bg: "bg-teal-950/40",
+      border: "border-teal-800/30",
+      title: "Rastreo de cualquier vuelo",
+      desc: "Seguí el estado de cualquier vuelo del mundo en tiempo real, con estado del aeropuerto de salida incluido.",
+    },
+  ];
 
-  // ── Tab rename helpers ────────────────────────────────────────────────────
+  const painPoints = [
+    {
+      emoji: "😰",
+      problem: "Te enterás tarde de las demoras",
+      solution: "TripCopilot monitorea la FAA las 24hs y te notifica al instante",
+    },
+    {
+      emoji: "😓",
+      problem: "No sabés si vas a perder la conexión",
+      solution: "Análisis automático de riesgo de conexión en cada escala",
+    },
+    {
+      emoji: "🤯",
+      problem: "Viajar a múltiples destinos es un caos",
+      solution: "IA que entiende todo tu itinerario y te da un plan claro",
+    },
+  ];
 
-  function startRename(trip: TripTab) {
-    setEditingTabId(trip.id);
-    setEditingName(trip.name);
-    setTimeout(() => editInputRef.current?.focus(), 0);
-  }
-
-  function saveRename() {
-    if (editingTabId) {
-      renameTrip(editingTabId, editingName);
-      setEditingTabId(null);
-    }
-  }
-
-  // ── Tab bar styles ────────────────────────────────────────────────────────
-
-  const tabBase =
-    "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap";
-  const tabActive   = "border-blue-500 text-blue-400";
-  const tabInactive = "border-transparent text-gray-400 hover:text-gray-200";
-
-  // ── Render ────────────────────────────────────────────────────────────────
+  const steps = [
+    {
+      num: "01",
+      title: "Entrás con Google o email",
+      desc: "Sin contraseña. Un clic y estás adentro.",
+    },
+    {
+      num: "02",
+      title: "TripCopilot carga tu viaje",
+      desc: "Registrás tus vuelos y el copiloto analiza cada tramo al instante.",
+    },
+    {
+      num: "03",
+      title: "Volás tranquilo",
+      desc: "Monitoreo en tiempo real, alertas automáticas y guía IA disponible siempre.",
+    },
+  ];
 
   return (
-    <>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: "#1f2937",
-            color: "#f3f4f6",
-            border: "1px solid #374151",
-          },
-        }}
-      />
+    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
 
-      {/* Notification setup sheet — iOS-aware */}
-      <NotificationSetupSheet
-        open={showNotifSheet}
-        onClose={() => {
-          setShowNotifSheet(false);
-          // Re-check permission state after sheet closes
-          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-            requestNotifications();
-          }
-        }}
-        locale={locale}
-      />
-
-      {/* Create trip modal */}
-      {showCreateModal && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
-            onClick={() => setShowCreateModal(false)}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
-            <div
-              className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4"
-              style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
+      {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
+      <nav className="fixed top-0 inset-x-0 z-50 border-b border-white/[0.06] backdrop-blur-xl"
+        style={{ background: "rgba(3,3,8,0.85)" }}>
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-8 w-auto" />
+            <span className="text-sm font-black tracking-tight text-white">TripCopilot</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <a href="#funciones" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              Funciones
+            </a>
+            <a href="#como-funciona" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              Cómo funciona
+            </a>
+            <button
+              onClick={scrollToLogin}
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-semibold text-white transition-colors"
             >
-              <div>
-                <h3 className="text-base font-black text-white">
-                  {locale === "es" ? "Nuevo viaje" : "New trip"}
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  {locale === "es" ? "Podés renombrarlo después" : "You can rename it later"}
+              <LogIn className="h-3.5 w-3.5" />
+              Empezar gratis
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── HERO ──────────────────────────────────────────────────────────── */}
+      <section className="relative pt-28 pb-20 px-4 overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10"
+            style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
+        </div>
+
+        <div className="relative max-w-4xl mx-auto text-center">
+          {/* Avatar */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full blur-2xl opacity-40"
+                style={{ background: "radial-gradient(circle, #3b82f6, transparent)" }} />
+              <img
+                src="/tripcopliot-avatar.svg"
+                alt="TripCopilot"
+                className="relative h-24 w-24 sm:h-32 sm:w-32 drop-shadow-2xl"
+              />
+            </div>
+          </div>
+
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-800/40 bg-blue-950/30 px-4 py-1.5 text-xs text-blue-400 font-medium mb-6">
+            <Brain className="h-3.5 w-3.5" />
+            Potenciado por Inteligencia Artificial · Claude AI
+          </div>
+
+          {/* Headline */}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.08] mb-5">
+            Tu copiloto para<br />
+            <span className="text-transparent bg-clip-text"
+              style={{ backgroundImage: "linear-gradient(135deg, #60a5fa, #a78bfa)" }}>
+              cada vuelo
+            </span>
+          </h1>
+
+          {/* Subheadline */}
+          <p className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-2xl mx-auto mb-8">
+            Monitoreo FAA en tiempo real, análisis de riesgo con IA y guía de viaje personalizada.
+            Todo lo que necesitás para volar{" "}
+            <span className="text-white font-semibold">sin sorpresas</span>.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
+            <button
+              onClick={scrollToLogin}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-8 py-3.5 text-sm font-bold text-white transition-all shadow-lg shadow-blue-900/30 tap-scale"
+            >
+              Empezar gratis
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" })}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-8 py-3.5 text-sm font-semibold text-gray-300 hover:bg-white/[0.08] transition-all"
+            >
+              Ver demo
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Social proof */}
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
+            <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Sin contraseña</span>
+            <span className="h-3 w-px bg-gray-800" />
+            <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Gratis para empezar</span>
+            <span className="h-3 w-px bg-gray-800" />
+            <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Datos 100% seguros</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PAIN POINTS ────────────────────────────────────────────────────── */}
+      <section className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-10">
+            ¿Te pasó alguna vez?
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {painPoints.map((p, i) => (
+              <div key={i} className="rounded-2xl border border-white/[0.06] p-5 space-y-3"
+                style={{ background: "linear-gradient(160deg, rgba(14,14,24,0.9) 0%, rgba(8,8,16,0.95) 100%)" }}>
+                <span className="text-3xl">{p.emoji}</span>
+                <p className="text-sm font-semibold text-gray-300 leading-snug">{p.problem}</p>
+                <div className="h-px bg-white/[0.06]" />
+                <p className="text-xs text-blue-400 leading-relaxed">
+                  <span className="font-bold text-blue-300">TripCopilot:</span> {p.solution}
                 </p>
               </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  {locale === "es" ? "Nombre del viaje" : "Trip name"}
-                </label>
-                <input
-                  ref={createModalInputRef}
-                  value={newTripName}
-                  onChange={(e) => setNewTripName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") confirmCreateTrip();
-                    if (e.key === "Escape") setShowCreateModal(false);
-                  }}
-                  placeholder={locale === "es" ? "Ej: Vacaciones Miami 2026" : "E.g. Miami Trip 2026"}
-                  maxLength={40}
-                  autoFocus
-                  className="w-full rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors"
-                >
-                  {locale === "es" ? "Cancelar" : "Cancel"}
-                </button>
-                <button
-                  onClick={confirmCreateTrip}
-                  className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 py-2.5 text-sm font-semibold text-white transition-colors tap-scale"
-                >
-                  {locale === "es" ? "Crear viaje" : "Create trip"}
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
-        </>
-      )}
-
-      {/* Offline banner */}
-      {mounted && !isOnline && (
-        <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-2 bg-yellow-900/95 border-b border-yellow-700/60 px-4 py-2.5 backdrop-blur-sm"
-          style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
-        >
-          <span className="text-sm">📡</span>
-          <p className="text-xs font-semibold text-yellow-200">
-            {locale === "es"
-              ? "Sin conexión — mostrando último estado conocido"
-              : "Offline — showing last known status"}
-          </p>
-          {lastUpdated && (
-            <span className="text-[10px] text-yellow-400/70">
-              · {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </span>
-          )}
         </div>
-      )}
+      </section>
 
-      <div className="min-h-screen bg-gray-950 px-4 pb-nav md:pb-6 md:py-6"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
-      >
-        <div className="mx-auto max-w-6xl space-y-4 md:space-y-6">
-
-          {/* ── Header ── */}
-          <div className="flex items-center justify-between gap-3">
-
-            {/* Title */}
-            <div className="min-w-0">
-              {/* Mobile: TripCopilot PNG only — brand seal, no text */}
-              <div className="flex md:hidden items-center">
-                <img
-                  src="/tripcopliot-avatar.svg"
-                  alt="TripCopilot"
-                  className="h-10 w-auto"
-                />
-              </div>
-              {/* Desktop: PNG + title text */}
-              <h1 className="hidden md:flex items-center gap-3 text-3xl font-black tracking-tight text-white">
-                <img
-                  src="/tripcopliot-avatar.svg"
-                  alt="TripCopilot"
-                  className="h-10 w-auto shrink-0"
-                />
-                <span className="truncate">{t.appTitle}</span>
-              </h1>
-              <p className="hidden md:block mt-1 text-sm text-gray-400 font-medium">{t.appSubtitle}</p>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-
-              {/* Language toggle */}
-              <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
-                {(["es", "en"] as Locale[]).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLocale(l)}
-                    className={`px-2.5 py-1.5 md:px-3 transition-colors ${
-                      locale === l
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-900 text-gray-400 hover:text-gray-200"
-                    }`}
-                  >
-                    {l.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              {/* Notification bell — always visible, handles iOS/Android/desktop */}
-              {mounted && (
-                <button
-                  onClick={() => {
-                    if (notificationsEnabled) {
-                      disableNotifications();
-                    } else {
-                      setShowNotifSheet(true);
-                    }
-                  }}
-                  title={
-                    notificationsEnabled
-                      ? (locale === "en" ? "Notifications ON — tap to disable" : "Alertas activas — tap para desactivar")
-                      : (locale === "en" ? "Enable notifications" : "Activar alertas")
-                  }
-                  className={`flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs transition-colors ${
-                    notificationsEnabled
-                      ? "border-blue-700/60 bg-blue-900/20 text-blue-400"
-                      : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300"
-                  }`}
-                >
-                  <Bell className={`h-3.5 w-3.5 ${notificationsEnabled ? "text-blue-400" : ""}`} />
-                  {notificationsEnabled && <span className="text-[10px] font-semibold hidden sm:inline">ON</span>}
-                </button>
-              )}
-
-              {/* Refresh interval — hidden on mobile */}
-              <select
-                value={refreshInterval}
-                onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                className="hidden sm:block rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {REFRESH_OPTIONS.map((min) => (
-                  <option key={min} value={min}>{min}m</option>
-                ))}
-              </select>
-
-              {/* Refresh button */}
-              <button
-                onClick={refresh}
-                disabled={loading}
-                className="flex items-center gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-                <span className="hidden sm:inline">{loading ? t.updating : t.update}</span>
-              </button>
-
-              {/* Help — desktop only */}
-              <button
-                onClick={() => setActiveTab(activeTab === "help" ? "airports" : "help")}
-                title={locale === "en" ? "Help & documentation" : "Ayuda y documentación"}
-                className={`hidden md:flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
-                  activeTab === "help"
-                    ? "border-blue-700/60 bg-blue-900/20 text-blue-400"
-                    : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-              </button>
-            </div>
+      {/* ── SCREENSHOTS ────────────────────────────────────────────────────── */}
+      <section className="py-16 px-4 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">La app en acción</p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Todo lo que necesitás,<br />en la palma de tu mano</h2>
           </div>
 
-          {/* RefreshCountdown — desktop only */}
-          <div className="hidden sm:block -mt-2">
-            <RefreshCountdown
-              secondsUntilRefresh={secondsUntilRefresh}
-              totalSeconds={totalSeconds}
-              lastUpdated={lastUpdated}
-              isStale={isStale}
+          <div className="flex gap-4 sm:gap-6 justify-center items-end overflow-x-auto pb-4 snap-x snap-mandatory">
+            {/* Screenshot 1 */}
+            <div className="shrink-0 snap-center">
+              <div className="relative rounded-3xl overflow-hidden border border-white/[0.10] shadow-2xl shadow-black/60"
+                style={{ width: "min(240px, 65vw)" }}>
+                <img src="/responsive-intuitivo-mobile.jpg" alt="Vista de vuelo con estado FAA" className="w-full h-auto block" />
+              </div>
+              <p className="text-center text-xs text-gray-600 mt-3">Estado por vuelo</p>
+            </div>
+
+            {/* Screenshot 2 — center, larger */}
+            <div className="shrink-0 snap-center -mb-4 sm:-mb-6 relative z-10">
+              <div className="relative rounded-3xl overflow-hidden border border-blue-500/20 shadow-2xl shadow-blue-900/30"
+                style={{ width: "min(260px, 70vw)" }}>
+                <div className="absolute inset-0 rounded-3xl border-2 border-blue-500/10 pointer-events-none z-10" />
+                <img src="/planifica-tu-viaje.jpg" alt="Gestión de viajes" className="w-full h-auto block" />
+              </div>
+              <p className="text-center text-xs text-blue-500 mt-3 font-medium">Gestión de viajes</p>
+            </div>
+
+            {/* Screenshot 3 */}
+            <div className="shrink-0 snap-center">
+              <div className="relative rounded-3xl overflow-hidden border border-white/[0.10] shadow-2xl shadow-black/60"
+                style={{ width: "min(240px, 65vw)" }}>
+                <img src="/tripcopilot-ia.jpg" alt="TripCopilot IA" className="w-full h-auto block" />
+              </div>
+              <p className="text-center text-xs text-gray-600 mt-3">IA integrada</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── VIDEO DEMO ────────────────────────────────────────────────────── */}
+      <section id="demo" className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">Demo en vivo</p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Mirá cómo funciona</h2>
+          </div>
+          <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl shadow-black/60 bg-gray-950">
+            <video
+              src="/copilot-dashboard-video.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-auto block"
             />
           </div>
+        </div>
+      </section>
 
-          {/* Global Status Bar — hidden on flights tab (TripSummaryHero covers it) */}
-          {activeTab !== "flights" && (
-            <GlobalStatusBar statusMap={statusMap} watchedAirports={watchedAirports} />
-          )}
-
-          {/* Error banner */}
-          {error && (
-            <div className="rounded-lg border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
-              ⚠️ {t.errorFAA} {error}
-            </div>
-          )}
-
-          {/* ── Tab bar — desktop only; mobile uses bottom nav ── */}
-          <div className="hidden md:block border-b border-gray-800">
-            <div className="flex gap-1 overflow-x-auto overflow-y-hidden">
-
-              {/* Static tabs — order: Aeropuertos | Mi viaje | Vuelos */}
-              {([
-                { id: "flights",  label: t.tabFlights  },
-                { id: "airports", label: t.tabAirports },
-                { id: "search",   label: t.tabSearch   },
-              ] as const).map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={`${tabBase} ${activeTab === id ? tabActive : tabInactive}`}
-                >
-                  {label}
-                </button>
-              ))}
-
-              {/* Dynamic user trip tabs */}
-              {userTrips.map((trip) => {
-                const isActive  = activeTab === trip.id;
-                const isEditing = editingTabId === trip.id;
-
-                return (
-                  <div key={trip.id} className="flex items-center -mb-px">
-                    {/* Tab button / inline rename input */}
-                    {isEditing ? (
-                      <div className={`${tabBase} ${tabActive} flex items-center`}>
-                        <input
-                          ref={editInputRef}
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onBlur={saveRename}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") saveRename();
-                            if (e.key === "Escape") setEditingTabId(null);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          maxLength={30}
-                          className="bg-transparent border-b border-blue-400 outline-none text-blue-300 w-28 text-sm"
-                        />
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setActiveTab(trip.id)}
-                        className={`${tabBase} ${isActive ? tabActive : tabInactive}`}
-                      >
-                        {trip.name}
-                      </button>
-                    )}
-
-                    {/* Pencil (rename) — only on active, non-editing tab */}
-                    {isActive && !isEditing && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); startRename(trip); }}
-                        className="p-1 text-gray-600 hover:text-gray-300 transition-colors -mb-px"
-                        title={locale === "en" ? "Rename trip" : "Renombrar viaje"}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                    )}
-
-                    {/* Delete (×) */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteTrip(trip.id); }}
-                      className="p-1 text-gray-700 hover:text-red-400 transition-colors -mb-px"
-                      title={locale === "en" ? "Delete trip" : "Eliminar viaje"}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                );
-              })}
-
-              {/* New trip button */}
-              <button
-                onClick={openCreateTripModal}
-                className={`${tabBase} ${tabInactive} flex items-center gap-1 px-3`}
-                title={locale === "en" ? "New trip" : "Nuevo viaje"}
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-
-            </div>
-          </div>
-
-          {/* ── Tab content ── */}
-          <ErrorBoundary>
-            {activeTab === "airports" && (
-              <div>
-                {/* Legend — shown before cards so users understand the scale */}
-                <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
-                  {t.legendTitle && (
-                    <span className="text-gray-500 font-medium mr-1">{t.legendTitle}</span>
-                  )}
-                  {t.legend.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
+      {/* ── AI SECTION ────────────────────────────────────────────────────── */}
+      <section className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="rounded-3xl border border-violet-800/30 overflow-hidden"
+            style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.15) 0%, rgba(14,14,28,0.97) 50%, rgba(30,27,75,0.15) 100%)" }}>
+            <div className="grid md:grid-cols-2 gap-0">
+              {/* Text */}
+              <div className="p-8 sm:p-10 flex flex-col justify-center">
+                <div className="inline-flex items-center gap-2 rounded-full border border-violet-700/40 bg-violet-950/30 px-3 py-1 text-[11px] text-violet-400 font-bold uppercase tracking-wider mb-5 w-fit">
+                  <Brain className="h-3 w-3" />
+                  Inteligencia Artificial
                 </div>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {sortedAirports.map((iata, idx) => (
-                    <div key={iata} className="animate-fade-in-up" style={{ animationDelay: `${idx * 0.05}s` }}>
-                      <AirportCard
-                        iata={iata}
-                        status={statusMap[iata]}
-                        onRemove={() => removeAirport(iata)}
-                        weather={weatherMap[iata]}
-                        metar={metarMap[iata]}
-                        highlight={changedAirports.has(iata)}
-                      />
-                    </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-4 leading-tight">
+                  Un copiloto que<br />
+                  <span className="text-violet-400">piensa por vos</span>
+                </h2>
+                <p className="text-sm text-gray-400 leading-relaxed mb-6">
+                  TripCopilot usa IA (Claude AI de Anthropic) para analizar cada detalle de tu viaje:
+                  destinos, climas, tiempos de conexión y más. El resultado: un plan personalizado
+                  que te dice exactamente qué empacar, qué esperar y cómo prepararte.
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    "Análisis climático por destino y temporada",
+                    "Lista de equipaje adaptada a tu itinerario",
+                    "Alertas culturales y de entrada al país",
+                    "Riesgo de conexión calculado en tiempo real",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-sm text-gray-300">
+                      <CheckCircle className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                      {item}
+                    </li>
                   ))}
-                  <AirportSearch
-                    watchedAirports={watchedAirports}
-                    onAdd={addAirport}
-                  />
+                </ul>
+              </div>
+              {/* Screenshot */}
+              <div className="relative p-6 sm:p-8 flex items-center justify-center">
+                <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl max-w-xs w-full">
+                  <img src="/tripcopilot-ia.jpg" alt="TripCopilot IA en acción" className="w-full h-auto block" />
                 </div>
               </div>
-            )}
-
-            {activeTab === "flights" && (
-              <MyFlightsPanel statusMap={statusMap} weatherMap={weatherMap} />
-            )}
-
-            {activeTab === "search" && (
-              <FlightSearch statusMap={statusMap} />
-            )}
-
-            {activeTab === "help" && (
-              <HelpPanel />
-            )}
-
-            {activeTab === "trips" && (
-              <TripListView
-                trips={userTrips}
-                statusMap={statusMap}
-                locale={locale}
-                onSelect={(id) => setActiveTab(id)}
-                onCreateTrip={openCreateTripModal}
-                onDeleteTrip={deleteTrip}
-              />
-            )}
-
-            {userTrips.map((trip) =>
-              activeTab === trip.id ? (
-                <TripPanel
-                  key={trip.id}
-                  trip={trip}
-                  statusMap={statusMap}
-                  weatherMap={weatherMap}
-                  onAddFlight={addFlightToTrip}
-                  onRemoveFlight={removeFlightFromTrip}
-                />
-              ) : null
-            )}
-          </ErrorBoundary>
-
-          {/* Footer — desktop only */}
-          <div className="hidden md:block pt-4 border-t border-gray-900 text-center text-xs text-gray-700">
-            {t.footer}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Mobile bottom navigation ─────────────────────────────────────────── */}
-      {mounted && (
-        <nav
-          className="fixed bottom-0 inset-x-0 z-50 md:hidden bottom-nav-bg"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
-          <div className="flex h-[60px]">
-
-            {/* Static tabs */}
-            {([
-              { id: "flights",  Icon: Plane,   label: t.tabFlights  },
-              { id: "airports", Icon: MapPin,  label: t.tabAirports },
-              { id: "search",   Icon: Search,  label: t.tabSearch   },
-            ] as const).map(({ id, Icon, label }) => {
-              const isActive = activeTab === id;
+      {/* ── FEATURES ─────────────────────────────────────────────────────── */}
+      <section id="funciones" className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">Funciones</p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Todo lo que un viajero necesita</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((f) => {
+              const Icon = f.icon;
               return (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${
-                    isActive ? "text-blue-400" : "text-gray-500"
-                  }`}
-                >
-                  {isActive && (
-                    <span className="absolute top-0 inset-x-0 flex justify-center">
-                      <span className="h-0.5 w-8 rounded-full bg-blue-400" />
-                    </span>
-                  )}
-                  <Icon className="h-[22px] w-[22px]" />
-                  <span className="text-[10px] font-semibold leading-none">{label}</span>
-                </button>
+                <div key={f.title}
+                  className={`rounded-2xl border ${f.border} ${f.bg} p-5 space-y-3`}>
+                  <div className={`inline-flex items-center justify-center h-9 w-9 rounded-xl ${f.bg} border ${f.border}`}>
+                    <Icon className={`h-4 w-4 ${f.color}`} />
+                  </div>
+                  <h3 className="text-sm font-bold text-white">{f.title}</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed">{f.desc}</p>
+                </div>
               );
             })}
-
-            {/* Trips tab — always goes to list view */}
-            {(() => {
-              const tripsActive =
-                activeTab === "trips" || userTrips.some((t) => t.id === activeTab);
-              return (
-                <button
-                  onClick={() => setActiveTab("trips")}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${
-                    tripsActive ? "text-blue-400" : "text-gray-500"
-                  }`}
-                >
-                  {tripsActive && (
-                    <span className="absolute top-0 inset-x-0 flex justify-center">
-                      <span className="h-0.5 w-8 rounded-full bg-blue-400" />
-                    </span>
-                  )}
-                  <div className="relative">
-                    <Map className="h-[22px] w-[22px]" />
-                    {userTrips.length > 0 && (
-                      <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                        {userTrips.length}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] font-semibold leading-none">
-                    {locale === "es" ? "Viajes" : "Trips"}
-                  </span>
-                </button>
-              );
-            })()}
           </div>
-        </nav>
-      )}
-    </>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ────────────────────────────────────────────────── */}
+      <section id="como-funciona" className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">Proceso</p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Empezar tarda 30 segundos</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {steps.map((s, i) => (
+              <div key={s.num} className="relative text-center space-y-3">
+                {i < steps.length - 1 && (
+                  <div className="hidden sm:block absolute top-6 left-[calc(50%+2rem)] right-[-50%] h-px bg-gradient-to-r from-white/10 to-transparent" />
+                )}
+                <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl border border-white/[0.08] bg-white/[0.04] text-xl font-black text-gray-600 mx-auto">
+                  {s.num}
+                </div>
+                <h3 className="text-sm font-bold text-white">{s.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── LOGIN / CTA ──────────────────────────────────────────────────── */}
+      <section ref={loginRef} id="empezar" className="py-20 px-4">
+        <div className="max-w-sm mx-auto">
+          <div className="text-center mb-8">
+            <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-16 w-auto mx-auto mb-4" />
+            <h2 className="text-2xl font-black tracking-tight mb-2">¿Listo para volar tranquilo?</h2>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Verificá con tu email y entrás en segundos —<br />
+              <span className="text-gray-400">sin contraseña, sin complicaciones.</span>
+            </p>
+          </div>
+
+          <div
+            className="rounded-2xl border border-white/[0.08] p-6 space-y-5"
+            style={{ background: "linear-gradient(160deg, rgba(16,16,28,0.99) 0%, rgba(9,9,18,1) 100%)" }}
+          >
+            {sent ? (
+              <div className="rounded-xl border border-emerald-700/40 bg-emerald-950/20 px-4 py-5 text-center space-y-2">
+                <p className="text-2xl">📬</p>
+                <p className="text-sm font-bold text-emerald-300">Revisá tu email</p>
+                <p className="text-xs text-emerald-400/70 leading-relaxed">
+                  Mandamos un link a <span className="font-semibold">{email}</span>. Tocá el link para entrar.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Google */}
+                <button
+                  onClick={handleGoogle}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.10] bg-white/[0.05] hover:bg-white/[0.09] py-3 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                >
+                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  Continuar con Google
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-white/[0.06]" />
+                  <span className="text-[10px] text-gray-600 uppercase tracking-wider">o con email</span>
+                  <div className="flex-1 h-px bg-white/[0.06]" />
+                </div>
+
+                <form onSubmit={handleMagicLink} className="space-y-3">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="tu@email.com"
+                      required
+                      className="w-full rounded-xl border border-white/[0.12] bg-[#080810] pl-10 pr-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {error && <p className="text-xs text-red-400">{error}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={loading || !email}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 py-3 text-sm font-semibold text-white transition-colors"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar link de acceso"}
+                  </button>
+                </form>
+              </>
+            )}
+
+            <p className="text-center text-[10px] text-gray-700 leading-relaxed">
+              Sin contraseña · Datos seguros · Gratis para empezar
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ──────────────────────────────────────────────────────── */}
+      <footer className="border-t border-white/[0.05] py-8 px-4">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-6 w-auto" />
+            <span className="text-xs font-bold text-gray-600">TripCopilot</span>
+          </div>
+          <p className="text-[11px] text-gray-700">
+            Hecho con ♥ para viajeros · Potenciado por Claude AI
+          </p>
+          <p className="text-[11px] text-gray-700">
+            © {new Date().getFullYear()} TripCopilot
+          </p>
+        </div>
+      </footer>
+
+    </div>
   );
 }

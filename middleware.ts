@@ -28,19 +28,21 @@ export async function middleware(request: NextRequest) {
   // Refresh session — keeps the user logged in
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Protect all routes except /login and /auth/*
   const { pathname } = request.nextUrl;
-  const isPublic = pathname.startsWith("/login") || pathname.startsWith("/auth");
+  const isAppRoute = pathname === "/app" || pathname.startsWith("/app/");
+  const isRoot = pathname === "/";
 
-  if (!user && !isPublic) {
+  // Unauthenticated users trying to access /app → redirect to landing
+  if (!user && isAppRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === "/login") {
+  // Authenticated users on the landing → redirect to app
+  if (user && isRoot) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/app";
     return NextResponse.redirect(url);
   }
 
@@ -49,6 +51,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|mp3|webm|ogg)$).*)",
   ],
 };
