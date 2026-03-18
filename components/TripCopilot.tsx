@@ -432,7 +432,7 @@ function LegNotes({
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function TripCopilot({ flights, locale }: TripCopilotProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const { data, status, error, refresh } = useTripAdvice(flights, locale);
 
   const stays = computeStays(flights);
@@ -469,7 +469,12 @@ export function TripCopilot({ flights, locale }: TripCopilotProps) {
           </div>
           <p className="text-[11px] text-gray-600 mt-0.5">
             {stays.length} {locale === "es" ? "destinos" : "destinations"} ·{" "}
-            {totalNights} {locale === "es" ? "noches" : "nights"}
+            {totalNights} {locale === "es" ? "noches" : "nights"}{" "}
+            {!expanded && (
+              <span className="text-gray-700">
+                · {locale === "es" ? "tocá para ver" : "tap to open"}
+              </span>
+            )}
           </p>
         </div>
 

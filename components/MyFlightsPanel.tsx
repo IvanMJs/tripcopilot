@@ -709,7 +709,7 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
   return (
     <div className="space-y-5">
 
-      {/* Day-of-travel emergency mode */}
+      {/* 1. Day-of-travel emergency mode */}
       {todayFlight && airlineCode && (
         <DayOfTravelBanner
           flightNum={todayFlight.flightNum}
@@ -723,16 +723,43 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
         />
       )}
 
-      {/* Trip summary hero */}
+      {/* 2. Trip summary hero — status + next flight */}
       <TripSummaryHero statusMap={statusMap} locale={locale} />
 
-      {/* Trip clocks */}
-      <TripClocks locale={locale} />
+      {/* 3. Flight cards — primary content, shown first */}
+      <div className="space-y-5">
+        {MY_FLIGHTS.map((flight, idx) => (
+          <div
+            key={`${flight.flightNum}-${flight.isoDate}`}
+            id={`flight-card-${idx}`}
+            className="animate-fade-in-up"
+            style={{ animationDelay: `${idx * 0.05}s` }}
+          >
+            <FlightCardItem
+              flight={flight}
+              statusMap={statusMap}
+              weatherMap={weatherMap}
+              locale={locale}
+              tsaData={tsaData[flight.originCode]}
+              index={idx}
+            />
+          </div>
+        ))}
+      </div>
 
-      {/* Trip guide — destination cards + Copiloto AI recommendations */}
-      <TripCopilot flights={MY_FLIGHTS} locale={locale} />
+      {/* 4. Timeline — visual overview after reading individual flights */}
+      <TripTimeline
+        flights={MY_FLIGHTS.map((f) => ({
+          originCode: f.originCode,
+          destinationCode: f.destinationCode,
+          isoDate: f.isoDate,
+          flightCode: f.flightNum,
+          departureTime: f.departureTime,
+        }))}
+        statusMap={statusMap}
+      />
 
-      {/* Action bar */}
+      {/* 5. Action bar — export / share utilities */}
       <div className="flex items-center justify-end flex-wrap gap-2">
           {/* ICS */}
           <button
@@ -790,38 +817,11 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
           </LinkButton>
       </div>
 
-      {/* Timeline */}
-      <TripTimeline
-        flights={MY_FLIGHTS.map((f) => ({
-          originCode: f.originCode,
-          destinationCode: f.destinationCode,
-          isoDate: f.isoDate,
-          flightCode: f.flightNum,
-          departureTime: f.departureTime,
-        }))}
-        statusMap={statusMap}
-      />
+      {/* 6. TripCopilot — AI travel guide, collapsed by default */}
+      <TripCopilot flights={MY_FLIGHTS} locale={locale} />
 
-      {/* Vuelos */}
-      <div className="space-y-5">
-        {MY_FLIGHTS.map((flight, idx) => (
-          <div
-            key={`${flight.flightNum}-${flight.isoDate}`}
-            id={`flight-card-${idx}`}
-            className="animate-fade-in-up"
-            style={{ animationDelay: `${idx * 0.08}s` }}
-          >
-            <FlightCardItem
-              flight={flight}
-              statusMap={statusMap}
-              weatherMap={weatherMap}
-              locale={locale}
-              tsaData={tsaData[flight.originCode]}
-              index={idx}
-            />
-          </div>
-        ))}
-      </div>
+      {/* 7. Trip clocks — secondary detail */}
+      <TripClocks locale={locale} />
 
       <p className="text-xs text-gray-500 pt-1">{t.flightLinkNote}</p>
     </div>

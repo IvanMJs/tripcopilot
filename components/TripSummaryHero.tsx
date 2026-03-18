@@ -60,8 +60,8 @@ const LEVEL_CONFIG = {
     dot:         "bg-emerald-400",
     text:        "text-emerald-400",
     icon:        ShieldCheck,
-    headline:    { es: "Todo en orden",            en: "All clear"                     },
-    sub:         { es: "Sin alertas en tu viaje",  en: "No active alerts on your trip" },
+    headline:    { es: "Tu viaje está en orden",       en: "Your trip looks good"              },
+    sub:         { es: "Sin alertas en ningún tramo",  en: "No active alerts on any leg"       },
   },
   medium: {
     outerBorder: "border-yellow-800/40",
@@ -70,8 +70,8 @@ const LEVEL_CONFIG = {
     dot:         "bg-yellow-400 animate-pulse",
     text:        "text-yellow-400",
     icon:        Shield,
-    headline:    { es: "Hay algo que revisar",     en: "Worth a look"                  },
-    sub:         { es: "Revisá los detalles",       en: "Check the details below"       },
+    headline:    { es: "Hay algo que revisar",         en: "Worth a closer look"               },
+    sub:         { es: "Revisá los vuelos abajo",      en: "Check the flights below"           },
   },
   high: {
     outerBorder: "border-orange-700/50",
@@ -80,8 +80,8 @@ const LEVEL_CONFIG = {
     dot:         "bg-orange-400 animate-pulse",
     text:        "text-orange-400",
     icon:        ShieldAlert,
-    headline:    { es: "Atención — riesgo en tu viaje", en: "Attention — trip risk"    },
-    sub:         { es: "Revisá cada tramo",         en: "Check each leg for details"   },
+    headline:    { es: "Atención — hay alertas activas", en: "Attention — active alerts"       },
+    sub:         { es: "Revisá cada tramo",             en: "Review each leg below"            },
   },
   critical: {
     outerBorder: "border-red-700/50",
@@ -90,8 +90,8 @@ const LEVEL_CONFIG = {
     dot:         "bg-red-400 animate-pulse",
     text:        "text-red-400",
     icon:        ShieldOff,
-    headline:    { es: "Riesgo crítico",            en: "Critical risk"                },
-    sub:         { es: "Contactá a tu aerolínea",   en: "Contact your airline now"     },
+    headline:    { es: "Riesgo crítico — actuá ya",    en: "Critical risk — act now"           },
+    sub:         { es: "Contactá a tu aerolínea",      en: "Contact your airline immediately"  },
   },
 } as const;
 
@@ -173,41 +173,48 @@ export function TripSummaryHero({ statusMap, locale }: TripSummaryHeroProps) {
         <Icon className={`h-5 w-5 ${cfg.text} opacity-50 shrink-0`} />
       </div>
 
-      {/* ── Stats grid: 2-col on mobile, 3-col on sm+ ───────────────────────── */}
-      <div className="px-3 pb-3 sm:px-4 sm:pb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-
-        {/* Next flight */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-1.5">
+      {/* ── Next flight — full width, primary info ───────────────────────────── */}
+      <div className="mx-3 sm:mx-4 mb-3">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-2">
             {locale === "es" ? "Próximo vuelo" : "Next flight"}
           </p>
           {nextFlight ? (
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-sm font-black text-white">{nextFlight.flightCode}</span>
-                <span className="text-[10px] text-gray-500">
-                  {nextFlight.originCode}→{nextFlight.destinationCode}
-                </span>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-lg font-black text-white">{nextFlight.flightCode}</span>
+                <div className="flex items-center gap-1.5 text-sm text-gray-400">
+                  <span className="font-semibold text-gray-300">{nextFlight.originCode}</span>
+                  <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
+                  <span className="font-semibold text-gray-300">{nextFlight.destinationCode}</span>
+                </div>
+                {nextFlight.departureTime && (
+                  <span className="text-xs text-gray-500">{nextFlight.departureTime}</span>
+                )}
               </div>
               {daysUntil !== null && (
-                <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                <span className={`text-sm font-black px-3 py-1 rounded-full ${
                   daysUntil === 0 ? "bg-red-900/70 text-red-300 animate-pulse" :
                   daysUntil === 1 ? "bg-yellow-900/60 text-yellow-300" :
                   daysUntil <= 7  ? "bg-blue-900/50 text-blue-300" :
                                     "bg-white/[0.06] text-gray-400"
                 }`}>
-                  {daysUntil === 0 ? (locale === "es" ? "HOY" : "TODAY") :
+                  {daysUntil === 0 ? (locale === "es" ? "HOY ✈" : "TODAY ✈") :
                    daysUntil === 1 ? (locale === "es" ? "mañana" : "tomorrow") :
-                   `${locale === "es" ? "en" : "in"} ${daysUntil}d`}
+                   locale === "es" ? `en ${daysUntil} días` : `in ${daysUntil} days`}
                 </span>
               )}
             </div>
           ) : (
-            <p className="text-[11px] text-gray-500">
-              {locale === "es" ? "Completado" : "Complete"}
+            <p className="text-sm font-semibold text-gray-500">
+              {locale === "es" ? "Viaje completado ✓" : "Trip completed ✓"}
             </p>
           )}
         </div>
+      </div>
+
+      {/* ── Bottom stats: 2-col grid ──────────────────────────────────────────── */}
+      <div className="px-3 pb-3 sm:px-4 sm:pb-4 grid grid-cols-2 gap-2 sm:gap-3">
 
         {/* Connection risk */}
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
@@ -230,17 +237,19 @@ export function TripSummaryHero({ statusMap, locale }: TripSummaryHeroProps) {
           ) : (
             <div className="flex items-center gap-1.5">
               <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-              <span className="text-xs font-bold text-emerald-400">ok</span>
+              <span className="text-xs font-bold text-emerald-400">
+                {locale === "es" ? "Sin riesgo" : "All safe"}
+              </span>
             </div>
           )}
         </div>
 
-        {/* Airport status dots — spans full width on mobile */}
-        <div className="col-span-2 sm:col-span-1 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+        {/* Airport status dots */}
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
           <p className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-1.5">
-            {locale === "es" ? "Aeropuertos del viaje" : "Trip airports"}
+            {locale === "es" ? "Aeropuertos" : "Airports"}
           </p>
-          <div className="flex items-center gap-3 sm:gap-2 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             {TRIP_AIRPORTS.map((code) => {
               const hasIssue = statusMap[code]?.status && statusMap[code].status !== "ok";
               return (

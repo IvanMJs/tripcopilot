@@ -68,7 +68,7 @@ export default function HomePage() {
   const isOnline = useOnlineStatus();
   const [showNotifSheet, setShowNotifSheet] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<string>("airports");
+  const [activeTab, setActiveTab] = useState<string>("flights");
   const [refreshInterval, setRefreshInterval] = useState(5);
   const [watchedAirports, setWatchedAirports] = useState<string[]>(DEFAULT_AIRPORTS);
   const [userTrips, setUserTrips] = useState<TripTab[]>([]);
@@ -431,8 +431,10 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Global Status Bar */}
-          <GlobalStatusBar statusMap={statusMap} watchedAirports={watchedAirports} />
+          {/* Global Status Bar — hidden on flights tab (TripSummaryHero covers it) */}
+          {activeTab !== "flights" && (
+            <GlobalStatusBar statusMap={statusMap} watchedAirports={watchedAirports} />
+          )}
 
           {/* Error banner */}
           {error && (
@@ -447,8 +449,8 @@ export default function HomePage() {
 
               {/* Static tabs — order: Aeropuertos | Mi viaje | Vuelos */}
               {([
-                { id: "airports", label: t.tabAirports },
                 { id: "flights",  label: t.tabFlights  },
+                { id: "airports", label: t.tabAirports },
                 { id: "search",   label: t.tabSearch   },
               ] as const).map(({ id, label }) => (
                 <button
@@ -605,8 +607,8 @@ export default function HomePage() {
 
             {/* Static tabs */}
             {([
-              { id: "airports", Icon: MapPin,  label: t.tabAirports },
               { id: "flights",  Icon: Plane,   label: t.tabFlights  },
+              { id: "airports", Icon: MapPin,  label: t.tabAirports },
               { id: "search",   Icon: Search,  label: t.tabSearch   },
             ] as const).map(({ id, Icon, label }) => {
               const isActive = activeTab === id;
