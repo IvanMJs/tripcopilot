@@ -635,14 +635,24 @@ function FlightCard({
       <div className={`px-4 py-3 ${
         hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"
       }`}>
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              {hasIssue && <AlertTriangle className="h-4 w-4 text-orange-400 shrink-0" />}
-              {isNonFAA && <Globe className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                {L.sectionAirport}
-              </span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            {/* Header row: label + trash button always on same line */}
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="flex items-center gap-2">
+                {hasIssue && <AlertTriangle className="h-4 w-4 text-orange-400 shrink-0" />}
+                {isNonFAA && <Globe className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  {L.sectionAirport}
+                </span>
+              </div>
+              <button
+                onClick={onRemove}
+                title={L.removeTitle}
+                className="shrink-0 rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-black text-white tracking-tight">{flight.originCode}</span>
@@ -669,14 +679,7 @@ function FlightCard({
               </div>
             )}
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <button
-              onClick={onRemove}
-              title={L.removeTitle}
-              className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+          <div className="flex flex-col items-end gap-2 shrink-0">
             {isNonFAA ? (
               <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 bg-white/4 border border-white/8 px-2.5 py-1 rounded-lg">
                 <Globe className="h-3 w-3" />
