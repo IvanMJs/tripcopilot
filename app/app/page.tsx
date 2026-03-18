@@ -15,7 +15,8 @@ import { TripPanel } from "@/components/TripPanel";
 import { TripListView } from "@/components/TripListView";
 import { HelpPanel } from "@/components/HelpPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { DelayStatus, TripFlight, TripTab } from "@/lib/types";
+import { AirportStatusMap, DelayStatus, TripFlight, TripTab } from "@/lib/types";
+import { AIRPORTS } from "@/lib/airports";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Locale } from "@/lib/i18n";
 import { useWeather } from "@/hooks/useWeather";
@@ -143,11 +144,8 @@ export default function HomePage() {
     t.flights.flatMap((f) => [f.originCode, f.destinationCode])
   );
 
-  // All airports that need status data: watched + trip airports (deduped)
-  const allMonitoredAirports = Array.from(new Set([...watchedAirports, ...tripAirports]));
-
   const {
-    statusMap,
+    statusMap: faaStatusMap,
     loading,
     error,
     lastUpdated,
@@ -159,7 +157,34 @@ export default function HomePage() {
     notificationsEnabled,
     requestNotifications,
     disableNotifications,
-  } = useAirportStatus(refreshInterval, locale, showSwNotification, allMonitoredAirports);
+  } = useAirportStatus(refreshInterval, locale, showSwNotification);
+
+  // ── International airport status (AeroDataBox) ───────────────────────────
+  const [intlStatusMap, setIntlStatusMap] = useState<AirportStatusMap>({});
+
+  useEffect(() => {
+    const intlAirports = Array.from(
+      new Set([...watchedAirports, ...tripAirports])
+    ).filter((iata) => AIRPORTS[iata]?.isFAA === false);
+
+    if (intlAirports.length === 0) return;
+
+    fetch(`/api/intl-status?airports=${intlAirports.join(",")}&locale=${locale}`)
+      .then((r) => r.ok ? r.json() : {})
+      .then((data) => {
+        const map: AirportStatusMap = {};
+        for (const [iata, status] of Object.entries(data as AirportStatusMap)) {
+          map[iata] = { ...status, lastChecked: new Date() };
+        }
+        setIntlStatusMap(map);
+      })
+      .catch(() => {});
+  // Re-fetch when trip airports change or every refresh cycle
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userTrips, watchedAirports, locale, lastUpdated]);
+
+  // Merge: FAA takes priority for US airports, intl fills the rest
+  const statusMap: AirportStatusMap = { ...intlStatusMap, ...faaStatusMap };
 
   const allAirportsForWeather = Array.from(
     new Set([...watchedAirports, ...FLIGHT_AIRPORTS, ...tripAirports])
