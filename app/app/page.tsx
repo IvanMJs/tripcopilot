@@ -48,7 +48,7 @@ const DRAFT_ID = "__draft__";
 
 export default function HomePage() {
   const { t, locale, setLocale } = useLanguage();
-  const { showSwNotification } = useServiceWorker();
+  const { showSwNotification, subscribeToPush } = useServiceWorker();
   const isOnline = useOnlineStatus();
   const router = useRouter();
   const [showNotifSheet, setShowNotifSheet] = useState(false);
@@ -340,6 +340,7 @@ export default function HomePage() {
           // Re-check permission state after sheet closes
           if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
             requestNotifications();
+            subscribeToPush();
           }
         }}
         locale={locale}

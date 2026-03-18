@@ -3,9 +3,9 @@
 import { useEffect, useRef, useCallback } from "react";
 
 /**
- * Registers the service worker (if supported) and exposes a helper to fire
- * notifications via the SW registration — this works on Android Chrome PWA
- * and desktop; iOS Safari requires "Add to Home Screen" for push.
+ * Registers the service worker and exposes helpers for:
+ * - showSwNotification: fire a notification via SW (works on Android PWA lock screen)
+ * - subscribeToPush: subscribe to VAPID web push and save to server
  */
 export function useServiceWorker() {
   const regRef = useRef<ServiceWorkerRegistration | null>(null);
@@ -13,20 +13,13 @@ export function useServiceWorker() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
-    // next-pwa already registers /sw.js — just grab the ready registration
     navigator.serviceWorker.ready
       .then((reg) => {
         regRef.current = reg;
       })
-      .catch(() => {
-        // SW not available — silent fail
-      });
+      .catch(() => {});
   }, []);
 
-  /**
-   * Show a notification via the SW registration (works in background / locked
-   * screen on Android PWA). Falls back to new Notification() on desktop.
-   */
   const showSwNotification = useCallback(
     (title: string, options?: NotificationOptions) => {
       if (regRef.current) {
@@ -46,5 +39,43 @@ export function useServiceWorker() {
     [],
   );
 
-  return { showSwNotification };
+  /**
+   * Subscribe this device to VAPID push and persist the subscription server-side.
+   * Call after the user grants notification permission.
+   */
+  const subscribeToPush = useCallback(async (): Promise<boolean> => {
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!publicKey || !regRef.current) return false;
+
+    try {
+      // Check if already subscribed
+      const existing = await regRef.current.pushManager.getSubscription();
+      const subscription =
+        existing ??
+        (await regRef.current.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        }));
+
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subscription.toJSON()),
+      });
+
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  return { showSwNotification, subscribeToPush };
+}
+
+// Helper: convert VAPID public key from base64 to Uint8Array
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
