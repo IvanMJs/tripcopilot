@@ -307,7 +307,8 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">La app en acción</p>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Todo lo que necesitás,<br />en la palma de tu mano</h2>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Web y mobile —<br />diseñado para los dos</h2>
+            <p className="text-sm text-gray-500 mt-3">Usalo en la computadora antes de salir o en el celular cuando estás en el aeropuerto.</p>
           </div>
 
           <div className="flex gap-4 sm:gap-6 justify-center items-end overflow-x-auto pb-4 snap-x snap-mandatory">
@@ -344,20 +345,46 @@ export default function LandingPage() {
 
       {/* ── VIDEO DEMO ────────────────────────────────────────────────────── */}
       <section id="demo" className="py-16 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">Demo en vivo</p>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Mirá cómo funciona</h2>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Mirá cómo funciona en la web</h2>
+            <p className="text-sm text-gray-500 mt-2">El dashboard completo — desde cualquier navegador, sin instalar nada.</p>
           </div>
-          <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl shadow-black/60 bg-gray-950">
-            <video
-              src="/copilot-dashboard-video.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-auto block"
-            />
+
+          {/* Laptop frame */}
+          <div className="relative mx-auto" style={{ maxWidth: 860 }}>
+            {/* Screen lid */}
+            <div className="rounded-t-2xl border border-white/[0.12] bg-[#111118] overflow-hidden"
+              style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 40px 80px rgba(0,0,0,0.8)" }}>
+              {/* Top bar with camera */}
+              <div className="flex items-center justify-center h-6 bg-[#0e0e16] border-b border-white/[0.05]">
+                <div className="h-1.5 w-1.5 rounded-full bg-gray-700" />
+              </div>
+              {/* Screen content */}
+              <div className="mx-3 mb-0 border border-white/[0.06] overflow-hidden rounded-sm">
+                <video
+                  src="/copilot-dashboard-video.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-auto block"
+                />
+              </div>
+            </div>
+            {/* Hinge line */}
+            <div className="h-[5px] bg-gradient-to-b from-[#2a2a3e] to-[#1a1a28] border-x border-white/[0.07]" />
+            {/* Keyboard base */}
+            <div className="h-4 bg-[#14141f] rounded-b-xl border-x border-b border-white/[0.07]"
+              style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}>
+              {/* Trackpad hint */}
+              <div className="mx-auto mt-1 rounded-sm border border-white/[0.04] bg-white/[0.02]"
+                style={{ width: "18%", height: 7 }} />
+            </div>
+            {/* Base shadow */}
+            <div className="mx-[4%] h-1 rounded-b-full"
+              style={{ background: "rgba(0,0,0,0.5)", filter: "blur(6px)" }} />
           </div>
         </div>
       </section>
@@ -420,8 +447,8 @@ export default function LandingPage() {
               const Icon = f.icon;
               return (
                 <div key={f.title}
-                  className={`rounded-2xl border ${f.border} ${f.bg} p-5 space-y-3`}>
-                  <div className={`inline-flex items-center justify-center h-9 w-9 rounded-xl ${f.bg} border ${f.border}`}>
+                  className={`rounded-2xl border ${f.border} ${f.bg} p-5 space-y-3 flex flex-col items-center text-center`}>
+                  <div className={`flex items-center justify-center h-9 w-9 rounded-xl ${f.bg} border ${f.border}`}>
                     <Icon className={`h-4 w-4 ${f.color}`} />
                   </div>
                   <h3 className="text-sm font-bold text-white">{f.title}</h3>
@@ -453,6 +480,49 @@ export default function LandingPage() {
                 <p className="text-xs text-gray-500 leading-relaxed">{s.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ROI ARGUMENT ─────────────────────────────────────────────────── */}
+      <section className="py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative rounded-3xl border border-amber-800/25 overflow-hidden p-8 sm:p-12 text-center"
+            style={{ background: "linear-gradient(135deg, rgba(120,53,15,0.12) 0%, rgba(8,8,18,0.97) 45%, rgba(120,53,15,0.08) 100%)" }}>
+
+            {/* Glow */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(251,191,36,0.06) 0%, transparent 65%)" }} />
+
+            <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-5">El cálculo es simple</p>
+
+            {/* Big number */}
+            <p className="text-5xl sm:text-7xl font-black text-amber-400 mb-3 tracking-tight">$300–$1.000</p>
+            <p className="text-base sm:text-xl text-gray-300 font-semibold mb-3">
+              es lo que cuesta en promedio perder una conexión
+            </p>
+            <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-xl mx-auto">
+              Rebooking, hotel inesperado, traslado. Si viajás 4 veces al año con escala,
+              la probabilidad de que te pase en algún momento no es baja — y cuando pasa, lo pagás caro.
+            </p>
+
+            {/* Comparison */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              <div className="rounded-2xl border border-red-800/30 bg-red-950/20 px-6 py-4 text-center">
+                <p className="text-2xl sm:text-3xl font-black text-red-400">$300+</p>
+                <p className="text-xs text-gray-500 mt-1">perder una conexión</p>
+              </div>
+              <div className="text-gray-600 text-xl font-black">vs</div>
+              <div className="rounded-2xl border border-emerald-700/30 bg-emerald-950/15 px-6 py-4 text-center">
+                <p className="text-2xl sm:text-3xl font-black text-emerald-400">$7/mes</p>
+                <p className="text-xs text-gray-500 mt-1">TripCopilot monitoreando</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-400 leading-relaxed font-medium">
+              TripCopilot se paga solo con prevenir{" "}
+              <span className="text-white font-bold">una sola situación.</span>
+            </p>
           </div>
         </div>
       </section>

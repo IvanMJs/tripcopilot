@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { AirportStatusMap } from "@/lib/types";
+import { AirportStatus, AirportStatusMap } from "@/lib/types";
 import { parseXML } from "@/lib/faa";
+import { AIRPORTS } from "@/lib/airports";
 import toast from "react-hot-toast";
 
 const TOAST_MESSAGES = {
@@ -14,6 +15,7 @@ export function useAirportStatus(
   refreshIntervalMinutes: number = 5,
   locale: "es" | "en" = "es",
   showSwNotification?: (title: string, options?: NotificationOptions) => void,
+  watchedAirports: string[] = [],
 ) {
   const [statusMap, setStatusMap] = useState<AirportStatusMap>({});
   const [loading, setLoading] = useState(false);
@@ -58,14 +60,36 @@ export function useAirportStatus(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
 
+    // Identify non-FAA airports to fetch internationally
+    const intlAirports = watchedAirports.filter(
+      (iata) => AIRPORTS[iata]?.isFAA === false,
+    );
+
     try {
-      const res = await fetch("/api/faa-status", { signal: controller.signal });
+      // Run FAA + international fetch in parallel
+      const faaPromise = fetch("/api/faa-status", { signal: controller.signal });
+      const intlPromise =
+        intlAirports.length > 0
+          ? fetch(
+              `/api/intl-status?airports=${intlAirports.join(",")}&locale=${locale}`,
+              { signal: controller.signal },
+            ).then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
+          : Promise.resolve({});
+
+      const [faaRes, intlData] = await Promise.all([faaPromise, intlPromise]);
       clearTimeout(timeout);
 
-      if (!res.ok) throw new Error("Error fetching FAA data");
-      const xml = await res.text();
+      if (!faaRes.ok) throw new Error("Error fetching FAA data");
+      const xml = await faaRes.text();
       lastXmlRef.current = xml;
-      const newMap = parseXML(xml, locale);
+      const faaMap = parseXML(xml, locale);
+
+      // Merge: FAA data takes priority for US airports, intl fills the rest
+      const intlMap: AirportStatusMap = {};
+      for (const [iata, status] of Object.entries(intlData as Record<string, AirportStatus>)) {
+        intlMap[iata] = { ...status, lastChecked: new Date() };
+      }
+      const newMap: AirportStatusMap = { ...intlMap, ...faaMap };
 
       if (initialLoadDone.current) {
         const prev = prevStatusRef.current;
@@ -118,7 +142,8 @@ export function useAirportStatus(
     } finally {
       setLoading(false);
     }
-  }, [refreshIntervalMinutes, locale, notificationsEnabled, showSwNotification]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshIntervalMinutes, locale, notificationsEnabled, showSwNotification, watchedAirports.join(",")]);
 
   // Re-parse cached XML when locale changes (no re-fetch needed)
   useEffect(() => {

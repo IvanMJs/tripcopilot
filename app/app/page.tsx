@@ -151,7 +151,7 @@ export default function HomePage() {
     notificationsEnabled,
     requestNotifications,
     disableNotifications,
-  } = useAirportStatus(refreshInterval, locale, showSwNotification);
+  } = useAirportStatus(refreshInterval, locale, showSwNotification, watchedAirports);
 
   // Aggregate airports for weather: watched + hardcoded flight airports + all user trip airports
   const tripAirports = userTrips.flatMap((t) =>
