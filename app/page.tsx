@@ -288,10 +288,12 @@ export default function LandingPage() {
             {painPoints.map((p, i) => (
               <div key={i} className="rounded-2xl border border-white/[0.06] p-5 space-y-3"
                 style={{ background: "linear-gradient(160deg, rgba(14,14,24,0.9) 0%, rgba(8,8,16,0.95) 100%)" }}>
-                <span className="text-3xl">{p.emoji}</span>
-                <p className="text-sm font-semibold text-gray-300 leading-snug">{p.problem}</p>
+                <div className="flex justify-center">
+                  <span className="text-4xl">{p.emoji}</span>
+                </div>
+                <p className="text-sm font-semibold text-gray-300 leading-snug text-center">{p.problem}</p>
                 <div className="h-px bg-white/[0.06]" />
-                <p className="text-xs text-blue-400 leading-relaxed">
+                <p className="text-xs text-blue-400 leading-relaxed text-center">
                   <span className="font-bold text-blue-300">TripCopilot:</span> {p.solution}
                 </p>
               </div>
