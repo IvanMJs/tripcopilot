@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
-import { RefreshCw, Plane, Pencil, X, Plus, Bell, HelpCircle, MapPin, Search, Map, LogOut } from "lucide-react";
+import { RefreshCw, Plane, Pencil, X, Plus, Bell, HelpCircle, MapPin, Search, Map, LogOut, ChevronRight } from "lucide-react";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
 import { AirportSearch } from "@/components/AirportSearch";
@@ -74,6 +74,12 @@ export default function HomePage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTripName, setNewTripName] = useState("");
   const createModalInputRef = useRef<HTMLInputElement>(null);
+
+  // Draft trip tracking (pure UI state, no DB needed)
+  const [draftTripIds, setDraftTripIds] = useState<Set<string>>(new Set());
+
+  // Mobile trip picker popup
+  const [showTripPicker, setShowTripPicker] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -179,8 +185,19 @@ export default function HomePage() {
       newTripName.trim() ||
       (locale === "en" ? `Trip ${userTrips.length + 1}` : `Viaje ${userTrips.length + 1}`);
     const id = await createTripDB(tripName);
-    if (id) setActiveTab(id);
+    if (id) {
+      setActiveTab(id);
+      setDraftTripIds((prev) => new Set(prev).add(id));
+    }
     setShowCreateModal(false);
+  }
+
+  function handleSaveTrip(id: string) {
+    setDraftTripIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   }
 
   function renameTrip(id: string, newName: string) { renameTripDB(id, newName); }
@@ -197,6 +214,7 @@ export default function HomePage() {
       )
     ) return;
     deleteTripDB(id);
+    handleSaveTrip(id); // remove from drafts if present
     if (activeTab === id) setActiveTab("trips");
   }
 
@@ -636,6 +654,8 @@ export default function HomePage() {
                   weatherMap={weatherMap}
                   onAddFlight={addFlightToTrip}
                   onRemoveFlight={removeFlightFromTrip}
+                  isDraft={draftTripIds.has(trip.id)}
+                  onSave={() => handleSaveTrip(trip.id)}
                 />
               ) : null
             )}
@@ -654,6 +674,72 @@ export default function HomePage() {
           className="fixed bottom-0 inset-x-0 z-50 md:hidden bottom-nav-bg"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
+          <div className="relative">
+
+          {/* Trip picker popup — slides up above bottom nav when multiple trips */}
+          {showTripPicker && userTrips.length > 1 && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowTripPicker(false)}
+              />
+              {/* Picker panel */}
+              <div
+                className="absolute bottom-full left-0 right-0 z-50 mx-3 mb-2 rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden"
+                style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
+              >
+                <div className="px-4 py-3 border-b border-white/[0.06]">
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    {locale === "es" ? "Mis viajes" : "My trips"}
+                  </p>
+                </div>
+                {userTrips.map((trip) => (
+                  <button
+                    key={trip.id}
+                    onClick={() => {
+                      setActiveTab(trip.id);
+                      setShowTripPicker(false);
+                    }}
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.04] active:bg-white/[0.07] ${
+                      activeTab === trip.id ? "bg-white/[0.04]" : ""
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className={`text-sm font-semibold truncate ${activeTab === trip.id ? "text-blue-400" : "text-white"}`}>
+                        {trip.name}
+                        {draftTripIds.has(trip.id) && (
+                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5">
+                            {locale === "es" ? "Borrador" : "Draft"}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {trip.flights.length === 0
+                          ? (locale === "es" ? "Sin vuelos" : "No flights")
+                          : locale === "es"
+                          ? `${trip.flights.length} vuelo${trip.flights.length !== 1 ? "s" : ""}`
+                          : `${trip.flights.length} flight${trip.flights.length !== 1 ? "s" : ""}`}
+                      </p>
+                    </div>
+                    <ChevronRight className={`h-4 w-4 shrink-0 ${activeTab === trip.id ? "text-blue-400" : "text-gray-600"}`} />
+                  </button>
+                ))}
+                <div className="px-4 py-3 border-t border-white/[0.06]">
+                  <button
+                    onClick={() => {
+                      setActiveTab("trips");
+                      setShowTripPicker(false);
+                    }}
+                    className="w-full text-xs text-gray-500 hover:text-gray-300 transition-colors text-center py-1"
+                  >
+                    {locale === "es" ? "Ver todos los viajes" : "View all trips"}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="flex h-[60px]">
 
             {/* Static tabs */}
@@ -682,13 +768,21 @@ export default function HomePage() {
               );
             })}
 
-            {/* Trips tab — always goes to list view */}
+            {/* Trips tab — smart nav: 0→list, 1→direct, 2+→picker */}
             {(() => {
               const tripsActive =
                 activeTab === "trips" || userTrips.some((t) => t.id === activeTab);
               return (
                 <button
-                  onClick={() => setActiveTab("trips")}
+                  onClick={() => {
+                    if (userTrips.length === 0) {
+                      setActiveTab("trips");
+                    } else if (userTrips.length === 1) {
+                      setActiveTab(userTrips[0].id);
+                    } else {
+                      setShowTripPicker((v) => !v);
+                    }
+                  }}
                   className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${
                     tripsActive ? "text-blue-400" : "text-gray-500"
                   }`}
@@ -712,6 +806,8 @@ export default function HomePage() {
                 </button>
               );
             })()}
+          </div>
+
           </div>
         </nav>
       )}

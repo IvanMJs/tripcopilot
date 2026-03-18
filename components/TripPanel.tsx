@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import {
   Plus, X, ExternalLink, Clock, MapPin, Plane,
   AlertTriangle, Search, Calendar, Share2, CheckCheck,
-  Upload, Radar, Globe, Zap, DoorOpen,
+  Upload, Radar, Globe, Zap, DoorOpen, Trash2, BookmarkCheck,
 } from "lucide-react";
 import { AirportStatusMap, TripFlight, TripTab } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
@@ -670,6 +670,13 @@ function FlightCard({
             )}
           </div>
           <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={onRemove}
+              title={L.removeTitle}
+              className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
             {isNonFAA ? (
               <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 bg-white/4 border border-white/8 px-2.5 py-1 rounded-lg">
                 <Globe className="h-3 w-3" />
@@ -743,48 +750,37 @@ function FlightCard({
 
       {/* SECTION 3: My flight */}
       <div className="px-4 py-3 border-t border-white/5 bg-white/[0.01]">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wider">
-              {L.sectionFlight}
-            </p>
-            <div className="space-y-2">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-xs font-medium px-2 py-0.5 rounded-md border border-white/8 bg-white/4 text-gray-300">
-                  {dateLabel}
-                </span>
-                <DaysCountdown days={daysUntil} L={L} />
-                <span className="font-bold text-white tracking-wide">{flight.flightCode}</span>
-                <span className="text-xs text-gray-500">{flight.airlineName}</span>
-              </div>
-              {flight.departureTime && (
-                <div className="flex items-center gap-4 flex-wrap text-xs">
-                  <span className="flex items-center gap-1.5 text-gray-400">
-                    <Clock className="h-3.5 w-3.5 text-gray-600" />
-                    {L.departs}{" "}
-                    <span className="font-bold text-white ml-1">{flight.departureTime}</span>
+        <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wider">
+          {L.sectionFlight}
+        </p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-md border border-white/8 bg-white/4 text-gray-300">
+              {dateLabel}
+            </span>
+            <DaysCountdown days={daysUntil} L={L} />
+            <span className="font-bold text-white tracking-wide">{flight.flightCode}</span>
+            <span className="text-xs text-gray-500">{flight.airlineName}</span>
+          </div>
+          {flight.departureTime && (
+            <div className="flex items-center gap-4 flex-wrap text-xs">
+              <span className="flex items-center gap-1.5 text-gray-400">
+                <Clock className="h-3.5 w-3.5 text-gray-600" />
+                {L.departs}{" "}
+                <span className="font-bold text-white ml-1">{flight.departureTime}</span>
+              </span>
+              {arrivalRec && (
+                <span className="flex items-start gap-1.5 text-gray-400">
+                  <MapPin className="h-3.5 w-3.5 text-yellow-600 shrink-0 mt-0.5" />
+                  <span>
+                    {L.arriveAt}{" "}
+                    <span className="font-bold text-yellow-400">{arrivalRec}</span>
+                    <span className="text-gray-500 ml-1">({arrivalNote})</span>
                   </span>
-                  {arrivalRec && (
-                    <span className="flex items-start gap-1.5 text-gray-400">
-                      <MapPin className="h-3.5 w-3.5 text-yellow-600 shrink-0 mt-0.5" />
-                      <span>
-                        {L.arriveAt}{" "}
-                        <span className="font-bold text-yellow-400">{arrivalRec}</span>
-                        <span className="text-gray-500 ml-1">({arrivalNote})</span>
-                      </span>
-                    </span>
-                  )}
-                </div>
+                </span>
               )}
             </div>
-          </div>
-          <button
-            onClick={onRemove}
-            title={L.removeTitle}
-            className="rounded-full p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          )}
         </div>
       </div>
 
@@ -999,6 +995,8 @@ interface TripPanelProps {
   weatherMap: Record<string, WeatherData>;
   onAddFlight: (tripId: string, flight: TripFlight) => void;
   onRemoveFlight: (tripId: string, flightId: string) => void;
+  isDraft?: boolean;
+  onSave?: () => void;
 }
 
 export function TripPanel({
@@ -1007,6 +1005,8 @@ export function TripPanel({
   weatherMap,
   onAddFlight,
   onRemoveFlight,
+  isDraft,
+  onSave,
 }: TripPanelProps) {
   const { locale } = useLanguage();
   const L = LABELS[locale];
@@ -1139,6 +1139,29 @@ export function TripPanel({
 
   return (
     <div className="space-y-4">
+      {/* Draft banner */}
+      {isDraft && (
+        <div className="rounded-xl border border-yellow-700/40 bg-yellow-950/20 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-yellow-400 px-2 py-0.5 rounded-md border border-yellow-700/50 bg-yellow-900/30">
+              {locale === "es" ? "Borrador" : "Draft"}
+            </span>
+            <p className="text-xs text-yellow-300/70">
+              {locale === "es"
+                ? "Agregá tus vuelos y guardá el viaje cuando estés listo"
+                : "Add your flights and save the trip when you're ready"}
+            </p>
+          </div>
+          <button
+            onClick={onSave}
+            className="shrink-0 flex items-center gap-1.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 active:scale-95 text-white text-xs font-bold px-3 py-2 transition-all tap-scale"
+          >
+            <BookmarkCheck className="h-3.5 w-3.5" />
+            {locale === "es" ? "Guardar viaje" : "Save trip"}
+          </button>
+        </div>
+      )}
+
       {/* Trip Risk Score */}
       {sorted.length > 0 && (
         <TripRiskBadge risk={riskScore} locale={locale} />
