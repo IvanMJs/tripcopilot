@@ -58,7 +58,7 @@ export default function LandingPage() {
       bg: "bg-violet-950/40",
       border: "border-violet-800/30",
       title: "Importá con IA — foto o texto",
-      desc: "Pegá tu confirmación de vuelo o sacá una foto. Claude AI interpreta cualquier formato y carga todos tus vuelos automáticamente. Sin tipear nada.",
+      desc: "Pegá tu confirmación de vuelo o sacá una foto. TripCopilot interpreta cualquier formato y carga todos tus vuelos automáticamente. Sin tipear nada.",
     },
     {
       icon: Zap,
@@ -121,7 +121,7 @@ export default function LandingPage() {
     {
       num: "02",
       title: "Importás con IA en segundos",
-      desc: "Pegás el screenshot o texto de tu confirmación. Claude AI lee todo y carga los vuelos solo.",
+      desc: "Pegás el screenshot o texto de tu confirmación. TripCopilot lee todo y carga los vuelos solo.",
     },
     {
       num: "03",
@@ -175,9 +175,9 @@ export default function LandingPage() {
             {/* ── LEFT: copy ── */}
             <div className="flex flex-col items-start">
               {/* Avatar + brand */}
-              <div className="flex items-center gap-2.5 mb-6">
-                <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-9 w-auto" />
-                <span className="text-sm font-black text-white tracking-tight">TripCopilot</span>
+              <div className="flex items-center gap-3 mb-6">
+                <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-14 w-auto sm:h-20 drop-shadow-xl" />
+                <span className="text-base sm:text-lg font-black text-white tracking-tight">TripCopilot</span>
               </div>
 
               {/* AI import badge — the hook */}
@@ -198,7 +198,7 @@ export default function LandingPage() {
               {/* Subheadline — specific to AI import */}
               <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-3 max-w-lg">
                 Pegá el screenshot de tu confirmación de vuelo.{" "}
-                <span className="text-white font-semibold">Claude AI lee tu itinerario y carga todos los vuelos en segundos</span>
+                <span className="text-white font-semibold">TripCopilot lee tu itinerario y carga todos los vuelos en segundos</span>
                 {" "}— sin tipear nada.
               </p>
               <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-lg">
@@ -261,10 +261,10 @@ export default function LandingPage() {
                   />
                 </div>
 
-                {/* Floating badge — Claude AI */}
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full border border-violet-700/50 bg-[#0d0d1a] px-4 py-1.5 text-[11px] text-violet-300 font-bold shadow-lg whitespace-nowrap">
-                  <Brain className="h-3 w-3 text-violet-400" />
-                  Powered by Claude AI
+                {/* Floating badge — TripCopilot */}
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-violet-700/50 bg-[#0d0d1a] px-3 py-1.5 shadow-lg whitespace-nowrap">
+                  <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-4 w-4" />
+                  <span className="text-[11px] text-violet-300 font-bold">TripCopilot lo hace solo</span>
                 </div>
 
                 {/* Floating pill — top right */}
@@ -379,7 +379,7 @@ export default function LandingPage() {
                 </h2>
                 <p className="text-sm text-gray-400 leading-relaxed mb-6">
                   Tenés el email de confirmación de tu aerolínea. Pegalo. Sacá una foto. Lo que sea.
-                  Claude AI de Anthropic lee el texto o la imagen, identifica cada vuelo y los carga automáticamente.
+                  TripCopilot lee el texto o la imagen, identifica cada vuelo y los carga automáticamente.
                   Sin formularios, sin errores de tipeo, sin perder tiempo.
                 </p>
                 <ul className="space-y-2.5">
@@ -544,7 +544,7 @@ export default function LandingPage() {
             <span className="text-xs font-bold text-gray-600">TripCopilot</span>
           </div>
           <p className="text-[11px] text-gray-700">
-            Hecho con ♥ para viajeros · Potenciado por Claude AI
+            Hecho con ♥ para viajeros que vuelan seguido
           </p>
           <p className="text-[11px] text-gray-700">
             © {new Date().getFullYear()} TripCopilot
