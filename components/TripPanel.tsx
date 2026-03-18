@@ -333,9 +333,9 @@ function AddFlightForm({ tripId, onAdd, onOpenImport, locale }: AddFlightFormPro
       return;
     }
     const origin = form.originCode.trim().toUpperCase();
-    if (!AIRPORTS[origin]) { setError(L.errUnknownOrigin); return; }
+    if (!/^[A-Z]{3}$/.test(origin)) { setError(L.errUnknownOrigin); return; }
     const dest = form.destCode.trim().toUpperCase();
-    if (!AIRPORTS[dest]) { setError(L.errUnknownDest); return; }
+    if (!/^[A-Z]{3}$/.test(dest)) { setError(L.errUnknownDest); return; }
     if (origin === dest)  { setError(L.errSameAirport); return; }
     if (!form.isoDate)    { setError(L.errMissingDate); return; }
 
