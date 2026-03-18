@@ -57,8 +57,8 @@ export default function LandingPage() {
       color: "text-violet-400",
       bg: "bg-violet-950/40",
       border: "border-violet-800/30",
-      title: "TripCopilot IA",
-      desc: "Inteligencia artificial que analiza tu itinerario completo: clima en cada destino, qué empacar, alertas personalizadas y guía de viaje.",
+      title: "Importá con IA — foto o texto",
+      desc: "Pegá tu confirmación de vuelo o sacá una foto. Claude AI interpreta cualquier formato y carga todos tus vuelos automáticamente. Sin tipear nada.",
     },
     {
       icon: Zap,
@@ -120,8 +120,8 @@ export default function LandingPage() {
     },
     {
       num: "02",
-      title: "TripCopilot carga tu viaje",
-      desc: "Registrás tus vuelos y el copiloto analiza cada tramo al instante.",
+      title: "Importás con IA en segundos",
+      desc: "Pegás el screenshot o texto de tu confirmación. Claude AI lee todo y carga los vuelos solo.",
     },
     {
       num: "03",
@@ -160,74 +160,121 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section className="relative pt-28 pb-20 px-4 overflow-hidden">
-        {/* Background glow */}
+      <section className="relative pt-24 pb-16 px-4 overflow-hidden">
+        {/* Background glows */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10"
+          <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-10"
             style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
+          <div className="absolute top-1/2 right-0 -translate-y-1/3 w-[400px] h-[600px] rounded-full opacity-8"
+            style={{ background: "radial-gradient(circle, #7c3aed 0%, transparent 70%)" }} />
         </div>
 
-        <div className="relative max-w-4xl mx-auto text-center">
-          {/* Avatar */}
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full blur-2xl opacity-40"
-                style={{ background: "radial-gradient(circle, #3b82f6, transparent)" }} />
-              <img
-                src="/tripcopliot-avatar.svg"
-                alt="TripCopilot"
-                className="relative h-24 w-24 sm:h-32 sm:w-32 drop-shadow-2xl"
-              />
+        <div className="relative max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+            {/* ── LEFT: copy ── */}
+            <div className="flex flex-col items-start">
+              {/* Avatar + brand */}
+              <div className="flex items-center gap-2.5 mb-6">
+                <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-9 w-auto" />
+                <span className="text-sm font-black text-white tracking-tight">TripCopilot</span>
+              </div>
+
+              {/* AI import badge — the hook */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-violet-700/50 bg-violet-950/40 px-4 py-1.5 text-xs text-violet-300 font-semibold mb-5">
+                <Brain className="h-3.5 w-3.5 text-violet-400" />
+                Sacás foto · La IA carga todo sola
+              </div>
+
+              {/* Headline */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.06] mb-5">
+                Tu copiloto para<br />
+                <span className="text-transparent bg-clip-text"
+                  style={{ backgroundImage: "linear-gradient(135deg, #60a5fa, #a78bfa)" }}>
+                  cada vuelo
+                </span>
+              </h1>
+
+              {/* Subheadline — specific to AI import */}
+              <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-3 max-w-lg">
+                Pegá el screenshot de tu confirmación de vuelo.{" "}
+                <span className="text-white font-semibold">Claude AI lee tu itinerario y carga todos los vuelos en segundos</span>
+                {" "}— sin tipear nada.
+              </p>
+              <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-lg">
+                Después monitorea la FAA en tiempo real, calcula el riesgo de conexión y te avisa si algo cambia.
+              </p>
+
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto mb-8">
+                <button
+                  onClick={scrollToLogin}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-8 py-3.5 text-sm font-bold text-white transition-all shadow-lg shadow-blue-900/30 tap-scale"
+                >
+                  Empezar gratis
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" })}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-8 py-3.5 text-sm font-semibold text-gray-300 hover:bg-white/[0.08] transition-all"
+                >
+                  Ver demo
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Social proof */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-600">
+                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Sin contraseña</span>
+                <span className="hidden sm:block h-3 w-px bg-gray-800" />
+                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Gratis para empezar</span>
+                <span className="hidden sm:block h-3 w-px bg-gray-800" />
+                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Datos 100% seguros</span>
+              </div>
             </div>
-          </div>
 
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-800/40 bg-blue-950/30 px-4 py-1.5 text-xs text-blue-400 font-medium mb-6">
-            <Brain className="h-3.5 w-3.5" />
-            Potenciado por Inteligencia Artificial · Claude AI
-          </div>
+            {/* ── RIGHT: AI import video in phone frame ── */}
+            <div className="flex justify-center md:justify-end">
+              <div className="relative">
+                {/* Outer glow */}
+                <div className="absolute inset-0 -m-8 rounded-full blur-3xl opacity-20 pointer-events-none"
+                  style={{ background: "radial-gradient(circle, #7c3aed 0%, transparent 70%)" }} />
 
-          {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.08] mb-5">
-            Tu copiloto para<br />
-            <span className="text-transparent bg-clip-text"
-              style={{ backgroundImage: "linear-gradient(135deg, #60a5fa, #a78bfa)" }}>
-              cada vuelo
-            </span>
-          </h1>
+                {/* Phone frame */}
+                <div className="relative rounded-[2.8rem] border-2 border-white/[0.12] shadow-2xl overflow-hidden"
+                  style={{
+                    width: "min(280px, 72vw)",
+                    boxShadow: "0 0 0 1px rgba(124,58,237,0.15), 0 40px 80px rgba(0,0,0,0.7), 0 0 60px rgba(124,58,237,0.12)",
+                    background: "#08080f",
+                  }}>
+                  {/* Notch */}
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 rounded-full bg-black z-10" />
+                  {/* Video */}
+                  <video
+                    src="/ia-import-text-screenshot.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-auto block"
+                    style={{ borderRadius: "2.4rem" }}
+                  />
+                </div>
 
-          {/* Subheadline */}
-          <p className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-2xl mx-auto mb-8">
-            Monitoreo FAA en tiempo real, análisis de riesgo con IA y guía de viaje personalizada.
-            Todo lo que necesitás para volar{" "}
-            <span className="text-white font-semibold">sin sorpresas</span>.
-          </p>
+                {/* Floating badge — Claude AI */}
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full border border-violet-700/50 bg-[#0d0d1a] px-4 py-1.5 text-[11px] text-violet-300 font-bold shadow-lg whitespace-nowrap">
+                  <Brain className="h-3 w-3 text-violet-400" />
+                  Powered by Claude AI
+                </div>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
-            <button
-              onClick={scrollToLogin}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-8 py-3.5 text-sm font-bold text-white transition-all shadow-lg shadow-blue-900/30 tap-scale"
-            >
-              Empezar gratis
-              <ArrowRight className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" })}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-8 py-3.5 text-sm font-semibold text-gray-300 hover:bg-white/[0.08] transition-all"
-            >
-              Ver demo
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          </div>
+                {/* Floating pill — top right */}
+                <div className="absolute -top-3 -right-3 inline-flex items-center gap-1 rounded-full bg-violet-600 px-3 py-1 text-[10px] text-white font-bold shadow-lg">
+                  <Zap className="h-3 w-3" />
+                  IA Import
+                </div>
+              </div>
+            </div>
 
-          {/* Social proof */}
-          <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
-            <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Sin contraseña</span>
-            <span className="h-3 w-px bg-gray-800" />
-            <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Gratis para empezar</span>
-            <span className="h-3 w-px bg-gray-800" />
-            <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Datos 100% seguros</span>
           </div>
         </div>
       </section>
@@ -327,20 +374,20 @@ export default function LandingPage() {
                   Inteligencia Artificial
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-4 leading-tight">
-                  Un copiloto que<br />
-                  <span className="text-violet-400">piensa por vos</span>
+                  Cargá tu viaje en<br />
+                  <span className="text-violet-400">segundos, no minutos</span>
                 </h2>
                 <p className="text-sm text-gray-400 leading-relaxed mb-6">
-                  TripCopilot usa IA (Claude AI de Anthropic) para analizar cada detalle de tu viaje:
-                  destinos, climas, tiempos de conexión y más. El resultado: un plan personalizado
-                  que te dice exactamente qué empacar, qué esperar y cómo prepararte.
+                  Tenés el email de confirmación de tu aerolínea. Pegalo. Sacá una foto. Lo que sea.
+                  Claude AI de Anthropic lee el texto o la imagen, identifica cada vuelo y los carga automáticamente.
+                  Sin formularios, sin errores de tipeo, sin perder tiempo.
                 </p>
                 <ul className="space-y-2.5">
                   {[
-                    "Análisis climático por destino y temporada",
-                    "Lista de equipaje adaptada a tu itinerario",
-                    "Alertas culturales y de entrada al país",
-                    "Riesgo de conexión calculado en tiempo real",
+                    "Texto, screenshot o foto — cualquier formato",
+                    "Detecta código, aerolínea, origen, destino, fecha y hora",
+                    "Carga múltiples vuelos de una sola confirmación",
+                    "Valida inconsistencias antes de guardar",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-sm text-gray-300">
                       <CheckCircle className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
