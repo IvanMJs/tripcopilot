@@ -52,7 +52,7 @@ export default function HomePage() {
   const router = useRouter();
   const [showNotifSheet, setShowNotifSheet] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<string>("flights");
+  const [activeTab, setActiveTab] = useState<string>("airports");
   const [refreshInterval, setRefreshInterval] = useState(5);
   const [mounted, setMounted] = useState(false);
 
@@ -242,6 +242,7 @@ export default function HomePage() {
   function deleteTrip(id: string) {
     const trip = userTrips.find((t) => t.id === id);
     if (!trip) return;
+    setRenameInPickerId(null);
     setDeleteConfirm({ id, name: trip.name, flightCount: trip.flights.length });
   }
 
@@ -250,6 +251,7 @@ export default function HomePage() {
     deleteTripDB(deleteConfirm.id);
     if (activeTab === deleteConfirm.id) setActiveTab("trips");
     setDeleteConfirm(null);
+    setShowTripPicker(false);
   }
 
   function addFlightToTrip(tripId: string, flight: TripFlight) { addFlightDB(tripId, flight); }
@@ -885,31 +887,64 @@ export default function HomePage() {
                 {/* Draft trip entry */}
                 {draftTrip && (
                   <div className={`flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.04] ${activeTab === DRAFT_ID ? "bg-white/[0.04]" : ""}`}>
-                    <button
-                      onClick={() => { setActiveTab(DRAFT_ID); setShowTripPicker(false); setRenameInPickerId(null); }}
-                      className="flex-1 min-w-0 text-left"
-                    >
-                      <p className={`text-sm font-semibold truncate ${activeTab === DRAFT_ID ? "text-blue-400" : "text-white"}`}>
-                        {draftTrip.name}
-                        <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5">
-                          {locale === "es" ? "Borrador" : "Draft"}
-                        </span>
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {draftTrip.flights.length === 0
-                          ? (locale === "es" ? "Sin vuelos" : "No flights")
-                          : locale === "es"
-                          ? `${draftTrip.flights.length} vuelo${draftTrip.flights.length !== 1 ? "s" : ""}`
-                          : `${draftTrip.flights.length} flight${draftTrip.flights.length !== 1 ? "s" : ""}`}
-                      </p>
-                    </button>
-                    <button
-                      onClick={discardDraft}
-                      className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
-                      title={locale === "es" ? "Descartar borrador" : "Discard draft"}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                    {renameInPickerId === DRAFT_ID ? (
+                      <input
+                        autoFocus
+                        value={renameInPickerName}
+                        onChange={(e) => setRenameInPickerName(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onBlur={() => {
+                          if (renameInPickerName.trim()) setDraftTrip((prev) => prev ? { ...prev, name: renameInPickerName.trim() } : prev);
+                          setRenameInPickerId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            if (renameInPickerName.trim()) setDraftTrip((prev) => prev ? { ...prev, name: renameInPickerName.trim() } : prev);
+                            setRenameInPickerId(null);
+                          }
+                          if (e.key === "Escape") setRenameInPickerId(null);
+                        }}
+                        maxLength={40}
+                        className="flex-1 min-w-0 bg-white/[0.06] border border-blue-500/50 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => { setActiveTab(DRAFT_ID); setShowTripPicker(false); setRenameInPickerId(null); }}
+                        className="flex-1 min-w-0 text-left"
+                      >
+                        <p className={`text-sm font-semibold truncate ${activeTab === DRAFT_ID ? "text-blue-400" : "text-white"}`}>
+                          {draftTrip.name}
+                          <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5">
+                            {locale === "es" ? "Borrador" : "Draft"}
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {draftTrip.flights.length === 0
+                            ? (locale === "es" ? "Sin vuelos" : "No flights")
+                            : locale === "es"
+                            ? `${draftTrip.flights.length} vuelo${draftTrip.flights.length !== 1 ? "s" : ""}`
+                            : `${draftTrip.flights.length} flight${draftTrip.flights.length !== 1 ? "s" : ""}`}
+                        </p>
+                      </button>
+                    )}
+                    {renameInPickerId !== DRAFT_ID && (
+                      <button
+                        onClick={() => { setRenameInPickerId(DRAFT_ID); setRenameInPickerName(draftTrip.name); }}
+                        className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/[0.06] transition-colors"
+                        title={locale === "es" ? "Renombrar" : "Rename"}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {renameInPickerId !== DRAFT_ID && (
+                      <button
+                        onClick={discardDraft}
+                        className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+                        title={locale === "es" ? "Descartar borrador" : "Discard draft"}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -925,6 +960,7 @@ export default function HomePage() {
                         autoFocus
                         value={renameInPickerName}
                         onChange={(e) => setRenameInPickerName(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
                         onBlur={() => {
                           if (renameInPickerName.trim()) renameTripDB(trip.id, renameInPickerName.trim());
                           setRenameInPickerId(null);
@@ -966,7 +1002,7 @@ export default function HomePage() {
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => { setShowTripPicker(false); deleteTrip(trip.id); }}
+                          onClick={() => deleteTrip(trip.id)}
                           className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
                           title={locale === "es" ? "Eliminar" : "Delete"}
                         >
@@ -1033,15 +1069,15 @@ export default function HomePage() {
 
             {/* 3. Vuelos */}
             {(() => {
-              const isActive = activeTab === "flights";
+              const isActive = activeTab === "search";
               return (
                 <button
-                  onClick={() => navigateAway("flights")}
+                  onClick={() => navigateAway("search")}
                   className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${isActive ? "text-blue-400" : "text-gray-500"}`}
                 >
                   {isActive && <span className="absolute top-0 inset-x-0 flex justify-center"><span className="h-0.5 w-8 rounded-full bg-blue-400" /></span>}
                   <Plane className="h-[22px] w-[22px]" />
-                  <span className="text-[10px] font-semibold leading-none">{t.tabFlights}</span>
+                  <span className="text-[10px] font-semibold leading-none">{t.tabSearch}</span>
                 </button>
               );
             })()}

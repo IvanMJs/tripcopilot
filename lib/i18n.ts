@@ -19,8 +19,8 @@ export const translations = {
 
     // Tabs
     tabAirports: "Aeropuertos",
-    tabFlights: "Vuelos",
-    tabSearch: "Buscar vuelos",
+    tabFlights: "Mi viaje",
+    tabSearch: "Vuelos",
     tabHelp: "Ayuda",
 
     // Airport card
@@ -123,8 +123,8 @@ export const translations = {
 
     // Tabs
     tabAirports: "Airports",
-    tabFlights: "Flights",
-    tabSearch: "Search flights",
+    tabFlights: "My trip",
+    tabSearch: "Flights",
     tabHelp: "Help",
 
     // Airport card
