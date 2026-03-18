@@ -67,7 +67,13 @@ const LABELS = {
     days: (n: number) => `${n} día${n !== 1 ? "s" : ""}`,
     today: "HOY",
     completed: "Completado",
-    internationalNote: "Internacional — sin cobertura FAA",
+    internationalNote: "Sin cobertura FAA",
+    errDuplicateFlight: (code: string) => `El vuelo ${code} ya existe para esa fecha.`,
+    warnCloseTimeTitle: "Poco tiempo entre vuelos",
+    warnCloseTime: (code: string, mins: number) =>
+      `Hay otro vuelo (${code}) a solo ${mins} min de diferencia. ¿Querés agregarlo igual?`,
+    confirmAnyway: "Agregar de todas formas",
+    addMoreFlights: "Agregar vuelo",
     sectionSigmet: "SIGMET activo en ruta",
     sectionGate:    "Puerta / Terminal",
     gateNotAssigned: "Las puertas se asignan 24–48h antes de la salida",
@@ -124,7 +130,13 @@ const LABELS = {
     days: (n: number) => `${n} day${n !== 1 ? "s" : ""} left`,
     today: "TODAY",
     completed: "Completed",
-    internationalNote: "International — no FAA coverage",
+    internationalNote: "No FAA coverage",
+    errDuplicateFlight: (code: string) => `Flight ${code} already exists for that date.`,
+    warnCloseTimeTitle: "Short time between flights",
+    warnCloseTime: (code: string, mins: number) =>
+      `Another flight (${code}) is only ${mins} min apart. Add anyway?`,
+    confirmAnyway: "Add anyway",
+    addMoreFlights: "Add flight",
     sectionSigmet: "SIGMET active on route",
     sectionGate:    "Gate / Terminal",
     gateNotAssigned: "Gates typically assigned 24–48h before departure",
@@ -299,6 +311,7 @@ function ConnectionRiskBanner({
 
 interface AddFlightFormProps {
   tripId: string;
+  existingFlights: TripFlight[];
   onAdd: (tripId: string, flight: TripFlight) => void;
   onOpenImport: () => void;
   locale: "es" | "en";
@@ -313,10 +326,40 @@ const BLANK_FORM = {
   arrivalBuffer: 2 as number,
 };
 
-function AddFlightForm({ tripId, onAdd, onOpenImport, locale }: AddFlightFormProps) {
+function checkFlightConflicts(
+  newFlight: TripFlight,
+  existing: TripFlight[],
+  L: typeof LABELS["es"],
+): { type: "hard" | "soft"; message: string } | null {
+  // Hard: exact duplicate (same code + same date)
+  const dup = existing.find(
+    (f) => f.flightCode.toUpperCase() === newFlight.flightCode.toUpperCase() && f.isoDate === newFlight.isoDate,
+  );
+  if (dup) return { type: "hard", message: L.errDuplicateFlight(newFlight.flightCode) };
+
+  // Soft: same date, departure within 90 min
+  if (newFlight.departureTime) {
+    const [nh, nm] = newFlight.departureTime.split(":").map(Number);
+    const newMins = nh * 60 + nm;
+    for (const f of existing) {
+      if (f.isoDate === newFlight.isoDate && f.departureTime) {
+        const [fh, fm] = f.departureTime.split(":").map(Number);
+        const diff = Math.abs(newMins - fh * 60 - fm);
+        if (diff < 90) {
+          return { type: "soft", message: L.warnCloseTime(f.flightCode, diff) };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, locale }: AddFlightFormProps) {
   const L = LABELS[locale];
   const [form, setForm] = useState(BLANK_FORM);
   const [error, setError] = useState("");
+  const [pendingFlight, setPendingFlight] = useState<{ flight: TripFlight; message: string } | null>(null);
 
   function update(field: keyof typeof BLANK_FORM, value: string | number) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -352,8 +395,20 @@ function AddFlightForm({ tripId, onAdd, onOpenImport, locale }: AddFlightFormPro
       departureTime:   form.departureTime,
       arrivalBuffer:   form.arrivalBuffer,
     };
+
+    const conflict = checkFlightConflicts(newFlight, existingFlights, L);
+    if (conflict?.type === "hard") { setError(conflict.message); return; }
+    if (conflict?.type === "soft") { setPendingFlight({ flight: newFlight, message: conflict.message }); return; }
+
     onAdd(tripId, newFlight);
     setForm(BLANK_FORM);
+  }
+
+  function confirmPending() {
+    if (!pendingFlight) return;
+    onAdd(tripId, pendingFlight.flight);
+    setForm(BLANK_FORM);
+    setPendingFlight(null);
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -487,6 +542,41 @@ function AddFlightForm({ tripId, onAdd, onOpenImport, locale }: AddFlightFormPro
         <Plus className="h-3.5 w-3.5" />
         {L.addBtn}
       </button>
+
+      {/* Soft-conflict confirmation modal */}
+      {pendingFlight && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => setPendingFlight(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
+            <div
+              className="w-full max-w-sm pointer-events-auto rounded-2xl border border-yellow-700/40 shadow-2xl p-5 space-y-4"
+              style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-black text-white">{L.warnCloseTimeTitle}</h3>
+                  <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">{pendingFlight.message}</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={confirmPending}
+                  className="w-full rounded-xl bg-yellow-600 hover:bg-yellow-500 py-2.5 text-sm font-semibold text-white transition-colors"
+                >
+                  {L.confirmAnyway}
+                </button>
+                <button
+                  onClick={() => setPendingFlight(null)}
+                  className="w-full py-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
+                >
+                  {locale === "es" ? "Cancelar" : "Cancel"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -674,10 +764,7 @@ function FlightCard({
             {/* Status badge + trash on the same row */}
             <div className="flex items-center gap-1.5">
               {isNonFAA ? (
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 bg-white/4 border border-white/8 px-2.5 py-1 rounded-lg">
-                  <Globe className="h-3 w-3" />
-                  {L.internationalNote}
-                </span>
+                <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
               ) : (
                 <StatusBadge status={status} className="text-sm px-3 py-1" />
               )}
@@ -690,7 +777,7 @@ function FlightCard({
               </button>
             </div>
             <LinkButton href={airportUrl} variant={hasIssue ? "orange" : "default"}>
-              {L.seeAllFlightsFrom(flight.originCode)}
+              FlightAware
             </LinkButton>
           </div>
         </div>
@@ -1022,6 +1109,7 @@ export function TripPanel({
   const [waCopied, setWaCopied]     = useState(false);
   const [showGcal, setShowGcal]     = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [isRenamingTrip, setIsRenamingTrip] = useState(false);
   const [renamingTripName, setRenamingTripName] = useState("");
 
@@ -1236,103 +1324,16 @@ export function TripPanel({
         connectionMap={connectionMap}
       />
 
-      {/* Empty state — shown before the form when no flights yet */}
-      {sorted.length === 0 && (
-        <div className="rounded-xl border border-white/6 bg-white/[0.02] px-5 py-6 text-center">
-          <p className="text-sm text-gray-300 font-medium mb-1">
-            {locale === "en" ? "No flights added yet" : "Todavía no hay vuelos"}
-          </p>
-          <p className="text-xs text-gray-500 leading-relaxed max-w-sm mx-auto">
-            {locale === "en"
-              ? "Add your flights to see connection risk, weather forecast, and airport status — all in one place."
-              : "Agregá tus vuelos para ver riesgo de conexión, pronóstico meteorológico y estado de cada aeropuerto — todo en una sola vista."}
-          </p>
-        </div>
-      )}
-
-      {/* Add flight form */}
-      <AddFlightForm
-        tripId={trip.id}
-        onAdd={onAddFlight}
-        onOpenImport={() => setShowImport(true)}
-        locale={locale}
-      />
-
-      {/* Action bar */}
-      {trip.flights.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={handleExportICS}
-              className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-colors"
-            >
-              <Calendar className="h-3.5 w-3.5" />
-              {locale === "en" ? "Export .ics" : "Exportar .ics"}
-            </button>
-
-            <div className="relative">
-              <button
-                onClick={() => setShowGcal((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-colors"
-              >
-                <Calendar className="h-3.5 w-3.5 text-blue-400" />
-                Google Calendar
-              </button>
-              {showGcal && (
-                <div className="absolute top-full mt-1 left-0 z-20 min-w-[220px] rounded-xl border border-white/8 bg-[#0f0f17] shadow-2xl py-1">
-                  {calFlights.map((cf, i) => (
-                    <a
-                      key={i}
-                      href={buildGoogleCalendarURL(cf)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setShowGcal(false)}
-                      className="flex items-center justify-between gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-white/6 hover:text-white transition-colors"
-                    >
-                      <span>
-                        <span className="font-semibold">{cf.flightCode}</span>
-                        <span className="text-gray-500 ml-1">{cf.originCode}→{cf.destinationCode}</span>
-                      </span>
-                      <span className="text-gray-500 shrink-0">
-                        {new Date(cf.isoDate + "T00:00:00").toLocaleDateString(
-                          locale === "en" ? "en-US" : "es-AR",
-                          { day: "numeric", month: "short" }
-                        )}
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={handleShareWhatsApp}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-800/50 bg-emerald-950/20 px-3 py-1.5 text-xs text-emerald-400 hover:bg-emerald-950/40 hover:text-emerald-300 transition-colors"
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              {waCopied
-                ? (locale === "en" ? "Copied! Paste in WhatsApp" : "¡Copiado! Pegalo en WhatsApp")
-                : "WhatsApp"}
-            </button>
-
-            <button
-              onClick={handleShareLink}
-              className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-colors"
-            >
-              {copied ? <CheckCheck className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
-              {copied
-                ? (locale === "en" ? "Copied!" : "¡Copiado!")
-                : (locale === "en" ? "Copy link" : "Copiar link")}
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Flight cards */}
       {sorted.length === 0 ? (
-        <div className="rounded-xl border border-white/6 py-12 text-center">
+        <div className="rounded-xl border border-white/6 bg-white/[0.02] px-5 py-8 text-center">
           <Plane className="h-8 w-8 text-gray-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">{L.noFlights}</p>
+          <p className="text-sm text-gray-300 font-medium mb-1">{L.noFlights}</p>
+          <p className="text-xs text-gray-500 leading-relaxed max-w-sm mx-auto">
+            {locale === "en"
+              ? "Add your flights to see connection risk, weather forecast, and airport status."
+              : "Agregá tus vuelos para ver riesgo de conexión, pronóstico y estado de aeropuertos."}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -1353,6 +1354,108 @@ export function TripPanel({
               tsaData={tsaData[flight.originCode]}
             />
           ))}
+        </div>
+      )}
+
+      {/* Action bar */}
+      {trip.flights.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={handleExportICS}
+            className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-colors"
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            {locale === "en" ? "Export .ics" : "Exportar .ics"}
+          </button>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowGcal((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-colors"
+            >
+              <Calendar className="h-3.5 w-3.5 text-blue-400" />
+              Google Calendar
+            </button>
+            {showGcal && (
+              <div className="absolute top-full mt-1 left-0 z-20 min-w-[220px] rounded-xl border border-white/8 bg-[#0f0f17] shadow-2xl py-1">
+                {calFlights.map((cf, i) => (
+                  <a
+                    key={i}
+                    href={buildGoogleCalendarURL(cf)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowGcal(false)}
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-white/6 hover:text-white transition-colors"
+                  >
+                    <span>
+                      <span className="font-semibold">{cf.flightCode}</span>
+                      <span className="text-gray-500 ml-1">{cf.originCode}→{cf.destinationCode}</span>
+                    </span>
+                    <span className="text-gray-500 shrink-0">
+                      {new Date(cf.isoDate + "T00:00:00").toLocaleDateString(
+                        locale === "en" ? "en-US" : "es-AR",
+                        { day: "numeric", month: "short" }
+                      )}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={handleShareWhatsApp}
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-800/50 bg-emerald-950/20 px-3 py-1.5 text-xs text-emerald-400 hover:bg-emerald-950/40 hover:text-emerald-300 transition-colors"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            {waCopied
+              ? (locale === "en" ? "Copied! Paste in WhatsApp" : "¡Copiado! Pegalo en WhatsApp")
+              : "WhatsApp"}
+          </button>
+
+          <button
+            onClick={handleShareLink}
+            className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-colors"
+          >
+            {copied ? <CheckCheck className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
+            {copied
+              ? (locale === "en" ? "Copied!" : "¡Copiado!")
+              : (locale === "en" ? "Copy link" : "Copiar link")}
+          </button>
+        </div>
+      )}
+
+      {/* Add flight — toggle button when flights exist, always-open when empty */}
+      {sorted.length > 0 && !showAddForm && (
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] py-3 text-sm font-semibold text-gray-400 hover:text-white transition-all"
+        >
+          <Plus className="h-4 w-4" />
+          {L.addMoreFlights}
+        </button>
+      )}
+
+      {(sorted.length === 0 || showAddForm) && (
+        <div>
+          {showAddForm && sorted.length > 0 && (
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{L.addMoreFlights}</span>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="p-1 rounded-lg text-gray-600 hover:text-gray-300 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <AddFlightForm
+            tripId={trip.id}
+            existingFlights={trip.flights}
+            onAdd={(tid, flight) => { onAddFlight(tid, flight); if (sorted.length > 0) setShowAddForm(false); }}
+            onOpenImport={() => setShowImport(true)}
+            locale={locale}
+          />
         </div>
       )}
 

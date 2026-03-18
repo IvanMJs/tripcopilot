@@ -647,9 +647,8 @@ export default function HomePage() {
           <div className="hidden md:block border-b border-gray-800">
             <div className="flex gap-1 overflow-x-auto overflow-y-hidden">
 
-              {/* Static tabs — order: Aeropuertos | Mi viaje | Vuelos */}
+              {/* Static tabs */}
               {([
-                { id: "flights",  label: t.tabFlights  },
                 { id: "airports", label: t.tabAirports },
                 { id: "search",   label: t.tabSearch   },
               ] as const).map(({ id, label }) => (
