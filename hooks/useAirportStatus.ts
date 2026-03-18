@@ -10,7 +10,11 @@ const TOAST_MESSAGES = {
   en: { cleared: "Delays cleared", changed: "Status changed" },
 };
 
-export function useAirportStatus(refreshIntervalMinutes: number = 5, locale: "es" | "en" = "es") {
+export function useAirportStatus(
+  refreshIntervalMinutes: number = 5,
+  locale: "es" | "en" = "es",
+  showSwNotification?: (title: string, options?: NotificationOptions) => void,
+) {
   const [statusMap, setStatusMap] = useState<AirportStatusMap>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,15 +80,17 @@ export function useAirportStatus(refreshIntervalMinutes: number = 5, locale: "es
             } else {
               toast.error(`${iata}: ${TOAST_MESSAGES[locale].changed} ⚠️`);
             }
-            // Push notification
-            if (notificationsEnabled && "Notification" in window && Notification.permission === "granted") {
+            // Push notification — prefer SW-based (works on Android PWA lock screen)
+            if (notificationsEnabled && Notification.permission === "granted") {
               const msg = newStatus === "ok"
                 ? TOAST_MESSAGES[locale].cleared
                 : TOAST_MESSAGES[locale].changed;
-              new Notification(`✈ ${iata}: ${msg}`, {
-                icon: "/icon.svg",
-                tag: iata,
-              });
+              const title = `✈ ${iata}: ${msg}`;
+              if (showSwNotification) {
+                showSwNotification(title, { tag: iata });
+              } else {
+                new Notification(title, { icon: "/icon.svg", tag: iata });
+              }
             }
           }
         });
@@ -112,7 +118,7 @@ export function useAirportStatus(refreshIntervalMinutes: number = 5, locale: "es
     } finally {
       setLoading(false);
     }
-  }, [refreshIntervalMinutes, locale, notificationsEnabled]);
+  }, [refreshIntervalMinutes, locale, notificationsEnabled, showSwNotification]);
 
   // Re-parse cached XML when locale changes (no re-fetch needed)
   useEffect(() => {
