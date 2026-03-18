@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AirportStatusMap } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { ExternalLink, Clock, MapPin, Plane, AlertTriangle, Calendar, Share2, DoorOpen, ChevronDown, ArrowRight } from "lucide-react";
@@ -12,6 +12,10 @@ import { CalendarFlight, generateICS, downloadICS, buildGoogleCalendarURL } from
 import { buildWhatsAppMessage, buildWhatsAppURL, WhatsAppFlight } from "@/lib/tripShare";
 import { FlightStatusBadge } from "@/components/FlightStatusBadge";
 import { useTsaWait, TsaAirportData } from "@/hooks/useTsaWait";
+import { DayOfTravelBanner } from "@/components/DayOfTravelBanner";
+import { TripCopilot } from "@/components/TripCopilot";
+import { TripClocks } from "@/components/TripClocks";
+import { getAirportTime, getAirportTzLabel } from "@/lib/airportTimezone";
 
 interface FlightData {
   date: string;
@@ -173,6 +177,32 @@ function LinkButton({
   );
 }
 
+// ── Flight notes storage ─────────────────────────────────────────────────────
+const NOTES_KEY = "copiloto-notes";
+
+interface FlightNote {
+  pnr: string;
+  seat: string;
+  notes: string;
+}
+
+function loadNotes(): Record<string, FlightNote> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(NOTES_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveNote(key: string, note: FlightNote) {
+  try {
+    const all = loadNotes();
+    all[key] = note;
+    localStorage.setItem(NOTES_KEY, JSON.stringify(all));
+  } catch {}
+}
+
 const CARD_ACCENTS = [
   { bar: "bg-blue-400/80",   border: "border-blue-500/25",   bg: "bg-blue-950/35"   },
   { bar: "bg-violet-400/80", border: "border-violet-500/25", bg: "bg-violet-950/35" },
@@ -201,9 +231,41 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index 
   const daysUntil = getDaysUntil(flight.isoDate);
   const airlineCode = flight.flightNum.split(" ")[0];
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
+  const noteKey = `${flight.flightNum.replace(/\s+/g, "")}-${flight.isoDate}`;
 
   // Accordion: expanded for future/today flights; collapsed for past flights
   const [isExpanded, setIsExpanded] = useState(daysUntil >= 0 || hasIssue);
+
+  // Notes state
+  const [note, setNote] = useState<FlightNote>({ pnr: "", seat: "", notes: "" });
+  const [showNotes, setShowNotes] = useState(false);
+
+  useEffect(() => {
+    const all = loadNotes();
+    if (all[noteKey]) setNote(all[noteKey]);
+  }, [noteKey]);
+
+  const updateNote = useCallback((field: keyof FlightNote, value: string) => {
+    setNote((prev) => {
+      const next = { ...prev, [field]: value };
+      saveNote(noteKey, next);
+      return next;
+    });
+  }, [noteKey]);
+
+  const hasAnyNote = note.pnr || note.seat || note.notes;
+
+  // Live clock — ticks every minute synced to boundary
+  const [, setClockTick] = useState(0);
+  useEffect(() => {
+    const msToNext = 60000 - (Date.now() % 60000);
+    const t = setTimeout(() => {
+      setClockTick((n) => n + 1);
+      const interval = setInterval(() => setClockTick((n) => n + 1), 60000);
+      return () => clearInterval(interval);
+    }, msToNext);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div
@@ -298,13 +360,25 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index 
               <span className="text-3xl font-black text-white">{flight.originCode}</span>
               <span className="text-sm text-gray-400">{originName}</span>
             </div>
-            {weatherMap?.[flight.originCode] && (
-              <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-                <span className="text-sm leading-none">{weatherMap[flight.originCode].icon}</span>
-                <span className="font-medium text-gray-300">{weatherMap[flight.originCode].temperature}°C</span>
-                <span>{weatherMap[flight.originCode].description}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              {weatherMap?.[flight.originCode] && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <span className="text-sm leading-none">{weatherMap[flight.originCode].icon}</span>
+                  <span className="font-medium text-gray-300">{weatherMap[flight.originCode].temperature}°C</span>
+                  <span>{weatherMap[flight.originCode].description}</span>
+                </div>
+              )}
+              {(() => {
+                const t = getAirportTime(flight.originCode);
+                const tz = getAirportTzLabel(flight.originCode);
+                if (!t) return null;
+                return (
+                  <span className="flex items-center gap-1 text-xs text-gray-400 tabular font-medium">
+                    🕐 {t}{tz && <span className="text-gray-600 text-[10px] ml-0.5">{tz}</span>}
+                  </span>
+                );
+              })()}
+            </div>
             {tsaData && tsaData.avgWaitTime > 0 && (
               <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
                 <span>🛡️</span>
@@ -502,7 +576,70 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index 
         );
       })()}
 
-      {/* SECCIÓN 5: Estado vuelo en vivo */}
+      {/* SECCIÓN 5: Notas del vuelo */}
+      <div className="border-t border-white/[0.05]">
+        <button
+          onClick={() => setShowNotes((v) => !v)}
+          className="w-full flex items-center justify-between gap-3 px-4 py-2.5 tap-scale"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🗒️</span>
+            <span className="text-xs font-semibold text-gray-400">
+              {locale === "es" ? "Mis notas del vuelo" : "My flight notes"}
+            </span>
+            {hasAnyNote && (
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+            )}
+          </div>
+          <ChevronDown className={`h-3.5 w-3.5 text-gray-600 transition-transform duration-200 ${showNotes ? "rotate-180" : ""}`} />
+        </button>
+        {showNotes && (
+          <div className="px-4 pb-3 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-1">
+                  {locale === "es" ? "Localizador / PNR" : "Locator / PNR"}
+                </label>
+                <input
+                  type="text"
+                  value={note.pnr}
+                  onChange={(e) => updateNote("pnr", e.target.value)}
+                  placeholder="XYZABC"
+                  className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-blue-600/60 focus:outline-none font-mono uppercase tracking-widest"
+                  maxLength={8}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-1">
+                  {locale === "es" ? "Asiento" : "Seat"}
+                </label>
+                <input
+                  type="text"
+                  value={note.seat}
+                  onChange={(e) => updateNote("seat", e.target.value)}
+                  placeholder="12A"
+                  className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-blue-600/60 focus:outline-none font-mono uppercase tracking-widest"
+                  maxLength={5}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-1">
+                {locale === "es" ? "Notas" : "Notes"}
+              </label>
+              <textarea
+                value={note.notes}
+                onChange={(e) => updateNote("notes", e.target.value)}
+                placeholder={locale === "es" ? "Hotel, transfer, equipaje..." : "Hotel, transfer, baggage..."}
+                rows={2}
+                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-blue-600/60 focus:outline-none resize-none leading-relaxed"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* SECCIÓN 6: Estado vuelo en vivo */}
       <FlightStatusBadge
         flightIata={flight.flightNum.replace(/\s+/g, "")}
         isoDate={flight.isoDate}
@@ -565,11 +702,35 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
     }
   }
 
+  // Determine if any "today" flight exists
+  const todayFlight = MY_FLIGHTS.find((f) => getDaysUntil(f.isoDate) === 0);
+  const airlineCode = todayFlight ? todayFlight.flightNum.split(" ")[0] : null;
+
   return (
     <div className="space-y-5">
 
+      {/* Day-of-travel emergency mode */}
+      {todayFlight && airlineCode && (
+        <DayOfTravelBanner
+          flightNum={todayFlight.flightNum}
+          airline={todayFlight.airline}
+          originCode={todayFlight.originCode}
+          destinationCode={todayFlight.destinationCode}
+          departureTime={todayFlight.departureTime}
+          flightUrl={todayFlight.flightUrl}
+          airlineCode={airlineCode}
+          locale={locale}
+        />
+      )}
+
       {/* Trip summary hero */}
       <TripSummaryHero statusMap={statusMap} locale={locale} />
+
+      {/* Trip clocks */}
+      <TripClocks locale={locale} />
+
+      {/* Trip guide — destination cards + Copiloto AI recommendations */}
+      <TripCopilot flights={MY_FLIGHTS} locale={locale} />
 
       {/* Action bar */}
       <div className="flex items-center justify-end flex-wrap gap-2">

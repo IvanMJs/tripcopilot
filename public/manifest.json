@@ -1,11 +1,11 @@
 {
-  "name": "Airport Monitor",
-  "short_name": "Airports",
-  "description": "Real-time airport status — FAA ASWS",
+  "name": "Copiloto de Viaje",
+  "short_name": "Copiloto",
+  "description": "Tu viaje completo · Riesgo de conexión y estado de aeropuertos en tiempo real",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#030712",
-  "theme_color": "#1e3a5f",
+  "background_color": "#080810",
+  "theme_color": "#080810",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }

@@ -19,6 +19,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Locale } from "@/lib/i18n";
 import { useWeather } from "@/hooks/useWeather";
 import { useMetar } from "@/hooks/useMetar";
+import { useServiceWorker } from "@/hooks/useServiceWorker";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { NotificationSetupSheet } from "@/components/NotificationSetupSheet";
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -61,8 +64,11 @@ function loadTrips(): TripTab[] {
 
 export default function HomePage() {
   const { t, locale, setLocale } = useLanguage();
+  const { showSwNotification } = useServiceWorker();
+  const isOnline = useOnlineStatus();
+  const [showNotifSheet, setShowNotifSheet] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<string>("flights");
+  const [activeTab, setActiveTab] = useState<string>("airports");
   const [refreshInterval, setRefreshInterval] = useState(5);
   const [watchedAirports, setWatchedAirports] = useState<string[]>(DEFAULT_AIRPORTS);
   const [userTrips, setUserTrips] = useState<TripTab[]>([]);
@@ -121,15 +127,13 @@ export default function HomePage() {
       const key = `checkin-notified-${f.code}-${f.isoDate}`;
       if (localStorage.getItem(key)) continue;
 
-      new Notification(
-        locale === "en" ? `✈ Check-in open · ${f.code}` : `✈ Check-in disponible · ${f.code}`,
-        {
-          body: locale === "en"
-            ? `Your flight ${f.route} departs tomorrow at ${f.time}`
-            : `Tu vuelo ${f.route} sale mañana a las ${f.time}`,
-          tag: key,
-        }
-      );
+      const notifTitle = locale === "en"
+        ? `✈ Check-in open · ${f.code}`
+        : `✈ Check-in disponible · ${f.code}`;
+      const notifBody = locale === "en"
+        ? `Your flight ${f.route} departs tomorrow at ${f.time}`
+        : `Tu vuelo ${f.route} sale mañana a las ${f.time}`;
+      showSwNotification(notifTitle, { body: notifBody, tag: key });
       localStorage.setItem(key, "1");
     }
   }, [mounted, locale, userTrips]);
@@ -154,7 +158,7 @@ export default function HomePage() {
     notificationsEnabled,
     requestNotifications,
     disableNotifications,
-  } = useAirportStatus(refreshInterval, locale);
+  } = useAirportStatus(refreshInterval, locale, showSwNotification);
 
   // Aggregate airports for weather: watched + hardcoded flight airports + all user trip airports
   const tripAirports = userTrips.flatMap((t) =>
@@ -215,7 +219,7 @@ export default function HomePage() {
       return;
     }
     setUserTrips((prev) => prev.filter((t) => t.id !== id));
-    if (activeTab === id) setActiveTab("flights");
+    if (activeTab === id) setActiveTab("airports");
   }
 
   function addFlightToTrip(tripId: string, flight: TripFlight) {
@@ -273,16 +277,61 @@ export default function HomePage() {
         }}
       />
 
+      {/* Notification setup sheet — iOS-aware */}
+      <NotificationSetupSheet
+        open={showNotifSheet}
+        onClose={() => {
+          setShowNotifSheet(false);
+          // Re-check permission state after sheet closes
+          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+            requestNotifications();
+          }
+        }}
+        locale={locale}
+      />
+
+      {/* Offline banner */}
+      {mounted && !isOnline && (
+        <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-2 bg-yellow-900/95 border-b border-yellow-700/60 px-4 py-2.5 backdrop-blur-sm"
+          style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
+        >
+          <span className="text-sm">📡</span>
+          <p className="text-xs font-semibold text-yellow-200">
+            {locale === "es"
+              ? "Sin conexión — mostrando último estado conocido"
+              : "Offline — showing last known status"}
+          </p>
+          {lastUpdated && (
+            <span className="text-[10px] text-yellow-400/70">
+              · {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="min-h-screen bg-gray-950 px-4 py-4 md:py-6 pb-nav md:pb-6">
         <div className="mx-auto max-w-6xl space-y-4 md:space-y-6">
 
           {/* ── Header ── */}
           <div className="flex items-center justify-between gap-3">
 
-            {/* Title — large on desktop, compact on mobile */}
+            {/* Title */}
             <div className="min-w-0">
-              <h1 className="flex items-center gap-2 md:gap-3 text-xl md:text-3xl font-black tracking-tight text-white">
-                <Plane className="h-5 w-5 md:h-8 md:w-8 text-blue-400 shrink-0" />
+              {/* Mobile: TripCopilot PNG only — brand seal, no text */}
+              <div className="flex md:hidden items-center">
+                <img
+                  src="/tripcopliot-avatar.svg"
+                  alt="TripCopilot"
+                  className="h-10 w-auto"
+                />
+              </div>
+              {/* Desktop: PNG + title text */}
+              <h1 className="hidden md:flex items-center gap-3 text-3xl font-black tracking-tight text-white">
+                <img
+                  src="/tripcopliot-avatar.svg"
+                  alt="TripCopilot"
+                  className="h-10 w-auto shrink-0"
+                />
                 <span className="truncate">{t.appTitle}</span>
               </h1>
               <p className="hidden md:block mt-1 text-sm text-gray-400 font-medium">{t.appSubtitle}</p>
@@ -308,14 +357,20 @@ export default function HomePage() {
                 ))}
               </div>
 
-              {/* Notification bell */}
-              {mounted && typeof window !== "undefined" && "Notification" in window && (
+              {/* Notification bell — always visible, handles iOS/Android/desktop */}
+              {mounted && (
                 <button
-                  onClick={notificationsEnabled ? disableNotifications : requestNotifications}
+                  onClick={() => {
+                    if (notificationsEnabled) {
+                      disableNotifications();
+                    } else {
+                      setShowNotifSheet(true);
+                    }
+                  }}
                   title={
                     notificationsEnabled
-                      ? (locale === "en" ? "Notifications ON — click to disable" : "Notificaciones activas — click para desactivar")
-                      : (locale === "en" ? "Enable notifications" : "Activar notificaciones")
+                      ? (locale === "en" ? "Notifications ON — tap to disable" : "Alertas activas — tap para desactivar")
+                      : (locale === "en" ? "Enable notifications" : "Activar alertas")
                   }
                   className={`flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs transition-colors ${
                     notificationsEnabled
@@ -351,7 +406,7 @@ export default function HomePage() {
 
               {/* Help — desktop only */}
               <button
-                onClick={() => setActiveTab(activeTab === "help" ? "flights" : "help")}
+                onClick={() => setActiveTab(activeTab === "help" ? "airports" : "help")}
                 title={locale === "en" ? "Help & documentation" : "Ayuda y documentación"}
                 className={`hidden md:flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
                   activeTab === "help"
@@ -388,10 +443,10 @@ export default function HomePage() {
           <div className="hidden md:block border-b border-gray-800">
             <div className="flex gap-1 overflow-x-auto overflow-y-hidden">
 
-              {/* Static tabs — order: Mi viaje | Aeropuertos | Vuelos */}
+              {/* Static tabs — order: Aeropuertos | Mi viaje | Vuelos */}
               {([
-                { id: "flights",  label: t.tabFlights  },
                 { id: "airports", label: t.tabAirports },
+                { id: "flights",  label: t.tabFlights  },
                 { id: "search",   label: t.tabSearch   },
               ] as const).map(({ id, label }) => (
                 <button
@@ -548,8 +603,8 @@ export default function HomePage() {
 
             {/* Static tabs */}
             {([
-              { id: "flights",  Icon: Plane,   label: t.tabFlights  },
               { id: "airports", Icon: MapPin,  label: t.tabAirports },
+              { id: "flights",  Icon: Plane,   label: t.tabFlights  },
               { id: "search",   Icon: Search,  label: t.tabSearch   },
             ] as const).map(({ id, Icon, label }) => {
               const isActive = activeTab === id;

@@ -1,13 +1,42 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { AirportStatus } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { cn } from "@/lib/utils";
-import { X, TrendingUp, TrendingDown, Minus, Wind } from "lucide-react";
+import { X, TrendingUp, TrendingDown, Minus, Wind, Sparkles, Loader2, ChevronDown } from "lucide-react";
 import { AIRPORTS } from "@/lib/airports";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { WeatherData } from "@/hooks/useWeather";
 import { MetarData, FlightCategory } from "@/hooks/useMetar";
+import { getAirportTime, getAirportTzLabel } from "@/lib/airportTimezone";
+import { getCachedFaaExplanation, setCachedFaaExplanation } from "@/lib/faaExplainCache";
+
+function AirportClock({ iata }: { iata: string }) {
+  const [time, setTime] = useState(() => getAirportTime(iata));
+
+  useEffect(() => {
+    setTime(getAirportTime(iata));
+    // Sync to next minute boundary
+    const msToNext = 60000 - (Date.now() % 60000);
+    const t = setTimeout(() => {
+      setTime(getAirportTime(iata));
+      const interval = setInterval(() => setTime(getAirportTime(iata)), 60000);
+      return () => clearInterval(interval);
+    }, msToNext);
+    return () => clearTimeout(t);
+  }, [iata]);
+
+  if (!time) return null;
+  const tzLabel = getAirportTzLabel(iata);
+
+  return (
+    <span className="flex items-center gap-1 text-xs text-gray-400 tabular font-medium">
+      🕐 {time}
+      {tzLabel && <span className="text-gray-600 text-[10px]">{tzLabel}</span>}
+    </span>
+  );
+}
 
 interface AirportCardProps {
   iata: string;
@@ -130,6 +159,123 @@ function TrendIcon({ trend }: { trend?: string }) {
   return <Minus className="h-3.5 w-3.5 text-yellow-400 inline" />;
 }
 
+// ── FAA Explain ────────────────────────────────────────────────────────────────
+
+type ExplainState = "idle" | "loading" | "done" | "error";
+
+function buildRawDetails(status: AirportStatus): string {
+  const parts: string[] = [];
+  if (status.delays) {
+    parts.push(
+      `Delay ${status.delays.minMinutes}–${status.delays.maxMinutes} min, reason: ${status.delays.reason}`,
+    );
+  }
+  if (status.groundStop) {
+    parts.push(
+      `Ground stop until ${status.groundStop.endTime ?? "indefinite"}, reason: ${status.groundStop.reason}`,
+    );
+  }
+  if (status.groundDelay) {
+    parts.push(
+      `Ground delay program, avg ${status.groundDelay.avgMinutes} min, reason: ${status.groundDelay.reason}`,
+    );
+  }
+  if (status.closure) {
+    parts.push(`Airport closure: ${status.closure.reason}`);
+  }
+  return parts.join(". ") || status.status;
+}
+
+function FaaExplainButton({
+  iata,
+  status,
+  locale,
+}: {
+  iata: string;
+  status: AirportStatus;
+  locale: "es" | "en";
+}) {
+  const [explainState, setExplainState] = useState<ExplainState>("idle");
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const handleExplain = useCallback(async () => {
+    if (open && explanation) {
+      setOpen(false);
+      return;
+    }
+
+    // Check cache first
+    const cached = getCachedFaaExplanation(iata, status.status);
+    if (cached) {
+      setExplanation(cached);
+      setExplainState("done");
+      setOpen(true);
+      return;
+    }
+
+    setExplainState("loading");
+    setOpen(true);
+
+    try {
+      const res = await fetch("/api/faa-explain", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          airportCode: iata,
+          status: status.status,
+          rawDetails: buildRawDetails(status),
+          locale,
+        }),
+      });
+      const json = await res.json() as { explanation?: string; error?: string };
+      if (!res.ok || json.error) {
+        setExplainState("error");
+        return;
+      }
+      const text = json.explanation ?? "";
+      setCachedFaaExplanation(iata, status.status, text);
+      setExplanation(text);
+      setExplainState("done");
+    } catch {
+      setExplainState("error");
+    }
+  }, [iata, status, locale, open, explanation]);
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={handleExplain}
+        className="inline-flex items-center gap-1.5 text-[11px] text-purple-400 hover:text-purple-300 transition-colors"
+      >
+        {explainState === "loading" ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Sparkles className="h-3 w-3" />
+        )}
+        {locale === "es" ? "¿Qué significa esto?" : "What does this mean?"}
+        {explanation && (
+          <ChevronDown
+            className={`h-3 w-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+          />
+        )}
+      </button>
+
+      {open && explainState === "done" && explanation && (
+        <p className="mt-1.5 text-xs text-gray-300 leading-relaxed bg-purple-950/20 border border-purple-800/20 rounded-lg px-3 py-2">
+          {explanation}
+        </p>
+      )}
+
+      {open && explainState === "error" && (
+        <p className="mt-1.5 text-[11px] text-gray-500">
+          {locale === "es" ? "No se pudo obtener la explicación." : "Could not get explanation."}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function AirportCard({ iata, status, onRemove, weather, metar, highlight }: AirportCardProps) {
   const { t, locale } = useLanguage();
   const s = status?.status ?? "ok";
@@ -178,13 +324,16 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight 
         <p className="text-xs text-green-400/80">{t.noDelaysReported}</p>
       )}
 
-      {weather && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-gray-300">
-          <span className="text-base leading-none">{weather.icon}</span>
-          <span className="font-medium">{weather.temperature}°C</span>
-          <span className="text-gray-500">{weather.description}</span>
-        </div>
-      )}
+      <div className="mt-2 flex items-center gap-3 flex-wrap">
+        {weather && (
+          <div className="flex items-center gap-2 text-xs text-gray-300">
+            <span className="text-base leading-none">{weather.icon}</span>
+            <span className="font-medium">{weather.temperature}°C</span>
+            <span className="text-gray-500">{weather.description}</span>
+          </div>
+        )}
+        <AirportClock iata={iata} />
+      </div>
 
       {metar && <MetarRow metar={metar} />}
 
@@ -236,6 +385,11 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight 
           <p className="font-bold text-gray-200">⛔ {t.airportClosed}</p>
           <p><span className="text-gray-500">{t.cause}:</span> {status.closure.reason}</p>
         </div>
+      )}
+
+      {/* FAA explain — only shown when there's an active incident */}
+      {status && s !== "ok" && s !== "unknown" && (
+        <FaaExplainButton iata={iata} status={status} locale={locale} />
       )}
 
       {status?.lastChecked && (
