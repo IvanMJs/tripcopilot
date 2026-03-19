@@ -238,12 +238,16 @@ export default function HomePage() {
     if (!draftTrip) return;
     const id = await createTripDB(draftTrip.name);
     if (id) {
+      // Build mapping: draft flight ID → real DB flight ID
+      const flightIdMap: Record<string, string> = {};
       for (const flight of draftTrip.flights) {
-        await addFlightDB(id, flight);
+        const realId = await addFlightDB(id, flight);
+        if (realId) flightIdMap[flight.id] = realId;
       }
       for (const acc of draftTrip.accommodations) {
         const { id: _id, tripId: _tid, ...accData } = acc;
-        await addAccommodationDB(id, accData);
+        const realFlightId = accData.flightId ? flightIdMap[accData.flightId] : undefined;
+        await addAccommodationDB(id, { ...accData, flightId: realFlightId });
       }
       setDraftTrip(null);
       setActiveTab(id);

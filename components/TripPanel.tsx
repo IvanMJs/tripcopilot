@@ -672,8 +672,8 @@ function FlightCard({
   const originIcao  = originInfo?.icao ?? `K${flight.originCode}`;
   const originName  = originInfo?.city || flight.originCode;
   const destName    = destInfo?.city   || flight.destinationCode;
-  // Estimate arrival date: if flight departs at 17:00 or later, assume overnight → arrive next day
-  const checkInDate = estimateArrivalDate(flight.isoDate, flight.departureTime);
+  // Estimate arrival date: late departure + long-haul buffer → arrive next day
+  const checkInDate = estimateArrivalDate(flight.isoDate, flight.departureTime, flight.arrivalBuffer);
   const isNonFAA    = originInfo?.isFAA === false;
 
   const flightUrl   = `https://www.flightaware.com/live/flight/${flight.airlineIcao}${flight.flightNumber}`;
@@ -1142,9 +1142,14 @@ function FlightCard({
 
 // ── TripPanel ─────────────────────────────────────────────────────────────────
 
-/** If flight departs at 17:00 or later, arrival is assumed to be the next calendar day. */
-function estimateArrivalDate(isoDate: string, departureTime: string): string {
-  if (departureTime && departureTime >= "17:00") {
+/**
+ * Estimate the arrival date for hotel check-in purposes.
+ * Only considers the flight overnight if it departs late (>=20:00) AND
+ * has a long pre-flight buffer (>=2h), which signals a long-haul flight.
+ * Short-haul evening flights (buffer <2h) are assumed to land the same day.
+ */
+function estimateArrivalDate(isoDate: string, departureTime: string, arrivalBuffer: number): string {
+  if (departureTime && departureTime >= "20:00" && arrivalBuffer >= 2) {
     const d = new Date(isoDate + "T00:00:00");
     d.setDate(d.getDate() + 1);
     return d.toISOString().slice(0, 10);
@@ -1562,7 +1567,7 @@ export function TripPanel({
                   onAddAccommodation(trip.id, {
                     flightId: flight.id,
                     name,
-                    checkInDate:  estimateArrivalDate(flight.isoDate, flight.departureTime),
+                    checkInDate:  estimateArrivalDate(flight.isoDate, flight.departureTime, flight.arrivalBuffer),
                     checkInTime,
                     checkOutDate: sorted[idx + 1]?.isoDate,
                     checkOutTime,

@@ -127,7 +127,7 @@ export function useUserTrips() {
     await supabase.from("trips").update({ name: trimmed }).eq("id", id);
   }, []);
 
-  const addFlight = useCallback(async (tripId: string, flight: TripFlight) => {
+  const addFlight = useCallback(async (tripId: string, flight: TripFlight): Promise<string | null> => {
     const supabase = createClient();
 
     const { data: last } = await supabase
@@ -166,7 +166,9 @@ export function useUserTrips() {
           t.id === tripId ? { ...t, flights: [...t.flights, newFlight] } : t,
         ),
       );
+      return data.id;
     }
+    return null;
   }, []);
 
   const removeFlight = useCallback(async (tripId: string, flightId: string) => {

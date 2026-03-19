@@ -272,7 +272,7 @@ export async function GET(request: Request) {
 
     // B: Check-in time notification (today, at the exact check-in time ±30min)
     if (acc.check_in_date === todayStr && acc.check_in_time) {
-      const inWindow = acc.check_in_time >= windowStart && acc.check_in_time <= currentTime;
+      const inWindow = timeInWindow(acc.check_in_time, windowStart, currentTime);
       if (inWindow) {
         const alreadySent = await checkLog(supabase, acc.id, "hotel_checkin_time", Infinity);
         if (!alreadySent) {
@@ -288,7 +288,7 @@ export async function GET(request: Request) {
 
     // C: Check-out time notification (today, at the exact check-out time ±30min)
     if (acc.check_out_date === todayStr && acc.check_out_time) {
-      const inWindow = acc.check_out_time >= windowStart && acc.check_out_time <= currentTime;
+      const inWindow = timeInWindow(acc.check_out_time, windowStart, currentTime);
       if (inWindow) {
         const alreadySent = await checkLog(supabase, acc.id, "hotel_checkout_time", Infinity);
         if (!alreadySent) {
@@ -408,4 +408,22 @@ async function sendAndLog(
 function formatDate(isoDate: string): string {
   const [, month, day] = isoDate.split("-");
   return `${day}/${month}`;
+}
+
+/** Convert "HH:MM" string to minutes since midnight. */
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Returns true if `time` falls within the window [windowStart, windowEnd].
+ * Handles midnight wrap-around (e.g. windowStart=23:45, windowEnd=00:15).
+ */
+function timeInWindow(time: string, windowStart: string, windowEnd: string): boolean {
+  const t = toMinutes(time);
+  const s = toMinutes(windowStart);
+  const e = toMinutes(windowEnd);
+  if (s <= e) return t >= s && t <= e;
+  return t >= s || t <= e; // crosses midnight
 }
