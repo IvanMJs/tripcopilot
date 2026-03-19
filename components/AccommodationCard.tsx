@@ -292,16 +292,16 @@ export function AddAccommodationInlineForm({
       <div className="flex rounded-lg border border-white/[0.06] bg-white/[0.02] p-0.5 gap-0.5">
         <button
           onClick={() => { setTab("ai"); setParsed(null); setAiError(null); }}
-          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-semibold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-[11px] font-semibold transition-all ${
             tab === "ai" ? "bg-violet-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-300"
           }`}
         >
-          <TripCopilotIcon size={12} />
+          <TripCopilotIcon size={20} />
           {L.accTabAI}
         </button>
         <button
           onClick={() => setTab("manual")}
-          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-semibold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-[11px] font-semibold transition-all ${
             tab === "manual" ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
           }`}
         >
