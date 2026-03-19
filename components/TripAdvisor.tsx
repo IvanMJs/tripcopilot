@@ -1,9 +1,30 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Sparkles, MapPin, Moon, Thermometer } from "lucide-react";
+import { ChevronDown, MapPin, Moon, Thermometer } from "lucide-react";
 import { getDestinationProfile, getDestinationConfig } from "@/lib/destinationConfig";
 import { TripAdviceResult } from "@/lib/types/tripAdvice";
+
+// ── TripCopilot avatar icon ───────────────────────────────────────────────────
+
+function TripCopilotIcon({ spinning, size = 16 }: { spinning?: boolean; size?: number }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 512 512"
+      width={size}
+      height={size}
+      className={`shrink-0 rounded-md ${spinning ? "animate-spin" : ""}`}
+      style={spinning ? { animationDuration: "2s" } : undefined}
+    >
+      <rect width="512" height="512" rx="96" fill="#1e3a5f" />
+      <path
+        d="M256 96c-8.8 0-16 7.2-16 16v128L112 304v32l128-32v80l-32 24v24l48-16 48 16v-24l-32-24v-80l128 32v-32L272 240V112c0-8.8-7.2-16-16-16z"
+        fill="#60a5fa"
+      />
+    </svg>
+  );
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -456,12 +477,8 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {isLoadingAi && (
-            <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
-          )}
-          {aiStatus === "done" && (
-            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-          )}
+          {isLoadingAi && <TripCopilotIcon spinning size={18} />}
+          {aiStatus === "done" && <TripCopilotIcon size={18} />}
           <div className="flex gap-1">
             {stays.map((s) => (
               <span key={s.code} className="text-base">{s.flag}</span>
@@ -479,7 +496,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
           {/* AI summary banner */}
           {aiData?.summary && (
             <div className="px-4 py-3 border-b border-white/[0.04] flex items-start gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-purple-400 shrink-0 mt-0.5" />
+              <TripCopilotIcon size={14} />
               <p className="text-xs text-gray-300 leading-relaxed">{aiData.summary}</p>
             </div>
           )}
