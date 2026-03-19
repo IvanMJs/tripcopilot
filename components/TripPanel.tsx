@@ -672,6 +672,8 @@ function FlightCard({
   const originIcao  = originInfo?.icao ?? `K${flight.originCode}`;
   const originName  = originInfo?.city || flight.originCode;
   const destName    = destInfo?.city   || flight.destinationCode;
+  // Estimate arrival date: if flight departs at 17:00 or later, assume overnight → arrive next day
+  const checkInDate = estimateArrivalDate(flight.isoDate, flight.departureTime);
   const isNonFAA    = originInfo?.isFAA === false;
 
   const flightUrl   = `https://www.flightaware.com/live/flight/${flight.airlineIcao}${flight.flightNumber}`;
@@ -1103,40 +1105,52 @@ function FlightCard({
         </div>
       )}
 
-      {/* Hotel inline */}
-      <div className="px-4 pb-4">
-        {accommodation ? (
-          <AccommodationInline
-            acc={accommodation}
-            checkInDate={flight.isoDate}
-            checkOutDate={nextDate}
-            locale={locale}
-            L={L}
-            onRemove={onRemoveAccommodation}
-          />
-        ) : showHotelForm ? (
-          <AddAccommodationInlineForm
-            destCity={destName}
-            locale={locale}
-            L={L}
-            onAdd={onAddAccommodation}
-            onClose={() => setShowHotelForm(false)}
-          />
-        ) : (
-          <button
-            onClick={() => setShowHotelForm(true)}
-            className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/[0.08] py-2 text-[11px] text-gray-600 hover:text-gray-400 hover:border-white/[0.15] transition-colors"
-          >
-            <Hotel className="h-3 w-3" />
-            {locale === "es" ? `+ Hotel en ${destName}` : `+ Hotel in ${destName}`}
-          </button>
-        )}
-      </div>
+      {/* Hotel inline — only when there's a next flight (not the return leg) */}
+      {(accommodation || nextDate) && (
+        <div className="px-4 pb-4">
+          {accommodation ? (
+            <AccommodationInline
+              acc={accommodation}
+              checkInDate={checkInDate}
+              checkOutDate={nextDate}
+              locale={locale}
+              L={L}
+              onRemove={onRemoveAccommodation}
+            />
+          ) : showHotelForm ? (
+            <AddAccommodationInlineForm
+              destCity={destName}
+              locale={locale}
+              L={L}
+              onAdd={onAddAccommodation}
+              onClose={() => setShowHotelForm(false)}
+            />
+          ) : (
+            <button
+              onClick={() => setShowHotelForm(true)}
+              className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/[0.08] py-2 text-[11px] text-gray-600 hover:text-gray-400 hover:border-white/[0.15] transition-colors"
+            >
+              <Hotel className="h-3 w-3" />
+              {locale === "es" ? `+ Hotel en ${destName}` : `+ Hotel in ${destName}`}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 // ── TripPanel ─────────────────────────────────────────────────────────────────
+
+/** If flight departs at 17:00 or later, arrival is assumed to be the next calendar day. */
+function estimateArrivalDate(isoDate: string, departureTime: string): string {
+  if (departureTime && departureTime >= "17:00") {
+    const d = new Date(isoDate + "T00:00:00");
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+  return isoDate;
+}
 
 function nightsBetween(isoA: string, isoB: string): number {
   return Math.round(
@@ -1548,7 +1562,7 @@ export function TripPanel({
                   onAddAccommodation(trip.id, {
                     flightId: flight.id,
                     name,
-                    checkInDate:  flight.isoDate,
+                    checkInDate:  estimateArrivalDate(flight.isoDate, flight.departureTime),
                     checkInTime,
                     checkOutDate: sorted[idx + 1]?.isoDate,
                     checkOutTime,
