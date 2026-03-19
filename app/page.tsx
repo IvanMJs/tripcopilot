@@ -55,29 +55,33 @@ export default function LandingPage() {
   const [activeNotif, setActiveNotif] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollRafRef = useRef<number | null>(null);
 
-  // IntersectionObserver: detect centered item on mobile swipe
-  useEffect(() => {
-    const container = carouselRef.current;
-    if (!container) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-            const idx = itemRefs.current.indexOf(entry.target as HTMLDivElement);
-            if (idx !== -1) setActiveNotif(idx);
-          }
-        });
-      },
-      { root: container, threshold: 0.6 },
-    );
-    itemRefs.current.forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
+  // Detect centered item on scroll (mobile swipe + web)
+  const handleCarouselScroll = useCallback(() => {
+    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(() => {
+      const container = carouselRef.current;
+      if (!container) return;
+      const center = container.scrollLeft + container.clientWidth / 2;
+      let closest = 0;
+      let closestDist = Infinity;
+      itemRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const dist = Math.abs(el.offsetLeft + el.offsetWidth / 2 - center);
+        if (dist < closestDist) { closestDist = dist; closest = i; }
+      });
+      setActiveNotif(closest);
+    });
   }, []);
 
   const scrollToNotif = useCallback((idx: number) => {
     setActiveNotif(idx);
-    itemRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    const el = itemRefs.current[idx];
+    const container = carouselRef.current;
+    if (!el || !container) return;
+    const target = el.offsetLeft - (container.clientWidth - el.offsetWidth) / 2;
+    container.scrollTo({ left: target, behavior: "smooth" });
   }, []);
 
   // Features data
@@ -547,7 +551,7 @@ export default function LandingPage() {
           </div>
 
           {/* Phone screenshots carousel */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 text-xs text-gray-400">
               <Smartphone className="h-3.5 w-3.5" />
               Así llegan en tu celular — deslizá o hacé click
@@ -555,7 +559,7 @@ export default function LandingPage() {
           </div>
 
           {/* Dot indicators */}
-          <div className="flex justify-center gap-1.5 mb-6">
+          <div className="flex justify-center gap-1.5 mb-8">
             {notifScreenshots.map((_, i) => (
               <button
                 key={i}
@@ -569,11 +573,18 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Carousel */}
+          {/* Carousel — fixed item width, scale transform on active (no layout shift) */}
           <div
             ref={carouselRef}
-            className="flex gap-3 sm:gap-5 justify-start sm:justify-center items-end overflow-x-auto pb-6 snap-x snap-mandatory px-[calc(50%-80px)] sm:px-0"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            onScroll={handleCarouselScroll}
+            className="flex items-center overflow-x-auto pb-10 snap-x snap-mandatory"
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              gap: "clamp(12px, 3vw, 24px)",
+              paddingLeft: "clamp(calc(50% - 120px), calc(50% - 140px), calc(50% - 160px))",
+              paddingRight: "clamp(calc(50% - 120px), calc(50% - 140px), calc(50% - 160px))",
+            }}
           >
             {notifScreenshots.map((s, i) => {
               const isActive = i === activeNotif;
@@ -581,31 +592,38 @@ export default function LandingPage() {
                 <div
                   key={s.src}
                   ref={(el) => { itemRefs.current[i] = el; }}
-                  className="shrink-0 snap-center cursor-pointer"
-                  style={{ transition: "transform 0.35s cubic-bezier(.4,0,.2,1)" }}
                   onClick={() => scrollToNotif(i)}
+                  className="shrink-0 snap-center cursor-pointer flex flex-col items-center"
+                  style={{
+                    width: "clamp(160px, 28vw, 260px)",
+                    scrollSnapStop: "always",
+                  }}
                 >
                   <div
-                    className={`relative rounded-3xl overflow-hidden shadow-2xl transition-all duration-350 ${
-                      isActive
-                        ? "border-2 border-blue-500/60 shadow-blue-900/50"
-                        : "border border-white/[0.08] shadow-black/60 opacity-50 hover:opacity-75"
-                    }`}
+                    className="relative w-full rounded-3xl overflow-hidden shadow-2xl"
                     style={{
-                      width: isActive ? "min(210px, 56vw)" : "min(140px, 38vw)",
-                      transition: "width 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s, border-color 0.35s",
+                      transform: isActive ? "scale(1.12)" : "scale(0.82)",
+                      transformOrigin: "center center",
+                      transition: "transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s, box-shadow 0.4s",
+                      opacity: isActive ? 1 : 0.45,
+                      border: isActive ? "2px solid rgba(59,130,246,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: isActive
+                        ? "0 20px 60px rgba(59,130,246,0.25), 0 8px 24px rgba(0,0,0,0.6)"
+                        : "0 4px 16px rgba(0,0,0,0.4)",
                     }}
                   >
-                    <img src={s.src} alt={s.label} className="w-full h-auto block" />
+                    <img src={s.src} alt={s.label} className="w-full h-auto block" draggable={false} />
                     {isActive && (
-                      <div className="absolute bottom-0 inset-x-0 py-2 px-3 text-center"
-                        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)" }}>
-                        <p className="text-[11px] font-bold text-white">{s.label}</p>
+                      <div
+                        className="absolute bottom-0 inset-x-0 py-3 px-3 text-center"
+                        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)" }}
+                      >
+                        <p className="text-xs font-bold text-white">{s.label}</p>
                       </div>
                     )}
                   </div>
                   {!isActive && (
-                    <p className="text-center text-[10px] text-gray-600 mt-2">{s.label}</p>
+                    <p className="text-[10px] text-gray-600 mt-3 transition-opacity duration-300">{s.label}</p>
                   )}
                 </div>
               );
