@@ -43,37 +43,40 @@ export async function GET(request: Request) {
 
   const results: Record<string, object> = {};
 
-  await Promise.allSettled(
-    intlAirports.map(async (iata) => {
-      try {
-        const url =
-          `https://aerodatabox.p.rapidapi.com/flights/airports/iata/${iata}/${from}/${to}` +
-          `?direction=Departure&withLeg=false&withCancelled=true&withCodeshared=true` +
-          `&withCargo=false&withPrivate=false&withLocation=false`;
+  let quotaExceeded = false;
 
-        const res = await fetch(url, {
-          headers: {
-            "X-RapidAPI-Key": key,
-            "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com",
-          },
-          signal: AbortSignal.timeout(8000),
-        });
+  // Sequential: stops immediately on 429/402 to avoid burning remaining quota
+  for (const iata of intlAirports) {
+    try {
+      const url =
+        `https://aerodatabox.p.rapidapi.com/flights/airports/iata/${iata}/${from}/${to}` +
+        `?direction=Departure&withLeg=false&withCancelled=true&withCodeshared=true` +
+        `&withCargo=false&withPrivate=false&withLocation=false`;
 
-        if (!res.ok) return;
+      const res = await fetch(url, {
+        headers: {
+          "X-RapidAPI-Key": key,
+          "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com",
+        },
+        signal: AbortSignal.timeout(8000),
+      });
 
-        const data = await res.json();
-        const status = parseAeroDataBox(iata, data, locale);
-        if (status) results[iata] = status;
-      } catch {
-        // Silently skip — individual airport failure shouldn't break others
+      if (res.status === 429 || res.status === 402) {
+        quotaExceeded = true;
+        break;
       }
-    }),
-  );
+      if (!res.ok) continue;
 
-  return Response.json(results, {
-    headers: {
-      // No client/SW caching — the hook re-fetches on its own schedule
-      "Cache-Control": "no-store",
-    },
-  });
+      const data = await res.json();
+      const status = parseAeroDataBox(iata, data, locale);
+      if (status) results[iata] = status;
+    } catch {
+      // Silently skip — individual airport failure shouldn't break others
+    }
+  }
+
+  return Response.json(
+    quotaExceeded ? { quotaExceeded: true } : results,
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

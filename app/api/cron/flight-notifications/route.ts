@@ -102,26 +102,27 @@ export async function GET(request: Request) {
       .toISOString()
       .slice(0, 16);
 
-    await Promise.allSettled(
-      intlAirports.map(async (iata) => {
-        try {
-          const url =
-            `https://aerodatabox.p.rapidapi.com/flights/airports/iata/${iata}/${fromStr}/${toStr}` +
-            `?direction=Departure&withLeg=false&withCancelled=true&withCodeshared=true&withCargo=false&withPrivate=false&withLocation=false`;
-          const res = await fetch(url, {
-            headers: {
-              "X-RapidAPI-Key": rapidApiKey,
-              "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com",
-            },
-            signal: AbortSignal.timeout(8000),
-          });
-          if (!res.ok) return;
-          const data = await res.json();
-          const status = parseAeroDataBox(iata, data, "es");
-          if (status) statusMap[iata] = status.status;
-        } catch {}
-      }),
-    );
+    // Sequential to detect quota-exceeded (429/402) and stop immediately
+    for (const iata of intlAirports) {
+      try {
+        const url =
+          `https://aerodatabox.p.rapidapi.com/flights/airports/iata/${iata}/${fromStr}/${toStr}` +
+          `?direction=Departure&withLeg=false&withCancelled=true&withCodeshared=true&withCargo=false&withPrivate=false&withLocation=false`;
+        const res = await fetch(url, {
+          headers: {
+            "X-RapidAPI-Key": rapidApiKey,
+            "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com",
+          },
+          signal: AbortSignal.timeout(8000),
+        });
+        // Quota exceeded — stop all remaining calls for this run
+        if (res.status === 429 || res.status === 402) break;
+        if (!res.ok) continue;
+        const data = await res.json();
+        const status = parseAeroDataBox(iata, data, "es");
+        if (status) statusMap[iata] = status.status;
+      } catch {}
+    }
   }
 
   // Process each flight

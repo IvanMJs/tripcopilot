@@ -175,7 +175,9 @@ export default function HomePage() {
 
     fetch(`/api/intl-status?airports=${intlAirports.join(",")}&locale=${locale}`)
       .then((r) => r.ok ? r.json() : {})
-      .then((data) => {
+      .then((data: Record<string, unknown>) => {
+        // Quota exceeded — skip update, keep existing data or empty
+        if (data.quotaExceeded) return;
         const map: AirportStatusMap = {};
         for (const [iata, status] of Object.entries(data as AirportStatusMap)) {
           map[iata] = { ...status, lastChecked: new Date() };
