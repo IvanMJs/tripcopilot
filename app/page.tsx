@@ -476,7 +476,9 @@ export default function LandingPage() {
 
       {/* ── AI SECTION ────────────────────────────────────────────────────── */}
       <section className="py-16 px-4">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto space-y-6">
+
+          {/* Vuelos IA */}
           <div className="rounded-3xl border border-violet-800/30 overflow-hidden"
             style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.15) 0%, rgba(14,14,28,0.97) 50%, rgba(30,27,75,0.15) 100%)" }}>
             <div className="grid md:grid-cols-2 gap-0">
@@ -484,7 +486,7 @@ export default function LandingPage() {
               <div className="p-8 sm:p-10 flex flex-col justify-center">
                 <div className="inline-flex items-center gap-2 rounded-full border border-violet-700/40 bg-violet-950/30 px-3 py-1 text-[11px] text-violet-400 font-bold uppercase tracking-wider mb-5 w-fit">
                   <Brain className="h-3 w-3" />
-                  Inteligencia Artificial
+                  TripCopilot IA · Vuelos
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-4 leading-tight">
                   Cargá tu viaje en<br />
@@ -509,14 +511,72 @@ export default function LandingPage() {
                   ))}
                 </ul>
               </div>
-              {/* Screenshot */}
+              {/* Video */}
               <div className="relative p-6 sm:p-8 flex items-center justify-center">
                 <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl max-w-xs w-full">
-                  <img src="/tripcopilot-ia.jpg" alt="TripCopilot IA en acción" className="w-full h-auto block" />
+                  <video
+                    src="/ia-import-text-screenshot.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-auto block"
+                  />
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Alojamiento IA */}
+          <div className="rounded-3xl border border-pink-800/30 overflow-hidden"
+            style={{ background: "linear-gradient(135deg, rgba(131,24,67,0.12) 0%, rgba(14,14,28,0.97) 50%, rgba(76,29,149,0.10) 100%)" }}>
+            <div className="grid md:grid-cols-2 gap-0">
+              {/* Video — izquierda en desktop */}
+              <div className="relative p-6 sm:p-8 flex items-center justify-center order-2 md:order-1">
+                <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl max-w-xs w-full">
+                  <video
+                    src="/alojamiento-ia.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-auto block"
+                  />
+                </div>
+              </div>
+              {/* Text — derecha en desktop */}
+              <div className="p-8 sm:p-10 flex flex-col justify-center order-1 md:order-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-pink-700/40 bg-pink-950/30 px-3 py-1 text-[11px] text-pink-400 font-bold uppercase tracking-wider mb-5 w-fit">
+                  <Brain className="h-3 w-3" />
+                  TripCopilot IA · Alojamiento
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-4 leading-tight">
+                  Tu hotel cargado en<br />
+                  <span className="text-pink-400">segundos, no minutos</span>
+                </h2>
+                <p className="text-sm text-gray-400 leading-relaxed mb-6">
+                  Pegá la confirmación del hotel, mandá una foto del email o escribilo en lenguaje natural.
+                  TripCopilot IA lee la reserva, extrae el nombre, fechas, horarios y código de confirmación,
+                  y lo pre-completa para que solo confirmes.
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    "Booking.com, Airbnb, Marriott, cualquier formato",
+                    "Extrae check-in, check-out, código de reserva y dirección",
+                    "Funciona con español, inglés y portugués",
+                    "Editá cualquier dato antes de guardar",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-sm text-gray-300">
+                      <CheckCircle className="h-4 w-4 text-pink-400 shrink-0 mt-0.5" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
         </div>
       </section>
 
