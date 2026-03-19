@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TripAdviceResult } from "@/lib/types/tripAdvice";
 import { createClient } from "@/utils/supabase/server";
+import { z } from "zod";
 
-interface StayPayload {
-  code: string;
-  city: string;
-  nights: number;
-  arrivalDate: string;
-  departureDate: string;
-  tempMin: number;
-  tempMax: number;
-  climate: string;
-}
+const StaySchema = z.object({
+  code:          z.string().length(3),
+  city:          z.string().max(100),
+  nights:        z.number().int().min(0).max(365),
+  arrivalDate:   z.string().max(10),
+  departureDate: z.string().max(10),
+  tempMin:       z.number(),
+  tempMax:       z.number(),
+  climate:       z.string().max(200),
+});
 
-interface RequestBody {
-  stays: StayPayload[];
-  locale: "es" | "en";
-}
+const BodySchema = z.object({
+  stays:  z.array(StaySchema).min(1).max(15),
+  locale: z.enum(["es", "en"]),
+});
 
 const SCHEMA_HINT = `{
   "summary": "2-3 sentence overview of the trip",
@@ -41,17 +42,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
   }
 
-  const body: RequestBody = await req.json();
-  const { stays, locale } = body;
-
-  if (!stays?.length) {
-    return NextResponse.json({ error: "No stays provided" }, { status: 400 });
+  const raw = await req.json();
+  const parsed = BodySchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
-
-  // Guard: max 15 stays to prevent runaway token usage
-  if (stays.length > 15) {
-    return NextResponse.json({ error: "Too many stays" }, { status: 400 });
-  }
+  const { stays, locale } = parsed.data;
 
   const staysText = stays
     .map((s) =>
@@ -130,8 +126,8 @@ ${SCHEMA_HINT}`;
     return NextResponse.json({ error: friendly }, { status: 500 });
   }
 
-  const raw = await response.json() as { content: { type: string; text: string }[] };
-  const text = raw.content?.find((c) => c.type === "text")?.text ?? "";
+  const apiRaw = await response.json() as { content: { type: string; text: string }[] };
+  const text = apiRaw.content?.find((c: { type: string; text: string }) => c.type === "text")?.text ?? "";
 
   // Extract JSON robustly — find first { to last }
   const start = text.indexOf("{");
@@ -141,17 +137,17 @@ ${SCHEMA_HINT}`;
   }
   const cleaned = text.slice(start, end + 1);
 
-  let parsed: TripAdviceResult;
+  let result: TripAdviceResult;
   try {
-    parsed = JSON.parse(cleaned) as TripAdviceResult;
+    result = JSON.parse(cleaned) as TripAdviceResult;
   } catch {
     return NextResponse.json({ error: "No se pudo generar el análisis AI" }, { status: 502 });
   }
 
   // Minimal validation
-  if (!parsed.summary || !Array.isArray(parsed.packing)) {
+  if (!result.summary || !Array.isArray(result.packing)) {
     return NextResponse.json({ error: "Incomplete response from model" }, { status: 502 });
   }
 
-  return NextResponse.json({ data: parsed });
+  return NextResponse.json({ data: result });
 }

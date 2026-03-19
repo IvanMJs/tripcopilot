@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/utils/supabase/server";
+import { z } from "zod";
+
+const BodySchema = z.object({
+  text:        z.string().max(20_000).optional(),
+  imageBase64: z.string().max(1_500_000).optional(), // ~1MB image
+  mimeType:    z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]).optional(),
+});
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -44,12 +51,12 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const body = await req.json();
-    const { text, imageBase64, mimeType } = body as {
-      text?: string;
-      imageBase64?: string;
-      mimeType?: string;
-    };
+    const raw = await req.json();
+    const parsed = BodySchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    const { text, imageBase64, mimeType } = parsed.data;
 
     if (!text && !imageBase64) {
       return NextResponse.json({ error: "text or imageBase64 required" }, { status: 400 });
@@ -84,16 +91,16 @@ export async function POST(req: NextRequest) {
       messages: [{ role: "user", content: userContent }],
     });
 
-    const raw = message.content[0].type === "text" ? message.content[0].text : "";
+    const responseText = message.content[0].type === "text" ? message.content[0].text : "";
 
     // Extract JSON from response (handle cases where model adds extra text)
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return NextResponse.json({ flights: [] });
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    return NextResponse.json({ flights: parsed.flights ?? [] });
+    const jsonParsed = JSON.parse(jsonMatch[0]) as { flights?: unknown[] };
+    return NextResponse.json({ flights: jsonParsed.flights ?? [] });
   } catch (err) {
     console.error("[parse-flight]", err);
     return NextResponse.json({ error: "Failed to parse" }, { status: 500 });

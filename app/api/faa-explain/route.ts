@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 export const runtime = "edge";
 
-interface RequestBody {
-  airportCode: string;
-  status: string;
-  rawDetails: string;
-  locale: "es" | "en";
-}
+const BodySchema = z.object({
+  airportCode: z.string().length(3),
+  status:      z.string().max(100),
+  rawDetails:  z.string().max(2_000),
+  locale:      z.enum(["es", "en"]),
+});
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -15,11 +16,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
   }
 
-  const { airportCode, status, rawDetails, locale }: RequestBody = await req.json();
-
-  if (!airportCode || !status) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  const raw = await req.json();
+  const parsed = BodySchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
+  const { airportCode, status, rawDetails, locale } = parsed.data;
 
   const prompt =
     locale === "es"
@@ -54,8 +56,8 @@ Explain in 1-2 simple sentences what this means for my flight and what I should 
     return NextResponse.json({ error: "No se pudo generar la explicación" }, { status: 500 });
   }
 
-  const raw = await response.json() as { content: { type: string; text: string }[] };
-  const explanation = raw.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
+  const apiRaw = await response.json() as { content: { type: string; text: string }[] };
+  const explanation = apiRaw.content?.find((c: { type: string; text: string }) => c.type === "text")?.text?.trim() ?? "";
 
   return NextResponse.json({ explanation });
 }
