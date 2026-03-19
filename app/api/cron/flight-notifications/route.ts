@@ -238,17 +238,18 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── Hotel check-in notifications (tomorrow) ────────────────────────────────
-  const tomorrowISO = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  // ── Hotel notifications ───────────────────────────────────────────────────
+  const todayStr    = now.toISOString().slice(0, 10);
+  const tomorrowISO = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const currentTime = now.toISOString().slice(11, 16); // "HH:MM"
+  const windowStart = new Date(now.getTime() - 30 * 60 * 1000).toISOString().slice(11, 16);
 
-  const { data: checkIns } = await supabase
+  const { data: hotelAccs } = await supabase
     .from("accommodations")
     .select("*, trips!inner(user_id)")
-    .eq("check_in_date", tomorrowISO);
+    .or(`check_in_date.eq.${todayStr},check_in_date.eq.${tomorrowISO},check_out_date.eq.${todayStr}`);
 
-  for (const acc of (checkIns ?? []) as any[]) {
+  for (const acc of (hotelAccs ?? []) as any[]) {
     const userId: string = acc.trips.user_id;
     const { data: subs } = await supabase
       .from("push_subscriptions")
@@ -256,17 +257,50 @@ export async function GET(request: Request) {
       .eq("user_id", userId);
     if (!subs?.length) continue;
 
-    const alreadySent = await checkLog(supabase, acc.id, "hotel_checkin", Infinity);
-    if (alreadySent) continue;
+    // A: Check-in reminder (day before, if no specific time set)
+    if (acc.check_in_date === tomorrowISO && !acc.check_in_time) {
+      const alreadySent = await checkLog(supabase, acc.id, "hotel_checkin_reminder", Infinity);
+      if (!alreadySent) {
+        await sendAndLog(supabase, subs, { id: acc.id }, userId, "hotel_checkin_reminder", {
+          title: `🏨 Mañana check-in en ${acc.name}`,
+          body: "Recordá tener listos los documentos y código de reserva.",
+          url: "/app",
+        });
+        notificationsSent++;
+      }
+    }
 
-    const timeText = acc.check_in_time ? ` a las ${acc.check_in_time}` : "";
-    const codeText = acc.confirmation_code ? ` · Conf: ${acc.confirmation_code}` : "";
-    await sendAndLog(supabase, subs, { id: acc.id }, userId, "hotel_checkin", {
-      title: `🏨 Mañana check-in en ${acc.name}`,
-      body: `Check-in${timeText}${codeText}.`,
-      url: "/app",
-    });
-    notificationsSent++;
+    // B: Check-in time notification (today, at the exact check-in time ±30min)
+    if (acc.check_in_date === todayStr && acc.check_in_time) {
+      const inWindow = acc.check_in_time >= windowStart && acc.check_in_time <= currentTime;
+      if (inWindow) {
+        const alreadySent = await checkLog(supabase, acc.id, "hotel_checkin_time", Infinity);
+        if (!alreadySent) {
+          await sendAndLog(supabase, subs, { id: acc.id }, userId, "hotel_checkin_time", {
+            title: `🏨 Check-in ahora — ${acc.name}`,
+            body: `Hora de check-in: ${acc.check_in_time}. ¡Bienvenido!`,
+            url: "/app",
+          });
+          notificationsSent++;
+        }
+      }
+    }
+
+    // C: Check-out time notification (today, at the exact check-out time ±30min)
+    if (acc.check_out_date === todayStr && acc.check_out_time) {
+      const inWindow = acc.check_out_time >= windowStart && acc.check_out_time <= currentTime;
+      if (inWindow) {
+        const alreadySent = await checkLog(supabase, acc.id, "hotel_checkout_time", Infinity);
+        if (!alreadySent) {
+          await sendAndLog(supabase, subs, { id: acc.id }, userId, "hotel_checkout_time", {
+            title: `🏨 Check-out ahora — ${acc.name}`,
+            body: `Hora de check-out: ${acc.check_out_time}. ¡Buen viaje!`,
+            url: "/app",
+          });
+          notificationsSent++;
+        }
+      }
+    }
   }
 
   return Response.json({

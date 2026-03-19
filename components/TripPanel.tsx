@@ -636,17 +636,15 @@ interface FlightCardProps {
   locale: "es" | "en";
   onRemove: () => void;
   idx: number;
-  /** Connection risk TO the NEXT flight (if this is a layover origin) */
   connectionToNext?: ConnectionAnalysis;
-  /** Destination of the NEXT flight — used for re-routing links */
   nextDestination?: string;
   nextDate?: string;
-  /** TAF data for the departure airport */
   tafData?: TafData;
-  /** Active SIGMETs intersecting this flight's route */
   activeSigmets?: SigmetFeature[];
-  /** TSA wait time data for the origin airport */
   tsaData?: TsaAirportData;
+  accommodation?: Accommodation | null;
+  onAddAccommodation: (name: string, checkInTime?: string, checkOutTime?: string) => void;
+  onRemoveAccommodation: () => void;
 }
 
 function FlightCard({
@@ -662,8 +660,12 @@ function FlightCard({
   tafData,
   activeSigmets,
   tsaData,
+  accommodation,
+  onAddAccommodation,
+  onRemoveAccommodation,
 }: FlightCardProps) {
   const L = LABELS[locale];
+  const [showHotelForm, setShowHotelForm] = useState(false);
 
   const originInfo  = AIRPORTS[flight.originCode];
   const destInfo    = AIRPORTS[flight.destinationCode];
@@ -1100,13 +1102,41 @@ function FlightCard({
           />
         </div>
       )}
+
+      {/* Hotel inline */}
+      <div className="px-4 pb-4">
+        {accommodation ? (
+          <AccommodationInline
+            acc={accommodation}
+            checkInDate={flight.isoDate}
+            checkOutDate={nextDate}
+            locale={locale}
+            L={L}
+            onRemove={onRemoveAccommodation}
+          />
+        ) : showHotelForm ? (
+          <AddAccommodationInlineForm
+            destCity={destName}
+            locale={locale}
+            L={L}
+            onAdd={onAddAccommodation}
+            onClose={() => setShowHotelForm(false)}
+          />
+        ) : (
+          <button
+            onClick={() => setShowHotelForm(true)}
+            className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/[0.08] py-2 text-[11px] text-gray-600 hover:text-gray-400 hover:border-white/[0.15] transition-colors"
+          >
+            <Hotel className="h-3 w-3" />
+            {locale === "es" ? `+ Hotel en ${destName}` : `+ Hotel in ${destName}`}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 // ── TripPanel ─────────────────────────────────────────────────────────────────
-
-// ── Accommodation helpers ────────────────────────────────────────────────────
 
 function nightsBetween(isoA: string, isoB: string): number {
   return Math.round(
@@ -1115,159 +1145,107 @@ function nightsBetween(isoA: string, isoB: string): number {
   );
 }
 
-function fmtAccDate(iso: string, locale: "es" | "en"): string {
-  return new Date(iso + "T12:00:00").toLocaleDateString(
-    locale === "es" ? "es-AR" : "en-US",
-    { day: "numeric", month: "short" },
-  );
-}
-
-// ── AccommodationCard ─────────────────────────────────────────────────────────
-
-function AccommodationCard({
+function AccommodationInline({
   acc,
+  checkInDate,
+  checkOutDate,
   locale,
   onRemove,
   L,
 }: {
   acc: Accommodation;
+  checkInDate: string;
+  checkOutDate?: string;
   locale: "es" | "en";
   onRemove: () => void;
   L: typeof LABELS["es"];
 }) {
-  const [copied, setCopied] = useState(false);
-  const nights = nightsBetween(acc.checkInDate, acc.checkOutDate);
-
-  async function copyCode() {
-    if (!acc.confirmationCode) return;
-    try { await navigator.clipboard.writeText(acc.confirmationCode); } catch {}
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
+  const nights = checkOutDate ? nightsBetween(checkInDate, checkOutDate) : null;
   return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 flex items-start gap-3">
-      <Hotel className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+    <div className="mt-3 pt-3 border-t border-white/[0.05] flex items-center gap-2">
+      <Hotel className="h-3.5 w-3.5 text-blue-400 shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white truncate">{acc.name}</p>
-        <p className="text-xs text-gray-400 mt-0.5">
-          {fmtAccDate(acc.checkInDate, locale)}
-          {acc.checkInTime ? ` · ${acc.checkInTime}` : ""}
-          {" → "}
-          {fmtAccDate(acc.checkOutDate, locale)}
-          {acc.checkOutTime ? ` · ${acc.checkOutTime}` : ""}
-          <span className="text-gray-600 ml-1.5">· {L.accNights(nights)}</span>
+        <p className="text-xs font-semibold text-white truncate">{acc.name}</p>
+        <p className="text-[11px] text-gray-500">
+          {acc.checkInTime ? `Check-in ${acc.checkInTime}` : "Check-in"}
+          {acc.checkOutTime ? ` · Check-out ${acc.checkOutTime}` : ""}
+          {nights !== null ? (
+            <span className="text-gray-600 ml-1.5">· {L.accNights(nights)}</span>
+          ) : null}
         </p>
-        {acc.confirmationCode && (
-          <button
-            onClick={copyCode}
-            className="mt-1.5 flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            {copied
-              ? <CheckCheck className="h-3 w-3 text-emerald-400" />
-              : <Copy className="h-3 w-3" />}
-            <span className={copied ? "text-emerald-400" : ""}>
-              {copied ? L.accCopied : acc.confirmationCode}
-            </span>
-          </button>
-        )}
       </div>
       <button
         onClick={onRemove}
         title={L.accRemove}
-        className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 transition-colors"
+        className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors"
       >
-        <Trash2 className="h-3.5 w-3.5" />
+        <Trash2 className="h-3 w-3" />
       </button>
     </div>
   );
 }
 
-// ── AddAccommodationForm ──────────────────────────────────────────────────────
-
-function AddAccommodationForm({
+function AddAccommodationInlineForm({
+  destCity,
   onAdd,
   onClose,
   locale,
   L,
 }: {
-  onAdd: (acc: Omit<Accommodation, "id" | "tripId">) => void;
+  destCity: string;
+  onAdd: (name: string, checkInTime?: string, checkOutTime?: string) => void;
   onClose: () => void;
   locale: "es" | "en";
   L: typeof LABELS["es"];
 }) {
-  const [name, setName]           = useState("");
-  const [checkInDate, setCheckInDate]   = useState("");
+  const [name, setName]             = useState("");
   const [checkInTime, setCheckInTime]   = useState("");
-  const [checkOutDate, setCheckOutDate] = useState("");
   const [checkOutTime, setCheckOutTime] = useState("");
-  const [confCode, setConfCode]   = useState("");
-  const [err, setErr]             = useState<string | null>(null);
+  const [err, setErr]               = useState<string | null>(null);
 
   function handleSubmit() {
     if (!name.trim()) { setErr(L.accErrName); return; }
-    if (!checkInDate || !checkOutDate || checkOutDate <= checkInDate) { setErr(L.accErrDates); return; }
-    onAdd({
-      name: name.trim(),
-      checkInDate,
-      checkInTime:  checkInTime  || undefined,
-      checkOutDate,
-      checkOutTime: checkOutTime || undefined,
-      confirmationCode: confCode.trim() || undefined,
-    });
+    onAdd(name.trim(), checkInTime || undefined, checkOutTime || undefined);
     onClose();
   }
 
-  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-blue-500/60 focus:bg-white/[0.06] transition-colors";
+  const inputCls = "flex-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-blue-500/60 transition-colors";
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{L.accAdd}</span>
-        <button onClick={onClose} className="p-1 rounded-lg text-gray-600 hover:text-gray-300 transition-colors">
-          <X className="h-4 w-4" />
+    <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
+          <Hotel className="h-3 w-3" />
+          {locale === "es" ? `Hotel en ${destCity}` : `Hotel in ${destCity}`}
+        </span>
+        <button onClick={onClose} className="p-0.5 text-gray-600 hover:text-gray-300 transition-colors">
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
-
       <input
         autoFocus
         value={name}
         onChange={(e) => { setName(e.target.value); setErr(null); }}
         placeholder={L.accNamePlaceholder}
-        className={inputCls}
+        className={inputCls + " w-full"}
+        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
       />
-
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">{L.accCheckIn}</label>
-          <input type="date" value={checkInDate} onChange={(e) => { setCheckInDate(e.target.value); setErr(null); }}
-            className={inputCls} />
-          <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)}
-            placeholder={L.accTime} className={inputCls} />
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <p className="text-[10px] text-gray-600 mb-1">{L.accCheckIn}</p>
+          <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} className={inputCls} />
         </div>
-        <div className="space-y-1">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">{L.accCheckOut}</label>
-          <input type="date" value={checkOutDate} onChange={(e) => { setCheckOutDate(e.target.value); setErr(null); }}
-            className={inputCls} />
-          <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)}
-            placeholder={L.accTime} className={inputCls} />
+        <div className="flex-1">
+          <p className="text-[10px] text-gray-600 mb-1">{L.accCheckOut}</p>
+          <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} className={inputCls} />
         </div>
       </div>
-
-      <input
-        value={confCode}
-        onChange={(e) => setConfCode(e.target.value)}
-        placeholder={L.accConfCode}
-        className={inputCls}
-      />
-
-      {err && <p className="text-xs text-red-400">{err}</p>}
-
+      {err && <p className="text-[11px] text-red-400">{err}</p>}
       <button
         onClick={handleSubmit}
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-bold px-4 py-2.5 transition-all"
+        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 transition-colors"
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="h-3.5 w-3.5" />
         {L.accAdd}
       </button>
     </div>
@@ -1548,23 +1526,38 @@ export function TripPanel({
         </div>
       ) : (
         <div className="space-y-4">
-          {sorted.map((flight, idx) => (
-            <FlightCard
-              key={flight.id}
-              flight={flight}
-              statusMap={statusMap}
-              weatherMap={weatherMap}
-              locale={locale}
-              onRemove={() => onRemoveFlight(trip.id, flight.id)}
-              idx={idx}
-              connectionToNext={connByFlight.get(flight.id)}
-              nextDestination={sorted[idx + 1]?.destinationCode}
-              nextDate={sorted[idx + 1]?.isoDate}
-              tafData={tafMap[flight.originCode]}
-              activeSigmets={sigmetsByFlight.get(flight.id)}
-              tsaData={tsaData[flight.originCode]}
-            />
-          ))}
+          {sorted.map((flight, idx) => {
+            const acc = trip.accommodations.find((a) => a.flightId === flight.id) ?? null;
+            return (
+              <FlightCard
+                key={flight.id}
+                flight={flight}
+                statusMap={statusMap}
+                weatherMap={weatherMap}
+                locale={locale}
+                onRemove={() => onRemoveFlight(trip.id, flight.id)}
+                idx={idx}
+                connectionToNext={connByFlight.get(flight.id)}
+                nextDestination={sorted[idx + 1]?.destinationCode}
+                nextDate={sorted[idx + 1]?.isoDate}
+                tafData={tafMap[flight.originCode]}
+                activeSigmets={sigmetsByFlight.get(flight.id)}
+                tsaData={tsaData[flight.originCode]}
+                accommodation={acc}
+                onAddAccommodation={(name, checkInTime, checkOutTime) =>
+                  onAddAccommodation(trip.id, {
+                    flightId: flight.id,
+                    name,
+                    checkInDate:  flight.isoDate,
+                    checkInTime,
+                    checkOutDate: sorted[idx + 1]?.isoDate,
+                    checkOutTime,
+                  })
+                }
+                onRemoveAccommodation={() => acc && onRemoveAccommodation(trip.id, acc.id)}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -1633,46 +1626,6 @@ export function TripPanel({
               ? (locale === "en" ? "Copied!" : "¡Copiado!")
               : (locale === "en" ? "Copy link" : "Copiar link")}
           </button>
-        </div>
-      )}
-
-      {/* Accommodation section */}
-      {sorted.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
-              <Hotel className="h-3 w-3" />
-              {L.accSection}
-            </p>
-            {!showAccForm && (
-              <button
-                onClick={() => setShowAccForm(true)}
-                className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
-              >
-                <Plus className="h-3 w-3" />
-                {L.accAdd}
-              </button>
-            )}
-          </div>
-
-          {trip.accommodations.map((acc) => (
-            <AccommodationCard
-              key={acc.id}
-              acc={acc}
-              locale={locale}
-              L={L}
-              onRemove={() => onRemoveAccommodation(trip.id, acc.id)}
-            />
-          ))}
-
-          {showAccForm && (
-            <AddAccommodationForm
-              locale={locale}
-              L={L}
-              onAdd={(acc) => onAddAccommodation(trip.id, acc)}
-              onClose={() => setShowAccForm(false)}
-            />
-          )}
         </div>
       )}
 

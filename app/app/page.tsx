@@ -267,7 +267,7 @@ export default function HomePage() {
     const newAcc: Accommodation = { ...acc, id: `draft-acc-${Date.now()}`, tripId: DRAFT_ID };
     setDraftTrip((prev) => prev ? {
       ...prev,
-      accommodations: [...prev.accommodations, newAcc].sort((a, b) => a.checkInDate.localeCompare(b.checkInDate)),
+      accommodations: [...prev.accommodations, newAcc].sort((a, b) => (a.checkInDate ?? "").localeCompare(b.checkInDate ?? "")),
     } : prev);
   }
 

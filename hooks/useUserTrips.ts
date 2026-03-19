@@ -7,24 +7,24 @@ import { TripTab, TripFlight, Accommodation } from "@/lib/types";
 interface DbAccommodation {
   id: string;
   trip_id: string;
+  flight_id: string | null;
   name: string;
-  check_in_date: string;
+  check_in_date: string | null;
   check_in_time: string | null;
-  check_out_date: string;
+  check_out_date: string | null;
   check_out_time: string | null;
-  confirmation_code: string | null;
 }
 
 function toAccommodation(a: DbAccommodation): Accommodation {
   return {
-    id:               a.id,
-    tripId:           a.trip_id,
-    name:             a.name,
-    checkInDate:      a.check_in_date,
-    checkInTime:      a.check_in_time ?? undefined,
-    checkOutDate:     a.check_out_date,
-    checkOutTime:     a.check_out_time ?? undefined,
-    confirmationCode: a.confirmation_code ?? undefined,
+    id:           a.id,
+    tripId:       a.trip_id,
+    flightId:     a.flight_id ?? undefined,
+    name:         a.name,
+    checkInDate:  a.check_in_date ?? undefined,
+    checkInTime:  a.check_in_time ?? undefined,
+    checkOutDate: a.check_out_date ?? undefined,
+    checkOutTime: a.check_out_time ?? undefined,
   };
 }
 
@@ -81,7 +81,7 @@ export function useUserTrips() {
             .sort((a, b) => a.sort_order - b.sort_order)
             .map(toTripFlight),
           accommodations: (t.accommodations as DbAccommodation[])
-            .sort((a, b) => a.check_in_date.localeCompare(b.check_in_date))
+            .sort((a, b) => (a.check_in_date ?? "").localeCompare(b.check_in_date ?? ""))
             .map(toAccommodation),
         }));
         setTrips(userTrips);
@@ -190,13 +190,13 @@ export function useUserTrips() {
     const { data, error } = await supabase
       .from("accommodations")
       .insert({
-        trip_id:          tripId,
-        name:             acc.name,
-        check_in_date:    acc.checkInDate,
-        check_in_time:    acc.checkInTime ?? null,
-        check_out_date:   acc.checkOutDate,
-        check_out_time:   acc.checkOutTime ?? null,
-        confirmation_code: acc.confirmationCode ?? null,
+        trip_id:       tripId,
+        flight_id:     acc.flightId ?? null,
+        name:          acc.name,
+        check_in_date:  acc.checkInDate ?? null,
+        check_in_time:  acc.checkInTime ?? null,
+        check_out_date: acc.checkOutDate ?? null,
+        check_out_time: acc.checkOutTime ?? null,
       })
       .select("id")
       .single();
@@ -209,7 +209,7 @@ export function useUserTrips() {
             ? {
                 ...t,
                 accommodations: [...t.accommodations, newAcc].sort((a, b) =>
-                  a.checkInDate.localeCompare(b.checkInDate),
+                  (a.checkInDate ?? "").localeCompare(b.checkInDate ?? ""),
                 ),
               }
             : t,

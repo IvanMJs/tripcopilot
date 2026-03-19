@@ -60,12 +60,12 @@ export interface TripFlight {
 export interface Accommodation {
   id: string;
   tripId: string;
+  flightId?: string;
   name: string;
-  checkInDate: string;
+  checkInDate?: string;
   checkInTime?: string;
-  checkOutDate: string;
+  checkOutDate?: string;
   checkOutTime?: string;
-  confirmationCode?: string;
 }
 
 export interface TripTab {
