@@ -13,18 +13,22 @@ interface DbAccommodation {
   check_in_time: string | null;
   check_out_date: string | null;
   check_out_time: string | null;
+  confirmation_code: string | null;
+  address: string | null;
 }
 
 function toAccommodation(a: DbAccommodation): Accommodation {
   return {
-    id:           a.id,
-    tripId:       a.trip_id,
-    flightId:     a.flight_id ?? undefined,
-    name:         a.name,
-    checkInDate:  a.check_in_date ?? undefined,
-    checkInTime:  a.check_in_time ?? undefined,
-    checkOutDate: a.check_out_date ?? undefined,
-    checkOutTime: a.check_out_time ?? undefined,
+    id:               a.id,
+    tripId:           a.trip_id,
+    flightId:         a.flight_id ?? undefined,
+    name:             a.name,
+    checkInDate:      a.check_in_date ?? undefined,
+    checkInTime:      a.check_in_time ?? undefined,
+    checkOutDate:     a.check_out_date ?? undefined,
+    checkOutTime:     a.check_out_time ?? undefined,
+    confirmationCode: a.confirmation_code ?? undefined,
+    address:          a.address ?? undefined,
   };
 }
 
@@ -192,13 +196,15 @@ export function useUserTrips() {
     const { data, error } = await supabase
       .from("accommodations")
       .insert({
-        trip_id:       tripId,
-        flight_id:     acc.flightId ?? null,
-        name:          acc.name,
-        check_in_date:  acc.checkInDate ?? null,
-        check_in_time:  acc.checkInTime ?? null,
-        check_out_date: acc.checkOutDate ?? null,
-        check_out_time: acc.checkOutTime ?? null,
+        trip_id:           tripId,
+        flight_id:         acc.flightId ?? null,
+        name:              acc.name,
+        check_in_date:     acc.checkInDate ?? null,
+        check_in_time:     acc.checkInTime ?? null,
+        check_out_date:    acc.checkOutDate ?? null,
+        check_out_time:    acc.checkOutTime ?? null,
+        confirmation_code: acc.confirmationCode ?? null,
+        address:           acc.address ?? null,
       })
       .select("id")
       .single();
@@ -235,7 +241,7 @@ export function useUserTrips() {
   const updateAccommodation = useCallback(async (
     tripId: string,
     accId: string,
-    updates: Pick<Accommodation, "name" | "checkInTime" | "checkOutTime">,
+    updates: Pick<Accommodation, "name" | "checkInTime" | "checkOutTime" | "confirmationCode" | "address">,
   ) => {
     setTrips((prev) =>
       prev.map((t) =>
@@ -251,9 +257,11 @@ export function useUserTrips() {
     );
     const supabase = createClient();
     await supabase.from("accommodations").update({
-      name:           updates.name,
-      check_in_time:  updates.checkInTime ?? null,
-      check_out_time: updates.checkOutTime ?? null,
+      name:              updates.name,
+      check_in_time:     updates.checkInTime ?? null,
+      check_out_time:    updates.checkOutTime ?? null,
+      confirmation_code: updates.confirmationCode ?? null,
+      address:           updates.address ?? null,
     }).eq("id", accId);
   }, []);
 

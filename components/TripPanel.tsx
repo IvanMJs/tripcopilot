@@ -87,6 +87,7 @@ const LABELS = {
     accCheckOut: "Check-out",
     accTime: "Hora",
     accConfCode: "Código de reserva (opcional)",
+    accAddress: "Dirección (opcional)",
     accRemove: "Eliminar alojamiento",
     accEdit: "Editar alojamiento",
     accSave: "Guardar",
@@ -94,6 +95,14 @@ const LABELS = {
     accNights: (n: number) => n === 0 ? "Mismo día" : `${n} noche${n !== 1 ? "s" : ""}`,
     accErrName: "Ingresá el nombre del alojamiento.",
     accErrDates: "La fecha de check-out debe ser posterior al check-in.",
+    accTabAI: "Importar con IA",
+    accTabManual: "Manual",
+    accAIPlaceholder: "Pegá tu confirmación o escribí p.ej. \"Marriott BA del 10 al 13 de Abril, check-in a las 15\"",
+    accAILoading: "Leyendo reserva...",
+    accAIError: "No pude leer la reserva. Revisá el texto o intentá de nuevo.",
+    accAIPhoto: "Foto",
+    accAIReview: "TripCopilot leyó tu reserva",
+    accAIRetry: "Volver a intentar",
     accCopied: "¡Copiado!",
     duplicateTrip: "Duplicar viaje",
     sectionSigmet: "SIGMET activo en ruta",
@@ -166,6 +175,7 @@ const LABELS = {
     accCheckOut: "Check-out",
     accTime: "Time",
     accConfCode: "Booking code (optional)",
+    accAddress: "Address (optional)",
     accRemove: "Remove accommodation",
     accEdit: "Edit accommodation",
     accSave: "Save",
@@ -173,6 +183,14 @@ const LABELS = {
     accNights: (n: number) => n === 0 ? "Same day" : `${n} night${n !== 1 ? "s" : ""}`,
     accErrName: "Enter the accommodation name.",
     accErrDates: "Check-out must be after check-in.",
+    accTabAI: "Import with AI",
+    accTabManual: "Manual",
+    accAIPlaceholder: "Paste your confirmation or type e.g. \"Marriott BA April 10-13, check-in at 3pm\"",
+    accAILoading: "Reading booking...",
+    accAIError: "Couldn't read the booking. Check the text or try again.",
+    accAIPhoto: "Photo",
+    accAIReview: "TripCopilot read your booking",
+    accAIRetry: "Try again",
     accCopied: "Copied!",
     duplicateTrip: "Duplicate trip",
     sectionSigmet: "SIGMET active on route",
@@ -264,9 +282,9 @@ interface FlightCardProps {
   activeSigmets?: SigmetFeature[];
   tsaData?: TsaAirportData;
   accommodation?: Accommodation | null;
-  onAddAccommodation: (name: string, checkInTime?: string, checkOutTime?: string) => void;
+  onAddAccommodation: (data: { name: string; checkInTime?: string; checkOutTime?: string; confirmationCode?: string; address?: string }) => void;
   onRemoveAccommodation: () => void;
-  onEditAccommodation: (name: string, checkInTime?: string, checkOutTime?: string) => void;
+  onEditAccommodation: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
 }
 
 function FlightCard({
@@ -775,7 +793,7 @@ interface TripPanelProps {
   onRemoveFlight: (tripId: string, flightId: string) => void;
   onAddAccommodation: (tripId: string, acc: Omit<Accommodation, "id" | "tripId">) => void;
   onRemoveAccommodation: (tripId: string, accId: string) => void;
-  onUpdateAccommodation: (tripId: string, accId: string, updates: Pick<Accommodation, "name" | "checkInTime" | "checkOutTime">) => void;
+  onUpdateAccommodation: (tripId: string, accId: string, updates: Pick<Accommodation, "name" | "checkInTime" | "checkOutTime" | "confirmationCode" | "address">) => void;
   onDeleteTrip?: () => void;
   onRenameTrip?: (name: string) => void;
   onDuplicateTrip?: () => void;
@@ -1087,19 +1105,21 @@ export function TripPanel({
                 activeSigmets={sigmetsByFlight.get(flight.id)}
                 tsaData={tsaData[flight.originCode]}
                 accommodation={acc}
-                onAddAccommodation={(name, checkInTime, checkOutTime) =>
+                onAddAccommodation={(data) =>
                   onAddAccommodation(trip.id, {
-                    flightId: flight.id,
-                    name,
-                    checkInDate:  estimateArrivalDate(flight.isoDate, flight.departureTime, flight.arrivalBuffer),
-                    checkInTime,
-                    checkOutDate: sorted[idx + 1]?.isoDate,
-                    checkOutTime,
+                    flightId:         flight.id,
+                    name:             data.name,
+                    checkInDate:      estimateArrivalDate(flight.isoDate, flight.departureTime, flight.arrivalBuffer),
+                    checkInTime:      data.checkInTime,
+                    checkOutDate:     sorted[idx + 1]?.isoDate,
+                    checkOutTime:     data.checkOutTime,
+                    confirmationCode: data.confirmationCode,
+                    address:          data.address,
                   })
                 }
                 onRemoveAccommodation={() => acc && onRemoveAccommodation(trip.id, acc.id)}
-                onEditAccommodation={(name, checkInTime, checkOutTime) =>
-                  acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime })
+                onEditAccommodation={(name, checkInTime, checkOutTime, confirmationCode, address) =>
+                  acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
                 }
               />
             );

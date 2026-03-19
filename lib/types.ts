@@ -66,6 +66,8 @@ export interface Accommodation {
   checkInTime?: string;
   checkOutDate?: string;
   checkOutTime?: string;
+  confirmationCode?: string;
+  address?: string;
 }
 
 export interface TripTab {

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Hotel, Pencil, Trash2, X, Plus } from "lucide-react";
+import { useState, useRef } from "react";
+import { Hotel, Pencil, Trash2, X, Plus, Sparkles, Upload, RotateCcw, MapPin, Hash } from "lucide-react";
 import { Accommodation } from "@/lib/types";
 
-// ── Labels subset ─────────────────────────────────────────────────────────────
+// ── Labels ────────────────────────────────────────────────────────────────────
 
 export type AccommodationLabels = {
   accNamePlaceholder: string;
@@ -17,6 +17,16 @@ export type AccommodationLabels = {
   accNights:          (n: number) => string;
   accErrName:         string;
   accAdd:             string;
+  accConfCode:        string;
+  accAddress:         string;
+  accTabAI:           string;
+  accTabManual:       string;
+  accAIPlaceholder:   string;
+  accAILoading:       string;
+  accAIError:         string;
+  accAIPhoto:         string;
+  accAIReview:        string;
+  accAIRetry:         string;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -37,6 +47,14 @@ export function nightsBetween(isoA: string, isoB: string): number {
   );
 }
 
+export type AccommodationFormData = {
+  name: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  confirmationCode?: string;
+  address?: string;
+};
+
 // ── AccommodationInline ───────────────────────────────────────────────────────
 
 export function AccommodationInline({
@@ -53,29 +71,31 @@ export function AccommodationInline({
   checkOutDate?: string;
   locale: "es" | "en";
   onRemove: () => void;
-  onEdit: (name: string, checkInTime?: string, checkOutTime?: string) => void;
+  onEdit: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
   L: AccommodationLabels;
 }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(acc.name);
   const [editCheckIn, setEditCheckIn] = useState(acc.checkInTime ?? "");
   const [editCheckOut, setEditCheckOut] = useState(acc.checkOutTime ?? "");
+  const [editConfCode, setEditConfCode] = useState(acc.confirmationCode ?? "");
+  const [editAddress, setEditAddress] = useState(acc.address ?? "");
   const nights = checkOutDate ? nightsBetween(checkInDate, checkOutDate) : null;
-  const inputCls = "flex-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-blue-500/60 transition-colors";
+  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-blue-500/60 transition-colors";
 
-  // suppress unused variable warning for locale (kept for API consistency)
   void locale;
+
+  function saveEdit() {
+    onEdit(editName.trim(), editCheckIn || undefined, editCheckOut || undefined, editConfCode || undefined, editAddress || undefined);
+    setEditing(false);
+  }
 
   if (editing) {
     return (
       <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-2">
-        <input
-          autoFocus
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          placeholder={L.accNamePlaceholder}
-          className={inputCls + " w-full"}
-          onKeyDown={(e) => { if (e.key === "Enter") { onEdit(editName.trim(), editCheckIn || undefined, editCheckOut || undefined); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
+        <input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
+          placeholder={L.accNamePlaceholder} className={inputCls}
+          onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditing(false); }}
         />
         <div className="flex gap-2">
           <div className="flex-1">
@@ -87,34 +107,51 @@ export function AccommodationInline({
             <input type="time" value={editCheckOut} onChange={(e) => setEditCheckOut(e.target.value)} className={inputCls} />
           </div>
         </div>
+        <input value={editConfCode} onChange={(e) => setEditConfCode(e.target.value)}
+          placeholder={L.accConfCode} className={inputCls} />
+        <input value={editAddress} onChange={(e) => setEditAddress(e.target.value)}
+          placeholder={L.accAddress} className={inputCls} />
         <div className="flex gap-2">
-          <button
-            onClick={() => { onEdit(editName.trim(), editCheckIn || undefined, editCheckOut || undefined); setEditing(false); }}
-            className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 py-1.5 text-xs font-medium text-white transition-colors"
-          >{L.accSave}</button>
-          <button onClick={() => setEditing(false)} className="px-3 rounded-lg border border-white/[0.08] py-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">{L.accCancel}</button>
+          <button onClick={saveEdit}
+            className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 py-1.5 text-xs font-medium text-white transition-colors">
+            {L.accSave}
+          </button>
+          <button onClick={() => setEditing(false)}
+            className="px-3 rounded-lg border border-white/[0.08] py-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">
+            {L.accCancel}
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-white/[0.05] flex items-center gap-2">
-      <Hotel className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+    <div className="mt-3 pt-3 border-t border-white/[0.05] flex items-start gap-2">
+      <Hotel className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-white truncate">{acc.name}</p>
         <p className="text-[11px] text-gray-500">
           {acc.checkInTime ? `Check-in ${acc.checkInTime}` : "Check-in"}
           {acc.checkOutTime ? ` · Check-out ${acc.checkOutTime}` : ""}
-          {nights !== null ? (
-            <span className="text-gray-600 ml-1.5">· {L.accNights(nights)}</span>
-          ) : null}
+          {nights !== null && <span className="text-gray-600 ml-1.5">· {L.accNights(nights)}</span>}
         </p>
+        {acc.confirmationCode && (
+          <p className="text-[10px] text-gray-600 mt-0.5 flex items-center gap-1">
+            <Hash className="h-2.5 w-2.5" />{acc.confirmationCode}
+          </p>
+        )}
+        {acc.address && (
+          <p className="text-[10px] text-gray-600 mt-0.5 flex items-center gap-1 truncate">
+            <MapPin className="h-2.5 w-2.5 shrink-0" />{acc.address}
+          </p>
+        )}
       </div>
-      <button onClick={() => setEditing(true)} title={L.accEdit} className="shrink-0 p-1 rounded-md text-gray-600 hover:text-blue-400 transition-colors">
+      <button onClick={() => setEditing(true)} title={L.accEdit}
+        className="shrink-0 p-1 rounded-md text-gray-600 hover:text-blue-400 transition-colors">
         <Pencil className="h-3 w-3" />
       </button>
-      <button onClick={onRemove} title={L.accRemove} className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors">
+      <button onClick={onRemove} title={L.accRemove}
+        className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors">
         <Trash2 className="h-3 w-3" />
       </button>
     </div>
@@ -122,6 +159,14 @@ export function AccommodationInline({
 }
 
 // ── AddAccommodationInlineForm ────────────────────────────────────────────────
+
+type ParsedAccommodation = {
+  name: string | null;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  confirmation_code: string | null;
+  address: string | null;
+};
 
 export function AddAccommodationInlineForm({
   destCity,
@@ -131,26 +176,95 @@ export function AddAccommodationInlineForm({
   L,
 }: {
   destCity: string;
-  onAdd: (name: string, checkInTime?: string, checkOutTime?: string) => void;
+  onAdd: (data: AccommodationFormData) => void;
   onClose: () => void;
   locale: "es" | "en";
   L: AccommodationLabels;
 }) {
-  const [name, setName]             = useState("");
-  const [checkInTime, setCheckInTime]   = useState("");
+  const [tab, setTab] = useState<"ai" | "manual">("ai");
+
+  // AI state
+  const [aiText, setAiText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [parsed, setParsed] = useState<ParsedAccommodation | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Form state (shared between AI review + manual)
+  const [name, setName] = useState("");
+  const [checkInTime, setCheckInTime] = useState("");
   const [checkOutTime, setCheckOutTime] = useState("");
-  const [err, setErr]               = useState<string | null>(null);
+  const [confCode, setConfCode] = useState("");
+  const [address, setAddress] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+
+  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-blue-500/60 transition-colors";
+
+  void locale;
+
+  async function handleAIParse(text?: string, imageBase64?: string, mimeType?: string) {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const body: Record<string, string> = {};
+      if (text) body.text = text;
+      if (imageBase64) { body.imageBase64 = imageBase64; body.mimeType = mimeType!; }
+      body.tripContext = destCity ? `destination: ${destCity}` : "";
+
+      const res = await fetch("/api/parse-accommodation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setAiError(data.error ?? L.accAIError);
+        return;
+      }
+      setParsed(data);
+      setName(data.name ?? "");
+      setCheckInTime(data.check_in_time ?? "");
+      setCheckOutTime(data.check_out_time ?? "");
+      setConfCode(data.confirmation_code ?? "");
+      setAddress(data.address ?? "");
+    } catch {
+      setAiError(L.accAIError);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.split(",")[1];
+      const mimeType = file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+      handleAIParse(undefined, base64, mimeType);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
 
   function handleSubmit() {
     if (!name.trim()) { setErr(L.accErrName); return; }
-    onAdd(name.trim(), checkInTime || undefined, checkOutTime || undefined);
+    onAdd({
+      name: name.trim(),
+      checkInTime: checkInTime || undefined,
+      checkOutTime: checkOutTime || undefined,
+      confirmationCode: confCode || undefined,
+      address: address || undefined,
+    });
     onClose();
   }
 
-  const inputCls = "flex-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-blue-500/60 transition-colors";
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-2">
+    <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-3">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
           <Hotel className="h-3 w-3" />
@@ -160,32 +274,152 @@ export function AddAccommodationInlineForm({
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <input
-        autoFocus
-        value={name}
-        onChange={(e) => { setName(e.target.value); setErr(null); }}
-        placeholder={L.accNamePlaceholder}
-        className={inputCls + " w-full"}
-        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-      />
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <p className="text-[10px] text-gray-600 mb-1">{L.accCheckIn}</p>
-          <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} className={inputCls} />
-        </div>
-        <div className="flex-1">
-          <p className="text-[10px] text-gray-600 mb-1">{L.accCheckOut}</p>
-          <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} className={inputCls} />
-        </div>
+
+      {/* Tabs */}
+      <div className="flex rounded-lg border border-white/[0.06] bg-white/[0.02] p-0.5 gap-0.5">
+        <button
+          onClick={() => { setTab("ai"); setParsed(null); setAiError(null); }}
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-semibold transition-all ${
+            tab === "ai" ? "bg-violet-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <Sparkles className="h-3 w-3" />
+          {L.accTabAI}
+        </button>
+        <button
+          onClick={() => setTab("manual")}
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-semibold transition-all ${
+            tab === "manual" ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <Pencil className="h-3 w-3" />
+          {L.accTabManual}
+        </button>
       </div>
-      {err && <p className="text-[11px] text-red-400">{err}</p>}
-      <button
-        onClick={handleSubmit}
-        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 transition-colors"
-      >
-        <Plus className="h-3.5 w-3.5" />
-        {L.accAdd}
-      </button>
+
+      {/* ── AI TAB ── */}
+      {tab === "ai" && !parsed && (
+        <div className="space-y-2">
+          <textarea
+            value={aiText}
+            onChange={(e) => setAiText(e.target.value)}
+            placeholder={L.accAIPlaceholder}
+            rows={3}
+            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-violet-500/60 transition-colors resize-none leading-relaxed"
+          />
+
+          {aiError && (
+            <p className="text-[11px] text-red-400 flex items-center gap-1">
+              <span>{aiError}</span>
+            </p>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => aiText.trim() && handleAIParse(aiText)}
+              disabled={aiLoading || !aiText.trim()}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 py-2 text-xs font-bold text-white transition-colors"
+            >
+              {aiLoading ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin block" />
+                  {L.accAILoading}
+                </span>
+              ) : (
+                <>
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {L.accTabAI}
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={aiLoading}
+              className="flex items-center gap-1.5 rounded-lg border border-white/[0.10] bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-40 px-3 py-2 text-xs text-gray-300 transition-colors"
+              title={L.accAIPhoto}
+            >
+              <Upload className="h-3.5 w-3.5" />
+              {L.accAIPhoto}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+          </div>
+        </div>
+      )}
+
+      {/* ── AI REVIEW FORM ── */}
+      {tab === "ai" && parsed && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              {L.accAIReview}
+            </p>
+            <button
+              onClick={() => { setParsed(null); setAiError(null); }}
+              className="flex items-center gap-1 text-[10px] text-gray-600 hover:text-gray-400 transition-colors"
+            >
+              <RotateCcw className="h-3 w-3" />
+              {L.accAIRetry}
+            </button>
+          </div>
+
+          <input value={name} onChange={(e) => { setName(e.target.value); setErr(null); }}
+            placeholder={L.accNamePlaceholder} className={inputCls} autoFocus />
+
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-600 mb-1">{L.accCheckIn}</p>
+              <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} className={inputCls} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-600 mb-1">{L.accCheckOut}</p>
+              <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          <input value={confCode} onChange={(e) => setConfCode(e.target.value)}
+            placeholder={L.accConfCode} className={inputCls} />
+          <input value={address} onChange={(e) => setAddress(e.target.value)}
+            placeholder={L.accAddress} className={inputCls} />
+
+          {err && <p className="text-[11px] text-red-400">{err}</p>}
+
+          <button onClick={handleSubmit}
+            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 transition-colors">
+            <Plus className="h-3.5 w-3.5" />
+            {L.accAdd}
+          </button>
+        </div>
+      )}
+
+      {/* ── MANUAL TAB ── */}
+      {tab === "manual" && (
+        <div className="space-y-2">
+          <input autoFocus value={name} onChange={(e) => { setName(e.target.value); setErr(null); }}
+            placeholder={L.accNamePlaceholder} className={inputCls}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-600 mb-1">{L.accCheckIn}</p>
+              <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} className={inputCls} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-600 mb-1">{L.accCheckOut}</p>
+              <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          <input value={confCode} onChange={(e) => setConfCode(e.target.value)}
+            placeholder={L.accConfCode} className={inputCls} />
+          <input value={address} onChange={(e) => setAddress(e.target.value)}
+            placeholder={L.accAddress} className={inputCls} />
+          {err && <p className="text-[11px] text-red-400">{err}</p>}
+          <button onClick={handleSubmit}
+            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 transition-colors">
+            <Plus className="h-3.5 w-3.5" />
+            {L.accAdd}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
