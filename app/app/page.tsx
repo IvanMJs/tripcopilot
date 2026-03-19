@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
-import { RefreshCw, Plane, Pencil, X, Plus, Bell, HelpCircle, MapPin, Search, Map, LogOut, ChevronRight, Trash2 } from "lucide-react";
+import { RefreshCw, Bell, HelpCircle, LogOut } from "lucide-react";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
 import { AirportSearch } from "@/components/AirportSearch";
@@ -15,7 +15,13 @@ import { TripPanel } from "@/components/TripPanel";
 import { TripListView } from "@/components/TripListView";
 import { HelpPanel } from "@/components/HelpPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AirportStatusMap, DelayStatus, TripFlight, TripTab, Accommodation } from "@/lib/types";
+import { CreateTripModal } from "@/components/CreateTripModal";
+import { DeleteTripModal } from "@/components/DeleteTripModal";
+import { DraftLeaveModal } from "@/components/DraftLeaveModal";
+import { TripTabBar } from "@/components/TripTabBar";
+import { BottomNav } from "@/components/BottomNav";
+import { TripPanelSkeleton } from "@/components/TripPanelSkeleton";
+import { AirportStatusMap, DelayStatus, TripFlight, Accommodation } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Locale } from "@/lib/i18n";
@@ -40,10 +46,7 @@ const SEVERITY_ORDER: Record<DelayStatus, number> = {
 };
 
 const REFRESH_OPTIONS = [5, 10, 15, 30];
-
-// Always include these airports for weather regardless of watchedAirports
 const FLIGHT_AIRPORTS = ["EZE", "MIA", "GCM", "JFK"];
-
 const DRAFT_ID = "__draft__";
 
 export default function HomePage() {
@@ -61,6 +64,7 @@ export default function HomePage() {
   const { airports: watchedAirports, add: addAirportDB, remove: removeAirportDB } = useWatchedAirports();
   const {
     trips: userTrips,
+    loading: tripsLoading,
     createTrip: createTripDB,
     deleteTrip: deleteTripDB,
     renameTrip: renameTripDB,
@@ -72,26 +76,14 @@ export default function HomePage() {
     duplicateTrip: duplicateTripDB,
   } = useUserTrips();
 
-  // Tab rename state
-  const [editingTabId, setEditingTabId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
-  const editInputRef = useRef<HTMLInputElement>(null);
-
   // Create trip modal
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newTripName, setNewTripName] = useState("");
-  const createModalInputRef = useRef<HTMLInputElement>(null);
 
   // Draft trip — local only, not persisted until "Guardar viaje"
   const [draftTrip, setDraftTrip] = useState<{ name: string; flights: TripFlight[]; accommodations: Accommodation[] } | null>(null);
 
   // Delete confirmation modal
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string; flightCount: number } | null>(null);
-
-  // Mobile trip picker popup
-  const [showTripPicker, setShowTripPicker] = useState(false);
-  const [renameInPickerId, setRenameInPickerId] = useState<string | null>(null);
-  const [renameInPickerName, setRenameInPickerName] = useState("");
 
   // Draft leave confirmation (shown when navigating away from unsaved draft)
   const [draftLeaveConfirm, setDraftLeaveConfirm] = useState<{ targetTab: string } | null>(null);
@@ -143,7 +135,7 @@ export default function HomePage() {
     }
   }, [mounted, locale, userTrips]);
 
-  // Aggregate trip airports (origin + destination of every flight across all trips)
+  // Aggregate trip airports
   const tripAirports = userTrips.flatMap((t) =>
     t.flights.flatMap((f) => [f.originCode, f.destinationCode])
   );
@@ -163,7 +155,7 @@ export default function HomePage() {
     disableNotifications,
   } = useAirportStatus(refreshInterval, locale, showSwNotification);
 
-  // ── International airport status (AeroDataBox) ───────────────────────────
+  // International airport status (AeroDataBox)
   const [intlStatusMap, setIntlStatusMap] = useState<AirportStatusMap>({});
 
   useEffect(() => {
@@ -176,7 +168,6 @@ export default function HomePage() {
     fetch(`/api/intl-status?airports=${intlAirports.join(",")}&locale=${locale}`)
       .then((r) => r.ok ? r.json() : {})
       .then((data: Record<string, unknown>) => {
-        // Quota exceeded — skip update, keep existing data or empty
         if (data.quotaExceeded) return;
         const map: AirportStatusMap = {};
         for (const [iata, status] of Object.entries(data as AirportStatusMap)) {
@@ -185,11 +176,9 @@ export default function HomePage() {
         setIntlStatusMap(map);
       })
       .catch(() => {});
-  // Re-fetch when trip airports change or every refresh cycle
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userTrips, watchedAirports, locale, lastUpdated]);
 
-  // Merge: FAA takes priority for US airports, intl fills the rest
   const statusMap: AirportStatusMap = { ...intlStatusMap, ...faaStatusMap };
 
   const allAirportsForWeather = Array.from(
@@ -208,9 +197,6 @@ export default function HomePage() {
 
   // ── Watched airports ──────────────────────────────────────────────────────
 
-  function addAirport(iata: string) { addAirportDB(iata); }
-  function removeAirport(iata: string) { removeAirportDB(iata); }
-
   const sortedAirports = [...watchedAirports].sort((a, b) => {
     const sa = statusMap[a]?.status ?? "ok";
     const sb = statusMap[b]?.status ?? "ok";
@@ -220,20 +206,12 @@ export default function HomePage() {
   // ── Trip management ───────────────────────────────────────────────────────
 
   function openCreateTripModal() {
-    if (draftTrip) {
-      setActiveTab(DRAFT_ID);
-      return;
-    }
-    setNewTripName("");
+    if (draftTrip) { setActiveTab(DRAFT_ID); return; }
     setShowCreateModal(true);
-    setTimeout(() => createModalInputRef.current?.focus(), 60);
   }
 
-  function confirmCreateTrip() {
-    const tripName =
-      newTripName.trim() ||
-      (locale === "en" ? `Trip ${userTrips.length + 1}` : `Viaje ${userTrips.length + 1}`);
-    setDraftTrip({ name: tripName, flights: [], accommodations: [] });
+  function confirmCreateTrip(name: string) {
+    setDraftTrip({ name, flights: [], accommodations: [] });
     setActiveTab(DRAFT_ID);
     setShowCreateModal(false);
   }
@@ -242,7 +220,6 @@ export default function HomePage() {
     if (!draftTrip) return;
     const id = await createTripDB(draftTrip.name);
     if (id) {
-      // Build mapping: draft flight ID → real DB flight ID
       const flightIdMap: Record<string, string> = {};
       for (const flight of draftTrip.flights) {
         const realId = await addFlightDB(id, flight);
@@ -283,29 +260,6 @@ export default function HomePage() {
     setDraftTrip((prev) => prev ? { ...prev, accommodations: prev.accommodations.filter((a) => a.id !== accId) } : prev);
   }
 
-  function addAccommodationToTrip(tripId: string, acc: Omit<Accommodation, "id" | "tripId">) {
-    addAccommodationDB(tripId, acc);
-  }
-
-  function removeAccommodationFromTrip(tripId: string, accId: string) {
-    removeAccommodationDB(tripId, accId);
-  }
-
-  function updateAccommodationInTrip(
-    tripId: string,
-    accId: string,
-    updates: Pick<Accommodation, "name" | "checkInTime" | "checkOutTime">,
-  ) {
-    updateAccommodationDB(tripId, accId, updates);
-  }
-
-  async function handleDuplicateTrip(tripId: string) {
-    const newId = await duplicateTripDB(tripId);
-    if (newId) setActiveTab(newId);
-  }
-
-  function renameTrip(id: string, newName: string) { renameTripDB(id, newName); }
-
   function renameTripFromPanel(id: string, newName: string) {
     if (id === DRAFT_ID) {
       const trimmed = newName.trim();
@@ -318,7 +272,6 @@ export default function HomePage() {
   function deleteTrip(id: string) {
     const trip = userTrips.find((t) => t.id === id);
     if (!trip) return;
-    setRenameInPickerId(null);
     setDeleteConfirm({ id, name: trip.name, flightCount: trip.flights.length });
   }
 
@@ -327,13 +280,13 @@ export default function HomePage() {
     deleteTripDB(deleteConfirm.id);
     if (activeTab === deleteConfirm.id) setActiveTab("trips");
     setDeleteConfirm(null);
-    setShowTripPicker(false);
   }
 
-  function addFlightToTrip(tripId: string, flight: TripFlight) { addFlightDB(tripId, flight); }
-  function removeFlightFromTrip(tripId: string, flightId: string) { removeFlightDB(tripId, flightId); }
+  async function handleDuplicateTrip(tripId: string) {
+    const newId = await duplicateTripDB(tripId);
+    if (newId) setActiveTab(newId);
+  }
 
-  // Navigate away — intercepts if there's an unsaved draft currently open
   function navigateAway(targetTab: string) {
     if (activeTab === DRAFT_ID && draftTrip) {
       setDraftLeaveConfirm({ targetTab });
@@ -342,28 +295,6 @@ export default function HomePage() {
     }
   }
 
-  // ── Tab rename helpers ────────────────────────────────────────────────────
-
-  function startRename(trip: TripTab) {
-    setEditingTabId(trip.id);
-    setEditingName(trip.name);
-    setTimeout(() => editInputRef.current?.focus(), 0);
-  }
-
-  function saveRename() {
-    if (editingTabId) {
-      renameTrip(editingTabId, editingName);
-      setEditingTabId(null);
-    }
-  }
-
-  // ── Tab bar styles ────────────────────────────────────────────────────────
-
-  const tabBase =
-    "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap";
-  const tabActive   = "border-blue-500 text-blue-400";
-  const tabInactive = "border-transparent text-gray-400 hover:text-gray-200";
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -371,20 +302,14 @@ export default function HomePage() {
       <Toaster
         position="top-right"
         toastOptions={{
-          style: {
-            background: "#1f2937",
-            color: "#f3f4f6",
-            border: "1px solid #374151",
-          },
+          style: { background: "#1f2937", color: "#f3f4f6", border: "1px solid #374151" },
         }}
       />
 
-      {/* Notification setup sheet — iOS-aware */}
       <NotificationSetupSheet
         open={showNotifSheet}
         onClose={() => {
           setShowNotifSheet(false);
-          // Re-check permission state after sheet closes
           if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
             requestNotifications();
             subscribeToPush();
@@ -393,160 +318,35 @@ export default function HomePage() {
         locale={locale}
       />
 
-      {/* Create trip modal */}
       {showCreateModal && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
-            onClick={() => setShowCreateModal(false)}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
-            <div
-              className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4"
-              style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
-            >
-              <div>
-                <h3 className="text-base font-black text-white">
-                  {locale === "es" ? "Nuevo viaje" : "New trip"}
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  {locale === "es" ? "Podés renombrarlo después" : "You can rename it later"}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  {locale === "es" ? "Nombre del viaje" : "Trip name"}
-                </label>
-                <input
-                  ref={createModalInputRef}
-                  value={newTripName}
-                  onChange={(e) => setNewTripName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") confirmCreateTrip();
-                    if (e.key === "Escape") setShowCreateModal(false);
-                  }}
-                  placeholder={locale === "es" ? "Ej: Vacaciones Miami 2026" : "E.g. Miami Trip 2026"}
-                  maxLength={40}
-                  autoFocus
-                  className="w-full rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors"
-                >
-                  {locale === "es" ? "Cancelar" : "Cancel"}
-                </button>
-                <button
-                  onClick={confirmCreateTrip}
-                  className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 py-2.5 text-sm font-semibold text-white transition-colors tap-scale"
-                >
-                  {locale === "es" ? "Crear viaje" : "Create trip"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+        <CreateTripModal
+          locale={locale}
+          tripCount={userTrips.length}
+          onClose={() => setShowCreateModal(false)}
+          onConfirm={confirmCreateTrip}
+        />
       )}
 
-      {/* Delete confirmation modal */}
       {deleteConfirm && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
-            onClick={() => setDeleteConfirm(null)}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
-            <div
-              className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4"
-              style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
-            >
-              <div>
-                <h3 className="text-base font-black text-white">
-                  {locale === "es" ? "¿Eliminar viaje?" : "Delete trip?"}
-                </h3>
-                <p className="text-sm text-gray-400 mt-2 leading-relaxed">
-                  {locale === "es"
-                    ? `¿Estás seguro de eliminar "${deleteConfirm.name}"${deleteConfirm.flightCount > 0 ? ` y sus ${deleteConfirm.flightCount} vuelo${deleteConfirm.flightCount !== 1 ? "s" : ""}` : ""}? Esta acción no se puede deshacer.`
-                    : `Are you sure you want to delete "${deleteConfirm.name}"${deleteConfirm.flightCount > 0 ? ` and its ${deleteConfirm.flightCount} flight${deleteConfirm.flightCount !== 1 ? "s" : ""}` : ""}? This can't be undone.`
-                  }
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors"
-                >
-                  {locale === "es" ? "Cancelar" : "Cancel"}
-                </button>
-                <button
-                  onClick={confirmDeleteTrip}
-                  className="flex-1 rounded-xl bg-red-700 hover:bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors"
-                >
-                  {locale === "es" ? "Eliminar" : "Delete"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+        <DeleteTripModal
+          locale={locale}
+          tripName={deleteConfirm.name}
+          flightCount={deleteConfirm.flightCount}
+          onClose={() => setDeleteConfirm(null)}
+          onConfirm={confirmDeleteTrip}
+        />
       )}
 
-      {/* Draft leave confirmation modal */}
-      {draftLeaveConfirm && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
-            onClick={() => setDraftLeaveConfirm(null)}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
-            <div
-              className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4"
-              style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
-            >
-              <div>
-                <h3 className="text-base font-black text-white">
-                  {locale === "es" ? "Tenés un borrador sin guardar" : "You have an unsaved draft"}
-                </h3>
-                <p className="text-sm text-gray-400 mt-2 leading-relaxed">
-                  {locale === "es"
-                    ? `El viaje "${draftTrip?.name}" todavía no fue guardado. ¿Qué querés hacer?`
-                    : `The trip "${draftTrip?.name}" hasn't been saved yet. What would you like to do?`}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={async () => {
-                    await saveDraftTrip();
-                    setActiveTab(draftLeaveConfirm.targetTab);
-                    setDraftLeaveConfirm(null);
-                  }}
-                  className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 py-2.5 text-sm font-semibold text-white transition-colors"
-                >
-                  {locale === "es" ? "Guardar y continuar" : "Save and continue"}
-                </button>
-                <button
-                  onClick={() => {
-                    discardDraft();
-                    setActiveTab(draftLeaveConfirm.targetTab);
-                    setDraftLeaveConfirm(null);
-                  }}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors"
-                >
-                  {locale === "es" ? "Descartar borrador" : "Discard draft"}
-                </button>
-                <button
-                  onClick={() => setDraftLeaveConfirm(null)}
-                  className="w-full py-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
-                >
-                  {locale === "es" ? "Cancelar" : "Cancel"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+      {draftLeaveConfirm && draftTrip && (
+        <DraftLeaveModal
+          locale={locale}
+          draftName={draftTrip.name}
+          targetTab={draftLeaveConfirm.targetTab}
+          onSave={saveDraftTrip}
+          onDiscard={discardDraft}
+          onCancel={() => setDraftLeaveConfirm(null)}
+          onNavigate={(tab) => { setActiveTab(tab); setDraftLeaveConfirm(null); }}
+        />
       )}
 
       {/* Offline banner */}
@@ -575,32 +375,18 @@ export default function HomePage() {
 
           {/* ── Header ── */}
           <div className="flex items-center justify-between gap-3">
-
-            {/* Title */}
             <div className="min-w-0">
-              {/* Mobile: TripCopilot PNG only — brand seal, no text */}
               <div className="flex md:hidden items-center">
-                <img
-                  src="/tripcopliot-avatar.svg"
-                  alt="TripCopilot"
-                  className="h-10 w-auto"
-                />
+                <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-10 w-auto" />
               </div>
-              {/* Desktop: PNG + title text */}
               <h1 className="hidden md:flex items-center gap-3 text-3xl font-black tracking-tight text-white">
-                <img
-                  src="/tripcopliot-avatar.svg"
-                  alt="TripCopilot"
-                  className="h-10 w-auto shrink-0"
-                />
+                <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-10 w-auto shrink-0" />
                 <span className="truncate">{t.appTitle}</span>
               </h1>
               <p className="hidden md:block mt-1 text-sm text-gray-400 font-medium">{t.appSubtitle}</p>
             </div>
 
-            {/* Controls */}
             <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-
               {/* Language toggle */}
               <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
                 {(["es", "en"] as Locale[]).map((l) => (
@@ -608,9 +394,7 @@ export default function HomePage() {
                     key={l}
                     onClick={() => setLocale(l)}
                     className={`px-2.5 py-1.5 md:px-3 transition-colors ${
-                      locale === l
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-900 text-gray-400 hover:text-gray-200"
+                      locale === l ? "bg-blue-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200"
                     }`}
                   >
                     {l.toUpperCase()}
@@ -618,7 +402,7 @@ export default function HomePage() {
                 ))}
               </div>
 
-              {/* Notification bell — always visible, handles iOS/Android/desktop */}
+              {/* Notification bell */}
               {mounted && (
                 <button
                   onClick={() => {
@@ -644,7 +428,7 @@ export default function HomePage() {
                 </button>
               )}
 
-              {/* Mobile logout — icon-only, visible on mobile */}
+              {/* Mobile logout */}
               <button
                 onClick={handleLogout}
                 className="flex items-center rounded-md border border-gray-700 bg-gray-900 p-1.5 text-gray-500 hover:text-red-400 hover:border-red-800/60 transition-colors md:hidden"
@@ -708,131 +492,35 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Global Status Bar — hidden on flights tab (TripSummaryHero covers it) */}
           {activeTab !== "flights" && (
             <GlobalStatusBar statusMap={statusMap} watchedAirports={watchedAirports} />
           )}
 
-          {/* Error banner */}
           {error && (
             <div className="rounded-lg border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
               ⚠️ {t.errorFAA} {error}
             </div>
           )}
 
-          {/* ── Tab bar — desktop only; mobile uses bottom nav ── */}
-          <div className="hidden md:block border-b border-gray-800">
-            <div className="flex gap-1 overflow-x-auto overflow-y-hidden">
-
-              {/* Static tabs */}
-              {([
-                { id: "airports", label: t.tabAirports },
-                { id: "search",   label: t.tabSearch   },
-              ] as const).map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={`${tabBase} ${activeTab === id ? tabActive : tabInactive}`}
-                >
-                  {label}
-                </button>
-              ))}
-
-              {/* Dynamic user trip tabs */}
-              {userTrips.map((trip) => {
-                const isActive  = activeTab === trip.id;
-                const isEditing = editingTabId === trip.id;
-
-                return (
-                  <div key={trip.id} className="flex items-center -mb-px">
-                    {/* Tab button / inline rename input */}
-                    {isEditing ? (
-                      <div className={`${tabBase} ${tabActive} flex items-center`}>
-                        <input
-                          ref={editInputRef}
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onBlur={saveRename}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") saveRename();
-                            if (e.key === "Escape") setEditingTabId(null);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          maxLength={30}
-                          className="bg-transparent border-b border-blue-400 outline-none text-blue-300 w-28 text-sm"
-                        />
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setActiveTab(trip.id)}
-                        className={`${tabBase} ${isActive ? tabActive : tabInactive}`}
-                      >
-                        {trip.name}
-                      </button>
-                    )}
-
-                    {/* Pencil (rename) — only on active, non-editing tab */}
-                    {isActive && !isEditing && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); startRename(trip); }}
-                        className="p-1 text-gray-600 hover:text-gray-300 transition-colors -mb-px"
-                        title={locale === "en" ? "Rename trip" : "Renombrar viaje"}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                    )}
-
-                    {/* Delete (×) */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteTrip(trip.id); }}
-                      className="p-1 text-gray-700 hover:text-red-400 transition-colors -mb-px"
-                      title={locale === "en" ? "Delete trip" : "Eliminar viaje"}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                );
-              })}
-
-              {/* Draft trip tab — only shown when a draft exists */}
-              {draftTrip && (
-                <div className="flex items-center -mb-px">
-                  <button
-                    onClick={() => setActiveTab(DRAFT_ID)}
-                    className={`${tabBase} ${activeTab === DRAFT_ID ? tabActive : tabInactive} flex items-center gap-2`}
-                  >
-                    {draftTrip.name}
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5 leading-none">
-                      {locale === "es" ? "Borrador" : "Draft"}
-                    </span>
-                  </button>
-                  <button
-                    onClick={discardDraft}
-                    className="p-1 text-gray-700 hover:text-red-400 transition-colors -mb-px"
-                    title={locale === "es" ? "Descartar borrador" : "Discard draft"}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
-
-              {/* New trip button */}
-              <button
-                onClick={openCreateTripModal}
-                className={`${tabBase} ${tabInactive} flex items-center gap-1 px-3`}
-                title={locale === "en" ? "New trip" : "Nuevo viaje"}
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-
-            </div>
-          </div>
+          {/* ── Desktop tab bar ── */}
+          <TripTabBar
+            locale={locale}
+            activeTab={activeTab}
+            userTrips={userTrips}
+            draftTrip={draftTrip}
+            draftId={DRAFT_ID}
+            tabLabels={{ airports: t.tabAirports, search: t.tabSearch }}
+            onTabChange={setActiveTab}
+            onRenameTrip={renameTripDB}
+            onDeleteTrip={deleteTrip}
+            onDiscardDraft={discardDraft}
+            onNewTrip={openCreateTripModal}
+          />
 
           {/* ── Tab content ── */}
           <ErrorBoundary>
             {activeTab === "airports" && (
               <div>
-                {/* Legend — shown before cards so users understand the scale */}
                 <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
                   {t.legendTitle && (
                     <span className="text-gray-500 font-medium mr-1">{t.legendTitle}</span>
@@ -847,17 +535,14 @@ export default function HomePage() {
                       <AirportCard
                         iata={iata}
                         status={statusMap[iata]}
-                        onRemove={() => removeAirport(iata)}
+                        onRemove={() => removeAirportDB(iata)}
                         weather={weatherMap[iata]}
                         metar={metarMap[iata]}
                         highlight={changedAirports.has(iata)}
                       />
                     </div>
                   ))}
-                  <AirportSearch
-                    watchedAirports={watchedAirports}
-                    onAdd={addAirport}
-                  />
+                  <AirportSearch watchedAirports={watchedAirports} onAdd={(iata) => addAirportDB(iata)} />
                 </div>
               </div>
             )}
@@ -885,8 +570,13 @@ export default function HomePage() {
               />
             )}
 
+            {/* Trip loading skeleton */}
+            {tripsLoading && (activeTab === "trips" || userTrips.some((t) => t.id === activeTab) || activeTab === DRAFT_ID) && (
+              <TripPanelSkeleton />
+            )}
+
             {/* Draft trip panel */}
-            {draftTrip && activeTab === DRAFT_ID && (
+            {!tripsLoading && draftTrip && activeTab === DRAFT_ID && (
               <TripPanel
                 key={DRAFT_ID}
                 trip={{ id: DRAFT_ID, name: draftTrip.name, flights: draftTrip.flights, accommodations: draftTrip.accommodations }}
@@ -905,18 +595,18 @@ export default function HomePage() {
             )}
 
             {/* Saved trip panels */}
-            {userTrips.map((trip) =>
+            {!tripsLoading && userTrips.map((trip) =>
               activeTab === trip.id ? (
                 <TripPanel
                   key={trip.id}
                   trip={trip}
                   statusMap={statusMap}
                   weatherMap={weatherMap}
-                  onAddFlight={addFlightToTrip}
-                  onRemoveFlight={removeFlightFromTrip}
-                  onAddAccommodation={(_, acc) => addAccommodationToTrip(trip.id, acc)}
-                  onRemoveAccommodation={(_, accId) => removeAccommodationFromTrip(trip.id, accId)}
-                  onUpdateAccommodation={(_, accId, updates) => updateAccommodationInTrip(trip.id, accId, updates)}
+                  onAddFlight={(_, flight) => addFlightDB(trip.id, flight)}
+                  onRemoveFlight={(_, flightId) => removeFlightDB(trip.id, flightId)}
+                  onAddAccommodation={(_, acc) => addAccommodationDB(trip.id, acc)}
+                  onRemoveAccommodation={(_, accId) => removeAccommodationDB(trip.id, accId)}
+                  onUpdateAccommodation={(_, accId, updates) => updateAccommodationDB(trip.id, accId, updates)}
                   onDuplicateTrip={() => handleDuplicateTrip(trip.id)}
                   onDeleteTrip={() => deleteTrip(trip.id)}
                   onRenameTrip={(name) => renameTripFromPanel(trip.id, name)}
@@ -932,252 +622,22 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Mobile bottom navigation ─────────────────────────────────────────── */}
+      {/* ── Mobile bottom navigation ── */}
       {mounted && (
-        <nav
-          className="fixed bottom-0 inset-x-0 z-50 md:hidden bottom-nav-bg"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
-          <div className="relative">
-
-          {/* Trip management popup — always opens on tap, full management hub */}
-          {showTripPicker && (
-            <>
-              {/* Backdrop */}
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => { setShowTripPicker(false); setRenameInPickerId(null); }}
-              />
-              {/* Picker panel */}
-              <div
-                className="absolute bottom-full left-0 right-0 z-50 mx-3 mb-2 rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden"
-                style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
-              >
-                {/* Header */}
-                <div className="px-4 py-3 border-b border-white/[0.06]">
-                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                    {locale === "es" ? "Mis viajes" : "My trips"}
-                  </p>
-                </div>
-
-                {/* Empty state */}
-                {userTrips.length === 0 && !draftTrip && (
-                  <div className="px-4 py-6 text-center">
-                    <p className="text-sm text-gray-400">{locale === "es" ? "No tenés viajes todavía" : "No trips yet"}</p>
-                  </div>
-                )}
-
-                {/* Draft trip entry */}
-                {draftTrip && (
-                  <div className={`flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.04] ${activeTab === DRAFT_ID ? "bg-white/[0.04]" : ""}`}>
-                    {renameInPickerId === DRAFT_ID ? (
-                      <input
-                        autoFocus
-                        value={renameInPickerName}
-                        onChange={(e) => setRenameInPickerName(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        onBlur={() => {
-                          if (renameInPickerName.trim()) setDraftTrip((prev) => prev ? { ...prev, name: renameInPickerName.trim() } : prev);
-                          setRenameInPickerId(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            if (renameInPickerName.trim()) setDraftTrip((prev) => prev ? { ...prev, name: renameInPickerName.trim() } : prev);
-                            setRenameInPickerId(null);
-                          }
-                          if (e.key === "Escape") setRenameInPickerId(null);
-                        }}
-                        maxLength={40}
-                        className="flex-1 min-w-0 bg-white/[0.06] border border-blue-500/50 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
-                      />
-                    ) : (
-                      <button
-                        onClick={() => { setActiveTab(DRAFT_ID); setShowTripPicker(false); setRenameInPickerId(null); }}
-                        className="flex-1 min-w-0 text-left"
-                      >
-                        <p className={`text-sm font-semibold truncate ${activeTab === DRAFT_ID ? "text-blue-400" : "text-white"}`}>
-                          {draftTrip.name}
-                          <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5">
-                            {locale === "es" ? "Borrador" : "Draft"}
-                          </span>
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {draftTrip.flights.length === 0
-                            ? (locale === "es" ? "Sin vuelos" : "No flights")
-                            : locale === "es"
-                            ? `${draftTrip.flights.length} vuelo${draftTrip.flights.length !== 1 ? "s" : ""}`
-                            : `${draftTrip.flights.length} flight${draftTrip.flights.length !== 1 ? "s" : ""}`}
-                        </p>
-                      </button>
-                    )}
-                    {renameInPickerId !== DRAFT_ID && (
-                      <button
-                        onClick={() => { setRenameInPickerId(DRAFT_ID); setRenameInPickerName(draftTrip.name); }}
-                        className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/[0.06] transition-colors"
-                        title={locale === "es" ? "Renombrar" : "Rename"}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    {renameInPickerId !== DRAFT_ID && (
-                      <button
-                        onClick={discardDraft}
-                        className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
-                        title={locale === "es" ? "Descartar borrador" : "Discard draft"}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Saved trips */}
-                {userTrips.map((trip) => (
-                  <div
-                    key={trip.id}
-                    className={`flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.04] last:border-0 ${activeTab === trip.id ? "bg-white/[0.04]" : ""}`}
-                  >
-                    {renameInPickerId === trip.id ? (
-                      /* Inline rename input */
-                      <input
-                        autoFocus
-                        value={renameInPickerName}
-                        onChange={(e) => setRenameInPickerName(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        onBlur={() => {
-                          if (renameInPickerName.trim()) renameTripDB(trip.id, renameInPickerName.trim());
-                          setRenameInPickerId(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            if (renameInPickerName.trim()) renameTripDB(trip.id, renameInPickerName.trim());
-                            setRenameInPickerId(null);
-                          }
-                          if (e.key === "Escape") setRenameInPickerId(null);
-                        }}
-                        maxLength={40}
-                        className="flex-1 min-w-0 bg-white/[0.06] border border-blue-500/50 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
-                      />
-                    ) : (
-                      <button
-                        onClick={() => { setActiveTab(trip.id); setShowTripPicker(false); setRenameInPickerId(null); }}
-                        className="flex-1 min-w-0 text-left"
-                      >
-                        <p className={`text-sm font-semibold truncate ${activeTab === trip.id ? "text-blue-400" : "text-white"}`}>
-                          {trip.name}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {trip.flights.length === 0
-                            ? (locale === "es" ? "Sin vuelos" : "No flights")
-                            : locale === "es"
-                            ? `${trip.flights.length} vuelo${trip.flights.length !== 1 ? "s" : ""}`
-                            : `${trip.flights.length} flight${trip.flights.length !== 1 ? "s" : ""}`}
-                        </p>
-                      </button>
-                    )}
-                    {renameInPickerId !== trip.id && (
-                      <>
-                        <button
-                          onClick={() => { setRenameInPickerId(trip.id); setRenameInPickerName(trip.name); }}
-                          className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/[0.06] transition-colors"
-                          title={locale === "es" ? "Renombrar" : "Rename"}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => deleteTrip(trip.id)}
-                          className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
-                          title={locale === "es" ? "Eliminar" : "Delete"}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          <div className="flex h-[60px]">
-
-            {/* 1. Mi viaje / Mis viajes */}
-            {(() => {
-              const tripsActive = activeTab === "trips" || activeTab === DRAFT_ID || userTrips.some((t) => t.id === activeTab);
-              const totalTrips = userTrips.length + (draftTrip ? 1 : 0);
-              const label = totalTrips <= 1
-                ? (locale === "es" ? "Mi viaje" : "My trip")
-                : (locale === "es" ? "Mis viajes" : "My trips");
-              return (
-                <button
-                  onClick={() => {
-                    const allTrips = [...userTrips, ...(draftTrip ? [{ id: DRAFT_ID }] : [])];
-                    if (allTrips.length === 1) {
-                      navigateAway(allTrips[0].id);
-                    } else {
-                      setShowTripPicker((v) => !v);
-                      setRenameInPickerId(null);
-                    }
-                  }}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${tripsActive ? "text-blue-400" : "text-gray-500"}`}
-                >
-                  {tripsActive && <span className="absolute top-0 inset-x-0 flex justify-center"><span className="h-0.5 w-8 rounded-full bg-blue-400" /></span>}
-                  <div className="relative">
-                    <Map className="h-[22px] w-[22px]" />
-                    {totalTrips > 1 && (
-                      <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                        {totalTrips}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] font-semibold leading-none">{label}</span>
-                </button>
-              );
-            })()}
-
-            {/* 2. Aeropuertos */}
-            {(() => {
-              const isActive = activeTab === "airports";
-              return (
-                <button
-                  onClick={() => navigateAway("airports")}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${isActive ? "text-blue-400" : "text-gray-500"}`}
-                >
-                  {isActive && <span className="absolute top-0 inset-x-0 flex justify-center"><span className="h-0.5 w-8 rounded-full bg-blue-400" /></span>}
-                  <MapPin className="h-[22px] w-[22px]" />
-                  <span className="text-[10px] font-semibold leading-none">{t.tabAirports}</span>
-                </button>
-              );
-            })()}
-
-            {/* 3. Vuelos */}
-            {(() => {
-              const isActive = activeTab === "search";
-              return (
-                <button
-                  onClick={() => navigateAway("search")}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${isActive ? "text-blue-400" : "text-gray-500"}`}
-                >
-                  {isActive && <span className="absolute top-0 inset-x-0 flex justify-center"><span className="h-0.5 w-8 rounded-full bg-blue-400" /></span>}
-                  <Plane className="h-[22px] w-[22px]" />
-                  <span className="text-[10px] font-semibold leading-none">{t.tabSearch}</span>
-                </button>
-              );
-            })()}
-
-            {/* 4. Nuevo */}
-            <button
-              onClick={() => { setShowTripPicker(false); openCreateTripModal(); }}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors text-gray-500 hover:text-blue-400"
-            >
-              <Plus className="h-[22px] w-[22px]" />
-              <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Nuevo" : "New"}</span>
-            </button>
-
-          </div>
-
-          </div>
-        </nav>
+        <BottomNav
+          locale={locale}
+          activeTab={activeTab}
+          userTrips={userTrips}
+          draftTrip={draftTrip}
+          draftId={DRAFT_ID}
+          tabLabels={{ airports: t.tabAirports, search: t.tabSearch }}
+          onNavigate={navigateAway}
+          onNewTrip={openCreateTripModal}
+          onDiscardDraft={discardDraft}
+          onDeleteTrip={deleteTrip}
+          onRenameTrip={renameTripDB}
+          onRenameDraft={(name) => setDraftTrip((prev) => prev ? { ...prev, name } : prev)}
+        />
       )}
     </>
   );
