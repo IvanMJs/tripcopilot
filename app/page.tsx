@@ -460,6 +460,57 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── NOTIFICATIONS ───────────────────────────────────────────────── */}
+      <section className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">Notificaciones</p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Solo lo que necesitás saber</h2>
+            <p className="text-sm text-gray-500 mt-3">Sin spam. Tres alertas críticas, en el momento justo.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                icon: "✈️",
+                color: "text-violet-400",
+                bg: "bg-violet-950/40",
+                border: "border-violet-800/30",
+                timing: "24hs antes",
+                title: "Check-in",
+                desc: "Recordatorio para hacer el check-in online antes de que cierren los mostradores.",
+              },
+              {
+                icon: "🛫",
+                color: "text-blue-400",
+                bg: "bg-blue-950/40",
+                border: "border-blue-800/30",
+                timing: "3hs antes",
+                title: "Pre-vuelo",
+                desc: "Estado actual del aeropuerto de salida incluido — sabés si hay demoras antes de salir de casa.",
+              },
+              {
+                icon: "⚠️",
+                color: "text-amber-400",
+                bg: "bg-amber-950/40",
+                border: "border-amber-800/30",
+                timing: "Hasta 3 días antes",
+                title: "Delays y cierres",
+                desc: "Alerta inmediata si tu aeropuerto de salida tiene demoras moderadas, severas o un cierre.",
+              },
+            ].map((n) => (
+              <div key={n.title} className={`rounded-2xl border ${n.border} ${n.bg} p-5 space-y-3 flex flex-col items-center text-center`}>
+                <div className={`flex items-center justify-center h-9 w-9 rounded-xl ${n.bg} border ${n.border} text-lg`}>
+                  {n.icon}
+                </div>
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${n.color}`}>{n.timing}</p>
+                <h3 className="text-sm font-bold text-white">{n.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{n.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── HOW IT WORKS ────────────────────────────────────────────────── */}
       <section id="como-funciona" className="py-16 px-4">
         <div className="max-w-4xl mx-auto">
