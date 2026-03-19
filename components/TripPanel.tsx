@@ -21,7 +21,6 @@ import { analyzeAllConnections, ConnectionAnalysis } from "@/lib/connectionRisk"
 import { calculateTripRiskScore } from "@/lib/tripRiskScore";
 import { TripRiskBadge } from "./TripRiskBadge";
 import { TripAdvisor } from "./TripAdvisor";
-import { TripActionChecklist } from "./TripActionChecklist";
 import { ImportFlightsModal } from "./ImportFlightsModal";
 import { ParsedFlight } from "@/lib/importFlights";
 import { FlightStatusBadge } from "@/components/FlightStatusBadge";
@@ -1182,32 +1181,6 @@ export function TripPanel({
     [sorted],
   );
 
-  // ── TripActionChecklist data ─────────────────────────────────────────────────
-  const tripAirports = useMemo(() => {
-    const codes = new Set<string>();
-    sorted.forEach((f) => { codes.add(f.originCode); codes.add(f.destinationCode); });
-    return Array.from(codes);
-  }, [sorted]);
-
-  const nextFlight = useMemo(() => {
-    const now = Date.now();
-    const upcoming = sorted.find((f) => {
-      if (!f.departureTime) return f.isoDate >= new Date().toISOString().slice(0, 10);
-      return new Date(`${f.isoDate}T${f.departureTime}:00`).getTime() > now;
-    });
-    if (!upcoming) return null;
-    const airport = AIRPORTS[upcoming.destinationCode];
-    return {
-      destinationCode:      upcoming.destinationCode,
-      isoDate:              upcoming.isoDate,
-      isInternational:      airport?.isFAA === false,
-      arrivalRecommendation: upcoming.departureTime
-        ? subtractHours(upcoming.departureTime, upcoming.arrivalBuffer)
-        : "—",
-      flightNum: upcoming.flightCode,
-    };
-  }, [sorted]);
-
   // ── Calendar flights ────────────────────────────────────────────────────────
   const calFlights: CalendarFlight[] = sorted.map((f) => ({
     flightCode:      f.flightCode,
@@ -1465,17 +1438,9 @@ export function TripPanel({
         </div>
       )}
 
-      {/* Trip guide — checklist + destination advisor */}
+      {/* Trip guide — destination advisor */}
       {sorted.length > 0 && (
-        <>
-          <TripActionChecklist
-            statusMap={statusMap}
-            tripAirports={tripAirports}
-            locale={locale}
-            nextFlight={nextFlight}
-          />
-          <TripAdvisor flights={advisorFlights} locale={locale} />
-        </>
+        <TripAdvisor flights={advisorFlights} locale={locale} />
       )}
 
       {/* Add flight — toggle button when flights exist, always-open when empty */}

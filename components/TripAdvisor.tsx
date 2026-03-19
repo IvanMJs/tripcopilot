@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { ChevronDown, Sparkles, MapPin, Moon, Thermometer, Loader2, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ChevronDown, Sparkles, MapPin, Moon, Thermometer } from "lucide-react";
 import { getDestinationProfile, getDestinationConfig } from "@/lib/destinationConfig";
+import { TripAdviceResult } from "@/lib/types/tripAdvice";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,8 +23,11 @@ interface StayInfo {
   nights: number;
   arrivalIso: string;
   departureIso: string;
-  /** Month of arrival (1-12) */
   month: number;
+  tempMin: number;
+  tempMax: number;
+  climate: string;
+  climateEn: string;
 }
 
 interface TripAdvisorProps {
@@ -47,20 +51,16 @@ function nightsBetween(isoA: string, isoB: string): number {
   return Math.round((b - a) / (1000 * 60 * 60 * 24));
 }
 
-/** Compute stays of ≥2 nights from the flights array */
 function computeStays(flights: FlightItem[]): StayInfo[] {
   const stays: StayInfo[] = [];
-
   for (let i = 0; i < flights.length; i++) {
     const dest = flights[i].destinationCode;
-    // Find the next flight that departs from this destination
     const nextDep = flights.find((f, j) => j > i && f.originCode === dest);
     if (!nextDep) continue;
-
     const nights = nightsBetween(flights[i].isoDate, nextDep.isoDate);
     if (nights < 2) continue;
-
     const config = getDestinationConfig(dest);
+    const profile = getDestinationProfile(dest, flights[i].isoDate);
     stays.push({
       code: dest,
       city: config?.city ?? flights[i].destinationName,
@@ -70,10 +70,17 @@ function computeStays(flights: FlightItem[]): StayInfo[] {
       arrivalIso: flights[i].isoDate,
       departureIso: nextDep.isoDate,
       month: new Date(flights[i].isoDate + "T00:00:00").getMonth() + 1,
+      tempMin: profile?.tempMinC ?? 20,
+      tempMax: profile?.tempMaxC ?? 30,
+      climate: profile?.climateDesc ?? "",
+      climateEn: profile?.climateDescEn ?? "",
     });
   }
-
   return stays;
+}
+
+function staysKey(stays: StayInfo[]): string {
+  return stays.map((s) => `${s.code}:${s.arrivalIso}:${s.departureIso}`).join("|");
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -113,34 +120,33 @@ function SectionHeader({
 function DestinationCard({
   stay,
   locale,
+  aiTips,
 }: {
   stay: StayInfo;
   locale: "es" | "en";
+  aiTips?: string[];
 }) {
   const [open, setOpen] = useState(true);
   const [packingOpen, setPackingOpen] = useState(true);
   const [activitiesOpen, setActivitiesOpen] = useState(true);
-  const [tipsOpen, setTipsOpen] = useState(false);
+  const [tipsOpen, setTipsOpen] = useState(true);
 
   const profile = getDestinationProfile(stay.code, stay.arrivalIso);
-  const config = getDestinationConfig(stay.code);
-
   const city = locale === "es" ? stay.city : stay.cityEn;
-  const climate = profile
-    ? locale === "es"
-      ? profile.climateDesc
-      : profile.climateDescEn
-    : null;
+  const climate = locale === "es" ? stay.climate : stay.climateEn;
+
+  // Use AI tips if available, otherwise fall back to static profile tips
+  const tips = aiTips
+    ? aiTips.map((t) => ({ es: t, en: t }))
+    : profile?.tips ?? [];
 
   return (
     <div className="border-b border-white/[0.04] last:border-b-0">
-      {/* Destination header */}
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left tap-scale"
       >
         <span className="text-xl leading-none shrink-0">{stay.flag}</span>
-
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-bold text-white">{city}</span>
@@ -156,7 +162,7 @@ function DestinationCard({
             <div className="flex items-center gap-2 mt-0.5">
               <span className="flex items-center gap-1 text-[10px] text-gray-500">
                 <Thermometer className="h-2.5 w-2.5" />
-                {profile.tempMinC}–{profile.tempMaxC}°C
+                {stay.tempMin}–{stay.tempMax}°C
               </span>
               {climate && (
                 <span className="text-[10px] text-gray-600 truncate">{climate}</span>
@@ -164,7 +170,6 @@ function DestinationCard({
             </div>
           )}
         </div>
-
         <ChevronDown
           className={`h-4 w-4 text-gray-500 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
@@ -172,7 +177,7 @@ function DestinationCard({
 
       {open && profile && (
         <div className="divide-y divide-white/[0.03]">
-          {/* Weather alerts (inline, no collapse) */}
+          {/* Weather alerts */}
           {profile.weatherAlerts.length > 0 && (
             <div className="px-4 py-2 space-y-1">
               {profile.weatherAlerts.map((w, i) => (
@@ -239,22 +244,24 @@ function DestinationCard({
             </div>
           )}
 
-          {/* Tips */}
-          {profile.tips.length > 0 && (
+          {/* Tips — AI or static */}
+          {tips.length > 0 && (
             <div>
               <SectionHeader
-                emoji="💡"
+                emoji={aiTips ? "✨" : "💡"}
                 label={locale === "es" ? "Tips" : "Tips"}
-                count={profile.tips.length}
+                count={tips.length}
                 open={tipsOpen}
                 onToggle={() => setTipsOpen((v) => !v)}
               />
               {tipsOpen && (
                 <ul className="px-4 pb-2 space-y-1.5">
-                  {profile.tips.map((t, i) => (
+                  {tips.map((t, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-gray-600 shrink-0 mt-1 text-[10px]">•</span>
-                      <span className="text-xs text-gray-300 leading-snug">
+                      <span className={`shrink-0 mt-1 text-[10px] ${aiTips ? "text-purple-400" : "text-gray-600"}`}>
+                        {aiTips ? "✦" : "•"}
+                      </span>
+                      <span className={`text-xs leading-snug ${aiTips ? "text-gray-200" : "text-gray-300"}`}>
                         {locale === "es" ? t.es : t.en}
                       </span>
                     </li>
@@ -269,61 +276,94 @@ function DestinationCard({
   );
 }
 
-// ── Cross-trip packing summary ────────────────────────────────────────────────
-
-function CrossTripSummary({
+function PackingSection({
   stays,
   locale,
+  aiPacking,
 }: {
   stays: StayInfo[];
   locale: "es" | "en";
+  aiPacking?: TripAdviceResult["packing"];
 }) {
   const [open, setOpen] = useState(true);
 
-  // Collect all packing items and deduplicate loosely
-  const tempRanges = stays.map((s) => {
-    const p = getDestinationProfile(s.code, s.arrivalIso);
-    return p ? { min: p.tempMinC, max: p.tempMaxC } : null;
-  }).filter(Boolean) as { min: number; max: number }[];
+  if (aiPacking && aiPacking.length > 0) {
+    const priorityColor: Record<string, string> = {
+      essential: "text-red-400",
+      recommended: "text-yellow-400",
+      optional: "text-gray-500",
+    };
+    const priorityLabel: Record<string, Record<string, string>> = {
+      essential: { es: "esencial", en: "essential" },
+      recommended: { es: "recomendado", en: "recommended" },
+      optional: { es: "opcional", en: "optional" },
+    };
+    return (
+      <div className="border-t border-white/[0.04]">
+        <SectionHeader
+          emoji="🧳"
+          label={locale === "es" ? "Equipaje del viaje" : "Trip packing"}
+          count={aiPacking.length}
+          open={open}
+          onToggle={() => setOpen((v) => !v)}
+        />
+        {open && (
+          <ul className="px-4 pb-3 space-y-2">
+            {aiPacking.map((p, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className={`shrink-0 mt-0.5 text-[10px] font-bold ${priorityColor[p.priority] ?? "text-gray-500"}`}>
+                  ✦
+                </span>
+                <div>
+                  <p className="text-xs font-medium text-gray-200">{p.item}</p>
+                  <p className="text-[11px] text-gray-500 leading-snug flex items-center gap-1">
+                    <span className={`text-[10px] font-semibold ${priorityColor[p.priority] ?? "text-gray-500"}`}>
+                      {priorityLabel[p.priority]?.[locale] ?? p.priority}
+                    </span>
+                    · {p.reason}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
+  // Static fallback: temp ranges per destination
+  const tempRanges = stays
+    .map((s) => ({ min: s.tempMin, max: s.tempMax }))
+    .filter((r) => r.min !== 20 || r.max !== 30);
+
+  if (tempRanges.length === 0) return null;
 
   const globalMin = Math.min(...tempRanges.map((r) => r.min));
   const globalMax = Math.max(...tempRanges.map((r) => r.max));
-  const tempSpread = globalMax - globalMin;
-  const hasMixedClimate = tempSpread >= 10;
+  const hasMixedClimate = globalMax - globalMin >= 10;
 
-  const es_items = [
-    `Rango de temperatura total del viaje: ${globalMin}–${globalMax}°C`,
-    hasMixedClimate
-      ? `Clima mixto detectado (${globalMin}°C en frío vs ${globalMax}°C en tropical) — empacá en capas`
-      : null,
-    "Protector solar FPS 50+ (obligatorio en GCM y MIA)",
-    "Una campera de abrigo para NY (noches pueden bajar a 8°C)",
-    "Campera liviana para el AC de restaurantes en toda la ruta",
-    "Paraguas compacto — lluvia posible en todos los destinos",
-    "Calzado cómodo para caminar (vas a caminar mucho en NYC y MIA)",
-    "Documentos: pasaporte vigente + seguro de viaje activo",
-  ].filter(Boolean) as string[];
-
-  const en_items = [
-    `Total trip temperature range: ${globalMin}–${globalMax}°C`,
-    hasMixedClimate
-      ? `Mixed climate detected (${globalMin}°C cold vs ${globalMax}°C tropical) — pack in layers`
-      : null,
-    "SPF 50+ sunscreen (essential in GCM and MIA)",
-    "A warm jacket for NYC (nights can drop to 8°C)",
-    "Light jacket for restaurant A/C throughout the trip",
-    "Compact umbrella — rain possible at all destinations",
-    "Comfortable walking shoes (lots of walking in NYC and MIA)",
-    "Documents: valid passport + active travel insurance",
-  ].filter(Boolean) as string[];
-
-  const items = locale === "es" ? es_items : en_items;
+  const items =
+    locale === "es"
+      ? [
+          `Temperatura del viaje: ${globalMin}–${globalMax}°C`,
+          hasMixedClimate ? `Clima mixto (${globalMin}°C frío → ${globalMax}°C cálido) — empacá en capas` : null,
+          "Protector solar FPS 50+",
+          "Paraguas compacto",
+          "Calzado cómodo para caminar",
+        ].filter(Boolean) as string[]
+      : [
+          `Trip temperature range: ${globalMin}–${globalMax}°C`,
+          hasMixedClimate ? `Mixed climate (${globalMin}°C cold → ${globalMax}°C warm) — pack in layers` : null,
+          "SPF 50+ sunscreen",
+          "Compact umbrella",
+          "Comfortable walking shoes",
+        ].filter(Boolean) as string[];
 
   return (
-    <div className="border-b border-white/[0.04] last:border-b-0">
+    <div className="border-t border-white/[0.04]">
       <SectionHeader
         emoji="🧳"
-        label={locale === "es" ? "Resumen de equipaje del viaje" : "Full-trip packing summary"}
+        label={locale === "es" ? "Equipaje del viaje" : "Trip packing"}
         open={open}
         onToggle={() => setOpen((v) => !v)}
       />
@@ -331,11 +371,7 @@ function CrossTripSummary({
         <ul className="px-4 pb-3 space-y-1.5">
           {items.map((item, i) => (
             <li key={i} className="flex items-start gap-2">
-              <span
-                className={`shrink-0 mt-1 text-[10px] ${
-                  i === 0 ? "text-blue-400" : i === 1 && hasMixedClimate ? "text-orange-400" : "text-gray-600"
-                }`}
-              >
+              <span className={`shrink-0 mt-1 text-[10px] ${i === 0 ? "text-blue-400" : i === 1 && hasMixedClimate ? "text-orange-400" : "text-gray-600"}`}>
                 {i === 0 ? "📊" : i === 1 && hasMixedClimate ? "⚠️" : "•"}
               </span>
               <span className={`text-xs leading-snug ${i === 0 ? "text-blue-300 font-medium" : i === 1 && hasMixedClimate ? "text-orange-300" : "text-gray-300"}`}>
@@ -349,151 +385,55 @@ function CrossTripSummary({
   );
 }
 
-// ── Claude AI card ─────────────────────────────────────────────────────────────
-
-function ClaudeAdvisorCard({
-  stays,
-  locale,
-}: {
-  stays: StayInfo[];
-  locale: "es" | "en";
-}) {
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [advice, setAdvice] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAdvice = useCallback(async () => {
-    setStatus("loading");
-    setError(null);
-
-    const payload = stays.map((s) => {
-      const p = getDestinationProfile(s.code, s.arrivalIso);
-      const c = getDestinationConfig(s.code);
-      return {
-        code: s.code,
-        city: locale === "es" ? s.city : s.cityEn,
-        nights: s.nights,
-        arrivalDate: formatDateShort(s.arrivalIso, locale),
-        departureDate: formatDateShort(s.departureIso, locale),
-        tempMin: p?.tempMinC ?? 20,
-        tempMax: p?.tempMaxC ?? 30,
-        climate:
-          locale === "es"
-            ? (p?.climateDesc ?? "")
-            : (p?.climateDescEn ?? ""),
-      };
-    });
-
-    try {
-      const res = await fetch("/api/trip-advice", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ stays: payload, locale }),
-      });
-      const data = await res.json() as { advice?: string; error?: string };
-      if (!res.ok || data.error) {
-        setError(data.error ?? "Error");
-        setStatus("error");
-      } else {
-        setAdvice(data.advice ?? "");
-        setStatus("done");
-      }
-    } catch {
-      setError(locale === "es" ? "Sin conexión" : "No connection");
-      setStatus("error");
-    }
-  }, [stays, locale]);
-
-  return (
-    <div className="mx-4 mb-4 mt-2 rounded-xl border border-purple-700/30 bg-purple-950/20 overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-purple-700/20">
-        <Sparkles className="h-4 w-4 text-purple-400 shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-purple-200">
-            {locale === "es" ? "Análisis IA del viaje" : "AI trip analysis"}
-          </p>
-          <p className="text-[11px] text-purple-400/70">
-            {locale === "es"
-              ? "Recomendaciones personalizadas con Claude"
-              : "Personalized recommendations with Claude"}
-          </p>
-        </div>
-      </div>
-
-      <div className="px-4 py-3">
-        {status === "idle" && (
-          <button
-            onClick={fetchAdvice}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-purple-600/40 bg-purple-900/30 text-purple-300 hover:bg-purple-900/50 transition-colors py-2.5 text-sm font-medium"
-          >
-            <Sparkles className="h-4 w-4" />
-            {locale === "es" ? "✨ Generar análisis con IA" : "✨ Generate AI analysis"}
-          </button>
-        )}
-
-        {status === "loading" && (
-          <div className="flex items-center justify-center gap-2 py-4 text-purple-400">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">
-              {locale === "es" ? "Analizando tu viaje…" : "Analyzing your trip…"}
-            </span>
-          </div>
-        )}
-
-        {status === "error" && (
-          <div className="space-y-2">
-            <div className="flex items-start gap-2 text-red-400">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <p className="text-xs">{error}</p>
-            </div>
-            <button
-              onClick={fetchAdvice}
-              className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              {locale === "es" ? "Reintentar" : "Try again"}
-            </button>
-          </div>
-        )}
-
-        {status === "done" && advice && (
-          <div className="space-y-3">
-            {advice.split("\n").filter((l) => l.trim()).map((line, i) => {
-              const isBold = line.startsWith("**") || /^\d+\./.test(line) || line.startsWith("###");
-              const clean = line.replace(/\*\*/g, "").replace(/^###\s*/, "").replace(/^\d+\.\s*/, "");
-              return (
-                <p
-                  key={i}
-                  className={`text-xs leading-relaxed ${
-                    isBold ? "font-semibold text-purple-200 mt-2" : "text-gray-300"
-                  }`}
-                >
-                  {clean}
-                </p>
-              );
-            })}
-            <button
-              onClick={() => { setStatus("idle"); setAdvice(null); }}
-              className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors"
-            >
-              {locale === "es" ? "Regenerar" : "Regenerate"}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
   const [expanded, setExpanded] = useState(true);
+  const [aiStatus, setAiStatus] = useState<"idle" | "loading" | "done" | "failed">("idle");
+  const [aiData, setAiData] = useState<TripAdviceResult | null>(null);
+  const fetchedKey = useRef<string>("");
 
   const stays = computeStays(flights);
+  const key = staysKey(stays);
+
+  useEffect(() => {
+    if (stays.length === 0 || fetchedKey.current === key) return;
+    fetchedKey.current = key;
+
+    setAiStatus("loading");
+
+    const payload = stays.map((s) => ({
+      code: s.code,
+      city: locale === "es" ? s.city : s.cityEn,
+      nights: s.nights,
+      arrivalDate: formatDateShort(s.arrivalIso, locale),
+      departureDate: formatDateShort(s.departureIso, locale),
+      tempMin: s.tempMin,
+      tempMax: s.tempMax,
+      climate: locale === "es" ? s.climate : s.climateEn,
+    }));
+
+    fetch("/api/trip-advice", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ stays: payload, locale }),
+    })
+      .then((r) => r.json())
+      .then((body: { data?: TripAdviceResult; error?: string }) => {
+        if (body.data) {
+          setAiData(body.data);
+          setAiStatus("done");
+        } else {
+          setAiStatus("failed");
+        }
+      })
+      .catch(() => setAiStatus("failed"));
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (stays.length === 0) return null;
 
   const totalNights = stays.reduce((s, x) => s + x.nights, 0);
+  const isLoadingAi = aiStatus === "loading";
 
   return (
     <div
@@ -511,15 +451,22 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
             {locale === "es" ? "Recomendaciones del viaje" : "Trip recommendations"}
           </p>
           <p className="text-[11px] text-gray-500 mt-0.5">
-            {stays.length}{" "}
-            {locale === "es" ? "destinos" : "destinations"} ·{" "}
-            {totalNights} {locale === "es" ? "noches totales" : "total nights"}
+            {stays.length} {locale === "es" ? "destinos" : "destinations"} ·{" "}
+            {totalNights} {locale === "es" ? "noches" : "nights"}
           </p>
         </div>
-        <div className="flex gap-1 shrink-0">
-          {stays.map((s) => (
-            <span key={s.code} className="text-base">{s.flag}</span>
-          ))}
+        <div className="flex items-center gap-2 shrink-0">
+          {isLoadingAi && (
+            <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
+          )}
+          {aiStatus === "done" && (
+            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+          )}
+          <div className="flex gap-1">
+            {stays.map((s) => (
+              <span key={s.code} className="text-base">{s.flag}</span>
+            ))}
+          </div>
         </div>
         <ChevronDown
           className={`h-4 w-4 text-gray-500 shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
@@ -529,22 +476,52 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
       {/* Content */}
       {expanded && (
         <div className="border-t border-white/[0.05]">
+          {/* AI summary banner */}
+          {aiData?.summary && (
+            <div className="px-4 py-3 border-b border-white/[0.04] flex items-start gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-purple-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-gray-300 leading-relaxed">{aiData.summary}</p>
+            </div>
+          )}
+
           {/* Per-destination cards */}
           <div className="divide-y divide-white/[0.04]">
-            {stays.map((stay) => (
-              <DestinationCard key={`${stay.code}-${stay.arrivalIso}`} stay={stay} locale={locale} />
-            ))}
+            {stays.map((stay) => {
+              const aiTips = aiData?.destination_tips?.find((d) => d.code === stay.code)?.tips;
+              return (
+                <DestinationCard
+                  key={`${stay.code}-${stay.arrivalIso}`}
+                  stay={stay}
+                  locale={locale}
+                  aiTips={aiTips}
+                />
+              );
+            })}
           </div>
 
-          {/* Cross-trip summary */}
-          <div className="border-t border-white/[0.04]">
-            <CrossTripSummary stays={stays} locale={locale} />
-          </div>
+          {/* Packing section */}
+          <PackingSection
+            stays={stays}
+            locale={locale}
+            aiPacking={aiData?.packing}
+          />
 
-          {/* Claude AI card */}
-          <div className="border-t border-white/[0.04] pt-3">
-            <ClaudeAdvisorCard stays={stays} locale={locale} />
-          </div>
+          {/* by_leg notes */}
+          {aiData?.by_leg && aiData.by_leg.length > 0 && (
+            <div className="border-t border-white/[0.04] px-4 py-3 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600">
+                {locale === "es" ? "Conexiones" : "Connections"}
+              </p>
+              {aiData.by_leg.map((leg, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-[10px] font-mono text-gray-500 shrink-0 mt-0.5">
+                    {leg.from}→{leg.to}
+                  </span>
+                  <p className="text-xs text-gray-400 leading-snug">{leg.note}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
