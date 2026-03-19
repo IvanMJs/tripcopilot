@@ -122,6 +122,15 @@ button, a, select, input {
 .pt-safe   { padding-top:    env(safe-area-inset-top);    }
 /* Used for main scroll container to clear the fixed bottom nav */
 .pb-nav    { padding-bottom: calc(env(safe-area-inset-bottom) + 68px); }
+/*
+ * Main content top: uses max() so that on PWA/full-screen mode the Dynamic
+ * Island (≈59px) or notch (≈44px) safe area is always respected.
+ * The max(…, 44px) fallback prevents the env() from silently collapsing
+ * to 0 on the first SSR paint in some iOS versions.
+ */
+.pt-main-content {
+  padding-top: max(env(safe-area-inset-top), 44px);
+}
 
 /* ── Bottom nav glass surface ───────────────────────────────────────────────── */
 .bottom-nav-bg {

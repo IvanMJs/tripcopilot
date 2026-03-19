@@ -344,7 +344,7 @@ export default function HomePage() {
       {/* Offline banner */}
       {mounted && !isOnline && (
         <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-2 bg-yellow-900/95 border-b border-yellow-700/60 px-4 py-2.5 backdrop-blur-sm"
-          style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
+          style={{ paddingTop: "max(env(safe-area-inset-top), 44px)" }}
         >
           <span className="text-sm">📡</span>
           <p className="text-xs font-semibold text-yellow-200">
@@ -360,8 +360,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="min-h-screen bg-gray-950 px-4 pb-nav md:pb-6 md:py-6"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
+      <div className="min-h-screen bg-gray-950 px-4 pb-nav pt-main-content md:pt-6 md:pb-6"
       >
         <div className="mx-auto max-w-6xl space-y-4 md:space-y-6">
 
