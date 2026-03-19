@@ -209,7 +209,7 @@ export async function GET(request: Request) {
 
 /** Returns true if we already sent this notification type for this flight within withinHours */
 async function checkLog(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   flightId: string,
   type: string,
   withinHours: number,
@@ -233,7 +233,7 @@ async function checkLog(
 
 /** Send push to all subscriptions and log it */
 async function sendAndLog(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   subs: { endpoint: string; p256dh: string; auth: string }[],
   flight: any,
   userId: string,
