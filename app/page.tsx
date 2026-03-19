@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Plane, Shield, Brain, Bell, Calendar, Search,
@@ -8,6 +8,8 @@ import {
   Zap, Star, CheckCircle, ChevronDown, LogIn,
   Building2, Smartphone
 } from "lucide-react";
+import { NotifCarousel } from "@/components/NotifCarousel";
+import { AppScreenshotCarousel } from "@/components/AppScreenshotCarousel";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -43,73 +45,14 @@ export default function LandingPage() {
     else setSent(true);
   }
 
-  // Notification screenshots carousel
   const notifScreenshots = [
-    { src: "/morning-briefing.jpeg", label: "Morning briefing" },
-    { src: "/vuelo-demorado.jpeg", label: "Demora real" },
-    { src: "/vuelo-cancelado.jpeg", label: "Cancelación" },
-    { src: "/check-in-24hs.jpeg", label: "Check-in vuelo" },
-    { src: "/mañana-check-in.jpeg", label: "Reminder hotel" },
+    { src: "/morning-briefing.jpeg",   label: "Morning briefing" },
+    { src: "/vuelo-demorado.jpeg",     label: "Demora real" },
+    { src: "/vuelo-cancelado.jpeg",    label: "Cancelación" },
+    { src: "/check-in-24hs.jpeg",      label: "Check-in vuelo" },
+    { src: "/mañana-check-in.jpeg",    label: "Reminder hotel" },
     { src: "/check-in-hoy-hotel.jpeg", label: "Check-in hotel" },
   ];
-  const [activeNotif, setActiveNotif] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const scrollRafRef = useRef<number | null>(null);
-  const isDragging = useRef(false);
-  const dragStartX = useRef(0);
-  const dragScrollLeft = useRef(0);
-
-  // Detect centered item on scroll (mobile swipe + web)
-  const handleCarouselScroll = useCallback(() => {
-    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
-    scrollRafRef.current = requestAnimationFrame(() => {
-      const container = carouselRef.current;
-      if (!container) return;
-      const center = container.scrollLeft + container.clientWidth / 2;
-      let closest = 0;
-      let closestDist = Infinity;
-      itemRefs.current.forEach((el, i) => {
-        if (!el) return;
-        const dist = Math.abs(el.offsetLeft + el.offsetWidth / 2 - center);
-        if (dist < closestDist) { closestDist = dist; closest = i; }
-      });
-      setActiveNotif(closest);
-    });
-  }, []);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!carouselRef.current) return;
-    isDragging.current = true;
-    dragStartX.current = e.pageX - carouselRef.current.offsetLeft;
-    dragScrollLeft.current = carouselRef.current.scrollLeft;
-    carouselRef.current.style.cursor = "grabbing";
-    carouselRef.current.style.userSelect = "none";
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging.current || !carouselRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - carouselRef.current.offsetLeft;
-    const walk = (x - dragStartX.current) * 1.5;
-    carouselRef.current.scrollLeft = dragScrollLeft.current - walk;
-  }, []);
-
-  const handleMouseUp = useCallback(() => {
-    if (!carouselRef.current) return;
-    isDragging.current = false;
-    carouselRef.current.style.cursor = "grab";
-    carouselRef.current.style.userSelect = "";
-  }, []);
-
-  const scrollToNotif = useCallback((idx: number) => {
-    setActiveNotif(idx);
-    const el = itemRefs.current[idx];
-    const container = carouselRef.current;
-    if (!el || !container) return;
-    const target = el.offsetLeft - (container.clientWidth - el.offsetWidth) / 2;
-    container.scrollTo({ left: target, behavior: "smooth" });
-  }, []);
 
   // Features data
   const features = [
@@ -449,35 +392,7 @@ export default function LandingPage() {
             <p className="text-sm text-gray-500 mt-3">Usalo en la computadora antes de salir o en el celular cuando estás en el aeropuerto.</p>
           </div>
 
-          <div className="flex gap-4 sm:gap-6 justify-center items-end overflow-x-auto pb-4 snap-x snap-mandatory">
-            {/* Screenshot 1 */}
-            <div className="shrink-0 snap-center">
-              <div className="relative rounded-3xl overflow-hidden border border-white/[0.10] shadow-2xl shadow-black/60"
-                style={{ width: "min(240px, 65vw)" }}>
-                <img src="/responsive-intuitivo-mobile.jpg" alt="Vista de vuelo con estado FAA" className="w-full h-auto block" />
-              </div>
-              <p className="text-center text-xs text-gray-600 mt-3">Estado por vuelo</p>
-            </div>
-
-            {/* Screenshot 2 — center, larger */}
-            <div className="shrink-0 snap-center -mb-4 sm:-mb-6 relative z-10">
-              <div className="relative rounded-3xl overflow-hidden border border-blue-500/20 shadow-2xl shadow-blue-900/30"
-                style={{ width: "min(260px, 70vw)" }}>
-                <div className="absolute inset-0 rounded-3xl border-2 border-blue-500/10 pointer-events-none z-10" />
-                <img src="/planifica-tu-viaje.jpg" alt="Gestión de viajes" className="w-full h-auto block" />
-              </div>
-              <p className="text-center text-xs text-blue-500 mt-3 font-medium">Gestión de viajes</p>
-            </div>
-
-            {/* Screenshot 3 */}
-            <div className="shrink-0 snap-center">
-              <div className="relative rounded-3xl overflow-hidden border border-white/[0.10] shadow-2xl shadow-black/60"
-                style={{ width: "min(240px, 65vw)" }}>
-                <img src="/tripcopilot-ia.jpg" alt="TripCopilot IA" className="w-full h-auto block" />
-              </div>
-              <p className="text-center text-xs text-gray-600 mt-3">IA integrada</p>
-            </div>
-          </div>
+          <AppScreenshotCarousel />
         </div>
       </section>
 
@@ -592,82 +507,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Dot indicators */}
-          <div className="flex justify-center gap-1.5 mb-8">
-            {notifScreenshots.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => scrollToNotif(i)}
-                className={`rounded-full transition-all duration-300 ${
-                  i === activeNotif
-                    ? "w-5 h-1.5 bg-blue-500"
-                    : "w-1.5 h-1.5 bg-white/20 hover:bg-white/40"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Carousel — fixed item width, scale transform on active (no layout shift) */}
-          <div
-            ref={carouselRef}
-            onScroll={handleCarouselScroll}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            className="flex items-center overflow-x-auto pb-10 snap-x snap-mandatory"
-            style={{
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              cursor: "grab",
-              gap: "clamp(12px, 3vw, 24px)",
-              paddingLeft: "clamp(calc(50% - 120px), calc(50% - 140px), calc(50% - 160px))",
-              paddingRight: "clamp(calc(50% - 120px), calc(50% - 140px), calc(50% - 160px))",
-            }}
-          >
-            {notifScreenshots.map((s, i) => {
-              const isActive = i === activeNotif;
-              return (
-                <div
-                  key={s.src}
-                  ref={(el) => { itemRefs.current[i] = el; }}
-                  onClick={() => { if (!isDragging.current) scrollToNotif(i); }}
-                  className="shrink-0 snap-center cursor-pointer flex flex-col items-center"
-                  style={{
-                    width: "clamp(160px, 28vw, 260px)",
-                    scrollSnapStop: "always",
-                  }}
-                >
-                  <div
-                    className="relative w-full rounded-3xl overflow-hidden shadow-2xl"
-                    style={{
-                      transform: isActive ? "scale(1.12)" : "scale(0.82)",
-                      transformOrigin: "center center",
-                      transition: "transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s, box-shadow 0.4s",
-                      opacity: isActive ? 1 : 0.45,
-                      border: isActive ? "2px solid rgba(59,130,246,0.6)" : "1px solid rgba(255,255,255,0.08)",
-                      boxShadow: isActive
-                        ? "0 20px 60px rgba(59,130,246,0.25), 0 8px 24px rgba(0,0,0,0.6)"
-                        : "0 4px 16px rgba(0,0,0,0.4)",
-                    }}
-                  >
-                    <img src={s.src} alt={s.label} className="w-full h-auto block" draggable={false} />
-                    {isActive && (
-                      <div
-                        className="absolute bottom-0 inset-x-0 py-3 px-3 text-center"
-                        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)" }}
-                      >
-                        <p className="text-xs font-bold text-white">{s.label}</p>
-                      </div>
-                    )}
-                  </div>
-                  {!isActive && (
-                    <p className="text-[10px] text-gray-600 mt-3 transition-opacity duration-300">{s.label}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <NotifCarousel screenshots={notifScreenshots} />
         </div>
       </section>
 

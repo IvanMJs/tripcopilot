@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "TripCopilot",
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-gray-950 text-gray-100 antialiased">
         <LanguageProvider>{children}</LanguageProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

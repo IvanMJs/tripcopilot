@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Hotel, Pencil, Trash2, X, Plus, Upload, RotateCcw, MapPin, Hash } from "lucide-react";
+import { analytics } from "@/lib/analytics";
 
 function TripCopilotIcon({ spinning, size = 16 }: { spinning?: boolean; size?: number }) {
   return (
@@ -265,6 +266,7 @@ export function AddAccommodationInlineForm({
 
   function handleSubmit() {
     if (!name.trim()) { setErr(L.accErrName); return; }
+    analytics.accommodationAdded({ via: parsed ? "ai" : "manual" });
     onAdd({
       name: name.trim(),
       checkInTime: checkInTime || undefined,

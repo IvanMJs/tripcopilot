@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { Locale, translations, Translations } from "@/lib/i18n";
+import { createClient } from "@/utils/supabase/client";
 
 interface LanguageContextValue {
   locale: Locale;
@@ -26,6 +27,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   function setLocale(l: Locale) {
     setLocaleState(l);
     localStorage.setItem("airport-monitor-locale", l);
+    // Persist locale in auth metadata so the cron can send bilingual notifications
+    const supabase = createClient();
+    supabase.auth.updateUser({ data: { locale: l } }).catch(() => {});
   }
 
   return (

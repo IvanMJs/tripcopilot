@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, Bell, BellOff } from "lucide-react";
+import { analytics } from "@/lib/analytics";
 
 interface NotificationSetupSheetProps {
   open: boolean;
@@ -174,6 +175,7 @@ function RequestButton({ locale, onClose }: { locale: "es" | "en"; onClose: () =
     setState("loading");
     const result = await Notification.requestPermission();
     if (result === "granted") {
+      analytics.pushPermissionGranted();
       onClose();
     } else {
       setState("denied");

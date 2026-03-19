@@ -1,6 +1,18 @@
 import { AirportStatus, DelayStatus } from "./types";
 import { AIRPORTS } from "./airports";
 
+type AeroDataBoxDeparture = {
+  status?: string;
+  movement?: {
+    scheduledTime?: { utc?: string };
+    actualTime?: { utc?: string };
+  };
+};
+
+type AeroDataBoxResponse = {
+  departures?: AeroDataBoxDeparture[];
+};
+
 function classifyDelay(avgMinutes: number): DelayStatus {
   if (avgMinutes <= 5) return "ok";
   if (avgMinutes <= 15) return "delay_minor";
@@ -10,13 +22,13 @@ function classifyDelay(avgMinutes: number): DelayStatus {
 
 export function parseAeroDataBox(
   iata: string,
-  data: any,
+  data: AeroDataBoxResponse,
   locale: "es" | "en" = "es",
 ): AirportStatus | null {
   const airport = AIRPORTS[iata];
   if (!airport) return null;
 
-  const departures: any[] = data?.departures ?? [];
+  const departures: AeroDataBoxDeparture[] = data?.departures ?? [];
 
   if (departures.length === 0) {
     return {

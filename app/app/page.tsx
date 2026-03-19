@@ -32,6 +32,8 @@ import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useWatchedAirports } from "@/hooks/useWatchedAirports";
 import { useUserTrips } from "@/hooks/useUserTrips";
 import { NotificationSetupSheet } from "@/components/NotificationSetupSheet";
+import { OnboardingModal } from "@/components/OnboardingModal";
+import { makeExampleTrip } from "@/lib/exampleTrip";
 import { createClient } from "@/utils/supabase/client";
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
@@ -47,7 +49,8 @@ const SEVERITY_ORDER: Record<DelayStatus, number> = {
 
 const REFRESH_OPTIONS = [5, 10, 15, 30];
 const FLIGHT_AIRPORTS = ["EZE", "MIA", "GCM", "JFK"];
-const DRAFT_ID = "__draft__";
+const DRAFT_ID   = "__draft__";
+const EXAMPLE_ID = "__example__";
 
 export default function HomePage() {
   const { t, locale, setLocale } = useLanguage();
@@ -83,13 +86,25 @@ export default function HomePage() {
   // Draft trip — local only, not persisted until "Guardar viaje"
   const [draftTrip, setDraftTrip] = useState<{ name: string; flights: TripFlight[]; accommodations: Accommodation[] } | null>(null);
 
+  // Onboarding
+  const [showOnboarding, setShowOnboarding]   = useState(false);
+  const [exampleTrip,    setExampleTrip]       = useState<ReturnType<typeof makeExampleTrip> | null>(null);
+
   // Delete confirmation modal
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string; flightCount: number } | null>(null);
 
   // Draft leave confirmation (shown when navigating away from unsaved draft)
   const [draftLeaveConfirm, setDraftLeaveConfirm] = useState<{ targetTab: string } | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    if (!localStorage.getItem("tripcopilot-onboarded")) {
+      setShowOnboarding(true);
+      setExampleTrip(makeExampleTrip(locale));
+    }
+  // locale intentionally omitted — locale might not be hydrated yet, example trip handles it statically
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Check-in push notifications
   useEffect(() => {
@@ -204,6 +219,36 @@ export default function HomePage() {
     return (SEVERITY_ORDER[sa] ?? 7) - (SEVERITY_ORDER[sb] ?? 7);
   });
 
+  // ── Onboarding ────────────────────────────────────────────────────────────
+
+  function markOnboarded() {
+    localStorage.setItem("tripcopilot-onboarded", "true");
+  }
+
+  function handleOnboardingSeeExample() {
+    setShowOnboarding(false);
+    setActiveTab(EXAMPLE_ID);
+  }
+
+  function handleOnboardingStartFresh() {
+    setShowOnboarding(false);
+    markOnboarded();
+    setExampleTrip(null);
+    setShowCreateModal(true);
+  }
+
+  function handleDismissExample() {
+    markOnboarded();
+    setExampleTrip(null);
+    setActiveTab("trips");
+  }
+
+  function handleStartRealTrip() {
+    markOnboarded();
+    setExampleTrip(null);
+    setShowCreateModal(true);
+  }
+
   // ── Trip management ───────────────────────────────────────────────────────
 
   function openCreateTripModal() {
@@ -297,6 +342,14 @@ export default function HomePage() {
           style: { background: "#1f2937", color: "#f3f4f6", border: "1px solid #374151" },
         }}
       />
+
+      {showOnboarding && (
+        <OnboardingModal
+          locale={locale}
+          onSeeExample={handleOnboardingSeeExample}
+          onStartFresh={handleOnboardingStartFresh}
+        />
+      )}
 
       <NotificationSetupSheet
         open={showNotifSheet}
@@ -558,6 +611,9 @@ export default function HomePage() {
                 onSelect={(id) => setActiveTab(id)}
                 onCreateTrip={openCreateTripModal}
                 onDeleteTrip={deleteTrip}
+                exampleTrip={exampleTrip}
+                onSelectExample={() => setActiveTab(EXAMPLE_ID)}
+                onDismissExample={handleDismissExample}
               />
             )}
 
@@ -583,6 +639,49 @@ export default function HomePage() {
                 isDraft={true}
                 onSave={saveDraftTrip}
               />
+            )}
+
+            {/* Example trip panel */}
+            {!tripsLoading && exampleTrip && activeTab === EXAMPLE_ID && (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-dashed border-violet-600/40 bg-violet-950/15 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <p className="text-sm font-bold text-violet-300">
+                      {locale === "es" ? "🎯 Viaje de ejemplo" : "🎯 Example trip"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {locale === "es"
+                        ? "Explorá las funciones — todo lo que ves es real"
+                        : "Explore the features — everything you see is real"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={handleStartRealTrip}
+                      className="rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 transition-colors"
+                    >
+                      {locale === "es" ? "Crear mi viaje" : "Create my trip"}
+                    </button>
+                    <button
+                      onClick={handleDismissExample}
+                      className="rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 text-xs px-2 py-1.5 transition-colors"
+                    >
+                      {locale === "es" ? "Descartar" : "Dismiss"}
+                    </button>
+                  </div>
+                </div>
+                <TripPanel
+                  key={EXAMPLE_ID}
+                  trip={exampleTrip}
+                  statusMap={statusMap}
+                  weatherMap={weatherMap}
+                  onAddFlight={() => {}}
+                  onRemoveFlight={() => {}}
+                  onAddAccommodation={() => {}}
+                  onRemoveAccommodation={() => {}}
+                  onUpdateAccommodation={() => {}}
+                />
+              </div>
             )}
 
             {/* Saved trip panels */}

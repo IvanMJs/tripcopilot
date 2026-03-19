@@ -1,24 +1,50 @@
 import webpush from "web-push";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { AIRPORTS } from "@/lib/airports";
 import { parseAeroDataBox } from "@/lib/aerodatabox";
 import { parseXML } from "@/lib/faa";
+import { localToUTC, localHourInTimezone, CRON_LABELS, CronLocale } from "@/lib/cronUtils";
+
+type FlightRow = {
+  id: string;
+  flight_code: string;
+  origin_code: string;
+  destination_code: string;
+  iso_date: string;
+  departure_time: string | null;
+  trips: { user_id: string };
+};
+
+type AccommodationRow = {
+  id: string;
+  name: string;
+  check_in_date: string;
+  check_out_date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  trips: { user_id: string };
+};
+
+type PushSubRow = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
+
+type AeroDataBoxFlightLeg = {
+  status?: string;
+  departure?: {
+    delay?: number;
+    gate?: string | null;
+    actualTime?: { local?: string };
+  };
+};
 
 webpush.setVapidDetails(
   "mailto:support@tripcopilot.app",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!,
 );
-
-const STATUS_LABEL: Record<string, string> = {
-  ok: "Normal ✅",
-  delay_minor: "Demora leve 🟡",
-  delay_moderate: "Demora moderada 🟠",
-  delay_severe: "Demora severa 🔴",
-  ground_delay: "Ground delay 🔴",
-  ground_stop: "Ground stop 🛑",
-  closure: "Cerrado ⛔",
-};
 
 const ALERT_STATUSES = new Set([
   "delay_moderate",
@@ -32,7 +58,6 @@ export async function GET(request: Request) {
   const cronStart = Date.now();
   const cronErrors: string[] = [];
 
-  // Vercel sets CRON_SECRET automatically for cron job requests
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -67,7 +92,7 @@ export async function GET(request: Request) {
 
   // Collect unique origin airports
   const uniqueAirports = Array.from(
-    new Set(flights.map((f: any) => f.origin_code as string)),
+    new Set((flights as FlightRow[]).map((f) => f.origin_code)),
   );
 
   // Fetch airport statuses (FAA + international)
@@ -81,10 +106,7 @@ export async function GET(request: Request) {
       const res = await fetch(
         "https://nasstatus.faa.gov/api/airport-status-information",
         {
-          headers: {
-            "User-Agent": "TripCopilot/1.0",
-            Accept: "application/xml",
-          },
+          headers: { "User-Agent": "TripCopilot/1.0", Accept: "application/xml" },
           signal: AbortSignal.timeout(10000),
         },
       );
@@ -106,26 +128,21 @@ export async function GET(request: Request) {
     const CACHE_TTL_MS = 30 * 60 * 1000;
     const cacheThreshold = new Date(now.getTime() - CACHE_TTL_MS).toISOString();
 
-    // Check cache first
     const { data: cachedRows } = await supabase
       .from("airport_status_cache")
       .select("iata, data")
       .in("iata", intlAirports)
       .gte("cached_at", cacheThreshold);
 
+    type CacheRow = { iata: string; data: { status?: string } };
     const cachedMap = new Map<string, string>(
-      (cachedRows ?? []).map((r: { iata: string; data: { status?: string } }) => [
-        r.iata,
-        r.data?.status ?? "ok",
-      ]),
+      (cachedRows ?? []).map((r: CacheRow) => [r.iata, r.data?.status ?? "ok"]),
     );
 
-    // Serve from cache
     for (const iata of intlAirports) {
       if (cachedMap.has(iata)) statusMap[iata] = cachedMap.get(iata)!;
     }
 
-    // Only call AeroDataBox for airports not in cache
     const toFetch = intlAirports.filter((iata) => !cachedMap.has(iata));
     if (toFetch.length > 0) {
       const fromStr = new Date(now.getTime() - 60 * 60 * 1000).toISOString().slice(0, 16);
@@ -152,7 +169,6 @@ export async function GET(request: Request) {
           const status = parseAeroDataBox(iata, data, "es");
           if (status) {
             statusMap[iata] = status.status;
-            // Write to shared cache
             await supabase
               .from("airport_status_cache")
               .upsert({ iata, data: status, cached_at: now.toISOString() });
@@ -164,19 +180,43 @@ export async function GET(request: Request) {
     }
   }
 
+  // Cache user locales to avoid repeated auth admin calls
+  const userLocaleCache = new Map<string, CronLocale>();
+  async function getUserLocale(userId: string): Promise<CronLocale> {
+    if (userLocaleCache.has(userId)) return userLocaleCache.get(userId)!;
+    try {
+      const { data } = await supabase.auth.admin.getUserById(userId);
+      const locale = (data?.user?.user_metadata?.locale as CronLocale) ?? "es";
+      const valid = locale === "en" ? "en" : "es";
+      userLocaleCache.set(userId, valid);
+      return valid;
+    } catch {
+      userLocaleCache.set(userId, "es");
+      return "es";
+    }
+  }
+
   // Process each flight
   let notificationsSent = 0;
 
-  for (const flight of flights as any[]) {
+  for (const flight of flights as FlightRow[]) {
     const userId: string = flight.trips.user_id;
     const departureTime: string | null = flight.departure_time;
     const isoDate: string = flight.iso_date;
     const originCode: string = flight.origin_code;
+    const destCode: string = flight.destination_code;
 
-    // Parse departure datetime treating stored time as UTC-3 (Argentina)
+    // Resolve airport timezone (fallback: UTC)
+    const airportTz = AIRPORTS[originCode]?.timezone ?? "UTC";
+
+    // Parse departure datetime in airport local timezone → UTC
     let departureDateTime: Date | null = null;
     if (departureTime) {
-      departureDateTime = new Date(`${isoDate}T${departureTime}:00-03:00`);
+      try {
+        departureDateTime = localToUTC(isoDate, departureTime, airportTz);
+      } catch {
+        // malformed time — skip
+      }
     }
 
     const hoursUntil =
@@ -184,10 +224,8 @@ export async function GET(request: Request) {
         ? (departureDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
         : null;
 
-    // Skip past flights
     if (hoursUntil !== null && hoursUntil < 0) continue;
 
-    // Get user push subscriptions
     const { data: subs } = await supabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
@@ -195,35 +233,29 @@ export async function GET(request: Request) {
 
     if (!subs?.length) continue;
 
+    const locale = await getUserLocale(userId);
+    const L = CRON_LABELS[locale];
     const airportStatus = statusMap[originCode] ?? "ok";
+    const statusLabel = L.statusLabel[airportStatus] ?? L.statusLabel["ok"];
 
     // A: Delay / closure alert (up to 3 days before)
     if (ALERT_STATUSES.has(airportStatus)) {
-      const notifType = `delay_${airportStatus}`;
-      const alreadySent = await checkLog(supabase, flight.id, notifType, 20);
+      const alreadySent = await checkFlightLog(supabase, flight.id, `delay_${airportStatus}`, 20);
       if (!alreadySent) {
-        const label = STATUS_LABEL[airportStatus] ?? airportStatus;
-        await sendAndLog(supabase, subs, flight, userId, notifType, {
-          title: `Alerta en ${originCode} — ${flight.flight_code}`,
-          body: `Tu vuelo ${flight.flight_code} a ${flight.destination_code} el ${formatDate(isoDate)}. Estado de ${originCode}: ${label}.`,
-          url: "/app",
-        });
+        const { title, body } = L.delayAlert(originCode, flight.flight_code, destCode, formatDate(isoDate), statusLabel);
+        await sendAndLogFlight(supabase, subs, flight.id, userId, `delay_${airportStatus}`, { title, body, url: "/app" });
         notificationsSent++;
       }
     }
 
-    // A2: Morning briefing — day of flight, between 9:00–13:00 UTC (6–10am Argentina)
+    // A2: Morning briefing — fires when it's 6–10 AM at the origin airport
     if (isoDate === todayISO && hoursUntil !== null && hoursUntil > 3) {
-      const utcHour = now.getUTCHours();
-      if (utcHour >= 9 && utcHour <= 13) {
-        const alreadySent = await checkLog(supabase, flight.id, "morning_briefing", Infinity);
+      const localHour = localHourInTimezone(now, airportTz);
+      if (localHour >= 6 && localHour <= 10) {
+        const alreadySent = await checkFlightLog(supabase, flight.id, "morning_briefing", Infinity);
         if (!alreadySent) {
-          const statusLabel = STATUS_LABEL[airportStatus] ?? "Normal ✅";
-          await sendAndLog(supabase, subs, flight, userId, "morning_briefing", {
-            title: `¡Hoy viajás! ${flight.flight_code} sale a las ${departureTime ?? "?"}`,
-            body: `${originCode}→${flight.destination_code}. ${originCode}: ${statusLabel}. ¡Buen vuelo! 🛫`,
-            url: "/app",
-          });
+          const { title, body } = L.morningBriefing(flight.flight_code, departureTime ?? "?", originCode, destCode, statusLabel);
+          await sendAndLogFlight(supabase, subs, flight.id, userId, "morning_briefing", { title, body, url: "/app" });
           notificationsSent++;
         }
       }
@@ -231,34 +263,27 @@ export async function GET(request: Request) {
 
     // B: Check-in 24h before
     if (hoursUntil !== null && hoursUntil >= 23 && hoursUntil <= 25) {
-      const alreadySent = await checkLog(supabase, flight.id, "checkin_24h", Infinity);
+      const alreadySent = await checkFlightLog(supabase, flight.id, "checkin_24h", Infinity);
       if (!alreadySent) {
-        await sendAndLog(supabase, subs, flight, userId, "checkin_24h", {
-          title: "¿Hiciste el check-in? ✈️",
-          body: `Tu vuelo ${flight.flight_code} ${originCode}→${flight.destination_code} sale mañana a las ${departureTime}.`,
-          url: "/app",
-        });
+        const { title, body } = L.checkin24h(flight.flight_code, originCode, destCode, departureTime ?? "?");
+        await sendAndLogFlight(supabase, subs, flight.id, userId, "checkin_24h", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
 
     // C: Pre-flight alert 3h before (with airport status)
     if (hoursUntil !== null && hoursUntil >= 2.5 && hoursUntil <= 3.5) {
-      const alreadySent = await checkLog(supabase, flight.id, "preflight_3h", Infinity);
+      const alreadySent = await checkFlightLog(supabase, flight.id, "preflight_3h", Infinity);
       if (!alreadySent) {
-        const label = STATUS_LABEL[airportStatus] ?? "Normal ✅";
-        await sendAndLog(supabase, subs, flight, userId, "preflight_3h", {
-          title: `Tu vuelo ${flight.flight_code} sale en ~3hs`,
-          body: `${originCode}→${flight.destination_code} a las ${departureTime}. ${originCode}: ${label}.`,
-          url: "/app",
-        });
+        const { title, body } = L.preflight3h(flight.flight_code, originCode, destCode, departureTime ?? "?", statusLabel);
+        await sendAndLogFlight(supabase, subs, flight.id, userId, "preflight_3h", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
 
     // D: Real-time flight status (2–4h before) — 1 API call per flight, ever
     if (hoursUntil !== null && hoursUntil >= 2 && hoursUntil <= 4 && rapidApiKey) {
-      const alreadyFetched = await checkLog(supabase, flight.id, "flight_status_fetched", Infinity);
+      const alreadyFetched = await checkFlightLog(supabase, flight.id, "flight_status_fetched", Infinity);
       if (!alreadyFetched) {
         // Log immediately so parallel cron runs don't double-fetch
         await supabase.from("notification_log").insert({
@@ -269,25 +294,18 @@ export async function GET(request: Request) {
         });
 
         const flightStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey);
-
         if (flightStatus) {
           if (flightStatus.cancelled) {
-            await sendAndLog(supabase, subs, flight, userId, "flight_cancelled", {
-              title: `Vuelo cancelado ⛔ — ${flight.flight_code}`,
-              body: `Tu vuelo ${flight.flight_code} ${originCode}→${flight.destination_code} fue cancelado. Contactá a la aerolínea.`,
-              url: "/app",
-            });
+            const { title, body } = L.flightCancelled(flight.flight_code, originCode, destCode);
+            await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_cancelled", { title, body, url: "/app" });
             notificationsSent++;
           } else if (flightStatus.delayMinutes >= 20) {
             const delayText = flightStatus.delayMinutes >= 60
               ? `${Math.floor(flightStatus.delayMinutes / 60)}h ${flightStatus.delayMinutes % 60}min`
               : `${flightStatus.delayMinutes} min`;
-            const gateText = flightStatus.gate ? ` · Puerta ${flightStatus.gate}` : "";
-            await sendAndLog(supabase, subs, flight, userId, "flight_delay_real", {
-              title: `${flight.flight_code} con ${delayText} de demora 🟠`,
-              body: `Sale aprox. a las ${flightStatus.estimatedDeparture ?? departureTime}${gateText}. ${originCode}→${flight.destination_code}.`,
-              url: "/app",
-            });
+            const gateText = flightStatus.gate ? ` · ${locale === "es" ? "Puerta" : "Gate"} ${flightStatus.gate}` : "";
+            const { title, body } = L.flightDelay(flight.flight_code, delayText, flightStatus.estimatedDeparture, departureTime ?? "?", gateText, originCode, destCode);
+            await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_delay_real", { title, body, url: "/app" });
             notificationsSent++;
           }
         }
@@ -298,7 +316,7 @@ export async function GET(request: Request) {
   // ── Hotel notifications ───────────────────────────────────────────────────
   const todayStr    = now.toISOString().slice(0, 10);
   const tomorrowISO = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const currentTime = now.toISOString().slice(11, 16); // "HH:MM"
+  const currentTime = now.toISOString().slice(11, 16); // "HH:MM" UTC
   const windowStart = new Date(now.getTime() - 30 * 60 * 1000).toISOString().slice(11, 16);
 
   const { data: hotelAccs } = await supabase
@@ -306,7 +324,7 @@ export async function GET(request: Request) {
     .select("*, trips!inner(user_id)")
     .or(`check_in_date.eq.${todayStr},check_in_date.eq.${tomorrowISO},check_out_date.eq.${todayStr},check_out_date.eq.${tomorrowISO}`);
 
-  for (const acc of (hotelAccs ?? []) as any[]) {
+  for (const acc of (hotelAccs ?? []) as AccommodationRow[]) {
     const userId: string = acc.trips.user_id;
     const { data: subs } = await supabase
       .from("push_subscriptions")
@@ -314,59 +332,48 @@ export async function GET(request: Request) {
       .eq("user_id", userId);
     if (!subs?.length) continue;
 
+    const locale = await getUserLocale(userId);
+    const L = CRON_LABELS[locale];
+
     // A: Check-in reminder (day before, if no specific time set)
     if (acc.check_in_date === tomorrowISO && !acc.check_in_time) {
-      const alreadySent = await checkLog(supabase, acc.id, "hotel_checkin_reminder", Infinity);
+      const alreadySent = await checkAccommodationLog(supabase, acc.id, "hotel_checkin_reminder");
       if (!alreadySent) {
-        await sendAndLog(supabase, subs, { id: acc.id }, userId, "hotel_checkin_reminder", {
-          title: `🏨 Mañana check-in en ${acc.name}`,
-          body: "Recordá tener listos los documentos y código de reserva.",
-          url: "/app",
-        });
+        const { title, body } = L.hotelCheckinReminder(acc.name);
+        await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkin_reminder", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
 
     // B: Check-in time notification (today, at the exact check-in time ±30min)
     if (acc.check_in_date === todayStr && acc.check_in_time) {
-      const inWindow = timeInWindow(acc.check_in_time, windowStart, currentTime);
-      if (inWindow) {
-        const alreadySent = await checkLog(supabase, acc.id, "hotel_checkin_time", Infinity);
+      if (timeInWindow(acc.check_in_time, windowStart, currentTime)) {
+        const alreadySent = await checkAccommodationLog(supabase, acc.id, "hotel_checkin_time");
         if (!alreadySent) {
-          await sendAndLog(supabase, subs, { id: acc.id }, userId, "hotel_checkin_time", {
-            title: `🏨 Check-in ahora — ${acc.name}`,
-            body: `Hora de check-in: ${acc.check_in_time}. ¡Bienvenido!`,
-            url: "/app",
-          });
+          const { title, body } = L.hotelCheckinTime(acc.name, acc.check_in_time);
+          await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkin_time", { title, body, url: "/app" });
           notificationsSent++;
         }
       }
     }
 
-    // C0: Check-out reminder (day before, if no specific time set)
+    // C: Check-out reminder (day before, if no specific time set)
     if (acc.check_out_date === tomorrowISO && !acc.check_out_time) {
-      const alreadySent = await checkLog(supabase, acc.id, "hotel_checkout_reminder", Infinity);
+      const alreadySent = await checkAccommodationLog(supabase, acc.id, "hotel_checkout_reminder");
       if (!alreadySent) {
-        await sendAndLog(supabase, subs, { id: acc.id }, userId, "hotel_checkout_reminder", {
-          title: `🏨 Mañana check-out en ${acc.name}`,
-          body: "Recordá dejar la habitación a tiempo y tener listo el equipaje.",
-          url: "/app",
-        });
+        const { title, body } = L.hotelCheckoutReminder(acc.name);
+        await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkout_reminder", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
 
-    // C: Check-out time notification (today, at the exact check-out time ±30min)
+    // D: Check-out time notification (today, at the exact check-out time ±30min)
     if (acc.check_out_date === todayStr && acc.check_out_time) {
-      const inWindow = timeInWindow(acc.check_out_time, windowStart, currentTime);
-      if (inWindow) {
-        const alreadySent = await checkLog(supabase, acc.id, "hotel_checkout_time", Infinity);
+      if (timeInWindow(acc.check_out_time, windowStart, currentTime)) {
+        const alreadySent = await checkAccommodationLog(supabase, acc.id, "hotel_checkout_time");
         if (!alreadySent) {
-          await sendAndLog(supabase, subs, { id: acc.id }, userId, "hotel_checkout_time", {
-            title: `🏨 Check-out ahora — ${acc.name}`,
-            body: `Hora de check-out: ${acc.check_out_time}. ¡Buen viaje!`,
-            url: "/app",
-          });
+          const { title, body } = L.hotelCheckoutTime(acc.name, acc.check_out_time);
+          await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkout_time", { title, body, url: "/app" });
           notificationsSent++;
         }
       }
@@ -388,7 +395,8 @@ export async function GET(request: Request) {
   });
 }
 
-/** Fetch real-time status for a specific flight from AeroDataBox */
+// ── Flight status API ──────────────────────────────────────────────────────
+
 async function fetchFlightStatus(
   flightCode: string,
   isoDate: string,
@@ -404,16 +412,13 @@ async function fetchFlightStatus(
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return null;
-    const data = await res.json() as any[];
+    const data = await res.json() as AeroDataBoxFlightLeg[];
     if (!Array.isArray(data) || data.length === 0) return null;
 
-    const leg = data[0];
-    const status: string = leg.status ?? "";
-    const cancelled = status === "Cancelled";
+    const leg: AeroDataBoxFlightLeg = data[0];
+    const cancelled = (leg.status ?? "") === "Cancelled";
     const delayMinutes: number = leg.departure?.delay ?? 0;
     const gate: string | null = leg.departure?.gate ?? null;
-
-    // Estimated departure from actualTime local, fallback to scheduledTime
     const actualLocal: string | null = leg.departure?.actualTime?.local ?? null;
     const estimatedDeparture = actualLocal ? actualLocal.slice(11, 16) : null;
 
@@ -423,17 +428,17 @@ async function fetchFlightStatus(
   }
 }
 
-/** Returns true if we already sent this notification type for this flight within withinHours */
-async function checkLog(
-  supabase: any,
+// ── Notification log helpers ───────────────────────────────────────────────
+
+async function checkFlightLog(
+  supabase: SupabaseClient,
   flightId: string,
   type: string,
   withinHours: number,
 ): Promise<boolean> {
-  const cutoff =
-    withinHours === Infinity
-      ? new Date(0)
-      : new Date(Date.now() - withinHours * 60 * 60 * 1000);
+  const cutoff = withinHours === Infinity
+    ? new Date(0)
+    : new Date(Date.now() - withinHours * 60 * 60 * 1000);
 
   const { data } = await supabase
     .from("notification_log")
@@ -447,57 +452,91 @@ async function checkLog(
   return !!data;
 }
 
-/** Send push to all subscriptions and log it */
-async function sendAndLog(
-  supabase: any,
-  subs: { endpoint: string; p256dh: string; auth: string }[],
-  flight: any,
+async function checkAccommodationLog(
+  supabase: SupabaseClient,
+  accommodationId: string,
+  type: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("notification_log")
+    .select("id")
+    .eq("accommodation_id", accommodationId)
+    .eq("type", type)
+    .limit(1)
+    .maybeSingle();
+
+  return !!data;
+}
+
+async function sendAndLogFlight(
+  supabase: SupabaseClient,
+  subs: PushSubRow[],
+  flightId: string,
   userId: string,
   type: string,
   notification: { title: string; body: string; url: string },
 ) {
-  await Promise.allSettled(
-    subs.map(async (sub) => {
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify({ ...notification, tag: type }),
-        );
-      } catch (e: unknown) {
-        const err = e as { statusCode?: number };
-        if (err.statusCode === 404 || err.statusCode === 410) {
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("endpoint", sub.endpoint);
-        }
-      }
-    }),
-  );
-
+  await pushToAll(subs, supabase, notification, type);
   await supabase.from("notification_log").insert({
-    flight_id: flight.id,
+    flight_id: flightId,
     user_id: userId,
     type,
     sent_at: new Date().toISOString(),
   });
 }
 
+async function sendAndLogAccommodation(
+  supabase: SupabaseClient,
+  subs: PushSubRow[],
+  accommodationId: string,
+  userId: string,
+  type: string,
+  notification: { title: string; body: string; url: string },
+) {
+  await pushToAll(subs, supabase, notification, type);
+  await supabase.from("notification_log").insert({
+    accommodation_id: accommodationId,
+    user_id: userId,
+    type,
+    sent_at: new Date().toISOString(),
+  });
+}
+
+async function pushToAll(
+  subs: PushSubRow[],
+  supabase: SupabaseClient,
+  notification: { title: string; body: string; url: string },
+  tag: string,
+) {
+  await Promise.allSettled(
+    subs.map(async (sub) => {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          JSON.stringify({ ...notification, tag }),
+        );
+      } catch (e: unknown) {
+        const err = e as { statusCode?: number };
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+        }
+      }
+    }),
+  );
+}
+
+// ── Utility ────────────────────────────────────────────────────────────────
+
 function formatDate(isoDate: string): string {
   const [, month, day] = isoDate.split("-");
   return `${day}/${month}`;
 }
 
-/** Convert "HH:MM" string to minutes since midnight. */
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 }
 
-/**
- * Returns true if `time` falls within the window [windowStart, windowEnd].
- * Handles midnight wrap-around (e.g. windowStart=23:45, windowEnd=00:15).
- */
 function timeInWindow(time: string, windowStart: string, windowEnd: string): boolean {
   const t = toMinutes(time);
   const s = toMinutes(windowStart);

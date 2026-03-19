@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Search, Upload, AlertTriangle } from "lucide-react";
 import { TripFlight } from "@/lib/types";
 import { AIRLINES, parseFlightCode } from "@/lib/flightUtils";
+import { analytics } from "@/lib/analytics";
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 
@@ -124,12 +125,18 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
     if (conflict?.type === "hard") { setError(conflict.message); return; }
     if (conflict?.type === "soft") { setPendingFlight({ flight: newFlight, message: conflict.message }); return; }
 
+    analytics.flightAdded({ airline: parsed.airlineCode, origin, destination: dest });
     onAdd(tripId, newFlight);
     setForm(BLANK_FORM);
   }
 
   function confirmPending() {
     if (!pendingFlight) return;
+    analytics.flightAdded({
+      airline: pendingFlight.flight.airlineCode,
+      origin: pendingFlight.flight.originCode,
+      destination: pendingFlight.flight.destinationCode,
+    });
     onAdd(tripId, pendingFlight.flight);
     setForm(BLANK_FORM);
     setPendingFlight(null);
