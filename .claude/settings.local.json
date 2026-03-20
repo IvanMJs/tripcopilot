@@ -60,7 +60,18 @@
       "mcp__supabase__list_tables",
       "mcp__supabase__list_migrations",
       "mcp__supabase__execute_sql",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "Bash(find /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport -name *.sql)",
+      "Bash(grep -r AeroDataBox /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/hooks --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"AeroDataBox\\\\|aerodatabox\" /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport --include=*.ts --include=*.tsx)",
+      "Bash(git show:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git log:*)",
+      "Bash(npm list:*)",
+      "Bash(ls:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''exports keys:'''', list\\(d.get\\(''''exports'''',{}\\).keys\\(\\)\\)[:20]\\)\")",
+      "Bash(node:*)",
+      "WebFetch(domain:super-flow.uiinitiative.com)"
     ]
   },
   "enableAllProjectMcpServers": true,

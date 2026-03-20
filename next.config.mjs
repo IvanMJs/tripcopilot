@@ -39,6 +39,8 @@ const securityHeaders = [
         "https://nasstatus.faa.gov",
         "https://aerodatabox.p.rapidapi.com",
       ].join(" "),
+      // Sentry Session Replay uses a blob: Web Worker
+      "worker-src blob: 'self'",
       "frame-ancestors 'none'",
       "form-action 'self'",
       "base-uri 'self'",
