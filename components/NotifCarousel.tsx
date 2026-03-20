@@ -86,7 +86,8 @@ export function NotifCarousel({ screenshots }: Props) {
       {/* ── Stack ───────────────────────────────────────────────────────── */}
       <div
         style={{
-          width: 260, height: 500,
+          width: "min(260px, 72vw)",
+          height: "min(500px, 138vw)",
           position: "relative",
           touchAction: "none",
         }}
@@ -186,20 +187,27 @@ export function NotifCarousel({ screenshots }: Props) {
       </div>
 
       {/* ── Dots ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 6 }}>
+      <div style={{ display: "flex", gap: 2 }}>
         {screenshots.map((s, i) => (
           <button
             key={i}
             onClick={() => !busy && setIndex(i)}
             aria-label={s.label}
             style={{
-              borderRadius: 999, height: 6,
-              width: i === index ? 20 : 6,
-              background: i === index ? "#3b82f6" : "rgba(255,255,255,0.18)",
-              border: "none", padding: 0, cursor: "pointer",
-              transition: "all 0.35s ease",
+              background: "transparent", border: "none",
+              padding: "10px 4px", cursor: "pointer",
+              WebkitAppearance: "none", appearance: "none",
+              display: "flex", alignItems: "center",
             }}
-          />
+          >
+            <span style={{
+              display: "block", borderRadius: 999,
+              height: 6, width: i === index ? 20 : 6,
+              background: i === index ? "#3b82f6" : "rgba(255,255,255,0.18)",
+              transition: "all 0.35s ease",
+              flexShrink: 0,
+            }} />
+          </button>
         ))}
       </div>
     </div>

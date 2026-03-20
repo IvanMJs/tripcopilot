@@ -9,7 +9,7 @@ const SLIDES = [
 ];
 
 // Fixed slide width — track translates by index * STEP, perfectly smooth
-const SLIDE_W = 240;
+const SLIDE_W = 220;
 const GAP = 20;
 const STEP = SLIDE_W + GAP;
 const AUTOPLAY_MS = 3500;
@@ -138,23 +138,27 @@ export function AppScreenshotCarousel() {
       </div>
 
       {/* Dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 6, paddingBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 2, paddingBottom: 8 }}>
         {SLIDES.map((_, i) => (
           <button
             key={i}
             onClick={() => setIndex(i)}
             aria-label={SLIDES[i].label}
             style={{
-              borderRadius: 999,
-              height: 6,
-              width: i === index ? 20 : 6,
-              background: i === index ? "#3b82f6" : "rgba(255,255,255,0.18)",
-              border: "none",
-              padding: 0,
-              cursor: "pointer",
-              transition: "all 0.35s ease",
+              background: "transparent", border: "none",
+              padding: "10px 4px", cursor: "pointer",
+              WebkitAppearance: "none", appearance: "none",
+              display: "flex", alignItems: "center",
             }}
-          />
+          >
+            <span style={{
+              display: "block", borderRadius: 999,
+              height: 6, width: i === index ? 20 : 6,
+              background: i === index ? "#3b82f6" : "rgba(255,255,255,0.18)",
+              transition: "all 0.35s ease",
+              flexShrink: 0,
+            }} />
+          </button>
         ))}
       </div>
     </div>
