@@ -21,18 +21,24 @@ export function NotifCarousel({ screenshots }: Props) {
     return () => clearInterval(t);
   }, [total]);
 
-  function advance(dir: "left" | "right") {
-    setIndex((i) => dir === "left" ? (i + 1) % total : (i - 1 + total) % total);
+  function handleStart(x: number) {
+    console.log("[NotifCarousel] handleStart x=", x);
+    startX.current = x;
   }
 
-  function handleStart(x: number) { startX.current = x; }
-
   function handleEnd(x: number) {
+    console.log("[NotifCarousel] handleEnd x=", x, "startX=", startX.current);
     if (startX.current === null) return;
     const d = x - startX.current;
     startX.current = null;
+    console.log("[NotifCarousel] delta=", d);
     if (Math.abs(d) > 50) advance(d < 0 ? "left" : "right");
-    else advance("left"); // treat short move / click as next
+    else advance("left");
+  }
+
+  function advance(dir: "left" | "right") {
+    console.log("[NotifCarousel] advance", dir);
+    setIndex((i) => dir === "left" ? (i + 1) % total : (i - 1 + total) % total);
   }
 
   function onTouchStart(e: React.TouchEvent) { handleStart(e.touches[0].clientX); }
