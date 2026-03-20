@@ -10,28 +10,35 @@ const AUTOPLAY_MS = 3200;
 const STACK = 4;
 
 export function NotifCarousel({ screenshots }: Props) {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex]       = useState(0);
   const [exitState, setExitState] = useState<{ dir: "left" | "right" } | null>(null);
-  const [dragX, setDragX] = useState(0);
+  const [dragX, setDragX]       = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const startX   = useRef<number | null>(null);
-  const dragging = useRef(false);
-  const hovered  = useRef(false);
-  const busy     = exitState !== null;
-  const total    = screenshots.length;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hovered      = useRef(false);
+  const dragging     = useRef(false);
+  const busy         = exitState !== null;
+  const total        = screenshots.length;
 
-  // ── Advance ───────────────────────────────────────────────────────────────
-  const doAdvance = useCallback(
-    (dir: "left" | "right") => {
-      if (busy) return;
-      setExitState({ dir });
-      setTimeout(() => {
-        setIndex((i) => dir === "left" ? (i + 1) % total : (i - 1 + total) % total);
-        setExitState(null);
-      }, 430);
-    },
-    [busy, total],
-  );
+  // Keep refs pointing to latest values so event-handler closures never go stale
+  const busyRef    = useRef(busy);
+  const totalRef   = useRef(total);
+  busyRef.current  = busy;
+  totalRef.current = total;
+
+  // ── Advance (exit animation) ───────────────────────────────────────────────
+  const doAdvance = useCallback((dir: "left" | "right") => {
+    if (busyRef.current) return;
+    setExitState({ dir });
+    setTimeout(() => {
+      setIndex((i) => dir === "left"
+        ? (i + 1) % totalRef.current
+        : (i - 1 + totalRef.current) % totalRef.current,
+      );
+      setExitState(null);
+    }, 430);
+  }, []);
 
   const doAdvanceRef = useRef(doAdvance);
   doAdvanceRef.current = doAdvance;
@@ -44,35 +51,49 @@ export function NotifCarousel({ screenshots }: Props) {
     return () => clearInterval(t);
   }, []);
 
-  // ── Pointer events (mouse + touch unified, setPointerCapture keeps focus) ─
-  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (busy) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    startX.current = e.clientX;
-    dragging.current = true;
-  }
+  // ── Native DOM pointer events — bypasses React synthetic event issues ─────
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!dragging.current || startX.current === null) return;
-    setDragX(e.clientX - startX.current);
-  }
+    let startX: number | null = null;
 
-  function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    if (!dragging.current || startX.current === null) return;
-    const delta = e.clientX - startX.current;
-    dragging.current = false;
-    startX.current = null;
-    setDragX(0);
-    if (Math.abs(delta) > 50) doAdvanceRef.current(delta < 0 ? "left" : "right");
-  }
+    function onDown(e: PointerEvent) {
+      if (busyRef.current) return;
+      el.setPointerCapture(e.pointerId);
+      startX = e.clientX;
+      dragging.current = true;
+      setIsDragging(true);
+    }
 
-  function onPointerCancel() {
-    dragging.current = false;
-    startX.current = null;
-    setDragX(0);
-  }
+    function onMove(e: PointerEvent) {
+      if (startX === null) return;
+      setDragX(e.clientX - startX);
+    }
 
-  const isDragging   = dragging.current;
+    function onUp(e: PointerEvent) {
+      if (startX === null) return;
+      const delta = e.clientX - startX;
+      startX = null;
+      dragging.current = false;
+      setIsDragging(false);
+      setDragX(0);
+      if (Math.abs(delta) > 50) doAdvanceRef.current(delta < 0 ? "left" : "right");
+    }
+
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onUp);
+
+    return () => {
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointercancel", onUp);
+    };
+  }, []); // empty — all reactive values accessed via refs
+
   const dragProgress = Math.min(Math.abs(dragX) / 180, 1);
 
   const cards = Array.from({ length: Math.min(STACK, total) }, (_, s) => ({
@@ -88,17 +109,14 @@ export function NotifCarousel({ screenshots }: Props) {
     >
       {/* ── Stack ───────────────────────────────────────────────────────── */}
       <div
+        ref={containerRef}
         style={{
           width: "min(260px, 72vw)",
           height: "min(500px, 138vw)",
           position: "relative",
           touchAction: "none",
-          cursor: busy ? "default" : "grab",
+          cursor: busy ? "default" : isDragging ? "grabbing" : "grab",
         }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
       >
         {[...cards].reverse().map(({ dataIndex, s }) => {
           const isFront = s === 0;
