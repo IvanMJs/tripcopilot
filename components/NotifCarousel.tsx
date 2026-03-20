@@ -60,7 +60,7 @@ export function NotifCarousel({ screenshots }: Props) {
 
     function onDown(e: PointerEvent) {
       if (busyRef.current) return;
-      el.setPointerCapture(e.pointerId);
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
       startX = e.clientX;
       dragging.current = true;
       setIsDragging(true);
