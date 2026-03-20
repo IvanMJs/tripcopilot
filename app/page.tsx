@@ -8,16 +8,8 @@ import {
   Zap, Star, CheckCircle, ChevronDown, LogIn,
   Building2, Smartphone
 } from "lucide-react";
-import dynamic from "next/dynamic";
-
-const NotifCarousel = dynamic(
-  () => import("@/components/NotifCarousel").then((m) => ({ default: m.NotifCarousel })),
-  { ssr: false },
-);
-const AppScreenshotCarousel = dynamic(
-  () => import("@/components/AppScreenshotCarousel").then((m) => ({ default: m.AppScreenshotCarousel })),
-  { ssr: false },
-);
+import { NotifCarousel } from "@/components/NotifCarousel";
+import { AppScreenshotCarousel } from "@/components/AppScreenshotCarousel";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");

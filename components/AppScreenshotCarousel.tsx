@@ -4,6 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 
+function useMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+}
+
 const SLIDES = [
   { src: "/responsive-intuitivo-mobile.jpg", alt: "Vista de vuelo con estado FAA", label: "Estado por vuelo" },
   { src: "/planifica-tu-viaje.jpg",          alt: "Gestión de viajes",              label: "Gestión de viajes" },
@@ -11,6 +17,7 @@ const SLIDES = [
 ];
 
 export function AppScreenshotCarousel() {
+  const mounted = useMounted();
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true, align: "center", containScroll: false },
     [Autoplay({ delay: 3500, stopOnInteraction: false, stopOnMouseEnter: true })],
@@ -28,6 +35,8 @@ export function AppScreenshotCarousel() {
     emblaApi.on("select", onSelect);
     return () => { emblaApi.off("select", onSelect); };
   }, [emblaApi, onSelect]);
+
+  if (!mounted) return <div style={{ height: 320 }} />;
 
   return (
     <div className="select-none">

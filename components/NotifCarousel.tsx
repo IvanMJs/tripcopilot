@@ -2,6 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
+// Silence SSR completely — renders a height-preserving placeholder on the server
+// and mounts the real carousel only after client hydration.
+function useMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+}
+
 interface Props {
   screenshots: { src: string; label: string }[];
 }
@@ -10,6 +18,7 @@ const AUTOPLAY_MS = 3200;
 const STACK = 4;
 
 export function NotifCarousel({ screenshots }: Props) {
+  const mounted = useMounted();
   const [index, setIndex]           = useState(0);
   const [exitState, setExitState]   = useState<{ dir: "left" | "right" } | null>(null);
   const [dragX, setDragX]           = useState(0);
@@ -84,6 +93,13 @@ export function NotifCarousel({ screenshots }: Props) {
     dataIndex: (index + s) % total,
     s,
   }));
+
+  // Server renders a height-preserving empty shell; carousel mounts only on client
+  if (!mounted) {
+    return (
+      <div style={{ width: "min(260px, 72vw)", height: "min(500px, 138vw)", margin: "0 auto" }} />
+    );
+  }
 
   return (
     <div
