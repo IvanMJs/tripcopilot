@@ -48,7 +48,7 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["swiper"],
+  transpilePackages: ["swiper", "embla-carousel", "embla-carousel-react", "embla-carousel-autoplay"],
   async headers() {
     return [
       {
