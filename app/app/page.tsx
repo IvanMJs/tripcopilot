@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
 import { RefreshCw, Bell, HelpCircle, LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
 import { AirportSearch } from "@/components/AirportSearch";
@@ -440,6 +441,9 @@ export default function HomePage() {
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+              {/* Theme toggle */}
+              <ThemeToggle />
+
               {/* Language toggle */}
               <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
                 {(["es", "en"] as Locale[]).map((l) => (

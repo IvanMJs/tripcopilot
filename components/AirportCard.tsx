@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { AirportStatus } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,7 @@ interface AirportCardProps {
   weather?: WeatherData;
   metar?: MetarData;
   highlight?: boolean;
+  onRefresh?: () => Promise<void> | void;
 }
 
 // ── METAR display helpers ─────────────────────────────────────────────────────
@@ -281,15 +282,51 @@ function FaaExplainButton({
   );
 }
 
-export function AirportCard({ iata, status, onRemove, weather, metar, highlight }: AirportCardProps) {
+export function AirportCard({ iata, status, onRemove, weather, metar, highlight, onRefresh }: AirportCardProps) {
   const { t, locale } = useLanguage();
   const s = status?.status ?? "ok";
+
+  // Pull-to-refresh state
+  const [pullOffset, setPullOffset] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef<number>(0);
+  const isPulling = useRef(false);
+
+  function handlePullTouchStart(e: React.TouchEvent) {
+    touchStartY.current = e.touches[0].clientY;
+    isPulling.current = true;
+  }
+
+  function handlePullTouchMove(e: React.TouchEvent) {
+    if (!isPulling.current || isRefreshing) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) {
+      setPullOffset(Math.min(delta, 80));
+    }
+  }
+
+  async function handlePullTouchEnd() {
+    isPulling.current = false;
+    if (pullOffset >= 60 && onRefresh) {
+      setIsRefreshing(true);
+      setPullOffset(0);
+      try {
+        await onRefresh();
+      } finally {
+        setIsRefreshing(false);
+      }
+    } else {
+      setPullOffset(0);
+    }
+  }
   const info = AIRPORTS[iata];
   const name  = status?.name  || info?.name  || iata;
   const city  = status?.city  || info?.city  || "";
   const state = status?.state || info?.state || "";
 
   const cs = CARD_STYLE[s] ?? CARD_STYLE.unknown;
+
+  const cardTranslateY = Math.min(pullOffset * 0.5, 40);
 
   return (
     <div
@@ -300,7 +337,20 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight 
         cs.border, cs.bg, cs.glow,
         highlight && "animate-highlight-flash"
       )}
+      style={{ transform: `translateY(${cardTranslateY}px)`, transition: isPulling.current ? "none" : "transform 0.2s ease" }}
+      onTouchStart={handlePullTouchStart}
+      onTouchMove={handlePullTouchMove}
+      onTouchEnd={handlePullTouchEnd}
     >
+      {/* Pull-to-refresh indicator */}
+      {(pullOffset > 10 || isRefreshing) && (
+        <div className="absolute top-0 inset-x-0 flex justify-center pt-1 z-20 pointer-events-none">
+          <Loader2
+            className={cn("h-4 w-4 text-blue-400", (isRefreshing || pullOffset >= 60) && "animate-spin")}
+            style={{ opacity: isRefreshing ? 1 : pullOffset / 60 }}
+          />
+        </div>
+      )}
       {/* Left-accent bar — 2025 Carbon/Stripe inline alert pattern */}
       <div className={cn("absolute left-0 inset-y-0 w-[3px] rounded-l-xl", cs.leftBar)} />
 

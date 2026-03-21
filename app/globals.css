@@ -143,3 +143,33 @@ button, a, select, input {
 @media (max-width: 767px) {
   .tap-scale:active { transform: scale(0.96); }
 }
+
+/* ── Light mode overrides ───────────────────────────────────────────────────── */
+html.light {
+  --background:   #f8f8fc;
+  --foreground:   #1a1a2e;
+  --card:         rgba(255, 255, 255, 0.9);
+  --border:       rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.15);
+}
+
+html.light body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+html.light body::before {
+  background-image:
+    radial-gradient(circle at 25% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 75% 100%, rgba(99, 102, 241, 0.04) 0%, transparent 50%);
+}
+
+html.light .bottom-nav-bg {
+  background:    rgba(248, 248, 252, 0.96);
+  border-top:    1px solid rgba(0, 0, 0, 0.08);
+}
+
+html.light input[type="date"],
+html.light input[type="time"] {
+  color-scheme: light;
+}

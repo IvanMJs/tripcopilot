@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import {
   ExternalLink, Clock, MapPin, Plane,
   AlertTriangle, Globe, Zap, DoorOpen, Trash2,
-  Hotel, Radar, Bell, ChevronDown, ChevronUp, Pencil,
+  Hotel, Radar, Bell, ChevronDown, ChevronUp, Pencil, CalendarPlus,
 } from "lucide-react";
 import { useNotificationLog } from "@/hooks/useNotificationLog";
 import { useFlightNotes } from "@/hooks/useFlightNotes";
@@ -17,6 +17,7 @@ import { TafData, getTafAtTime } from "@/hooks/useTaf";
 import { SigmetFeature } from "@/hooks/useSigmet";
 import { LinkButton } from "./LinkButton";
 import { AccommodationInline, AddAccommodationInlineForm, estimateArrivalDate } from "./AccommodationCard";
+import { buildGoogleCalendarUrl } from "@/lib/exportGoogleCalendar";
 import { ConnectionAnalysis } from "@/lib/connectionRisk";
 import { FlightStatusBadge } from "@/components/FlightStatusBadge";
 import { TsaAirportData } from "@/hooks/useTsaWait";
@@ -111,6 +112,40 @@ export function FlightCard({
   const L = TRIP_PANEL_LABELS[locale];
   const [showHotelForm, setShowHotelForm] = useState(false);
   const [showNotifLog, setShowNotifLog] = useState(false);
+
+  // Swipe-to-delete state
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStartX = useRef<number>(0);
+  const isSwiping = useRef(false);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    isSwiping.current = true;
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!isSwiping.current) return;
+    const delta = touchStartX.current - e.touches[0].clientX;
+    if (delta > 0) {
+      setSwipeOffset(Math.min(delta, 100));
+    } else {
+      setSwipeOffset(0);
+    }
+  }
+
+  function handleTouchEnd() {
+    isSwiping.current = false;
+    if (swipeOffset >= 80) {
+      setSwipeOffset(80); // stay open to reveal button
+    } else {
+      setSwipeOffset(0); // snap back
+    }
+  }
+
+  function handleDeleteTap() {
+    setSwipeOffset(0);
+    onRemove();
+  }
   const { logs: notifLogs, loading: notifLoading } = useNotificationLog(flight.id, showNotifLog);
 
   // Flight notes
@@ -160,7 +195,7 @@ export function FlightCard({
   return (
     <div
       id={`flight-card-${idx}`}
-      className={`rounded-xl border-2 overflow-hidden transition-all animate-fade-in-up ${
+      className={`relative rounded-xl border-2 overflow-hidden transition-all animate-fade-in-up ${
         connectionToNext && connectionToNext.risk === "missed"   ? "border-red-700/60"    :
         connectionToNext && connectionToNext.risk === "at_risk"  ? "border-orange-600/60" :
         connectionToNext && connectionToNext.risk === "tight"    ? "border-yellow-700/50" :
@@ -170,6 +205,24 @@ export function FlightCard({
       }`}
       style={{ animationDelay: `${idx * 0.08}s` }}
     >
+      {/* Swipe-to-delete: delete button revealed behind card */}
+      <button
+        onClick={handleDeleteTap}
+        aria-label={locale === "es" ? "Eliminar vuelo" : "Delete flight"}
+        className="absolute inset-y-0 right-0 bg-red-600 flex items-center px-4 rounded-r-xl z-0 transition-opacity"
+        style={{ opacity: swipeOffset >= 80 ? 1 : swipeOffset / 80 }}
+      >
+        <Trash2 className="h-5 w-5 text-white" />
+      </button>
+
+      {/* Card content — slides left on swipe */}
+      <div
+        className="relative z-10 transition-transform duration-150"
+        style={{ transform: `translateX(-${swipeOffset}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
       {daysUntil === 1 && (
         <div className="px-4 py-2.5 bg-emerald-950/30 border-b border-emerald-800/40 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
@@ -326,6 +379,15 @@ export function FlightCard({
             <DaysCountdown days={daysUntil} L={L} />
             <span className="font-bold text-white tracking-wide">{flight.flightCode}</span>
             <span className="text-xs text-gray-500">{flight.airlineName}</span>
+            <a
+              href={buildGoogleCalendarUrl(flight)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={locale === "es" ? "Agregar a Google Calendar" : "Add to Google Calendar"}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-400/70 hover:text-blue-300 transition-colors"
+            >
+              <CalendarPlus className="h-3.5 w-3.5" />
+            </a>
           </div>
           {flight.departureTime && (
             <div className="flex items-center gap-4 flex-wrap text-xs">
@@ -619,6 +681,7 @@ export function FlightCard({
           )}
         </div>
       )}
+      </div>{/* end swipeable card content */}
     </div>
   );
 }
