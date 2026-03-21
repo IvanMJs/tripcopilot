@@ -29,6 +29,7 @@ import { useTsaWait } from "@/hooks/useTsaWait";
 import { FlightCard } from "./FlightCard";
 import { TRIP_PANEL_LABELS } from "./TripPanelLabels";
 import { analytics } from "@/lib/analytics";
+import { FlightCountdownBadge } from "./FlightCountdownBadge";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -89,6 +90,47 @@ export function TripPanel({
     }),
     [trip.flights],
   );
+
+  const nextFlight = useMemo(() => {
+    const now = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return sorted.find((f) => {
+      if (!f.departureTime) return false;
+      const tz = AIRPORTS[f.originCode]?.timezone ?? "UTC";
+      const parts = f.departureTime.split(":").map(Number);
+      if (parts.length < 2) return false;
+      const [h, m] = parts;
+      try {
+        const refMs = Date.UTC(
+          parseInt(f.isoDate.slice(0, 4)),
+          parseInt(f.isoDate.slice(5, 7)) - 1,
+          parseInt(f.isoDate.slice(8, 10)),
+          h, m, 0,
+        );
+        const tzParts = new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          year: "numeric", month: "numeric", day: "numeric",
+          hour: "numeric", minute: "numeric", second: "numeric",
+          hour12: false,
+        }).formatToParts(new Date(refMs));
+        const get = (type: string) =>
+          parseInt(tzParts.find((p) => p.type === type)?.value ?? "0");
+        const tzHour = get("hour") % 24;
+        const tzMin  = get("minute");
+        const offsetMin = (h * 60 + m) - (tzHour * 60 + tzMin);
+        const midnightUTC = Date.UTC(
+          parseInt(f.isoDate.slice(0, 4)),
+          parseInt(f.isoDate.slice(5, 7)) - 1,
+          parseInt(f.isoDate.slice(8, 10)),
+        );
+        const depMs = midnightUTC + (h * 60 + m + offsetMin) * 60000;
+        const msLeft = depMs - now;
+        return msLeft > 0 && msLeft <= oneDayMs;
+      } catch {
+        return false;
+      }
+    }) ?? null;
+  }, [sorted]);
 
   const tsaData    = useTsaWait();
   const tafMap     = useTaf(sorted.map((f) => f.originCode));
@@ -306,6 +348,11 @@ export function TripPanel({
             {locale === "es" ? "Guardar viaje" : "Save trip"}
           </button>
         </div>
+      )}
+
+      {/* Flight Countdown Badge */}
+      {nextFlight && (
+        <FlightCountdownBadge flight={nextFlight} locale={locale} />
       )}
 
       {/* Trip Risk Score */}

@@ -313,6 +313,56 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── Flight countdown push (lock screen) ──────────────────────────────────
+  // Sends a push with tag "flight_countdown" every cron run when a flight is
+  // 30 min–4 h away. The shared tag means the browser replaces the previous
+  // countdown notification rather than stacking them.
+  for (const flight of flights as FlightRow[]) {
+    const userId: string = flight.trips.user_id;
+    const departureTime: string | null = flight.departure_time;
+    const isoDate: string = flight.iso_date;
+    const originCode: string = flight.origin_code;
+    const destCode: string = flight.destination_code;
+    const flightCode: string = flight.flight_code;
+
+    if (!departureTime) continue;
+
+    const airportTz = AIRPORTS[originCode]?.timezone ?? "UTC";
+    let departureDateTime: Date | null = null;
+    try {
+      departureDateTime = localToUTC(isoDate, departureTime, airportTz);
+    } catch {
+      continue;
+    }
+
+    const hoursUntil = (departureDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursUntil < 0.5 || hoursUntil > 4) continue;
+
+    const { data: subs } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("user_id", userId);
+
+    if (!subs?.length) continue;
+
+    const locale = await getUserLocale(userId);
+
+    const minsLeft = Math.round((departureDateTime.getTime() - now.getTime()) / 60000);
+    const formatted =
+      minsLeft >= 60
+        ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}min`
+        : `${minsLeft}min`;
+
+    const title =
+      locale === "es"
+        ? `${flightCode} · Sale en ${formatted}`
+        : `${flightCode} · Departs in ${formatted}`;
+    const body = `${originCode} → ${destCode}`;
+
+    await pushToAll(subs, supabase, { title, body, url: "/app" }, "flight_countdown");
+    notificationsSent++;
+  }
+
   // ── Hotel notifications ───────────────────────────────────────────────────
   const todayStr    = now.toISOString().slice(0, 10);
   const tomorrowISO = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
