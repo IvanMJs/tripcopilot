@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 import { TripTab, TripFlight, Accommodation } from "@/lib/types";
 
@@ -119,12 +120,17 @@ export function useUserTrips() {
   }, []);
 
   const deleteTrip = useCallback(async (id: string) => {
+    const snapshot = trips;
     setTrips((prev) => prev.filter((t) => t.id !== id));
 
     const supabase = createClient();
     // Flights cascade on delete via FK
-    await supabase.from("trips").delete().eq("id", id);
-  }, []);
+    const { error } = await supabase.from("trips").delete().eq("id", id);
+    if (error) {
+      setTrips(snapshot);
+      toast.error("No se pudo eliminar el viaje / Could not delete trip");
+    }
+  }, [trips]);
 
   const renameTrip = useCallback(async (id: string, name: string) => {
     const trimmed = name.trim();
@@ -182,6 +188,7 @@ export function useUserTrips() {
   }, []);
 
   const removeFlight = useCallback(async (tripId: string, flightId: string) => {
+    const snapshot = trips;
     setTrips((prev) =>
       prev.map((t) =>
         t.id === tripId
@@ -191,8 +198,12 @@ export function useUserTrips() {
     );
 
     const supabase = createClient();
-    await supabase.from("flights").delete().eq("id", flightId);
-  }, []);
+    const { error } = await supabase.from("flights").delete().eq("id", flightId);
+    if (error) {
+      setTrips(snapshot);
+      toast.error("No se pudo eliminar el vuelo / Could not delete flight");
+    }
+  }, [trips]);
 
   const addAccommodation = useCallback(async (
     tripId: string,
@@ -233,6 +244,7 @@ export function useUserTrips() {
   }, []);
 
   const removeAccommodation = useCallback(async (tripId: string, accId: string) => {
+    const snapshot = trips;
     setTrips((prev) =>
       prev.map((t) =>
         t.id === tripId
@@ -241,8 +253,12 @@ export function useUserTrips() {
       ),
     );
     const supabase = createClient();
-    await supabase.from("accommodations").delete().eq("id", accId);
-  }, []);
+    const { error } = await supabase.from("accommodations").delete().eq("id", accId);
+    if (error) {
+      setTrips(snapshot);
+      toast.error("No se pudo eliminar el alojamiento / Could not delete accommodation");
+    }
+  }, [trips]);
 
   const updateAccommodation = useCallback(async (
     tripId: string,

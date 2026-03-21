@@ -114,7 +114,25 @@ export async function POST(req: NextRequest) {
     }
 
     const jsonParsed = JSON.parse(jsonMatch[0]) as { flights?: unknown[] };
-    return NextResponse.json({ flights: jsonParsed.flights ?? [] });
+
+    // Validate and sanitize each flight — replace invalid fields with "" so the
+    // import modal can flag them as missing rather than inserting bad data to DB.
+    const FlightSchema = z.object({
+      flightCode:      z.string().regex(/^[A-Z0-9]{2,3}\d{1,4}$/).catch(""),
+      airlineCode:     z.string().regex(/^[A-Z]{2}$/).catch(""),
+      airlineName:     z.string().max(100).catch(""),
+      flightNumber:    z.string().regex(/^\d{1,4}$/).catch(""),
+      originCode:      z.string().regex(/^[A-Z]{3}$/).catch(""),
+      destinationCode: z.string().regex(/^[A-Z]{3}$/).catch(""),
+      isoDate:         z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/).catch(""),
+      departureTime:   z.string().regex(/^\d{2}:\d{2}$/).or(z.literal("")).catch(""),
+      arrivalDate:     z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/).or(z.literal("")).catch(""),
+      arrivalTime:     z.string().regex(/^\d{2}:\d{2}$/).or(z.literal("")).catch(""),
+      missing:         z.array(z.string()).catch([]),
+    });
+
+    const flights = z.array(FlightSchema).max(20).catch([]).parse(jsonParsed.flights ?? []);
+    return NextResponse.json({ flights });
   } catch (err) {
     console.error("[parse-flight]", err);
     return NextResponse.json({ error: "Failed to parse" }, { status: 500 });

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { RefreshCw, Bell, HelpCircle, LogOut } from "lucide-react";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
@@ -182,7 +183,7 @@ export default function HomePage() {
     if (intlAirports.length === 0) return;
 
     fetch(`/api/intl-status?airports=${intlAirports.join(",")}&locale=${locale}`)
-      .then((r) => r.ok ? r.json() : {})
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then((data: Record<string, unknown>) => {
         if (data.quotaExceeded) return;
         const map: AirportStatusMap = {};
@@ -191,7 +192,14 @@ export default function HomePage() {
         }
         setIntlStatusMap(map);
       })
-      .catch(() => {});
+      .catch(() => {
+        toast.error(
+          locale === "es"
+            ? "No se pudo actualizar el estado de aeropuertos internacionales"
+            : "Could not update international airport status",
+          { id: "intl-status-error", duration: 4000 },
+        );
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userTrips, watchedAirports, locale, lastUpdated]);
 
