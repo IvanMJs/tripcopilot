@@ -22,6 +22,9 @@ import { ConnectionAnalysis } from "@/lib/connectionRisk";
 import { FlightStatusBadge } from "@/components/FlightStatusBadge";
 import { TsaAirportData } from "@/hooks/useTsaWait";
 import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, TripPanelLabels } from "./TripPanelLabels";
+import { getVisaRequirement } from "@/lib/visaRequirements";
+import { BoardingPassView } from "./BoardingPassView";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -91,6 +94,26 @@ export interface FlightCardProps {
   onEditAccommodation: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
 }
 
+function ExchangeRateRow({ destinationCode }: { destinationCode: string }) {
+  const result = useExchangeRate(destinationCode);
+  if (!result || result.loading || result.error || result.rate === null) return null;
+
+  // Format the rate — for currencies with very small rates (e.g. JPY, KRW) show more decimals
+  const formatted = result.rate < 0.001
+    ? result.rate.toFixed(6)
+    : result.rate < 0.01
+    ? result.rate.toFixed(5)
+    : result.rate < 0.1
+    ? result.rate.toFixed(4)
+    : result.rate.toFixed(4);
+
+  return (
+    <span className="text-xs text-gray-500">
+      1 ARS = {formatted} {result.currency}
+    </span>
+  );
+}
+
 export function FlightCard({
   flight,
   statusMap,
@@ -112,6 +135,7 @@ export function FlightCard({
   const L = TRIP_PANEL_LABELS[locale];
   const [showHotelForm, setShowHotelForm] = useState(false);
   const [showNotifLog, setShowNotifLog] = useState(false);
+  const [showBoardingPass, setShowBoardingPass] = useState(false);
 
   // Swipe-to-delete state
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -178,6 +202,44 @@ export function FlightCard({
     { day: "2-digit", month: locale === "en" ? "short" : "2-digit" }
   );
   const daysUntil = getDaysUntil(flight.isoDate);
+
+  // Hours until departure (for boarding pass trigger)
+  const hoursUntilDep = (() => {
+    if (!flight.departureTime || !flight.isoDate) return null;
+    const tz = originInfo?.timezone ?? "UTC";
+    try {
+      const [h, m] = flight.departureTime.split(":").map(Number);
+      const refMs = Date.UTC(
+        parseInt(flight.isoDate.slice(0, 4)),
+        parseInt(flight.isoDate.slice(5, 7)) - 1,
+        parseInt(flight.isoDate.slice(8, 10)),
+        h, m, 0,
+      );
+      const tzParts = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        year: "numeric", month: "numeric", day: "numeric",
+        hour: "numeric", minute: "numeric", second: "numeric",
+        hour12: false,
+      }).formatToParts(new Date(refMs));
+      const get = (type: string) =>
+        parseInt(tzParts.find((p) => p.type === type)?.value ?? "0");
+      const tzHour = get("hour") % 24;
+      const tzMin  = get("minute");
+      const offsetMin = (h * 60 + m) - (tzHour * 60 + tzMin);
+      const midnightUTC = Date.UTC(
+        parseInt(flight.isoDate.slice(0, 4)),
+        parseInt(flight.isoDate.slice(5, 7)) - 1,
+        parseInt(flight.isoDate.slice(8, 10)),
+      );
+      const depMs = midnightUTC + (h * 60 + m + offsetMin) * 60000;
+      return (depMs - Date.now()) / (1000 * 60 * 60);
+    } catch {
+      return null;
+    }
+  })();
+
+  const showBoardingPassButton =
+    hoursUntilDep !== null && hoursUntilDep < 4 && hoursUntilDep > -1;
 
   const originStatus = statusMap[flight.originCode];
   const status       = originStatus?.status ?? "ok";
@@ -359,6 +421,18 @@ export function FlightCard({
               <span className="text-gray-700">·</span>
               <span className="text-gray-500 text-xs">{originName} → {destName}</span>
             </div>
+            {/* Visa indicator */}
+            {(() => {
+              const visa = getVisaRequirement(flight.destinationCode);
+              if (!visa) return null;
+              return visa.required ? (
+                <span className="text-xs text-amber-400">🛂 {visa.notes}</span>
+              ) : (
+                <span className="text-xs text-green-400">✅ {visa.notes}</span>
+              );
+            })()}
+            {/* Exchange rate */}
+            <ExchangeRateRow destinationCode={flight.destinationCode} />
           </div>
           <LinkButton href={routeUrl} variant="default">
             {L.seeOtherFlights(flight.originCode, flight.destinationCode)}
@@ -681,7 +755,27 @@ export function FlightCard({
           )}
         </div>
       )}
+      {/* Boarding pass button — shows within 4h of departure */}
+      {showBoardingPassButton && (
+        <div className="px-4 pb-4 pt-2 border-t border-violet-800/20">
+          <button
+            onClick={() => setShowBoardingPass(true)}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-violet-950/40 border border-violet-700/40 hover:bg-violet-950/60 py-2.5 text-xs font-bold text-violet-300 transition-colors"
+          >
+            <Plane className="h-3.5 w-3.5" />
+            {locale === "es" ? "Ver boarding pass" : "View boarding pass"}
+          </button>
+        </div>
+      )}
       </div>{/* end swipeable card content */}
+
+      {/* Boarding pass overlay */}
+      {showBoardingPass && (
+        <BoardingPassView
+          flight={flight}
+          onClose={() => setShowBoardingPass(false)}
+        />
+      )}
     </div>
   );
 }

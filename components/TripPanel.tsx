@@ -510,6 +510,17 @@ export function TripPanel({
             {locale === "en" ? "Export .ics" : "Exportar .ics"}
           </button>
 
+          {!isDraft && (
+            <a
+              href={`/print/${trip.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-colors"
+            >
+              🖨️ PDF
+            </a>
+          )}
+
           <div className="relative">
             <button
               onClick={() => setShowGcal((v) => !v)}
