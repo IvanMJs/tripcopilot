@@ -5,11 +5,13 @@ import { Plane, ChevronRight, Trash2, Plus, MapPin, X, Clock, ChevronDown, Chevr
 import { TripTab } from "@/lib/types";
 import { AirportStatusMap } from "@/lib/types";
 import { calculateTripRiskScore } from "@/lib/tripRiskScore";
+import { TripListSkeleton } from "./TripListSkeleton";
 
 interface TripListViewProps {
   trips: TripTab[];
   statusMap: AirportStatusMap;
   locale: "es" | "en";
+  loading?: boolean;
   onSelect: (id: string) => void;
   onCreateTrip: () => void;
   onDeleteTrip: (id: string) => void;
@@ -85,6 +87,7 @@ export function TripListView({
   trips,
   statusMap,
   locale,
+  loading,
   onSelect,
   onCreateTrip,
   onDeleteTrip,
@@ -93,6 +96,10 @@ export function TripListView({
   onDismissExample,
 }: TripListViewProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  if (loading) {
+    return <TripListSkeleton />;
+  }
 
   const activeTrips = trips.filter((t) => !isTripPast(t));
   const pastTrips   = trips.filter((t) =>  isTripPast(t));

@@ -27,6 +27,7 @@ import { ImportFlightsModal } from "./ImportFlightsModal";
 import { ParsedFlight } from "@/lib/importFlights";
 import { useTsaWait } from "@/hooks/useTsaWait";
 import { FlightCard } from "./FlightCard";
+import { FlightCardSkeleton } from "./FlightCardSkeleton";
 import { TRIP_PANEL_LABELS } from "./TripPanelLabels";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
@@ -56,6 +57,7 @@ interface TripPanelProps {
   onDuplicateTrip?: () => void;
   isDraft?: boolean;
   onSave?: () => void;
+  loading?: boolean;
 }
 
 export function TripPanel({
@@ -72,6 +74,7 @@ export function TripPanel({
   onDuplicateTrip,
   isDraft,
   onSave,
+  loading,
 }: TripPanelProps) {
   const { locale } = useLanguage();
   const L = TRIP_PANEL_LABELS[locale];
@@ -246,6 +249,7 @@ export function TripPanel({
         setTimeout(() => setLinkCopied(false), 3000);
       }
     } catch {
+      navigator.vibrate?.([100, 50, 100]);
       toast.error(locale === "es" ? "No se pudo crear el link familiar" : "Could not create family link");
     }
   }
@@ -328,7 +332,7 @@ export function TripPanel({
             )}
             {onDeleteTrip && (
               <button
-                onClick={onDeleteTrip}
+                onClick={() => { navigator.vibrate?.([50, 30, 50]); onDeleteTrip(); }}
                 title={locale === "es" ? "Eliminar viaje" : "Delete trip"}
                 className="shrink-0 flex items-center gap-1.5 rounded-xl border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-950/40 hover:text-red-400 transition-colors"
               >
@@ -340,7 +344,7 @@ export function TripPanel({
         )}
         {isDraft && onDeleteTrip && !isRenamingTrip && (
           <button
-            onClick={onDeleteTrip}
+            onClick={() => { navigator.vibrate?.([50, 30, 50]); onDeleteTrip(); }}
             title={locale === "es" ? "Eliminar viaje" : "Delete trip"}
             className="shrink-0 flex items-center gap-1.5 rounded-xl border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-950/40 hover:text-red-400 transition-colors"
           >
@@ -365,7 +369,7 @@ export function TripPanel({
             </div>
           </div>
           <button
-            onClick={onSave}
+            onClick={() => { navigator.vibrate?.(30); onSave?.(); }}
             className="flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-bold text-white transition-colors shrink-0"
           >
             <Save className="h-3.5 w-3.5" />
@@ -417,6 +421,10 @@ export function TripPanel({
             <Plus className="h-4 w-4" />
             {locale === "es" ? "Agregar primer vuelo" : "Add first flight"}
           </button>
+        </div>
+      ) : loading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => <FlightCardSkeleton key={i} />)}
         </div>
       ) : (
         <div className="space-y-0">

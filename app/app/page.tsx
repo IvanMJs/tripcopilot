@@ -35,6 +35,7 @@ import { useWatchedAirports } from "@/hooks/useWatchedAirports";
 import { useUserTrips } from "@/hooks/useUserTrips";
 import { NotificationSetupSheet } from "@/components/NotificationSetupSheet";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { makeExampleTrip } from "@/lib/exampleTrip";
 import { createClient } from "@/utils/supabase/client";
 
@@ -622,6 +623,7 @@ export default function HomePage() {
                 trips={userTrips}
                 statusMap={statusMap}
                 locale={locale}
+                loading={tripsLoading}
                 onSelect={(id) => setActiveTab(id)}
                 onCreateTrip={openCreateTripModal}
                 onDeleteTrip={deleteTrip}
@@ -738,6 +740,9 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* ── PWA install banner ── */}
+      {mounted && <PwaInstallBanner hasTrip={userTrips.length > 0} />}
 
       {/* ── Mobile bottom navigation ── */}
       {mounted && (

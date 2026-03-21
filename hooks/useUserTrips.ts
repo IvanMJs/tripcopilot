@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 import { TripTab, TripFlight, Accommodation } from "@/lib/types";
+import { cacheTrips, getCachedTrips } from "@/lib/tripsCache";
 
 interface DbAccommodation {
   id: string;
@@ -154,6 +155,21 @@ export function useUserTrips() {
     const supabase = createClient();
 
     async function load() {
+      // Offline: serve from IndexedDB cache
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        const cached = await getCachedTrips();
+        if (cached) {
+          setTrips(cached);
+          toast("Sin conexión — mostrando datos guardados", {
+            icon: "📴",
+            duration: 4000,
+            style: { background: "#1e293b", color: "#cbd5e1", fontSize: "13px" },
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("trips")
         .select("id, name, flights(*), accommodations(*)")
@@ -171,6 +187,8 @@ export function useUserTrips() {
             .map(toAccommodation),
         }));
         setTrips(userTrips);
+        // Update the offline cache in the background
+        cacheTrips(userTrips).catch(() => {/* best-effort */});
       }
 
       setLoading(false);
@@ -198,6 +216,7 @@ export function useUserTrips() {
 
     if (!error && data) {
       setTrips((prev) => [...prev, { id: data.id, name, flights: [], accommodations: [] }]);
+      navigator.vibrate?.(20);
       toast.success(locale === "es" ? "Viaje creado" : "Trip created");
       return data.id;
     }
@@ -208,11 +227,13 @@ export function useUserTrips() {
     const snapshot = trips;
     setTrips((prev) => prev.filter((t) => t.id !== id));
 
+    navigator.vibrate?.([50, 30, 50]);
     const supabase = createClient();
     // Flights cascade on delete via FK
     const { error } = await supabase.from("trips").delete().eq("id", id);
     if (error) {
       setTrips(snapshot);
+      navigator.vibrate?.([100, 50, 100]);
       toast.error("No se pudo eliminar el viaje / Could not delete trip");
     }
   }, [trips]);
@@ -283,10 +304,12 @@ export function useUserTrips() {
       ),
     );
 
+    navigator.vibrate?.([50, 30, 50]);
     const supabase = createClient();
     const { error } = await supabase.from("flights").delete().eq("id", flightId);
     if (error) {
       setTrips(snapshot);
+      navigator.vibrate?.([100, 50, 100]);
       toast.error("No se pudo eliminar el vuelo / Could not delete flight");
     }
   }, [trips]);
@@ -402,6 +425,7 @@ export function useUserTrips() {
 
     if (error || !data) return null;
 
+    navigator.vibrate?.(30);
     const newTripId = data as string;
 
     // Fetch the newly created trip with its real DB IDs
