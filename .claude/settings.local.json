@@ -71,7 +71,12 @@
       "Bash(ls:*)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''exports keys:'''', list\\(d.get\\(''''exports'''',{}\\).keys\\(\\)\\)[:20]\\)\")",
       "Bash(node:*)",
-      "WebFetch(domain:super-flow.uiinitiative.com)"
+      "WebFetch(domain:super-flow.uiinitiative.com)",
+      "Bash(sed -i 's/^model: sonnet$/model: sonnet\\\\npermissionMode: bypassPermissions/' /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/.claude/agents/planner.md)",
+      "Bash(sed -i 's/^model: sonnet$/model: sonnet\\\\npermissionMode: bypassPermissions/' /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/.claude/agents/researcher.md)",
+      "Bash(sed -i 's/^model: sonnet$/model: sonnet\\\\npermissionMode: bypassPermissions/' /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/.claude/agents/coder.md)",
+      "Bash(sed -i 's/^model: sonnet$/model: sonnet\\\\npermissionMode: bypassPermissions/' /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/.claude/agents/reviewer.md)",
+      "Bash(sed -i 's/^model: sonnet$/model: sonnet\\\\npermissionMode: bypassPermissions/' /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/.claude/agents/debugger.md)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -700,7 +700,20 @@ export default function HomePage() {
                   trip={trip}
                   statusMap={statusMap}
                   weatherMap={weatherMap}
-                  onAddFlight={(_, flight) => addFlightDB(trip.id, flight)}
+                  onAddFlight={(_, flight) => {
+                    const duplicate = trip.flights.some(
+                      (f) => f.flightCode === flight.flightCode && f.isoDate === flight.isoDate,
+                    );
+                    if (duplicate) {
+                      toast.error(
+                        locale === "es"
+                          ? `${flight.flightCode} ya está en este viaje`
+                          : `${flight.flightCode} already in this trip`,
+                      );
+                      return;
+                    }
+                    addFlightDB(trip.id, flight);
+                  }}
                   onRemoveFlight={(_, flightId) => removeFlightDB(trip.id, flightId)}
                   onAddAccommodation={(_, acc) => addAccommodationDB(trip.id, acc)}
                   onRemoveAccommodation={(_, accId) => removeAccommodationDB(trip.id, accId)}

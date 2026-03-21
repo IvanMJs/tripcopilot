@@ -147,17 +147,36 @@ ${SCHEMA_HINT}`;
   }
   const cleaned = text.slice(start, end + 1);
 
-  let result: TripAdviceResult;
+  let parsedJson: unknown;
   try {
-    result = JSON.parse(cleaned) as TripAdviceResult;
+    parsedJson = JSON.parse(cleaned);
   } catch {
     return NextResponse.json({ error: "No se pudo generar el análisis AI" }, { status: 502 });
   }
 
-  // Minimal validation
-  if (!result.summary || !Array.isArray(result.packing)) {
+  const TripAdviceSchema = z.object({
+    summary: z.string().min(1).max(1000),
+    packing: z.array(z.object({
+      item:     z.string().min(1).max(200),
+      reason:   z.string().min(1).max(500),
+      priority: z.enum(["essential", "recommended", "optional"]),
+    })).min(1).max(15),
+    destination_tips: z.array(z.object({
+      code: z.string().max(3),
+      city: z.string().max(100),
+      tips: z.array(z.string().max(500)).min(1).max(5),
+    })).max(10).default([]),
+    by_leg: z.array(z.object({
+      from: z.string().max(3),
+      to:   z.string().max(3),
+      note: z.string().max(500),
+    })).max(20).optional(),
+  });
+
+  const validation = TripAdviceSchema.safeParse(parsedJson);
+  if (!validation.success) {
     return NextResponse.json({ error: "Incomplete response from model" }, { status: 502 });
   }
 
-  return NextResponse.json({ data: result });
+  return NextResponse.json({ data: validation.data as TripAdviceResult });
 }

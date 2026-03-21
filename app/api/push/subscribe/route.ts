@@ -14,6 +14,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
+  // If this endpoint is registered to a different user (device switching accounts),
+  // remove the old subscription so notifications don't go to the wrong person.
+  const { data: existing } = await supabase
+    .from("push_subscriptions")
+    .select("user_id")
+    .eq("endpoint", subscription.endpoint)
+    .maybeSingle();
+
+  if (existing && existing.user_id !== user.id) {
+    await supabase.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
+  }
+
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
       user_id: user.id,

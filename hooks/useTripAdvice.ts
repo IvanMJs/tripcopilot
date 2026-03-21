@@ -10,6 +10,7 @@ import {
   FlightSignatureItem,
 } from "@/lib/tripAdviceCache";
 import { getDestinationProfile } from "@/lib/destinationConfig";
+import { createClient } from "@/utils/supabase/client";
 
 export type AdviceStatus = "idle" | "loading" | "done" | "error";
 
@@ -59,11 +60,23 @@ export function useTripAdvice(
   const [data, setData] = useState<TripAdviceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fetchedRef = useRef(false);
+  // undefined = not yet loaded; string = userId (or "anon" if not authenticated)
+  const [userId, setUserId] = useState<string | undefined>(undefined);
 
-  const signature = computeTripSignature(flights as FlightSignatureItem[]);
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data: d }) => {
+      setUserId(d.user?.id ?? "anon");
+    });
+  }, []);
+
+  // Include userId in signature to prevent cross-user cache collisions
+  const signature = userId !== undefined
+    ? computeTripSignature(flights as FlightSignatureItem[], userId)
+    : null;
 
   const fetch_ = useCallback(
     async (force = false) => {
+      if (!signature) return; // wait until userId is loaded
       if (!force) {
         const cached = getCachedTripAdvice(signature);
         if (cached) {
@@ -113,12 +126,13 @@ export function useTripAdvice(
     [signature, locale],
   );
 
-  // Load once on mount (background — non-blocking)
+  // Load once when userId is ready (background — non-blocking)
   useEffect(() => {
     if (fetchedRef.current) return;
+    if (userId === undefined) return; // wait for userId
     fetchedRef.current = true;
     fetch_(false);
-  }, [fetch_]);
+  }, [fetch_, userId]);
 
   const refresh = useCallback(() => fetch_(true), [fetch_]);
 

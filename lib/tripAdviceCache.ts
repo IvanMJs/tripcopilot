@@ -9,10 +9,11 @@ export interface FlightSignatureItem {
   destinationCode: string;
 }
 
-export function computeTripSignature(flights: FlightSignatureItem[]): string {
-  return flights
+export function computeTripSignature(flights: FlightSignatureItem[], userId?: string): string {
+  const base = flights
     .map((f) => `${f.isoDate}:${f.originCode}:${f.destinationCode}`)
     .join("|");
+  return userId ? `${userId}|${base}` : base;
 }
 
 export function getCachedTripAdvice(signature: string): TripAdviceResult | null {

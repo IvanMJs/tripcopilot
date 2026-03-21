@@ -1,5 +1,6 @@
 import { TripFlight } from "./types";
 import { AirportStatusMap } from "./types";
+import { AIRPORTS } from "./airports";
 
 // ── Minimum Connection Times (minutes) ────────────────────────────────────────
 // Based on published MCT data from major carriers and airport guides.
@@ -71,16 +72,59 @@ function estimateFlightDuration(originCode: string, destCode: string): number {
   return 180;
 }
 
-/** Parse "HH:MM" + ISO date into total minutes from epoch */
-function parseToMinutes(isoDate: string, time: string): number | null {
-  if (!time) return null;
-  const parts = time.split(":").map(Number);
+/**
+ * Convert a local departure time (HH:MM in the airport's named timezone) to
+ * UTC minutes from epoch. Uses Intl.DateTimeFormat without external libraries.
+ * Falls back to treating as UTC if the timezone is unknown or Intl fails.
+ */
+function localToUTCMinutes(isoDate: string, timeHHMM: string, timezone: string): number | null {
+  if (!timeHHMM) return null;
+  const parts = timeHHMM.split(":").map(Number);
   if (parts.length < 2) return null;
   const [h, m] = parts;
-  const date = new Date(isoDate + "T00:00:00");
-  // Use day-offset so multi-day trips work (minutes from date midnight)
-  const dayOffsetMs = date.getTime();
-  return dayOffsetMs / 60000 + h * 60 + m;
+
+  try {
+    // Treat the local time as UTC to get a reference Date
+    const refMs = Date.UTC(
+      parseInt(isoDate.slice(0, 4)),
+      parseInt(isoDate.slice(5, 7)) - 1,
+      parseInt(isoDate.slice(8, 10)),
+      h, m, 0,
+    );
+
+    // Find what that UTC moment looks like in the target timezone
+    const tzParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric", month: "numeric", day: "numeric",
+      hour: "numeric", minute: "numeric", second: "numeric",
+      hour12: false,
+    }).formatToParts(new Date(refMs));
+
+    const get = (type: string) =>
+      parseInt(tzParts.find((p) => p.type === type)?.value ?? "0");
+
+    // offset (minutes) = what we pretended (h:m) minus what the tz shows
+    const tzHour = get("hour") % 24; // Intl may return 24 for midnight
+    const tzMin  = get("minute");
+    const offsetMin = (h * 60 + m) - (tzHour * 60 + tzMin);
+
+    // True UTC minutes = midnight UTC of isoDate + local HH:MM + offset
+    const midnightUTC = Date.UTC(
+      parseInt(isoDate.slice(0, 4)),
+      parseInt(isoDate.slice(5, 7)) - 1,
+      parseInt(isoDate.slice(8, 10)),
+    ) / 60000;
+
+    return midnightUTC + h * 60 + m + offsetMin;
+  } catch {
+    // Fallback: treat time as UTC (original behavior)
+    const midnightUTC = Date.UTC(
+      parseInt(isoDate.slice(0, 4)),
+      parseInt(isoDate.slice(5, 7)) - 1,
+      parseInt(isoDate.slice(8, 10)),
+    ) / 60000;
+    return midnightUTC + h * 60 + m;
+  }
 }
 
 /**
@@ -98,8 +142,12 @@ export function analyzeConnection(
 
   const connectionAirport = flightB.originCode;
 
-  const depAMin = parseToMinutes(flightA.isoDate, flightA.departureTime);
-  const depBMin = parseToMinutes(flightB.isoDate, flightB.departureTime);
+  // Use airport timezones for accurate UTC-based comparison across time zones
+  const tzA = AIRPORTS[flightA.originCode]?.timezone ?? "UTC";
+  const tzB = AIRPORTS[flightB.originCode]?.timezone ?? "UTC";
+
+  const depAMin = localToUTCMinutes(flightA.isoDate, flightA.departureTime, tzA);
+  const depBMin = localToUTCMinutes(flightB.isoDate, flightB.departureTime, tzB);
   if (depAMin === null || depBMin === null) return null;
 
   const estimatedDuration = estimateFlightDuration(flightA.originCode, flightA.destinationCode);

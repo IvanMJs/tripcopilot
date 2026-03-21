@@ -344,18 +344,26 @@ export function useUserTrips() {
       .single();
     if (error || !newTrip) return null;
 
+    const newTripId = newTrip.id;
+
+    // Helper: cleanup partial trip on any failure
+    async function rollbackTrip() {
+      await supabase.from("trips").delete().eq("id", newTripId);
+      toast.error("No se pudo duplicar el viaje / Could not duplicate trip");
+    }
+
     const flightIdMap: Record<string, string> = {};
     for (const flight of source.flights) {
       const { data: last } = await supabase
         .from("flights")
         .select("sort_order")
-        .eq("trip_id", newTrip.id)
+        .eq("trip_id", newTripId)
         .order("sort_order", { ascending: false })
         .limit(1)
         .maybeSingle();
       const sort_order = (last?.sort_order ?? -1) + 1;
-      const { data: f } = await supabase.from("flights").insert({
-        trip_id: newTrip.id,
+      const { data: f, error: fErr } = await supabase.from("flights").insert({
+        trip_id: newTripId,
         flight_code: flight.flightCode,
         airline_code: flight.airlineCode,
         airline_name: flight.airlineName,
@@ -370,15 +378,14 @@ export function useUserTrips() {
         arrival_buffer: flight.arrivalBuffer,
         sort_order,
       }).select("id").single();
-      if (f) flightIdMap[flight.id] = f.id;
+      if (fErr || !f) { await rollbackTrip(); return null; }
+      flightIdMap[flight.id] = f.id;
     }
-
-    const newFlights = source.flights.map((f) => ({ ...f, id: flightIdMap[f.id] ?? f.id }));
 
     for (const acc of source.accommodations) {
       const realFlightId = acc.flightId ? flightIdMap[acc.flightId] : null;
-      await supabase.from("accommodations").insert({
-        trip_id: newTrip.id,
+      const { error: aErr } = await supabase.from("accommodations").insert({
+        trip_id: newTripId,
         flight_id: realFlightId ?? null,
         name: acc.name,
         check_in_date: acc.checkInDate ?? null,
@@ -386,10 +393,12 @@ export function useUserTrips() {
         check_out_date: acc.checkOutDate ?? null,
         check_out_time: acc.checkOutTime ?? null,
       });
+      if (aErr) { await rollbackTrip(); return null; }
     }
 
+    const newFlights = source.flights.map((f) => ({ ...f, id: flightIdMap[f.id] ?? f.id }));
     setTrips((prev) => [...prev, {
-      id: newTrip.id,
+      id: newTripId,
       name: newName,
       flights: newFlights,
       accommodations: source.accommodations.map((a) => ({
