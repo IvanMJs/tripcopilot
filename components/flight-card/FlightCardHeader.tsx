@@ -64,65 +64,67 @@ export function FlightCardHeader({
               <span className="text-[11px] text-gray-500 truncate">{flight.airlineName}</span>
             )}
           </div>
-          {confirmDelete ? (
-            <div className="flex items-center gap-1.5 animate-scale-in shrink-0">
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {confirmDelete ? (
+              <div className="flex items-center gap-1.5 animate-scale-in">
+                <button
+                  onClick={onCancelDelete}
+                  className="text-xs text-gray-400 hover:text-gray-200 px-2 py-1 transition-colors"
+                >
+                  {locale === "es" ? "Cancelar" : "Cancel"}
+                </button>
+                <button
+                  onClick={onRemove}
+                  className="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg transition-colors"
+                >
+                  {locale === "es" ? "Eliminar" : "Delete"}
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={onCancelDelete}
-                className="text-xs text-gray-400 hover:text-gray-200 px-2 py-1 transition-colors"
+                onClick={onConfirmDelete}
+                title={L.removeTitle}
+                className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors flex items-center justify-center"
               >
-                {locale === "es" ? "Cancelar" : "Cancel"}
+                <Trash2 className="h-4 w-4" />
               </button>
+            )}
+            {daysUntil > 0 && onToggleUpgrade && (
               <button
-                onClick={onRemove}
-                className="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg transition-colors"
+                onClick={() => onToggleUpgrade(flight.id, !wantsUpgrade)}
+                title={
+                  wantsUpgrade
+                    ? (locale === "es" ? "Upgrade activado" : "Upgrade alert on")
+                    : (locale === "es" ? "Avisarme si hay upgrade disponible" : "Notify me if upgrade is available")
+                }
+                className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors ${
+                  wantsUpgrade
+                    ? "bg-violet-600 text-white"
+                    : "border border-white/15 text-gray-400 hover:text-white hover:border-white/30"
+                }`}
               >
-                {locale === "es" ? "Eliminar" : "Delete"}
+                {wantsUpgrade ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    <span className="hidden sm:inline">Upgrade</span>
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpCircle className="h-3 w-3" />
+                    <span className="hidden sm:inline">Upgrade</span>
+                  </>
+                )}
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={onConfirmDelete}
-              title={L.removeTitle}
-              className="shrink-0 rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Row 1b: status badge + upgrade toggle */}
+        {/* Row 1b: status badge */}
         <div className="flex items-center gap-1.5 mb-2">
           {isNonFAA && !originStatus ? (
             <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
           ) : (
             <StatusBadge status={status} className="text-sm px-3 py-1" />
-          )}
-          {daysUntil > 0 && onToggleUpgrade && (
-            <button
-              onClick={() => onToggleUpgrade(flight.id, !wantsUpgrade)}
-              title={
-                wantsUpgrade
-                  ? (locale === "es" ? "Upgrade activado" : "Upgrade alert on")
-                  : (locale === "es" ? "Avisarme si hay upgrade disponible" : "Notify me if upgrade is available")
-              }
-              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors ${
-                wantsUpgrade
-                  ? "bg-violet-600 text-white"
-                  : "border border-white/15 text-gray-400 hover:text-white hover:border-white/30"
-              }`}
-            >
-              {wantsUpgrade ? (
-                <>
-                  <Check className="h-3 w-3" />
-                  <span className="hidden sm:inline">Upgrade</span>
-                </>
-              ) : (
-                <>
-                  <ArrowUpCircle className="h-3 w-3" />
-                  <span className="hidden sm:inline">Upgrade</span>
-                </>
-              )}
-            </button>
           )}
         </div>
 
