@@ -101,6 +101,7 @@ function RiskGauge({ score, fill, track }: { score: number; fill: string; track:
 
 export function TripRiskBadge({ risk, locale }: TripRiskBadgeProps) {
   const [expanded, setExpanded] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const cfg = LEVEL_CONFIG[risk.level];
   const Icon = cfg.icon;
 
@@ -114,9 +115,10 @@ export function TripRiskBadge({ risk, locale }: TripRiskBadgeProps) {
   return (
     <div className={`rounded-xl border ${cfg.bg} ${cfg.border} overflow-hidden`}>
       {/* Main row */}
+      <div className="flex items-center gap-4 px-4 py-3">
       <button
         onClick={() => risk.factors.length > 0 && setExpanded((v) => !v)}
-        className="w-full flex items-center gap-4 px-4 py-3 text-left"
+        className="flex-1 flex items-center gap-4 text-left"
       >
         {/* Gauge */}
         <div className="shrink-0">
@@ -145,6 +147,34 @@ export function TripRiskBadge({ risk, locale }: TripRiskBadgeProps) {
           </div>
         )}
       </button>
+
+      {/* Tap-to-explain popover */}
+      <div className="relative shrink-0">
+        <button
+          onClick={() => setPopoverOpen((v) => !v)}
+          aria-label={locale === "es" ? "Ver factores de riesgo" : "View risk factors"}
+          className={`p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors ${cfg.text} opacity-70 hover:opacity-100`}
+        >
+          <ShieldAlert className="h-3.5 w-3.5" />
+        </button>
+        {popoverOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setPopoverOpen(false)} />
+            <div className="absolute top-full mt-2 right-0 z-50 w-60 bg-[#1a1a2e] border border-white/10 rounded-xl p-3 shadow-2xl text-xs">
+              <p className="font-semibold text-gray-200 mb-2 text-sm">
+                {locale === "es" ? "Factores de riesgo" : "Risk factors"}
+              </p>
+              <ul className="space-y-1.5 text-gray-400">
+                <li className="flex items-center gap-2"><span>🛫</span> {locale === "es" ? "Estado del aeropuerto" : "Airport status"}</li>
+                <li className="flex items-center gap-2"><span>⏱</span> {locale === "es" ? "Tiempos de conexión" : "Connection times"}</li>
+                <li className="flex items-center gap-2"><span>🌦</span> {locale === "es" ? "Condiciones climáticas" : "Weather conditions"}</li>
+                <li className="flex items-center gap-2"><span>📊</span> {locale === "es" ? "Historial de demoras" : "Delay history"}</li>
+              </ul>
+            </div>
+          </>
+        )}
+      </div>
+      </div>
 
       {/* Factor details */}
       {expanded && risk.factors.length > 0 && (

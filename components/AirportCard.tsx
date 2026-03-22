@@ -328,13 +328,25 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
 
   const cardTranslateY = Math.min(pullOffset * 0.5, 40);
 
+  // P7: gradient top border based on status severity
+  const borderTopClass =
+    s === "ok"             ? "border-top-success" :
+    s === "delay_minor"    ? "border-top-warning" :
+    s === "delay_moderate" ? "border-top-warning" :
+    s === "delay_severe"   ? "border-top-danger"  :
+    s === "ground_delay"   ? "border-top-danger"  :
+    s === "ground_stop"    ? "border-top-danger"  :
+    "";
+
   return (
     <div
       className={cn(
         // Outer wrapper: border + bg + glow + hover lift
-        "relative rounded-xl border overflow-hidden transition-all duration-200",
+        // C4: breathing animation since data updates live
+        "animate-breathing relative rounded-xl border overflow-hidden transition-all duration-200",
         "hover:-translate-y-0.5 hover:shadow-card-hover",
         cs.border, cs.bg, cs.glow,
+        borderTopClass,
         highlight && "animate-highlight-flash"
       )}
       style={{ transform: `translateY(${cardTranslateY}px)`, transition: isPulling.current ? "none" : "transform 0.2s ease" }}
@@ -358,7 +370,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
         <button
           onClick={onRemove}
           className="absolute right-2 top-2 rounded-full p-1 text-gray-600 hover:bg-white/8 hover:text-gray-300 transition-colors z-10"
-          aria-label={`Remove ${iata}`}
+          aria-label={locale === "es" ? "Eliminar" : "Delete"}
         >
           <X className="h-3.5 w-3.5" />
         </button>

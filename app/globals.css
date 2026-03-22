@@ -309,6 +309,20 @@ html.light input[type="time"] {
   transform-origin: left top;
 }
 
+/* ── Countdown success flash ───────────────────────────────────────────────── */
+@keyframes success-flash {
+  0%, 100% { background: transparent; }
+  40%       { background: rgba(34,197,94,0.25); box-shadow: 0 0 20px rgba(34,197,94,0.3); }
+}
+.animate-success-flash { animation: success-flash 0.7s ease-in-out 3; }
+
+/* ── Departure day aura ────────────────────────────────────────────────────── */
+@keyframes pulse-aura {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(124,58,237,0.3), 0 0 16px rgba(124,58,237,0.1); }
+  50%       { box-shadow: 0 0 0 1px rgba(139,92,246,0.5), 0 0 28px rgba(124,58,237,0.2); }
+}
+.animate-pulse-aura { animation: pulse-aura 2.5s ease-in-out infinite; }
+
 /* ── Confetti animation ────────────────────────────────────────────────────── */
 @keyframes confetti-fall {
   0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }

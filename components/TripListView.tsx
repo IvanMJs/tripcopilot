@@ -151,6 +151,17 @@ export function TripListView({
         </div>
       )}
 
+      {/* N4: FAB for new trip — only when no trips exist */}
+      {trips.length === 0 && (
+        <button
+          onClick={onCreateTrip}
+          className="fixed bottom-24 right-4 z-30 w-14 h-14 rounded-full btn-primary shadow-lg shadow-violet-900/40 flex items-center justify-center"
+          aria-label={locale === "es" ? "Crear viaje" : "Create trip"}
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
+
       {/* Example trip card */}
       {exampleTrip && (
         <div className="rounded-2xl border border-dashed border-violet-600/40 overflow-hidden bg-violet-950/10">
@@ -210,10 +221,13 @@ export function TripListView({
         const routeLabel = buildRouteLabel(trip);
         const nextFlightLabel = getNextFlightLabel(trip, locale);
 
+        const today = new Date().toISOString().slice(0, 10);
+        const isDepartureDay = trip.flights.some((f) => f.isoDate === today);
+
         return (
           <div
             key={trip.id}
-            className="rounded-2xl border border-white/[0.07] overflow-hidden transition-all hover:border-white/[0.14]"
+            className={`rounded-2xl border border-white/[0.07] overflow-hidden transition-all hover:border-white/[0.14] ${isDepartureDay ? "animate-pulse-aura" : ""}`}
             style={{ background: "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)" }}
           >
             <div className="flex items-center gap-2 pr-3">

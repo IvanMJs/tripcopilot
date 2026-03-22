@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
@@ -359,6 +359,22 @@ export default function HomePage() {
     }
   }
 
+  // ── P5: Background tint — highlight trips with today's flights ────────────
+  const today = new Date().toISOString().slice(0, 10);
+
+  const activeTrip = userTrips[0] ?? null;
+  const hasCriticalDelay = useMemo(() => {
+    if (!activeTrip) return false;
+    return activeTrip.flights.some((f) => f.isoDate === today);
+  }, [activeTrip, today]);
+
+  // ── S4: Trips that have today's flights (notification dots) ───────────────
+  const alertTripIds = useMemo(() => {
+    return userTrips
+      .filter((t) => t.flights.some((f) => f.isoDate === today))
+      .map((t) => t.id);
+  }, [userTrips, today]);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -451,6 +467,7 @@ export default function HomePage() {
       )}
 
       <div className="min-h-screen bg-gray-950 px-4 pb-nav pt-4 md:pt-6 md:pb-6"
+        style={{ '--bg-tint': hasCriticalDelay ? 'rgba(239,68,68,0.008)' : 'transparent' } as React.CSSProperties}
       >
         <div className="mx-auto max-w-6xl space-y-4 md:space-y-6">
 
@@ -595,6 +612,7 @@ export default function HomePage() {
             draftTrip={draftTrip}
             draftId={DRAFT_ID}
             tabLabels={{ airports: t.tabAirports, search: t.tabSearch }}
+            alertTripIds={alertTripIds}
             onTabChange={setActiveTab}
             onRenameTrip={(id, name) => renameTripDB(id, name, locale)}
             onDeleteTrip={deleteTrip}
@@ -606,7 +624,7 @@ export default function HomePage() {
           <ErrorBoundary>
             <div
               key={activeTab}
-              className={slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left"}
+              className="animate-fade-in-up"
             >
             {activeTab === "airports" && (
               <div>

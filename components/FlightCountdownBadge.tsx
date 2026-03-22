@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plane } from "lucide-react";
 import { TripFlight } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
@@ -64,6 +64,8 @@ function localToUTCDate(isoDate: string, timeHHMM: string, timezone: string): Da
 
 export function FlightCountdownBadge({ flight, locale }: FlightCountdownBadgeProps) {
   const [msLeft, setMsLeft] = useState<number | null>(null);
+  const [flashing, setFlashing] = useState(false);
+  const celebratedRef = useRef(false);
 
   useEffect(() => {
     const timezone = AIRPORTS[flight.originCode]?.timezone ?? "UTC";
@@ -72,7 +74,13 @@ export function FlightCountdownBadge({ flight, locale }: FlightCountdownBadgePro
 
     function tick() {
       if (!departureDate) return;
-      setMsLeft(departureDate.getTime() - Date.now());
+      const remaining = departureDate.getTime() - Date.now();
+      setMsLeft(remaining);
+      if (remaining <= 0 && !celebratedRef.current) {
+        celebratedRef.current = true;
+        setFlashing(true);
+        setTimeout(() => setFlashing(false), 2200);
+      }
     }
 
     tick();
@@ -105,11 +113,13 @@ export function FlightCountdownBadge({ flight, locale }: FlightCountdownBadgePro
 
   return (
     <div
-      className={
+      className={[
+        "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm",
         isUrgent
-          ? "flex items-center gap-2 bg-amber-900/40 border border-amber-700/40 rounded-full px-3 py-1.5 text-sm text-amber-300"
-          : "flex items-center gap-2 bg-violet-900/40 border border-violet-700/40 rounded-full px-3 py-1.5 text-sm text-violet-300"
-      }
+          ? "bg-amber-900/40 border border-amber-700/40 text-amber-300"
+          : "bg-violet-900/40 border border-violet-700/40 text-violet-300",
+        flashing ? "animate-success-flash" : "",
+      ].join(" ")}
     >
       <Plane className="h-3.5 w-3.5 shrink-0" />
       <span className="font-semibold tabular-nums">{label}</span>
