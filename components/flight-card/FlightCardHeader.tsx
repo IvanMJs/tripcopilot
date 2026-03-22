@@ -54,7 +54,7 @@ export function FlightCardHeader({
   return (
     <>
       {/* ── Boarding-pass header (always visible) ─────────────────────────── */}
-      <div className={`px-4 pt-3 pb-2 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
+      <div className={`pl-4 pr-5 pt-3 pb-2 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
         {/* Row 1: flight code + status badge + remove */}
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
