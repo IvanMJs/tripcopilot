@@ -144,7 +144,7 @@ export function TripListView({
               onClick={onCreateTrip}
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-6 py-3 transition-all tap-scale"
             >
-              {locale === "es" ? "📷 Importar mi primer vuelo con IA" : "📷 Import my first flight with AI"}
+              {locale === "es" ? "Crear mi primer viaje →" : "Create my first trip →"}
             </button>
           </div>
         </div>

@@ -561,9 +561,10 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index,
 interface MyFlightsPanelProps {
   statusMap: AirportStatusMap;
   weatherMap?: Record<string, WeatherData>;
+  onImport?: () => void;
 }
 
-export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
+export function MyFlightsPanel({ statusMap, weatherMap, onImport }: MyFlightsPanelProps) {
   const { t, locale } = useLanguage();
   const [showGcal, setShowGcal] = useState(false);
   const [waCopied, setWaCopied] = useState(false);
@@ -582,7 +583,7 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
   }
 
   if (MY_FLIGHTS.length === 0) {
-    return <TripEmptyState locale={locale} />;
+    return <TripEmptyState locale={locale} onImport={onImport} />;
   }
 
   const calFlights: CalendarFlight[] = MY_FLIGHTS.map((f) => ({

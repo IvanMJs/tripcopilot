@@ -39,6 +39,8 @@ import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { makeExampleTrip } from "@/lib/exampleTrip";
 import { createClient } from "@/utils/supabase/client";
 import { GlobalAlertBar } from "@/components/GlobalAlertBar";
+import { ImportFlightsModal } from "@/components/ImportFlightsModal";
+import { ParsedFlight } from "@/lib/importFlights";
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -117,6 +119,9 @@ export default function HomePage() {
 
   // Draft leave confirmation (shown when navigating away from unsaved draft)
   const [draftLeaveConfirm, setDraftLeaveConfirm] = useState<{ targetTab: string } | null>(null);
+
+  // Import modal triggered from the "no flights" banner inside a saved trip
+  const [importBannerTripId, setImportBannerTripId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -461,6 +466,39 @@ export default function HomePage() {
         />
       )}
 
+      {importBannerTripId && (
+        <ImportFlightsModal
+          locale={locale}
+          onClose={() => setImportBannerTripId(null)}
+          onImport={(parsedFlights: ParsedFlight[]) => {
+            const tripId = importBannerTripId;
+            const trip = userTrips.find((t) => t.id === tripId);
+            if (!trip) return;
+            for (const pf of parsedFlights) {
+              const duplicate = trip.flights.some(
+                (f) => f.flightCode === pf.flightCode && f.isoDate === pf.isoDate,
+              );
+              if (!duplicate) {
+                addFlightDB(tripId, {
+                  id:              `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+                  flightCode:      pf.flightCode,
+                  airlineCode:     pf.airlineCode,
+                  airlineName:     pf.airlineName,
+                  airlineIcao:     pf.airlineIcao,
+                  flightNumber:    pf.flightNumber,
+                  originCode:      pf.originCode,
+                  destinationCode: pf.destinationCode,
+                  isoDate:         pf.isoDate,
+                  departureTime:   pf.departureTime,
+                  arrivalBuffer:   pf.arrivalBuffer,
+                });
+              }
+            }
+            setImportBannerTripId(null);
+          }}
+        />
+      )}
+
       {/* Offline banner */}
       {mounted && !isOnline && (
         <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-2 bg-yellow-900/95 border-b border-yellow-700/60 px-4 py-2.5 backdrop-blur-sm"
@@ -682,7 +720,11 @@ export default function HomePage() {
             )}
 
             {activeTab === "flights" && (
-              <MyFlightsPanel statusMap={statusMap} weatherMap={weatherMap} />
+              <MyFlightsPanel
+                statusMap={statusMap}
+                weatherMap={weatherMap}
+                onImport={() => { navigateAway("trips"); openCreateTripModal(); }}
+              />
             )}
 
             {activeTab === "search" && (
@@ -792,7 +834,7 @@ export default function HomePage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => setActiveTab(trip.id)}
+                        onClick={() => setImportBannerTripId(trip.id)}
                         className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-4 py-2.5 transition-all tap-scale"
                       >
                         📷 {locale === "es" ? "La IA carga tu vuelo" : "AI loads your flight"}
