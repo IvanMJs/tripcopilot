@@ -118,11 +118,13 @@ function checkItineraryConsistency(trips: TripTab[]) {
     const flights = trip.flights;
     if (flights.length < 2) continue;
 
-    // Check 1: date order issues (flights not in chronological order)
+    // Check 1: date+time order issues (flights not in chronological order)
     for (let i = 0; i < flights.length - 1; i++) {
       const a = flights[i];
       const b = flights[i + 1];
-      if (a.isoDate > b.isoDate) {
+      const aDateTime = `${a.isoDate} ${a.departureTime ?? "00:00"}`;
+      const bDateTime = `${b.isoDate} ${b.departureTime ?? "00:00"}`;
+      if (aDateTime > bDateTime) {
         toast(
           `"${trip.name}": los vuelos no están en orden cronológico. Considerá reordenarlos.`,
           {
