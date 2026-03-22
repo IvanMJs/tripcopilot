@@ -54,6 +54,7 @@ interface TripPanelProps {
   onAddAccommodation: (tripId: string, acc: Omit<Accommodation, "id" | "tripId">) => void;
   onRemoveAccommodation: (tripId: string, accId: string) => void;
   onUpdateAccommodation: (tripId: string, accId: string, updates: Pick<Accommodation, "name" | "checkInTime" | "checkOutTime" | "confirmationCode" | "address">) => void;
+  onUpdateBoardingPass?: (tripId: string, flightId: string, url: string | null) => void;
   onDeleteTrip?: () => void;
   onRenameTrip?: (name: string) => void;
   onDuplicateTrip?: () => void;
@@ -71,6 +72,7 @@ export function TripPanel({
   onAddAccommodation,
   onRemoveAccommodation,
   onUpdateAccommodation,
+  onUpdateBoardingPass,
   onDeleteTrip,
   onRenameTrip,
   onDuplicateTrip,
@@ -531,6 +533,7 @@ export function TripPanel({
                         onEditAccommodation={(name, checkInTime, checkOutTime, confirmationCode, address) =>
                           acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
                         }
+                        onBoardingPassSaved={(url) => onUpdateBoardingPass?.(trip.id, flight.id, url)}
                       />
                     </div>
                     {connAnalysis && connAnalysis.risk !== "safe" && globalIdx < sorted.length - 1 && (

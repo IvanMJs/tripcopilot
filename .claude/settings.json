@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport && echo '\\n--- TypeScript check ---' && npx tsc --noEmit 2>&1 | tail -10 && echo '--- Done ---'"
+            "command": "cd /home/user/tripcopilot && echo '\\n--- TypeScript check ---' && npx tsc --noEmit 2>&1 | tail -10 && echo '--- Done ---'"
           }
         ]
       }

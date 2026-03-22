@@ -57,6 +57,7 @@ export interface TripFlight {
   arrivalDate?: string;     // "2026-03-30" (may differ for overnight flights)
   arrivalTime?: string;     // "06:45" local at destination
   arrivalBuffer: number;    // hours: 1, 1.5, 2, 2.5, 3
+  boardingPassUrl?: string; // Supabase Storage path, e.g. "{userId}/{flightId}.jpg"
 }
 
 export interface Accommodation {

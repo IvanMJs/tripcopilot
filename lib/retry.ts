@@ -37,3 +37,26 @@ export async function fetchWithRetry(
     return res;
   }, maxAttempts);
 }
+
+/**
+ * Processes items in parallel batches, collecting fulfilled/rejected counts.
+ * Each batch runs concurrently; batches are processed sequentially to bound
+ * concurrency and avoid overwhelming downstream services.
+ */
+export async function sendInBatches<T>(
+  items: T[],
+  fn: (item: T) => Promise<void>,
+  batchSize = 10,
+): Promise<{ fulfilled: number; rejected: number }> {
+  let fulfilled = 0;
+  let rejected = 0;
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const results = await Promise.allSettled(batch.map(fn));
+    for (const r of results) {
+      if (r.status === "fulfilled") fulfilled++;
+      else rejected++;
+    }
+  }
+  return { fulfilled, rejected };
+}

@@ -82,6 +82,7 @@ export default function HomePage() {
     addAccommodation: addAccommodationDB,
     removeAccommodation: removeAccommodationDB,
     updateAccommodation: updateAccommodationDB,
+    updateBoardingPass: updateBoardingPassDB,
     saveDraftTrip: saveDraftTripDB,
     duplicateTripWithLocale: duplicateTripWithLocaleDB,
   } = useUserTrips();
@@ -773,6 +774,7 @@ export default function HomePage() {
                   onAddAccommodation={(_, acc) => addAccommodationDB(trip.id, acc)}
                   onRemoveAccommodation={(_, accId) => removeAccommodationDB(trip.id, accId)}
                   onUpdateAccommodation={(_, accId, updates) => updateAccommodationDB(trip.id, accId, updates)}
+                  onUpdateBoardingPass={(_, flightId, url) => updateBoardingPassDB(trip.id, flightId, url)}
                   onDuplicateTrip={() => handleDuplicateTrip(trip.id)}
                   onDeleteTrip={() => deleteTrip(trip.id)}
                   onRenameTrip={(name) => renameTripFromPanel(trip.id, name)}

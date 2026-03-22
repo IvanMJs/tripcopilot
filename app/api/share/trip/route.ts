@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 // ── GET: fetch trip data by share token ───────────────────────────────────────
 
@@ -55,6 +56,11 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 30 share token creations per hour per user
+  if (!(await checkUserRateLimit(supabase, user.id, "share-trip", 30))) {
+    return rateLimitResponse();
   }
 
   const raw = await req.json().catch(() => null);

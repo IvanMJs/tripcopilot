@@ -50,6 +50,7 @@ interface DbFlight {
   arrival_time: string | null;
   arrival_buffer: number;
   sort_order: number;
+  boarding_pass_url: string | null;
 }
 
 function toTripFlight(f: DbFlight): TripFlight {
@@ -64,9 +65,10 @@ function toTripFlight(f: DbFlight): TripFlight {
     destinationCode: f.destination_code,
     isoDate:         f.iso_date,
     departureTime:   f.departure_time ?? "",
-    arrivalDate:     f.arrival_date ?? undefined,
-    arrivalTime:     f.arrival_time ?? undefined,
-    arrivalBuffer:   f.arrival_buffer,
+    arrivalDate:      f.arrival_date ?? undefined,
+    arrivalTime:      f.arrival_time ?? undefined,
+    arrivalBuffer:    f.arrival_buffer,
+    boardingPassUrl:  f.boarding_pass_url ?? undefined,
   };
 }
 
@@ -683,5 +685,24 @@ export function useUserTrips() {
     return newTrip.id;
   }, [trips]);
 
-  return { trips, loading, createTrip, deleteTrip, renameTrip, addFlight, removeFlight, addAccommodation, removeAccommodation, updateAccommodation, saveDraftTrip, duplicateTrip, duplicateTripWithLocale };
+  const updateBoardingPass = useCallback(async (
+    tripId: string,
+    flightId: string,
+    url: string | null,
+  ) => {
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id !== tripId ? t : {
+          ...t,
+          flights: t.flights.map((f) =>
+            f.id !== flightId ? f : { ...f, boardingPassUrl: url ?? undefined },
+          ),
+        },
+      ),
+    );
+    const supabase = createClient();
+    await supabase.from("flights").update({ boarding_pass_url: url }).eq("id", flightId);
+  }, []);
+
+  return { trips, loading, createTrip, deleteTrip, renameTrip, addFlight, removeFlight, addAccommodation, removeAccommodation, updateAccommodation, saveDraftTrip, duplicateTrip, duplicateTripWithLocale, updateBoardingPass };
 }

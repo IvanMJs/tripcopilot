@@ -1,0 +1,161 @@
+"use client";
+
+import { Plane, Globe, Trash2, ChevronDown } from "lucide-react";
+import { TripFlight, AirportStatus } from "@/lib/types";
+import { StatusBadge } from "@/components/StatusBadge";
+import { TripPanelLabels } from "@/components/TripPanelLabels";
+import { DaysCountdown } from "./helpers";
+
+export interface FlightCardHeaderProps {
+  flight: TripFlight;
+  locale: "es" | "en";
+  L: TripPanelLabels;
+  // derived values (pre-computed in root)
+  daysUntil: number;
+  hasIssue: boolean;
+  isNonFAA: boolean;
+  originName: string;
+  destName: string;
+  originStatus: AirportStatus | undefined;
+  // delete state
+  confirmDelete: boolean;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
+  onRemove: () => void;
+  // expand toggle
+  expanded: boolean;
+  onToggleExpanded: () => void;
+}
+
+export function FlightCardHeader({
+  flight,
+  locale,
+  L,
+  daysUntil,
+  hasIssue,
+  isNonFAA,
+  originName,
+  destName,
+  originStatus,
+  confirmDelete,
+  onConfirmDelete,
+  onCancelDelete,
+  onRemove,
+  expanded,
+  onToggleExpanded,
+}: FlightCardHeaderProps) {
+  const status = originStatus?.status ?? "ok";
+
+  return (
+    <>
+      {/* ── Boarding-pass header (always visible) ─────────────────────────── */}
+      <div className={`px-4 pt-3 pb-2 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
+        {/* Row 1: flight code + status badge + remove */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <Plane className="h-3.5 w-3.5 text-gray-500" />
+            <span className="text-sm font-bold tracking-wide text-white">{flight.flightCode}</span>
+            {flight.airlineName && (
+              <span className="text-[11px] text-gray-500 truncate max-w-[120px]">{flight.airlineName}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isNonFAA && !originStatus ? (
+              <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
+            ) : (
+              <StatusBadge status={status} className="text-sm px-3 py-1" />
+            )}
+            {confirmDelete ? (
+              <div className="flex items-center gap-1.5 animate-scale-in">
+                <button
+                  onClick={onCancelDelete}
+                  className="text-xs text-gray-400 hover:text-gray-200 px-2 py-1 transition-colors"
+                >
+                  {locale === "es" ? "Cancelar" : "Cancel"}
+                </button>
+                <button
+                  onClick={onRemove}
+                  className="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg transition-colors"
+                >
+                  {locale === "es" ? "Eliminar" : "Delete"}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onConfirmDelete}
+                title={L.removeTitle}
+                className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2: EZE → MIA with times */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-2">
+          {/* Origin */}
+          <div>
+            <p className="text-2xl font-bold font-mono text-white leading-none">{flight.originCode}</p>
+            {flight.departureTime && (
+              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">{flight.departureTime}</p>
+            )}
+            <p className="text-xs text-gray-400 mt-0.5 truncate">{originName}</p>
+          </div>
+
+          {/* Arrow */}
+          <div className="flex flex-col items-center gap-0.5 px-1">
+            <Plane className="w-4 h-4 text-gray-500 rotate-90" />
+          </div>
+
+          {/* Destination */}
+          <div className="text-right">
+            <p className="text-2xl font-bold font-mono text-white leading-none">{flight.destinationCode}</p>
+            {(flight.arrivalTime || flight.arrivalDate) && (
+              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">
+                {flight.arrivalTime ?? ""}
+                {flight.arrivalDate && flight.arrivalDate !== flight.isoDate && (
+                  <sup className="text-xs text-gray-400 ml-0.5">+1</sup>
+                )}
+              </p>
+            )}
+            <p className="text-xs text-gray-400 mt-0.5 truncate">{destName}</p>
+          </div>
+        </div>
+
+        {/* Row 3: bottom strip */}
+        <div className="border-t border-white/5 pt-2 flex items-center gap-2 flex-wrap text-[11px] text-gray-500">
+          <DaysCountdown days={daysUntil} L={L} />
+          {flight.departureTime && (
+            <span className="tabular-nums">
+              {daysUntil === 0
+                ? (locale === "es" ? "Hoy" : "Today")
+                : daysUntil === 1
+                ? (locale === "es" ? "Mañana" : "Tomorrow")
+                : new Date(flight.isoDate + "T00:00:00").toLocaleDateString(
+                    locale === "en" ? "en-US" : "es-AR",
+                    { day: "2-digit", month: locale === "en" ? "short" : "2-digit" },
+                  )}{" "}
+              {flight.departureTime}
+            </span>
+          )}
+          {flight.airlineName && (
+            <>
+              <span className="text-gray-700">·</span>
+              <span>{flight.airlineName}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── Chevron toggle ─────────────────────────────────────────────────── */}
+      <button
+        onClick={onToggleExpanded}
+        className="w-full flex justify-center items-center py-1.5 text-gray-600 hover:text-gray-400 transition-colors border-t border-white/5 mt-0"
+        aria-label={expanded ? (locale === "es" ? "Colapsar detalles" : "Collapse details") : (locale === "es" ? "Ver detalles" : "View details")}
+      >
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+      </button>
+    </>
+  );
+}
