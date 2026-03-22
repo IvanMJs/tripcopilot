@@ -33,6 +33,7 @@ import { TRIP_PANEL_LABELS } from "./TripPanelLabels";
 import { formatRelativeDate, formatTimelineDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
+import { LayoverGuide } from "./LayoverGuide";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -615,6 +616,13 @@ export function TripPanel({
                             : "bg-yellow-500/40"
                         }`} />
                       </div>
+                    )}
+                    {connAnalysis && connAnalysis.scheduledBufferMinutes > 180 && globalIdx < sorted.length - 1 && (
+                      <LayoverGuide
+                        airportIata={connAnalysis.connectionAirport}
+                        bufferMinutes={connAnalysis.scheduledBufferMinutes}
+                        locale={locale}
+                      />
                     )}
                   </Fragment>
                 );
