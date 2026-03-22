@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
-import { TripTab, TripFlight, Accommodation } from "@/lib/types";
+import { TripTab, TripFlight, Accommodation, Passenger } from "@/lib/types";
 import { cacheTrips, getCachedTrips } from "@/lib/tripsCache";
 
 interface DbAccommodation {
@@ -51,6 +51,7 @@ interface DbFlight {
   arrival_buffer: number;
   sort_order: number;
   boarding_pass_url: string | null;
+  wants_upgrade: boolean | null;
 }
 
 function toTripFlight(f: DbFlight): TripFlight {
@@ -69,6 +70,7 @@ function toTripFlight(f: DbFlight): TripFlight {
     arrivalTime:      f.arrival_time ?? undefined,
     arrivalBuffer:    f.arrival_buffer,
     boardingPassUrl:  f.boarding_pass_url ?? undefined,
+    wantsUpgrade:    f.wants_upgrade ?? false,
   };
 }
 
@@ -218,7 +220,7 @@ export function useUserTrips() {
 
       const { data, error } = await supabase
         .from("trips")
-        .select("id, name, flights(*), accommodations(*)")
+        .select("id, name, passengers, flights(*), accommodations(*)")
         .order("created_at", { ascending: true });
 
       if (!error && data) {
@@ -231,6 +233,7 @@ export function useUserTrips() {
           accommodations: (t.accommodations as DbAccommodation[])
             .sort((a, b) => (a.check_in_date ?? "").localeCompare(b.check_in_date ?? ""))
             .map(toAccommodation),
+          passengers: (t.passengers as Passenger[] | null) ?? [],
         }));
         const sorted = sortTripsByUrgency(userTrips);
         setTrips(sorted);
@@ -504,7 +507,7 @@ export function useUserTrips() {
     // Fetch the newly created trip with its real DB IDs
     const { data: tripRow } = await supabase
       .from("trips")
-      .select("id, name, flights(*), accommodations(*)")
+      .select("id, name, passengers, flights(*), accommodations(*)")
       .eq("id", newTripId)
       .single();
 
@@ -518,6 +521,7 @@ export function useUserTrips() {
         accommodations: (tripRow.accommodations as DbAccommodation[])
           .sort((a, b) => (a.check_in_date ?? "").localeCompare(b.check_in_date ?? ""))
           .map(toAccommodation),
+        passengers: (tripRow.passengers as Passenger[] | null) ?? [],
       };
       setTrips((prev) => [...prev, newTrip]);
     }
@@ -685,6 +689,50 @@ export function useUserTrips() {
     return newTrip.id;
   }, [trips]);
 
+  const updatePassengers = useCallback(async (tripId: string, passengers: Passenger[]) => {
+    const prevPassengers = trips.find((t) => t.id === tripId)?.passengers ?? [];
+    setTrips((prev) =>
+      prev.map((t) => (t.id === tripId ? { ...t, passengers } : t)),
+    );
+    const supabase = createClient();
+    const { error } = await supabase.from("trips").update({ passengers }).eq("id", tripId);
+    if (error) {
+      setTrips((prev) =>
+        prev.map((t) => (t.id === tripId ? { ...t, passengers: prevPassengers } : t)),
+      );
+      console.error("Error updating passengers:", error.message);
+    }
+  }, [trips]);
+
+  const toggleUpgradeWish = useCallback(async (tripId: string, flightId: string, wants: boolean) => {
+    const prevWants = trips.find((t) => t.id === tripId)?.flights.find((f) => f.id === flightId)?.wantsUpgrade ?? !wants;
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id !== tripId ? t : {
+          ...t,
+          flights: t.flights.map((f) =>
+            f.id !== flightId ? f : { ...f, wantsUpgrade: wants },
+          ),
+        },
+      ),
+    );
+    const supabase = createClient();
+    const { error } = await supabase.from("flights").update({ wants_upgrade: wants }).eq("id", flightId);
+    if (error) {
+      setTrips((prev) =>
+        prev.map((t) =>
+          t.id !== tripId ? t : {
+            ...t,
+            flights: t.flights.map((f) =>
+              f.id !== flightId ? f : { ...f, wantsUpgrade: prevWants },
+            ),
+          },
+        ),
+      );
+      console.error("Error updating upgrade wish:", error.message);
+    }
+  }, [trips]);
+
   const updateBoardingPass = useCallback(async (
     tripId: string,
     flightId: string,
@@ -704,5 +752,5 @@ export function useUserTrips() {
     await supabase.from("flights").update({ boarding_pass_url: url }).eq("id", flightId);
   }, []);
 
-  return { trips, loading, createTrip, deleteTrip, renameTrip, addFlight, removeFlight, addAccommodation, removeAccommodation, updateAccommodation, saveDraftTrip, duplicateTrip, duplicateTripWithLocale, updateBoardingPass };
+  return { trips, loading, createTrip, deleteTrip, renameTrip, addFlight, removeFlight, addAccommodation, removeAccommodation, updateAccommodation, saveDraftTrip, duplicateTrip, duplicateTripWithLocale, updateBoardingPass, updatePassengers, toggleUpgradeWish };
 }

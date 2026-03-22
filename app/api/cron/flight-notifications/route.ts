@@ -24,6 +24,7 @@ type FlightRow = {
   arrival_time: string | null;
   arrival_buffer: number;
   gate: string | null;
+  wants_upgrade: boolean | null;
   trips: { user_id: string };
 };
 
@@ -94,7 +95,7 @@ export async function GET(request: Request) {
   // Get all flights departing in the next 3 days, with their user_id via trip
   const { data: flights, error } = await supabase
     .from("flights")
-    .select("id, trip_id, flight_code, airline_code, airline_name, airline_icao, flight_number, origin_code, destination_code, iso_date, departure_time, arrival_date, arrival_time, arrival_buffer, gate, trips!inner(user_id)")
+    .select("id, trip_id, flight_code, airline_code, airline_name, airline_icao, flight_number, origin_code, destination_code, iso_date, departure_time, arrival_date, arrival_time, arrival_buffer, gate, wants_upgrade, trips!inner(user_id)")
     .gte("iso_date", todayISO)
     .lte("iso_date", threeDaysISO);
 
@@ -482,6 +483,26 @@ export async function GET(request: Request) {
             await supabase.from("flights").update({ gate: boardingStatus.gate }).eq("id", flight.id);
           }
         }
+      }
+    }
+    // A7: Seat upgrade reminder — fires when wants_upgrade is true and flight departs in 2–5h today
+    if (
+      flight.wants_upgrade === true &&
+      isoDate === todayISO &&
+      hoursUntil !== null &&
+      hoursUntil >= 2 &&
+      hoursUntil <= 5
+    ) {
+      const alreadySent = await checkFlightLog(supabase, flight.id, "upgrade_reminder", Infinity);
+      if (!alreadySent) {
+        const title = locale === "es"
+          ? "⬆️ Buen momento para pedir upgrade"
+          : "⬆️ Good time to request an upgrade";
+        const body = locale === "es"
+          ? `Quedan ~3h para tu vuelo ${flight.flight_code}. En el mostrador de ${flight.airline_name} a veces asignan upgrades gratuitos.`
+          : `~3h left for ${flight.flight_code}. Check with ${flight.airline_name} at the gate — they sometimes assign free upgrades.`;
+        notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "upgrade_reminder", { title, body, url: "/app" });
+        notificationsSent++;
       }
     }
   }

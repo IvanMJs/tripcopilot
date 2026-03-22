@@ -34,6 +34,8 @@ import { formatRelativeDate, formatTimelineDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
 import { LayoverGuide } from "./LayoverGuide";
+import { TripPassengers } from "./TripPassengers";
+import { TripExpenses } from "./TripExpenses";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -56,6 +58,8 @@ interface TripPanelProps {
   onRemoveAccommodation: (tripId: string, accId: string) => void;
   onUpdateAccommodation: (tripId: string, accId: string, updates: Pick<Accommodation, "name" | "checkInTime" | "checkOutTime" | "confirmationCode" | "address">) => void;
   onUpdateBoardingPass?: (tripId: string, flightId: string, url: string | null) => void;
+  onUpdatePassengers?: (tripId: string, passengers: import("@/lib/types").Passenger[]) => void;
+  onToggleUpgrade?: (tripId: string, flightId: string, wants: boolean) => void;
   onDeleteTrip?: () => void;
   onRenameTrip?: (name: string) => void;
   onDuplicateTrip?: () => void;
@@ -75,6 +79,8 @@ export function TripPanel({
   onRemoveAccommodation,
   onUpdateAccommodation,
   onUpdateBoardingPass,
+  onUpdatePassengers,
+  onToggleUpgrade,
   onDeleteTrip,
   onRenameTrip,
   onDuplicateTrip,
@@ -445,6 +451,16 @@ export function TripPanel({
         );
       })()}
 
+      {/* Passengers */}
+      {!isDraft && onUpdatePassengers && (
+        <TripPassengers
+          tripId={trip.id}
+          passengers={trip.passengers ?? []}
+          onUpdate={onUpdatePassengers}
+          locale={locale}
+        />
+      )}
+
       {/* Flight cards */}
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center gap-5 py-12 px-6 text-center">
@@ -582,6 +598,9 @@ export function TripPanel({
                           acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
                         }
                         onBoardingPassSaved={(url) => onUpdateBoardingPass?.(trip.id, flight.id, url)}
+                        onToggleUpgrade={onToggleUpgrade
+                          ? (flightId, wants) => onToggleUpgrade(trip.id, flightId, wants)
+                          : undefined}
                       />
                     </div>
                     {connAnalysis && connAnalysis.risk !== "safe" && globalIdx < sorted.length - 1 && (
@@ -796,6 +815,9 @@ export function TripPanel({
 
       {/* Trip guide */}
       {sorted.length > 0 && <TripAdvisor flights={advisorFlights} locale={locale} />}
+
+      {/* Trip expenses */}
+      {!isDraft && <TripExpenses tripId={trip.id} locale={locale} />}
 
       {/* Add flight */}
       {sorted.length > 0 && !showAddForm && (

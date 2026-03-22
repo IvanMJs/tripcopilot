@@ -58,6 +58,7 @@ export interface TripFlight {
   arrivalTime?: string;     // "06:45" local at destination
   arrivalBuffer: number;    // hours: 1, 1.5, 2, 2.5, 3
   boardingPassUrl?: string; // Supabase Storage path, e.g. "{userId}/{flightId}.jpg"
+  wantsUpgrade?: boolean;   // user opted in for upgrade reminder notification
 }
 
 export interface Accommodation {
@@ -73,9 +74,26 @@ export interface Accommodation {
   address?: string;
 }
 
+export interface Passenger {
+  id: string;
+  name: string;
+  email?: string;
+}
+
+export interface TripExpense {
+  id: string;
+  tripId: string;
+  amount: number;
+  currency: string;
+  category: "flight" | "hotel" | "food" | "transport" | "activity" | "other";
+  description?: string;
+  expenseDate?: string;
+}
+
 export interface TripTab {
   id: string;
   name: string;
   flights: TripFlight[];
   accommodations: Accommodation[];
+  passengers?: Passenger[];
 }
