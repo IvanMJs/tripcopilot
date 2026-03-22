@@ -52,6 +52,7 @@ interface DbFlight {
   sort_order: number;
   boarding_pass_url: string | null;
   wants_upgrade: boolean | null;
+  cabin_class: string | null;
 }
 
 function toTripFlight(f: DbFlight): TripFlight {
@@ -71,6 +72,12 @@ function toTripFlight(f: DbFlight): TripFlight {
     arrivalBuffer:    f.arrival_buffer,
     boardingPassUrl:  f.boarding_pass_url ?? undefined,
     wantsUpgrade:    f.wants_upgrade ?? false,
+    cabinClass: (
+      f.cabin_class === "economy" ||
+      f.cabin_class === "premium_economy" ||
+      f.cabin_class === "business" ||
+      f.cabin_class === "first"
+    ) ? f.cabin_class : "economy",
   };
 }
 
@@ -347,6 +354,7 @@ export function useUserTrips() {
         arrival_time:     flight.arrivalTime ?? null,
         arrival_buffer:   flight.arrivalBuffer,
         sort_order,
+        cabin_class:      flight.cabinClass ?? "economy",
       })
       .select("id")
       .single();
@@ -733,6 +741,25 @@ export function useUserTrips() {
     }
   }, [trips]);
 
+  const updateCabinClass = useCallback(async (
+    tripId: string,
+    flightId: string,
+    cabinClass: TripFlight["cabinClass"],
+  ) => {
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id !== tripId ? t : {
+          ...t,
+          flights: t.flights.map((f) =>
+            f.id !== flightId ? f : { ...f, cabinClass },
+          ),
+        },
+      ),
+    );
+    const supabase = createClient();
+    await supabase.from("flights").update({ cabin_class: cabinClass ?? "economy" }).eq("id", flightId);
+  }, []);
+
   const updateBoardingPass = useCallback(async (
     tripId: string,
     flightId: string,
@@ -752,5 +779,5 @@ export function useUserTrips() {
     await supabase.from("flights").update({ boarding_pass_url: url }).eq("id", flightId);
   }, []);
 
-  return { trips, loading, createTrip, deleteTrip, renameTrip, addFlight, removeFlight, addAccommodation, removeAccommodation, updateAccommodation, saveDraftTrip, duplicateTrip, duplicateTripWithLocale, updateBoardingPass, updatePassengers, toggleUpgradeWish };
+  return { trips, loading, createTrip, deleteTrip, renameTrip, addFlight, removeFlight, addAccommodation, removeAccommodation, updateAccommodation, saveDraftTrip, duplicateTrip, duplicateTripWithLocale, updateBoardingPass, updatePassengers, toggleUpgradeWish, updateCabinClass };
 }

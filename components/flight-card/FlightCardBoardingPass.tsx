@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Plane, ImagePlus } from "lucide-react";
+import { useState } from "react";
+import { Plane, ImagePlus, FileDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { TripFlight } from "@/lib/types";
 import { BoardingPassView } from "@/components/BoardingPassView";
@@ -23,6 +23,7 @@ export function FlightCardBoardingPass({
   const [showBoardingPass, setShowBoardingPass] = useState(false);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const hasBoardingPass = Boolean(flight.boardingPassUrl);
   const showSection = showButton || hasBoardingPass;
@@ -70,6 +71,35 @@ export function FlightCardBoardingPass({
     toast.success(locale === "es" ? "Boarding pass guardado ✓" : "Boarding pass saved ✓");
   }
 
+  async function handleDownloadSummary() {
+    setDownloading(true);
+    try {
+      const res = await fetch("/api/boarding-pass-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flight }),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const { html } = await res.json() as { html: string };
+      const win = window.open("", "_blank");
+      if (win) {
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        win.print();
+      } else {
+        toast.error(locale === "es"
+          ? "Bloqueado por el navegador. Permitir popups para esta página."
+          : "Blocked by browser. Allow popups for this page.");
+      }
+    } catch {
+      toast.error(locale === "es" ? "Error al generar el resumen" : "Error generating summary");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   async function handleDelete() {
     if (!flight.boardingPassUrl) return;
     const supabase = createClient();
@@ -83,7 +113,7 @@ export function FlightCardBoardingPass({
   return (
     <>
       {showSection && (
-        <div className="px-4 pb-4 pt-2 border-t border-violet-800/20">
+        <div className="px-4 pb-4 pt-2 border-t border-violet-800/20 space-y-2">
           <button
             onClick={handleOpen}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-violet-950/40 border border-violet-700/40 hover:bg-violet-950/60 py-2.5 text-xs font-bold text-violet-300 transition-colors"
@@ -100,6 +130,18 @@ export function FlightCardBoardingPass({
               </>
             )}
           </button>
+          {!hasBoardingPass && (
+            <button
+              onClick={handleDownloadSummary}
+              disabled={downloading}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] py-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            >
+              <FileDown className="h-3.5 w-3.5" />
+              {downloading
+                ? (locale === "es" ? "Generando…" : "Generating…")
+                : (locale === "es" ? "Descargar resumen" : "Download summary")}
+            </button>
+          )}
         </div>
       )}
       {showBoardingPass && (

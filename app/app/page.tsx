@@ -41,6 +41,7 @@ import { createClient } from "@/utils/supabase/client";
 import { GlobalAlertBar } from "@/components/GlobalAlertBar";
 import { ImportFlightsModal } from "@/components/ImportFlightsModal";
 import { ParsedFlight } from "@/lib/importFlights";
+import { PriceAlerts } from "@/components/PriceAlerts";
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -91,6 +92,7 @@ export default function HomePage() {
     toggleUpgradeWish: toggleUpgradeWishDB,
     saveDraftTrip: saveDraftTripDB,
     duplicateTripWithLocale: duplicateTripWithLocaleDB,
+    updateCabinClass: updateCabinClassDB,
   } = useUserTrips();
 
   // All navigable tab IDs in display order for directional slide
@@ -738,18 +740,21 @@ export default function HomePage() {
             )}
 
             {activeTab === "trips" && (
-              <TripListView
-                trips={userTrips}
-                statusMap={statusMap}
-                locale={locale}
-                loading={tripsLoading}
-                onSelect={(id) => setActiveTab(id)}
-                onCreateTrip={openCreateTripModal}
-                onDeleteTrip={deleteTrip}
-                exampleTrip={exampleTrip}
-                onSelectExample={() => setActiveTab(EXAMPLE_ID)}
-                onDismissExample={handleDismissExample}
-              />
+              <div className="space-y-4">
+                <TripListView
+                  trips={userTrips}
+                  statusMap={statusMap}
+                  locale={locale}
+                  loading={tripsLoading}
+                  onSelect={(id) => setActiveTab(id)}
+                  onCreateTrip={openCreateTripModal}
+                  onDeleteTrip={deleteTrip}
+                  exampleTrip={exampleTrip}
+                  onSelectExample={() => setActiveTab(EXAMPLE_ID)}
+                  onDismissExample={handleDismissExample}
+                />
+                <PriceAlerts locale={locale} />
+              </div>
             )}
 
             {/* Trip loading skeleton */}
@@ -871,6 +876,7 @@ export default function HomePage() {
                   onUpdateBoardingPass={(_, flightId, url) => updateBoardingPassDB(trip.id, flightId, url)}
                   onUpdatePassengers={(_, passengers) => updatePassengersDB(trip.id, passengers)}
                   onToggleUpgrade={(_, flightId, wants) => toggleUpgradeWishDB(trip.id, flightId, wants)}
+                  onUpdateCabinClass={(_, flightId, cabin) => updateCabinClassDB(trip.id, flightId, cabin)}
                   onDuplicateTrip={() => handleDuplicateTrip(trip.id)}
                   onDeleteTrip={() => deleteTrip(trip.id)}
                   onRenameTrip={(name) => renameTripFromPanel(trip.id, name)}
