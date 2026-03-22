@@ -87,6 +87,8 @@ export default function HomePage() {
     removeAccommodation: removeAccommodationDB,
     updateAccommodation: updateAccommodationDB,
     updateBoardingPass: updateBoardingPassDB,
+    updatePassengers: updatePassengersDB,
+    toggleUpgradeWish: toggleUpgradeWishDB,
     saveDraftTrip: saveDraftTripDB,
     duplicateTripWithLocale: duplicateTripWithLocaleDB,
   } = useUserTrips();
@@ -867,6 +869,8 @@ export default function HomePage() {
                   onRemoveAccommodation={(_, accId) => removeAccommodationDB(trip.id, accId)}
                   onUpdateAccommodation={(_, accId, updates) => updateAccommodationDB(trip.id, accId, updates)}
                   onUpdateBoardingPass={(_, flightId, url) => updateBoardingPassDB(trip.id, flightId, url)}
+                  onUpdatePassengers={(_, passengers) => updatePassengersDB(trip.id, passengers)}
+                  onToggleUpgrade={(_, flightId, wants) => toggleUpgradeWishDB(trip.id, flightId, wants)}
                   onDuplicateTrip={() => handleDuplicateTrip(trip.id)}
                   onDeleteTrip={() => deleteTrip(trip.id)}
                   onRenameTrip={(name) => renameTripFromPanel(trip.id, name)}

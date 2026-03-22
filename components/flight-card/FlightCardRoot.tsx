@@ -36,6 +36,7 @@ export interface FlightCardProps {
   onRemoveAccommodation: () => void;
   onEditAccommodation: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
   onBoardingPassSaved: (url: string | null) => void;
+  onToggleUpgrade?: (flightId: string, wants: boolean) => void;
 }
 
 export function FlightCard({
@@ -56,6 +57,7 @@ export function FlightCard({
   onRemoveAccommodation,
   onEditAccommodation,
   onBoardingPassSaved,
+  onToggleUpgrade,
 }: FlightCardProps) {
   const L = TRIP_PANEL_LABELS[locale];
 
@@ -243,6 +245,8 @@ export function FlightCard({
           onRemove={handleRemove}
           expanded={expanded}
           onToggleExpanded={() => setExpanded((v) => !v)}
+          wantsUpgrade={flight.wantsUpgrade}
+          onToggleUpgrade={onToggleUpgrade}
         />
 
         <FlightCardBody
