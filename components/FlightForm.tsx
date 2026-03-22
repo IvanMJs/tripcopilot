@@ -149,7 +149,7 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
   const inputClass =
     "w-full rounded-xl border border-white/[0.12] bg-[#080810] px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500/70";
   const labelClass =
-    "block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5";
+    "block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5";
 
   return (
     <div

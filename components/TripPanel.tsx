@@ -29,6 +29,7 @@ import { useTsaWait } from "@/hooks/useTsaWait";
 import { FlightCard } from "./FlightCard";
 import { FlightCardSkeleton } from "./FlightCardSkeleton";
 import { TRIP_PANEL_LABELS } from "./TripPanelLabels";
+import { formatRelativeDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
 
@@ -281,7 +282,7 @@ export function TripPanel({
       {/* Trip header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-0.5">
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-0.5">
             {locale === "es" ? "Viaje" : "Trip"}
           </p>
           {isRenamingTrip ? (
@@ -361,7 +362,7 @@ export function TripPanel({
             <span className="text-violet-400">✏️</span>
             <div>
               <p className="text-xs font-bold text-violet-300">{locale === "es" ? "Borrador — no guardado" : "Draft — not saved"}</p>
-              <p className="text-[10px] text-violet-500">
+              <p className="text-xs text-violet-500">
                 {locale === "es"
                   ? `${trip.flights.length} vuelo${trip.flights.length !== 1 ? "s" : ""} · listo para guardar`
                   : `${trip.flights.length} flight${trip.flights.length !== 1 ? "s" : ""} · ready to save`}
@@ -428,74 +429,108 @@ export function TripPanel({
         </div>
       ) : (
         <div className="space-y-0">
-          {sorted.map((flight, idx) => {
-            const acc = trip.accommodations.find((a) => a.flightId === flight.id) ?? null;
-            const connAnalysis = connByFlight.get(flight.id);
-            return (
-              <Fragment key={flight.id}>
-                <div className="mb-4">
-                  <FlightCard
-                    flight={flight}
-                    statusMap={statusMap}
-                    weatherMap={weatherMap}
-                    locale={locale}
-                    onRemove={() => onRemoveFlight(trip.id, flight.id)}
-                    idx={idx}
-                    connectionToNext={connAnalysis}
-                    nextDestination={sorted[idx + 1]?.destinationCode}
-                    nextDate={sorted[idx + 1]?.isoDate}
-                    tafData={tafMap[flight.originCode]}
-                    activeSigmets={sigmetsByFlight.get(flight.id)}
-                    tsaData={tsaData[flight.originCode]}
-                    accommodation={acc}
-                    onAddAccommodation={(data) =>
-                      onAddAccommodation(trip.id, {
-                        flightId:         flight.id,
-                        name:             data.name,
-                        checkInDate:      estimateArrivalDate(flight.isoDate, flight.departureTime, flight.arrivalBuffer),
-                        checkInTime:      data.checkInTime,
-                        checkOutDate:     sorted[idx + 1]?.isoDate,
-                        checkOutTime:     data.checkOutTime,
-                        confirmationCode: data.confirmationCode,
-                        address:          data.address,
-                      })
-                    }
-                    onRemoveAccommodation={() => acc && onRemoveAccommodation(trip.id, acc.id)}
-                    onEditAccommodation={(name, checkInTime, checkOutTime, confirmationCode, address) =>
-                      acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
-                    }
-                  />
-                </div>
-                {connAnalysis && connAnalysis.risk !== "safe" && idx < sorted.length - 1 && (
-                  <div className="flex items-center gap-2 my-1 px-2">
-                    <div className={`flex-1 h-px ${
-                      connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                        ? "bg-red-500/40"
-                        : "bg-yellow-500/40"
-                    }`} />
-                    <span className={`text-xs flex items-center gap-1 ${
-                      connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                        ? "text-red-400"
-                        : "text-yellow-400"
-                    }`}>
-                      <AlertTriangle className="w-3 h-3" />
-                      {connAnalysis.risk === "missed"
-                        ? (locale === "es" ? "Conexión imposible" : "Missed connection")
-                        : connAnalysis.risk === "at_risk"
-                        ? (locale === "es" ? "Conexión en riesgo" : "Connection at risk")
-                        : (locale === "es" ? "Conexión ajustada" : "Tight connection")
-                      }
+          {(() => {
+            const todayIso = new Date().toISOString().slice(0, 10);
+            // Group flights by date
+            const grouped = sorted.reduce((acc, f) => {
+              (acc[f.isoDate] = acc[f.isoDate] || []).push(f);
+              return acc;
+            }, {} as Record<string, TripFlight[]>);
+
+            return Object.entries(grouped)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([date, dayFlights]) => (
+                <div key={date}>
+                  {/* Date separator */}
+                  <div className="flex items-center gap-3 my-3">
+                    <div className="flex-1 h-px bg-white/5" />
+                    <span className="text-xs text-gray-500 font-medium px-2">
+                      {formatRelativeDate(date, locale)}
                     </span>
-                    <div className={`flex-1 h-px ${
-                      connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                        ? "bg-red-500/40"
-                        : "bg-yellow-500/40"
-                    }`} />
+                    <div className="flex-1 h-px bg-white/5" />
                   </div>
-                )}
-              </Fragment>
-            );
-          })}
+
+                  {dayFlights.map((flight) => {
+                    const globalIdx = sorted.indexOf(flight);
+                    const acc = trip.accommodations.find((a) => a.flightId === flight.id) ?? null;
+                    const connAnalysis = connByFlight.get(flight.id);
+                    const isToday = flight.isoDate === todayIso;
+
+                    const cardNode = (
+                      <Fragment key={flight.id}>
+                        <div className="mb-4">
+                          <FlightCard
+                            flight={flight}
+                            statusMap={statusMap}
+                            weatherMap={weatherMap}
+                            locale={locale}
+                            onRemove={() => onRemoveFlight(trip.id, flight.id)}
+                            idx={globalIdx}
+                            connectionToNext={connAnalysis}
+                            nextDestination={sorted[globalIdx + 1]?.destinationCode}
+                            nextDate={sorted[globalIdx + 1]?.isoDate}
+                            tafData={tafMap[flight.originCode]}
+                            activeSigmets={sigmetsByFlight.get(flight.id)}
+                            tsaData={tsaData[flight.originCode]}
+                            accommodation={acc}
+                            onAddAccommodation={(data) =>
+                              onAddAccommodation(trip.id, {
+                                flightId:         flight.id,
+                                name:             data.name,
+                                checkInDate:      estimateArrivalDate(flight.isoDate, flight.departureTime, flight.arrivalBuffer),
+                                checkInTime:      data.checkInTime,
+                                checkOutDate:     sorted[globalIdx + 1]?.isoDate,
+                                checkOutTime:     data.checkOutTime,
+                                confirmationCode: data.confirmationCode,
+                                address:          data.address,
+                              })
+                            }
+                            onRemoveAccommodation={() => acc && onRemoveAccommodation(trip.id, acc.id)}
+                            onEditAccommodation={(name, checkInTime, checkOutTime, confirmationCode, address) =>
+                              acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
+                            }
+                          />
+                        </div>
+                        {connAnalysis && connAnalysis.risk !== "safe" && globalIdx < sorted.length - 1 && (
+                          <div className="flex items-center gap-2 my-1 px-2">
+                            <div className={`flex-1 h-px ${
+                              connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
+                                ? "bg-red-500/40"
+                                : "bg-yellow-500/40"
+                            }`} />
+                            <span className={`text-xs flex items-center gap-1 ${
+                              connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
+                                ? "text-red-400"
+                                : "text-yellow-400"
+                            }`}>
+                              <AlertTriangle className="w-3 h-3" />
+                              {connAnalysis.risk === "missed"
+                                ? (locale === "es" ? "Conexión imposible" : "Missed connection")
+                                : connAnalysis.risk === "at_risk"
+                                ? (locale === "es" ? "Conexión en riesgo" : "Connection at risk")
+                                : (locale === "es" ? "Conexión ajustada" : "Tight connection")
+                              }
+                            </span>
+                            <div className={`flex-1 h-px ${
+                              connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
+                                ? "bg-red-500/40"
+                                : "bg-yellow-500/40"
+                            }`} />
+                          </div>
+                        )}
+                      </Fragment>
+                    );
+
+                    return isToday ? (
+                      <div key={flight.id} className="relative">
+                        <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-violet-600/30 to-transparent pointer-events-none" />
+                        <div className="relative">{cardNode}</div>
+                      </div>
+                    ) : cardNode;
+                  })}
+                </div>
+              ));
+          })()}
         </div>
       )}
 

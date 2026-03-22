@@ -281,7 +281,7 @@ export function TripActionChecklist({
               {locale === "es" ? "Checklist del viaje" : "Trip checklist"}
             </p>
             {destConfig && nextFlight && (
-              <span className="flex items-center gap-1 text-[10px] text-gray-500 font-medium">
+              <span className="flex items-center gap-1 text-xs text-gray-500 font-medium">
                 <MapPin className="h-2.5 w-2.5" />
                 {destConfig.flag} {locale === "es" ? destConfig.city : destConfig.cityEn}
                 {destProfile && (
@@ -335,7 +335,7 @@ export function TripActionChecklist({
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex-1">
                     {locale === "es" ? secLabel.es : secLabel.en}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-xs text-gray-600">
                     {secDone}/{items.length}
                   </span>
                   <ChevronDown

@@ -515,7 +515,7 @@ function FlightEditCard({
           )}
         </div>
         {flight.missing.length > 0 && (
-          <span className="ml-auto text-[10px] font-semibold text-orange-400 bg-orange-950/40 border border-orange-800/30 rounded-full px-2 py-0.5 shrink-0">
+          <span className="ml-auto text-xs font-semibold text-orange-400 bg-orange-950/40 border border-orange-800/30 rounded-full px-2 py-0.5 shrink-0">
             {flight.missing.length} {locale === "es" ? "faltan" : "missing"}
           </span>
         )}
@@ -525,7 +525,7 @@ function FlightEditCard({
       {flight.selected && (
         <div className="px-4 pb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 border-t border-white/4 pt-3">
           <div>
-            <label className="text-[10px] text-gray-600 mb-1 block">{t.flightCode}</label>
+            <label className="text-xs text-gray-600 mb-1 block">{t.flightCode}</label>
             <input
               value={flight.flightCode}
               onChange={(e) => onChange("flightCode", e.target.value.toUpperCase())}
@@ -534,7 +534,7 @@ function FlightEditCard({
             />
           </div>
           <div>
-            <label className="text-[10px] text-gray-600 mb-1 block">{t.origin}</label>
+            <label className="text-xs text-gray-600 mb-1 block">{t.origin}</label>
             <input
               value={flight.originCode}
               onChange={(e) => onChange("originCode", e.target.value.toUpperCase().slice(0, 3))}
@@ -544,7 +544,7 @@ function FlightEditCard({
             />
           </div>
           <div>
-            <label className="text-[10px] text-gray-600 mb-1 block">{t.dest}</label>
+            <label className="text-xs text-gray-600 mb-1 block">{t.dest}</label>
             <input
               value={flight.destinationCode}
               onChange={(e) => onChange("destinationCode", e.target.value.toUpperCase().slice(0, 3))}
@@ -554,7 +554,7 @@ function FlightEditCard({
             />
           </div>
           <div>
-            <label className="text-[10px] text-gray-600 mb-1 block">{t.date}</label>
+            <label className="text-xs text-gray-600 mb-1 block">{t.date}</label>
             <input
               value={flight.isoDate}
               onChange={(e) => onChange("isoDate", e.target.value)}
@@ -563,7 +563,7 @@ function FlightEditCard({
             />
           </div>
           <div>
-            <label className="text-[10px] text-gray-600 mb-1 block">{t.time}</label>
+            <label className="text-xs text-gray-600 mb-1 block">{t.time}</label>
             <input
               value={flight.departureTime}
               onChange={(e) => onChange("departureTime", e.target.value)}
@@ -572,7 +572,7 @@ function FlightEditCard({
             />
           </div>
           <div>
-            <label className="text-[10px] text-gray-600 mb-1 block">
+            <label className="text-xs text-gray-600 mb-1 block">
               {locale === "es" ? "Llegada (hora)" : "Arrival time"}
             </label>
             <input
@@ -583,7 +583,7 @@ function FlightEditCard({
             />
           </div>
           <div>
-            <label className="text-[10px] text-gray-600 mb-1 block">
+            <label className="text-xs text-gray-600 mb-1 block">
               {locale === "es" ? "Llegada (fecha)" : "Arrival date"}
             </label>
             <input
@@ -594,7 +594,7 @@ function FlightEditCard({
             />
           </div>
           <div>
-            <label className="text-[10px] text-gray-600 mb-1 block">{t.buffer}</label>
+            <label className="text-xs text-gray-600 mb-1 block">{t.buffer}</label>
             <input
               type="number"
               value={flight.arrivalBuffer}

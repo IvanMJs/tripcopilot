@@ -77,17 +77,17 @@ export function BoardingPassView({ flight, gate, onClose }: BoardingPassViewProp
         {/* Details row */}
         <div className="px-6 pb-4 grid grid-cols-3 gap-3">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Salida</p>
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-0.5">Salida</p>
             <p className="text-lg font-black text-white">
               {flight.departureTime ?? "--:--"}
             </p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Clase</p>
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-0.5">Clase</p>
             <p className="text-lg font-black text-white">ECO</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-0.5">
               {gate ? "Puerta" : "Terminal"}
             </p>
             <p className={`text-lg font-black ${gate ? "text-emerald-400" : "text-gray-600"}`}>
@@ -125,7 +125,7 @@ export function BoardingPassView({ flight, gate, onClose }: BoardingPassViewProp
               ))}
             </div>
           </div>
-          <p className="text-[10px] uppercase tracking-widest text-gray-600">
+          <p className="text-xs uppercase tracking-widest text-gray-600">
             Scan at gate
           </p>
         </div>

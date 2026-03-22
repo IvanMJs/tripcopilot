@@ -33,7 +33,7 @@ function AirportClock({ iata }: { iata: string }) {
   return (
     <span className="flex items-center gap-1 text-xs text-gray-400 tabular font-medium">
       🕐 {time}
-      {tzLabel && <span className="text-gray-600 text-[10px]">{tzLabel}</span>}
+      {tzLabel && <span className="text-gray-600 text-xs">{tzLabel}</span>}
     </span>
   );
 }
@@ -366,7 +366,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
 
       <div className="pl-5 pr-4 pt-4 pb-0">
         <div className="mb-3 pr-6">
-          <span className="block text-4xl font-black tracking-tight text-white tabular">{iata}</span>
+          <span className="block text-4xl font-black tracking-tight text-white tabular font-mono">{iata}</span>
           <span className="text-xs text-gray-500 leading-tight">
             {name}
             {city && state ? ` · ${city}, ${state}` : city ? ` · ${city}` : ""}
@@ -451,7 +451,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
         const minutesAgo = Math.floor((Date.now() - new Date(status.lastChecked).getTime()) / 60000);
         return (
           <>
-            <p className="mt-3 text-[10px] text-gray-500 tabular">
+            <p className="mt-3 text-xs text-gray-500 tabular">
               {t.updated}:{" "}
               {status.lastChecked.toLocaleTimeString(locale === "en" ? "en-US" : "es-AR", { hour: "2-digit", minute: "2-digit" })}
             </p>

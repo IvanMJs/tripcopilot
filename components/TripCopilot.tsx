@@ -169,7 +169,7 @@ function AlertsSection({
 
   return (
     <div className="border-t border-white/[0.04] px-4 py-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-2">
+      <p className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
         ⚠️ {locale === "es" ? "Alertas climáticas" : "Weather alerts"}
       </p>
       <ul className="space-y-1">
@@ -255,7 +255,7 @@ function PackingSection({
               {items.map((pk, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <span
-                    className={`shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${
+                    className={`shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border ${
                       PRIORITY_STYLE[pk.priority]
                     }`}
                   >
@@ -264,7 +264,7 @@ function PackingSection({
                   <div className="min-w-0">
                     <span className="text-xs text-gray-200">{pk.item}</span>
                     {pk.reason && (
-                      <span className="text-[10px] text-gray-500 ml-1.5">{pk.reason}</span>
+                      <span className="text-xs text-gray-500 ml-1.5">{pk.reason}</span>
                     )}
                   </div>
                 </li>
@@ -315,22 +315,22 @@ function DestinationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-bold text-white">{city}</span>
-            <span className="flex items-center gap-1 text-[10px] text-gray-500">
+            <span className="flex items-center gap-1 text-xs text-gray-500">
               <Moon className="h-2.5 w-2.5" />
               {stay.nights} {locale === "es" ? "noches" : "nights"}
             </span>
-            <span className="text-[10px] text-gray-600">
+            <span className="text-xs text-gray-600">
               {fmtDate(stay.arrivalIso, locale)} → {fmtDate(stay.departureIso, locale)}
             </span>
           </div>
           {profile && (
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="flex items-center gap-1 text-[10px] text-gray-500">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
                 <Thermometer className="h-2.5 w-2.5" />
                 {profile.tempMinC}–{profile.tempMaxC}°C
               </span>
               {climate && (
-                <span className="text-[10px] text-gray-600 truncate">{climate}</span>
+                <span className="text-xs text-gray-600 truncate">{climate}</span>
               )}
             </div>
           )}
@@ -353,7 +353,7 @@ function DestinationCard({
                 <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex-1">
                   {locale === "es" ? "Qué hacer" : "Things to do"}
                 </span>
-                <span className="text-[10px] text-gray-600">{profile.activities.length}</span>
+                <span className="text-xs text-gray-600">{profile.activities.length}</span>
                 <ChevronDown
                   className={`h-3 w-3 text-gray-600 transition-transform duration-150 ${activitiesOpen ? "rotate-180" : ""}`}
                 />
@@ -381,7 +381,7 @@ function DestinationCard({
           {/* Tips */}
           {(tips.length > 0 || status === "loading") && (
             <div className="px-4 py-2.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-2 flex items-center gap-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2 flex items-center gap-1">
                 <span>💡</span> Tips
                 {aiTips?.length && status === "done" ? (
                   <TripCopilotLogo className="h-4 w-auto opacity-60 ml-1" />
@@ -396,7 +396,7 @@ function DestinationCard({
                 <ul className="space-y-1.5">
                   {tips.map((tip, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-gray-600 shrink-0 mt-1 text-[10px]">•</span>
+                      <span className="text-gray-600 shrink-0 mt-1 text-xs">•</span>
                       <span className="text-xs text-gray-300 leading-snug">{tip}</span>
                     </li>
                   ))}
@@ -422,13 +422,13 @@ function LegNotes({
   if (!data?.by_leg?.length) return null;
   return (
     <div className="border-t border-white/[0.04] px-4 py-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-2">
+      <p className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
         ✈️ {locale === "es" ? "Por tramo" : "Per leg"}
       </p>
       <ul className="space-y-1.5">
         {data.by_leg.map((leg, i) => (
           <li key={i} className="flex items-start gap-2">
-            <span className="text-[10px] text-blue-500 font-mono shrink-0 mt-0.5">
+            <span className="text-xs text-blue-500 font-mono shrink-0 mt-0.5">
               {leg.from}→{leg.to}
             </span>
             <span className="text-xs text-gray-400 leading-snug">{leg.note}</span>
@@ -619,14 +619,14 @@ export function TripCopilot({ flights, locale, tripName = "Mi viaje" }: TripCopi
               TripCopilot
             </p>
             {status === "loading" && expanded && (
-              <span className="text-[9px] text-gray-600 animate-pulse">
+              <span className="text-[11px] text-gray-600 animate-pulse">
                 {locale === "es" ? "analizando…" : "analyzing…"}
               </span>
             )}
           </div>
           {/* Collapsed subtitle */}
           {!expanded && (
-            <p className="text-[10px] text-gray-600 leading-snug mt-0.5">
+            <p className="text-xs text-gray-600 leading-snug mt-0.5">
               {locale === "es" ? "Tu copiloto para este viaje" : "Your travel copilot"}
             </p>
           )}
@@ -634,18 +634,18 @@ export function TripCopilot({ flights, locale, tripName = "Mi viaje" }: TripCopi
           {/* Collapsed: feature pills showing what's inside */}
           {!expanded && (
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
                 👕 {locale === "es" ? "Equipaje" : "Packing"}
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
                 💡 Tips
               </span>
               {hasAlerts && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-yellow-600 bg-yellow-950/30 border border-yellow-800/30 rounded-full px-2 py-0.5">
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-600 bg-yellow-950/30 border border-yellow-800/30 rounded-full px-2 py-0.5">
                   ⚠️ {locale === "es" ? "Alertas" : "Alerts"}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
                 🗺️ {stays.length} {locale === "es" ? "destinos" : "destinations"}
               </span>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   ExternalLink, Clock, MapPin, Plane,
   AlertTriangle, Globe, Zap, DoorOpen, Trash2,
@@ -25,6 +25,7 @@ import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, TripPanelLabels } from "./TripPane
 import { getVisaRequirement } from "@/lib/visaRequirements";
 import { BoardingPassView } from "./BoardingPassView";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { formatRelativeDate } from "@/lib/formatDate";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -136,6 +137,14 @@ export function FlightCard({
   const [showHotelForm, setShowHotelForm] = useState(false);
   const [showNotifLog, setShowNotifLog] = useState(false);
   const [showBoardingPass, setShowBoardingPass] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  // Removal animation state
+  const [removing, setRemoving] = useState(false);
+  const handleRemove = useCallback(() => {
+    setRemoving(true);
+    setTimeout(() => onRemove?.(), 280);
+  }, [onRemove]);
 
   // Swipe-to-delete state
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -168,7 +177,7 @@ export function FlightCard({
 
   function handleDeleteTap() {
     setSwipeOffset(0);
-    onRemove();
+    handleRemove();
   }
   const { logs: notifLogs, loading: notifLoading } = useNotificationLog(flight.id, showNotifLog);
 
@@ -197,10 +206,7 @@ export function FlightCard({
   const originTz    = originInfo?.timezone ?? "UTC";
   const tzAbbr      = flight.departureTime ? getTzAbbr(originTz, flight.isoDate) : "";
 
-  const dateLabel = new Date(flight.isoDate + "T00:00:00").toLocaleDateString(
-    locale === "en" ? "en-US" : "es-AR",
-    { day: "2-digit", month: locale === "en" ? "short" : "2-digit" }
-  );
+  const dateLabel = formatRelativeDate(flight.isoDate, locale);
   const daysUntil = getDaysUntil(flight.isoDate);
 
   // Hours until departure (for boarding pass trigger)
@@ -264,7 +270,7 @@ export function FlightCard({
         hasIssue                                                  ? "border-orange-600/50" :
         isImminent                                               ? "border-blue-700/40"   :
         "border-white/6"
-      }`}
+      } ${removing ? "opacity-0 -translate-x-6 scale-95" : "opacity-100 translate-x-0 scale-100"}`}
       style={{ animationDelay: `${idx * 0.08}s` }}
     >
       {/* Swipe-to-delete: delete button revealed behind card */}
@@ -285,6 +291,101 @@ export function FlightCard({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+      {/* ── Boarding-pass header (always visible) ─────────────────────────── */}
+      <div className={`px-4 pt-3 pb-2 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
+        {/* Row 1: flight code + status badge + remove */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <Plane className="h-3.5 w-3.5 text-gray-500" />
+            <span className="text-sm font-bold tracking-wide text-white">{flight.flightCode}</span>
+            {flight.airlineName && (
+              <span className="text-[11px] text-gray-500 truncate max-w-[120px]">{flight.airlineName}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isNonFAA && !originStatus ? (
+              <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
+            ) : (
+              <StatusBadge status={status} className="text-sm px-3 py-1" />
+            )}
+            <button
+              onClick={handleRemove}
+              title={L.removeTitle}
+              className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: EZE → MIA with times */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-2">
+          {/* Origin */}
+          <div>
+            <p className="text-2xl font-bold font-mono text-white leading-none">{flight.originCode}</p>
+            {flight.departureTime && (
+              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">{flight.departureTime}</p>
+            )}
+            <p className="text-xs text-gray-400 mt-0.5 truncate">{originName}</p>
+          </div>
+
+          {/* Arrow */}
+          <div className="flex flex-col items-center gap-0.5 px-1">
+            <Plane className="w-4 h-4 text-gray-500 rotate-90" />
+          </div>
+
+          {/* Destination */}
+          <div className="text-right">
+            <p className="text-2xl font-bold font-mono text-white leading-none">{flight.destinationCode}</p>
+            {(flight.arrivalTime || flight.arrivalDate) && (
+              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">
+                {flight.arrivalTime ?? ""}
+                {flight.arrivalDate && flight.arrivalDate !== flight.isoDate && (
+                  <sup className="text-xs text-gray-400 ml-0.5">+1</sup>
+                )}
+              </p>
+            )}
+            <p className="text-xs text-gray-400 mt-0.5 truncate">{destName}</p>
+          </div>
+        </div>
+
+        {/* Row 3: bottom strip */}
+        <div className="border-t border-white/5 pt-2 flex items-center gap-2 flex-wrap text-[11px] text-gray-500">
+          <DaysCountdown days={daysUntil} L={L} />
+          {flight.departureTime && (
+            <span className="tabular-nums">
+              {daysUntil === 0
+                ? (locale === "es" ? "Hoy" : "Today")
+                : daysUntil === 1
+                ? (locale === "es" ? "Mañana" : "Tomorrow")
+                : new Date(flight.isoDate + "T00:00:00").toLocaleDateString(
+                    locale === "en" ? "en-US" : "es-AR",
+                    { day: "2-digit", month: locale === "en" ? "short" : "2-digit" },
+                  )}{" "}
+              {flight.departureTime}
+            </span>
+          )}
+          {flight.airlineName && (
+            <>
+              <span className="text-gray-700">·</span>
+              <span>{flight.airlineName}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── Chevron toggle ─────────────────────────────────────────────────── */}
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex justify-center items-center py-1.5 text-gray-600 hover:text-gray-400 transition-colors border-t border-white/5 mt-0"
+        aria-label={expanded ? (locale === "es" ? "Colapsar detalles" : "Collapse details") : (locale === "es" ? "Ver detalles" : "View details")}
+      >
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+      </button>
+
+      {/* ── Collapsible detail sections ────────────────────────────────────── */}
+      <div className={`overflow-hidden transition-all duration-300 ease-out ${expanded ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"}`}>
+
       {daysUntil === 1 && (
         <div className="px-4 py-2.5 bg-emerald-950/30 border-b border-emerald-800/40 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
@@ -315,7 +416,7 @@ export function FlightCard({
       )}
 
       {/* SECTION 1: Airport */}
-      <div className={`px-4 py-3 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
+      <div className={`px-4 py-3 border-t border-white/5 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -326,7 +427,7 @@ export function FlightCard({
               </span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-white tracking-tight">{flight.originCode}</span>
+              <span className="text-3xl font-black text-white tracking-tight font-mono">{flight.originCode}</span>
               <span className="text-sm text-gray-400">{originName}</span>
               {originInfo?.country && (
                 <span className="text-xs text-gray-500">{originInfo.country}</span>
@@ -351,20 +452,6 @@ export function FlightCard({
             )}
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <div className="flex items-center gap-1.5">
-              {isNonFAA && !originStatus ? (
-                <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
-              ) : (
-                <StatusBadge status={status} className="text-sm px-3 py-1" />
-              )}
-              <button
-                onClick={onRemove}
-                title={L.removeTitle}
-                className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
             <LinkButton href={airportUrl} variant={hasIssue ? "orange" : "default"}>
               FlightAware
             </LinkButton>
@@ -374,12 +461,12 @@ export function FlightCard({
         {hasIssue && (
           <div className="mt-3 rounded-xl bg-orange-950/30 border border-orange-800/30 px-3 py-2.5 text-xs">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400 flex items-center gap-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-orange-400 flex items-center gap-1">
                 <Zap className="h-3 w-3" />
                 {locale === "en" ? "FAA Live Alert" : "Alerta FAA en vivo"}
               </span>
               <a href={airportUrl} target="_blank" rel="noopener noreferrer"
-                className="text-[10px] text-orange-500/70 hover:text-orange-400 transition-colors">
+                className="text-xs text-orange-500/70 hover:text-orange-400 transition-colors">
                 FlightAware ↗
               </a>
             </div>
@@ -415,9 +502,9 @@ export function FlightCard({
               {L.sectionRoute}
             </p>
             <div className="flex items-center gap-2 text-sm">
-              <span className="font-bold text-white">{flight.originCode}</span>
+              <span className="font-bold text-white font-mono">{flight.originCode}</span>
               <Plane className="h-3.5 w-3.5 text-gray-700" />
-              <span className="font-bold text-gray-400">{flight.destinationCode}</span>
+              <span className="font-bold text-gray-400 font-mono">{flight.destinationCode}</span>
               <span className="text-gray-700">·</span>
               <span className="text-gray-500 text-xs">{originName} → {destName}</span>
             </div>
@@ -468,9 +555,9 @@ export function FlightCard({
               <span className="flex items-center gap-1.5 text-gray-400">
                 <Clock className="h-3.5 w-3.5 text-gray-600" />
                 {L.departs}{" "}
-                <span className="font-bold text-white ml-1">{flight.departureTime}</span>
+                <span className="font-bold text-white ml-1 tabular-nums">{flight.departureTime}</span>
                 {tzAbbr && (
-                  <span className="text-[10px] font-medium text-gray-500 bg-white/5 border border-white/8 rounded px-1 py-0.5">
+                  <span className="text-xs font-medium text-gray-500 bg-white/5 border border-white/8 rounded px-1 py-0.5">
                     {tzAbbr}
                   </span>
                 )}
@@ -480,7 +567,7 @@ export function FlightCard({
                   <MapPin className="h-3.5 w-3.5 text-yellow-600 shrink-0 mt-0.5" />
                   <span>
                     {L.arriveAt}{" "}
-                    <span className="font-bold text-yellow-400">{arrivalRec}</span>
+                    <span className="font-bold text-yellow-400 tabular-nums">{arrivalRec}</span>
                     <span className="text-gray-500 ml-1">({arrivalNote})</span>
                   </span>
                 </span>
@@ -522,7 +609,7 @@ export function FlightCard({
               className="w-full text-xs bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-gray-300 placeholder-gray-600 resize-none focus:outline-none focus:border-violet-600/50"
               autoFocus
             />
-            <p className="text-[10px] text-gray-600">
+            <p className="text-xs text-gray-600">
               {locale === "es" ? "Enter para guardar · Shift+Enter nueva línea" : "Enter to save · Shift+Enter new line"}
             </p>
           </div>
@@ -553,7 +640,7 @@ export function FlightCard({
               <DoorOpen className="h-3 w-3" />
               {L.sectionGate}
               {isToday && (
-                <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-600/50 bg-yellow-900/40 text-yellow-400 animate-pulse">
+                <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded border border-yellow-600/50 bg-yellow-900/40 text-yellow-400 animate-pulse">
                   LIVE
                 </span>
               )}
@@ -722,6 +809,8 @@ export function FlightCard({
           </div>
         )}
       </div>
+
+      </div>{/* end collapsible */}
 
       {/* Hotel inline */}
       {(accommodation || nextDate) && (

@@ -176,7 +176,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index,
           <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
             hasIssue ? "bg-orange-400 animate-pulse" : "bg-emerald-400"
           }`} />
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${
+          <span className={`text-xs font-bold uppercase tracking-widest ${
             hasIssue ? "text-orange-400" : "text-emerald-400"
           }`}>
             {hasIssue
@@ -281,7 +281,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index,
                 if (!t) return null;
                 return (
                   <span className="flex items-center gap-1 text-xs text-gray-400 tabular font-medium">
-                    🕐 {t}{tz && <span className="text-gray-600 text-[10px] ml-0.5">{tz}</span>}
+                    🕐 {t}{tz && <span className="text-gray-600 text-xs ml-0.5">{tz}</span>}
                   </span>
                 );
               })()}
@@ -311,14 +311,14 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index,
         {hasIssue && (
           <div className="mt-2 rounded-lg bg-orange-950/40 border border-orange-800/40 px-3 py-2 text-xs">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-orange-400">
                 {locale === "en" ? "FAA Live Alert" : "Alerta FAA en vivo"}
               </span>
               <a
                 href={`https://www.flightaware.com/live/airport/${flight.originICAO}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[10px] text-orange-500 hover:text-orange-300 transition-colors"
+                className="inline-flex items-center gap-1 text-xs text-orange-500 hover:text-orange-300 transition-colors"
               >
                 {locale === "en" ? "See on FlightAware ↗" : "Ver en FlightAware ↗"}
               </a>
@@ -425,7 +425,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index,
               <DoorOpen className="h-3 w-3" />
               {locale === "en" ? "Gate / Terminal" : "Puerta / Terminal"}
               {isToday && (
-                <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-600/50 bg-yellow-900/40 text-yellow-400 animate-pulse">
+                <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded border border-yellow-600/50 bg-yellow-900/40 text-yellow-400 animate-pulse">
                   LIVE
                 </span>
               )}
@@ -503,7 +503,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index,
           <div className="px-4 pb-3 space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-600 block mb-1">
                   {locale === "es" ? "Localizador / PNR" : "Locator / PNR"}
                 </label>
                 <input
@@ -516,7 +516,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index,
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-600 block mb-1">
                   {locale === "es" ? "Asiento" : "Seat"}
                 </label>
                 <input
@@ -530,7 +530,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, tsaData, index,
               </div>
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-600 block mb-1">
                 {locale === "es" ? "Notas" : "Notes"}
               </label>
               <textarea

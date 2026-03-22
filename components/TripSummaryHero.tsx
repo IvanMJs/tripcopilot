@@ -131,7 +131,7 @@ export function TripSummaryHero({ statusMap, locale, flights }: TripSummaryHeroP
     >
       {/* ── PRÓXIMO VUELO — protagonista visual ─────────────────────────────── */}
       <div className="px-4 pt-5 pb-4 sm:px-5">
-        <p className="text-[9px] font-bold uppercase tracking-widest text-gray-600 mb-3">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">
           {nextFlight
             ? (locale === "es" ? "Próximo vuelo" : "Next flight")
             : (locale === "es" ? "Tu viaje" : "Your trip")}
@@ -260,7 +260,7 @@ export function TripSummaryHero({ statusMap, locale, flights }: TripSummaryHeroP
 
         {/* Trip dates — desktop only, pushed right */}
         {flights.length > 0 && (
-          <span className="ml-auto text-[10px] text-gray-700 hidden sm:block tabular">
+          <span className="ml-auto text-xs text-gray-700 hidden sm:block tabular">
             {locale === "en"
               ? `${flights[0].dateEn} – ${flights[flights.length - 1].dateEn}`
               : `${flights[0].date} – ${flights[flights.length - 1].date}`}

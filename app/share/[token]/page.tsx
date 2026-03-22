@@ -101,7 +101,7 @@ export default async function ShareTripPage({ params }: PageProps) {
       {/* Header */}
       <div className="border-b border-white/8 px-4 py-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-0.5">
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-0.5">
             Seguimiento en vivo
           </p>
           <h1 className="text-lg font-black text-white">{trip.name}</h1>
@@ -141,7 +141,7 @@ export default async function ShareTripPage({ params }: PageProps) {
                       <span className="text-xs font-bold tracking-wider text-gray-400">
                         Vuelo {idx + 1}
                       </span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-current opacity-70">
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-current opacity-70">
                         {statusLabel}
                       </span>
                     </div>
@@ -160,7 +160,7 @@ export default async function ShareTripPage({ params }: PageProps) {
                           <span className="text-gray-400">
                             {" "}\u2192{" "}{flight.arrival_time}
                             {flight.arrival_date && flight.arrival_date !== flight.iso_date ? (
-                              <span className="text-[10px] text-gray-500">+1</span>
+                              <span className="text-xs text-gray-500">+1</span>
                             ) : null}
                           </span>
                         )}

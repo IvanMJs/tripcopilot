@@ -6,6 +6,7 @@ import { TripTab } from "@/lib/types";
 import { AirportStatusMap } from "@/lib/types";
 import { calculateTripRiskScore } from "@/lib/tripRiskScore";
 import { TripListSkeleton } from "./TripListSkeleton";
+import { formatRelativeDate } from "@/lib/formatDate";
 
 interface TripListViewProps {
   trips: TripTab[];
@@ -66,12 +67,7 @@ function getNextFlightLabel(trip: TripTab, locale: "es" | "en"): { label: string
   if (upcoming.length === 0) return null;
   const next = upcoming[0];
   const isToday = next.isoDate === today;
-  const dateLabel = isToday
-    ? (locale === "es" ? "Hoy" : "Today")
-    : new Date(next.isoDate + "T00:00:00").toLocaleDateString(
-        locale === "en" ? "en-US" : "es-AR",
-        { day: "numeric", month: "short" },
-      );
+  const dateLabel = formatRelativeDate(next.isoDate, locale);
   const timeLabel = next.departureTime ? ` · ${next.departureTime}` : "";
   return { label: `✈ ${dateLabel}${timeLabel}`, isToday };
 }
@@ -165,7 +161,7 @@ export function TripListView({
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400 border border-violet-600/40 bg-violet-900/30 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-bold uppercase tracking-wider text-violet-400 border border-violet-600/40 bg-violet-900/30 px-1.5 py-0.5 rounded">
                     {locale === "es" ? "Ejemplo" : "Example"}
                   </span>
                 </div>
@@ -229,7 +225,7 @@ export function TripListView({
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-base font-bold text-white truncate">{trip.name}</span>
                     {riskStyle && (
-                      <span className={`flex items-center gap-1 text-[10px] font-semibold shrink-0 ${riskStyle.text}`}>
+                      <span className={`flex items-center gap-1 text-xs font-semibold shrink-0 ${riskStyle.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${riskStyle.dot}`} />
                         {riskStyle.label[locale]}
                       </span>
@@ -310,7 +306,7 @@ export function TripListView({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-sm font-bold text-gray-300 truncate">{trip.name}</span>
-                            <span className="text-[10px] text-gray-600 font-medium shrink-0">{range}</span>
+                            <span className="text-xs text-gray-600 font-medium shrink-0">{range}</span>
                           </div>
                           <div className="flex items-center gap-3 flex-wrap">
                             <span className="flex items-center gap-1 text-xs text-gray-600">

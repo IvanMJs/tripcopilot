@@ -36,7 +36,7 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
               {locale === "es" ? "Nombre del viaje" : "Trip name"}
             </label>
             <input

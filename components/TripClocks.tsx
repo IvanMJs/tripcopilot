@@ -60,7 +60,7 @@ export function TripClocks({ locale }: { locale: "es" | "en" }) {
       style={{ background: "linear-gradient(150deg, rgba(12,12,22,0.97) 0%, rgba(8,8,16,0.99) 100%)" }}
     >
       <div className="px-4 pt-3.5 pb-1">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-600">
           {locale === "es" ? "Hora local · ciudades del viaje" : "Local time · trip cities"}
         </p>
       </div>
@@ -80,17 +80,17 @@ export function TripClocks({ locale }: { locale: "es" | "en" }) {
             >
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="text-sm leading-none">{c.flag}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                <span className="text-xs font-black uppercase tracking-widest text-gray-500">
                   {c.code}
                 </span>
               </div>
               <p className="text-2xl font-black text-white tabular leading-none">
                 {time}
               </p>
-              <p className="text-[10px] text-gray-500 mt-0.5 truncate">{city}</p>
-              <p className="text-[10px] text-gray-600 truncate">{dateLabel}</p>
+              <p className="text-xs text-gray-500 mt-0.5 truncate">{city}</p>
+              <p className="text-xs text-gray-600 truncate">{dateLabel}</p>
               {sameAsOther && (
-                <p className="text-[9px] text-gray-700 mt-0.5">= MIA</p>
+                <p className="text-[11px] text-gray-700 mt-0.5">= MIA</p>
               )}
             </div>
           );

@@ -70,6 +70,47 @@ function toTripFlight(f: DbFlight): TripFlight {
   };
 }
 
+// ── Trip urgency sort ─────────────────────────────────────────────────────────
+
+function sortTripsByUrgency(trips: TripTab[]): TripTab[] {
+  const today = new Date().toISOString().slice(0, 10);
+
+  function getTripPriority(trip: TripTab): { bucket: number; sortKey: string } {
+    const flights = trip.flights;
+    if (flights.length === 0) {
+      // No flights — sort by created_at desc (bucket 2)
+      return { bucket: 2, sortKey: "" };
+    }
+
+    const flightsToday = flights.filter((f) => f.isoDate === today);
+    if (flightsToday.length > 0) {
+      // Has flight today — first bucket, sort by earliest departure time
+      const earliest = flightsToday
+        .map((f) => f.departureTime ?? "99:99")
+        .sort()[0];
+      return { bucket: 0, sortKey: earliest };
+    }
+
+    const upcomingFlights = flights.filter((f) => f.isoDate > today);
+    if (upcomingFlights.length > 0) {
+      // Has upcoming flights — sort by nearest isoDate
+      const nearest = upcomingFlights.map((f) => f.isoDate).sort()[0];
+      return { bucket: 1, sortKey: nearest };
+    }
+
+    // All past flights — last bucket
+    return { bucket: 3, sortKey: "" };
+  }
+
+  return [...trips].sort((a, b) => {
+    const pa = getTripPriority(a);
+    const pb = getTripPriority(b);
+    if (pa.bucket !== pb.bucket) return pa.bucket - pb.bucket;
+    if (pa.sortKey && pb.sortKey) return pa.sortKey.localeCompare(pb.sortKey);
+    return 0;
+  });
+}
+
 // ── Itinerary inconsistency checker ───────────────────────────────────────────
 
 function checkItineraryConsistency(trips: TripTab[]) {
@@ -186,9 +227,10 @@ export function useUserTrips() {
             .sort((a, b) => (a.check_in_date ?? "").localeCompare(b.check_in_date ?? ""))
             .map(toAccommodation),
         }));
-        setTrips(userTrips);
+        const sorted = sortTripsByUrgency(userTrips);
+        setTrips(sorted);
         // Update the offline cache in the background
-        cacheTrips(userTrips).catch(() => {/* best-effort */});
+        cacheTrips(sorted).catch(() => {/* best-effort */});
       }
 
       setLoading(false);

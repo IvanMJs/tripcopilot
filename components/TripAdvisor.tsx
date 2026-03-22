@@ -123,7 +123,7 @@ function SectionHeader({
         {label}
       </span>
       {count !== undefined && (
-        <span className="text-[10px] text-gray-600">{count}</span>
+        <span className="text-xs text-gray-600">{count}</span>
       )}
       <ChevronDown
         className={`h-3 w-3 text-gray-600 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
@@ -165,22 +165,22 @@ function DestinationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-bold text-white">{city}</span>
-            <span className="flex items-center gap-1 text-[10px] text-gray-500">
+            <span className="flex items-center gap-1 text-xs text-gray-500">
               <Moon className="h-2.5 w-2.5" />
               {stay.nights} {locale === "es" ? "noches" : "nights"}
             </span>
-            <span className="text-[10px] text-gray-600">
+            <span className="text-xs text-gray-600">
               {formatDateShort(stay.arrivalIso, locale)} → {formatDateShort(stay.departureIso, locale)}
             </span>
           </div>
           {profile && (
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="flex items-center gap-1 text-[10px] text-gray-500">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
                 <Thermometer className="h-2.5 w-2.5" />
                 {stay.tempMin}–{stay.tempMax}°C
               </span>
               {climate && (
-                <span className="text-[10px] text-gray-600 truncate">{climate}</span>
+                <span className="text-xs text-gray-600 truncate">{climate}</span>
               )}
             </div>
           )}
@@ -218,7 +218,7 @@ function DestinationCard({
                 <ul className="px-4 pb-2 space-y-1.5">
                   {profile.packing.map((p, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-gray-600 shrink-0 mt-1 text-[10px]">•</span>
+                      <span className="text-gray-600 shrink-0 mt-1 text-xs">•</span>
                       <span className="text-xs text-gray-300 leading-snug">
                         {locale === "es" ? p.es : p.en}
                       </span>
@@ -273,7 +273,7 @@ function DestinationCard({
                 <ul className="px-4 pb-2 space-y-1.5">
                   {tips.map((t, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className={`shrink-0 mt-1 text-[10px] ${aiTips ? "text-purple-400" : "text-gray-600"}`}>
+                      <span className={`shrink-0 mt-1 text-xs ${aiTips ? "text-purple-400" : "text-gray-600"}`}>
                         {aiTips ? "✦" : "•"}
                       </span>
                       <span className={`text-xs leading-snug ${aiTips ? "text-gray-200" : "text-gray-300"}`}>
@@ -326,13 +326,13 @@ function PackingSection({
           <ul className="px-4 pb-3 space-y-2">
             {aiPacking.map((p, i) => (
               <li key={i} className="flex items-start gap-2">
-                <span className={`shrink-0 mt-0.5 text-[10px] font-bold ${priorityColor[p.priority] ?? "text-gray-500"}`}>
+                <span className={`shrink-0 mt-0.5 text-xs font-bold ${priorityColor[p.priority] ?? "text-gray-500"}`}>
                   ✦
                 </span>
                 <div>
                   <p className="text-xs font-medium text-gray-200">{p.item}</p>
                   <p className="text-[11px] text-gray-500 leading-snug flex items-center gap-1">
-                    <span className={`text-[10px] font-semibold ${priorityColor[p.priority] ?? "text-gray-500"}`}>
+                    <span className={`text-xs font-semibold ${priorityColor[p.priority] ?? "text-gray-500"}`}>
                       {priorityLabel[p.priority]?.[locale] ?? p.priority}
                     </span>
                     · {p.reason}
@@ -386,7 +386,7 @@ function PackingSection({
         <ul className="px-4 pb-3 space-y-1.5">
           {items.map((item, i) => (
             <li key={i} className="flex items-start gap-2">
-              <span className={`shrink-0 mt-1 text-[10px] ${i === 0 ? "text-blue-400" : i === 1 && hasMixedClimate ? "text-orange-400" : "text-gray-600"}`}>
+              <span className={`shrink-0 mt-1 text-xs ${i === 0 ? "text-blue-400" : i === 1 && hasMixedClimate ? "text-orange-400" : "text-gray-600"}`}>
                 {i === 0 ? "📊" : i === 1 && hasMixedClimate ? "⚠️" : "•"}
               </span>
               <span className={`text-xs leading-snug ${i === 0 ? "text-blue-300 font-medium" : i === 1 && hasMixedClimate ? "text-orange-300" : "text-gray-300"}`}>
@@ -551,7 +551,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
           {/* Activity chip selector — only before first fetch */}
           {!activitiesConfirmed && (
             <div className="px-4 py-3 border-b border-white/[0.04]">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
                 {locale === "es" ? "¿Qué vas a hacer en este viaje?" : "What are you doing on this trip?"}
               </p>
               <div className="flex flex-wrap gap-1.5 mb-3">
@@ -615,12 +615,12 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
           {/* by_leg notes */}
           {aiData?.by_leg && aiData.by_leg.length > 0 && (
             <div className="border-t border-white/[0.04] px-4 py-3 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-600">
                 {locale === "es" ? "Conexiones" : "Connections"}
               </p>
               {aiData.by_leg.map((leg, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <span className="text-[10px] font-mono text-gray-500 shrink-0 mt-0.5">
+                  <span className="text-xs font-mono text-gray-500 shrink-0 mt-0.5">
                     {leg.from}→{leg.to}
                   </span>
                   <p className="text-xs text-gray-400 leading-snug">{leg.note}</p>

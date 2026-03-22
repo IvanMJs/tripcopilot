@@ -152,7 +152,7 @@ export function TripRiskBadge({ risk, locale }: TripRiskBadgeProps) {
           {risk.factors.map((f, i) => (
             <div key={i} className="flex items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2">
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${cfg.text} bg-white/5`}>
+                <span className={`px-1.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide ${cfg.text} bg-white/5`}>
                   {factorTypeLabels[f.type][locale]}
                 </span>
                 <span className="text-gray-400">{f.label}</span>

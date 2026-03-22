@@ -19,7 +19,7 @@ interface Props {
 }
 
 const tabBase = "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap";
-const tabActive   = "border-blue-500 text-blue-400";
+const tabActive   = "border-violet-500 text-violet-400";
 const tabInactive = "border-transparent text-gray-400 hover:text-gray-200";
 
 export function TripTabBar({
@@ -123,7 +123,7 @@ export function TripTabBar({
                     }}
                     onClick={(e) => e.stopPropagation()}
                     maxLength={30}
-                    className="bg-transparent border-b border-blue-400 outline-none text-blue-300 w-28 text-sm"
+                    className="bg-transparent border-b border-violet-400 outline-none text-violet-300 w-28 text-sm"
                   />
                 </div>
               ) : (
@@ -164,7 +164,7 @@ export function TripTabBar({
               className={`${tabBase} ${activeTab === draftId ? tabActive : tabInactive} flex items-center gap-2`}
             >
               {draftTrip.name}
-              <span className="text-[9px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5 leading-none">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5 leading-none">
                 {locale === "es" ? "Borrador" : "Draft"}
               </span>
             </button>

@@ -9,6 +9,17 @@
   --card:          rgba(15, 15, 23, 0.9);
   --border:        rgba(255, 255, 255, 0.06);
   --border-hover:  rgba(255, 255, 255, 0.12);
+
+  /* Primary accent — violet */
+  --color-primary:       124 58 237;   /* violet-600 */
+  --color-primary-light: 139 92 246;   /* violet-500 */
+
+  /* Semantic color tokens */
+  --color-success: 34 197 94;     /* green-500 */
+  --color-warning: 251 146 60;    /* orange-400 */
+  --color-danger:  239 68 68;     /* red-500 */
+  --color-info:    139 92 246;    /* violet-400 */
+  --color-neutral: 156 163 175;   /* gray-400 */
 }
 
 /* ── Base ──────────────────────────────────────────────────────────────────── */
@@ -88,6 +99,57 @@ input[type="time"] {
   font-feature-settings: "tnum";
 }
 
+/* ── Primary accent utilities ──────────────────────────────────────────────── */
+.text-primary   { color: rgb(var(--color-primary-light)); }
+.bg-primary     { background-color: rgb(var(--color-primary)); }
+.border-primary { border-color: rgb(var(--color-primary)); }
+
+/* ── Semantic color utilities ──────────────────────────────────────────────── */
+.text-success { color: rgb(var(--color-success)); }
+.text-warning { color: rgb(var(--color-warning)); }
+.text-danger  { color: rgb(var(--color-danger)); }
+
+.badge-success {
+  background: rgba(var(--color-success), 0.15);
+  color: rgb(var(--color-success));
+  border: 1px solid rgba(var(--color-success), 0.3);
+}
+.badge-warning {
+  background: rgba(var(--color-warning), 0.15);
+  color: rgb(var(--color-warning));
+  border: 1px solid rgba(var(--color-warning), 0.3);
+}
+.badge-danger {
+  background: rgba(var(--color-danger), 0.15);
+  color: rgb(var(--color-danger));
+  border: 1px solid rgba(var(--color-danger), 0.3);
+}
+
+/* ── Card elevation system ─────────────────────────────────────────────────── */
+.surface-0 { background: #080810; }
+.surface-1 { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }
+.surface-2 { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); }
+.surface-3 { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.12); }
+
+/* ── Glass highlight ───────────────────────────────────────────────────────── */
+.glass-highlight {
+  position: relative;
+}
+.glass-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  border-radius: 9999px;
+}
+
+/* ── Ambient glow utilities ────────────────────────────────────────────────── */
+.glow-success { box-shadow: 0 0 16px rgba(34,197,94,0.25), 0 0 32px rgba(34,197,94,0.1); }
+.glow-warning { box-shadow: 0 0 16px rgba(251,146,60,0.25), 0 0 32px rgba(251,146,60,0.1); }
+.glow-danger  { box-shadow: 0 0 16px rgba(239,68,68,0.25), 0 0 32px rgba(239,68,68,0.1); }
+.glow-primary { box-shadow: 0 0 16px rgba(124,58,237,0.25), 0 0 32px rgba(124,58,237,0.1); }
+
 /* ── Utility: glass card effect ────────────────────────────────────────────── */
 .glass {
   background: rgba(15, 15, 23, 0.85);
@@ -146,30 +208,60 @@ button, a, select, input {
 
 /* ── Light mode overrides ───────────────────────────────────────────────────── */
 html.light {
-  --background:   #f8f8fc;
-  --foreground:   #1a1a2e;
-  --card:         rgba(255, 255, 255, 0.9);
-  --border:       rgba(0, 0, 0, 0.08);
-  --border-hover: rgba(0, 0, 0, 0.15);
+  --background:          248 248 252;
+  --foreground:          26 26 46;
+  --card:                255 255 255;
+  --border:              0 0 0 / 0.08;
+  --color-primary:       109 40 217;   /* violet-700 for better contrast on light */
+  --color-primary-light: 124 58 237;
 }
 
 html.light body {
-  background: var(--background);
-  color: var(--foreground);
+  background: rgb(248, 248, 252);
+  color: rgb(26, 26, 46);
 }
 
 html.light body::before {
   background-image:
-    radial-gradient(circle at 25% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 75% 100%, rgba(99, 102, 241, 0.04) 0%, transparent 50%);
+    radial-gradient(circle at 25% 0%, rgba(124, 58, 237, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 75% 100%, rgba(109, 40, 217, 0.04) 0%, transparent 50%);
+}
+
+html.light .glass {
+  background: rgba(255,255,255,0.85);
+  border-color: rgba(0,0,0,0.08);
 }
 
 html.light .bottom-nav-bg {
-  background:    rgba(248, 248, 252, 0.96);
-  border-top:    1px solid rgba(0, 0, 0, 0.08);
+  background:   rgba(248, 248, 252, 0.96);
+  border-color: rgba(0, 0, 0, 0.08);
 }
+
+html.light .surface-1 { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.06); }
+html.light .surface-2 { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+html.light .surface-3 { background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.12); }
 
 html.light input[type="date"],
 html.light input[type="time"] {
   color-scheme: light;
+}
+
+/* ── Directional slide animations ──────────────────────────────────────────── */
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right { animation: slide-in-right 0.2s ease-out; }
+.animate-slide-in-left  { animation: slide-in-left  0.2s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

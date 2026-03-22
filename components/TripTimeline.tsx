@@ -77,7 +77,7 @@ function ConnectionPill({
   if (analysis.risk === "safe" && analysis.delayAddedMinutes === 0) return null;
 
   return (
-    <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${colors[analysis.risk]}`}>
+    <span className={`text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${colors[analysis.risk]}`}>
       {riskLabels[analysis.risk][locale]}
       {analysis.delayAddedMinutes > 0 && ` +${analysis.delayAddedMinutes}m`}
     </span>
@@ -258,7 +258,7 @@ export function TripTimeline({
                   />
                   <span className="text-xs font-bold text-white">{node.code}</span>
                   {(isFirst || isLast) && (
-                    <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm ${
+                    <span className={`text-[11px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm ${
                       isFirst ? "bg-emerald-900/50 text-emerald-400" : "bg-blue-900/50 text-blue-400"
                     }`}>
                       {isFirst
@@ -267,12 +267,12 @@ export function TripTimeline({
                     </span>
                   )}
                   {node.isOrigin && node.flightCode && (
-                    <span className="text-[10px] text-blue-300/70 max-w-[60px] text-center leading-tight">
+                    <span className="text-xs text-blue-300/70 max-w-[60px] text-center leading-tight">
                       {node.flightCode}
                     </span>
                   )}
                   {node.isOrigin && daysUntil !== null && (
-                    <span className={`text-[10px] font-semibold ${
+                    <span className={`text-xs font-semibold ${
                       daysUntil < 0   ? "text-white/35"   :
                       daysUntil === 0 ? "text-red-400 animate-pulse" :
                       daysUntil <= 7  ? "text-yellow-400" :
@@ -328,7 +328,7 @@ export function TripTimeline({
           })}
         </div>
 
-        <p className="text-[10px] text-white/50 mt-3 text-center">
+        <p className="text-xs text-white/50 mt-3 text-center">
           {locale === "en" ? "Hover or tap a dot for details" : "Hover o tocá un punto para ver detalles"}
         </p>
       </div>

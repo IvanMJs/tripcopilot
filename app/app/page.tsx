@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
@@ -38,6 +38,7 @@ import { OnboardingModal } from "@/components/OnboardingModal";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { makeExampleTrip } from "@/lib/exampleTrip";
 import { createClient } from "@/utils/supabase/client";
+import { GlobalAlertBar } from "@/components/GlobalAlertBar";
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -62,7 +63,9 @@ export default function HomePage() {
   const router = useRouter();
   const [showNotifSheet, setShowNotifSheet] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<string>("airports");
+  const [activeTab, setActiveTabRaw] = useState<string>("airports");
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
+  const prevTabRef = useRef<string>("airports");
   const [refreshInterval, setRefreshInterval] = useState(5);
   const [mounted, setMounted] = useState(false);
 
@@ -82,6 +85,19 @@ export default function HomePage() {
     saveDraftTrip: saveDraftTripDB,
     duplicateTripWithLocale: duplicateTripWithLocaleDB,
   } = useUserTrips();
+
+  // All navigable tab IDs in display order for directional slide
+  const allTabIds = ["airports", "flights", "search", "trips", ...userTrips.map((t) => t.id), DRAFT_ID, EXAMPLE_ID, "help"];
+
+  function setActiveTab(newTab: string) {
+    const prevIdx = allTabIds.indexOf(prevTabRef.current);
+    const nextIdx = allTabIds.indexOf(newTab);
+    if (prevIdx !== -1 && nextIdx !== -1) {
+      setSlideDirection(nextIdx > prevIdx ? "right" : "left");
+    }
+    prevTabRef.current = newTab;
+    setActiveTabRaw(newTab);
+  }
 
   // Create trip modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -348,10 +364,20 @@ export default function HomePage() {
   return (
     <>
       <Toaster
-        position="top-right"
+        position="bottom-center"
         toastOptions={{
-          style: { background: "#1f2937", color: "#f3f4f6", border: "1px solid #374151" },
+          className: '',
+          style: {
+            background: '#1a1a2e',
+            color: '#e8e8f0',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px',
+            fontSize: '14px',
+          },
+          success: { iconTheme: { primary: '#22c55e', secondary: '#080810' } },
+          error:   { iconTheme: { primary: '#ef4444', secondary: '#080810' } },
         }}
+        containerStyle={{ bottom: 76 }}
       />
 
       {showOnboarding && (
@@ -417,7 +443,7 @@ export default function HomePage() {
               : "Offline — showing last known status"}
           </p>
           {lastUpdated && (
-            <span className="text-[10px] text-yellow-400/70">
+            <span className="text-xs text-yellow-400/70">
               · {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
@@ -483,7 +509,7 @@ export default function HomePage() {
                   }`}
                 >
                   <Bell className={`h-3.5 w-3.5 ${notificationsEnabled ? "text-blue-400" : ""}`} />
-                  {notificationsEnabled && <span className="text-[10px] font-semibold hidden sm:inline">ON</span>}
+                  {notificationsEnabled && <span className="text-xs font-semibold hidden sm:inline">ON</span>}
                 </button>
               )}
 
@@ -578,6 +604,10 @@ export default function HomePage() {
 
           {/* ── Tab content ── */}
           <ErrorBoundary>
+            <div
+              key={activeTab}
+              className={slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left"}
+            >
             {activeTab === "airports" && (
               <div>
                 <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
@@ -732,6 +762,7 @@ export default function HomePage() {
                 />
               ) : null
             )}
+            </div>
           </ErrorBoundary>
 
           {/* Footer — desktop only */}
@@ -759,6 +790,15 @@ export default function HomePage() {
           onDeleteTrip={deleteTrip}
           onRenameTrip={(id, name) => renameTripDB(id, name, locale)}
           onRenameDraft={(name) => setDraftTrip((prev) => prev ? { ...prev, name } : prev)}
+        />
+      )}
+
+      {/* ── Global alert bar — today's flights ── */}
+      {mounted && (
+        <GlobalAlertBar
+          trips={userTrips}
+          locale={locale}
+          onSelectTrip={(id) => setActiveTab(id)}
         />
       )}
     </>
