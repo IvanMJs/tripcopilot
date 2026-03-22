@@ -59,6 +59,7 @@ export interface TripFlight {
   arrivalBuffer: number;    // hours: 1, 1.5, 2, 2.5, 3
   boardingPassUrl?: string; // Supabase Storage path, e.g. "{userId}/{flightId}.jpg"
   wantsUpgrade?: boolean;   // user opted in for upgrade reminder notification
+  cabinClass?: "economy" | "premium_economy" | "business" | "first";
 }
 
 export interface Accommodation {

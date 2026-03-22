@@ -691,6 +691,99 @@ export async function GET(request: Request) {
     );
   }
 
+  // ── Price alert reminders ──────────────────────────────────────────────────
+  const sixMonthsISO = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+
+  const { data: priceAlerts } = await supabase
+    .from("price_alerts")
+    .select("id, user_id, origin_code, destination_code, target_date")
+    .eq("is_active", true)
+    .gte("target_date", todayISO)
+    .lte("target_date", sixMonthsISO);
+
+  type PriceAlertRow = {
+    id: string;
+    user_id: string;
+    origin_code: string;
+    destination_code: string;
+    target_date: string;
+  };
+
+  if (priceAlerts?.length) {
+    const processPriceAlert = async (alert: PriceAlertRow): Promise<void> => {
+      const targetMs  = new Date(alert.target_date + "T00:00:00").getTime();
+      const todayMs   = new Date(todayISO + "T00:00:00").getTime();
+      const daysLeft  = Math.round((targetMs - todayMs) / (1000 * 60 * 60 * 24));
+
+      const triggerDays = [90, 30, 7] as const;
+      const matched = triggerDays.find((d) => daysLeft === d);
+      if (!matched) return;
+
+      const tag = `price_alert_${alert.id}_${matched}d`;
+
+      // Check notification_log to avoid duplicates (re-use flight log helper pattern)
+      const { data: existing } = await supabase
+        .from("notification_log")
+        .select("id")
+        .eq("type", tag)
+        .eq("user_id", alert.user_id)
+        .gte("sent_at", new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString())
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) return;
+
+      const { data: subs } = await supabase
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth")
+        .eq("user_id", alert.user_id);
+
+      if (!subs?.length) return;
+
+      const locale = await getUserLocale(alert.user_id);
+      const route = `${alert.origin_code}→${alert.destination_code}`;
+
+      let title: string;
+      let body: string;
+
+      if (matched === 90) {
+        title = locale === "es"
+          ? `Buen momento para buscar vuelos ${route}`
+          : `Good time to search for ${route} flights`;
+        body = locale === "es"
+          ? "Los precios suelen estar buenos ~90 días antes. Revisá ahora."
+          : "Prices are usually good ~90 days out. Check now.";
+      } else if (matched === 30) {
+        title = locale === "es"
+          ? `Los precios de ${route} suelen subir pronto`
+          : `${route} prices tend to rise soon`;
+        body = locale === "es"
+          ? "Faltan 30 días para tu mes objetivo. Revisá antes de que suban."
+          : "30 days to your target month. Check before prices go up.";
+      } else {
+        title = locale === "es"
+          ? `Últimos días para conseguir buen precio ${route}`
+          : `Last days for a good price on ${route}`;
+        body = locale === "es"
+          ? "Tu mes objetivo está a solo 7 días. Última oportunidad."
+          : "Your target month is just 7 days away. Last chance.";
+      }
+
+      notificationsFailed += await pushToAll(subs, supabase, { title, body, url: "/app" }, tag);
+      notificationsSent++;
+
+      await supabase.from("notification_log").insert({
+        user_id:  alert.user_id,
+        type:     tag,
+        sent_at:  new Date().toISOString(),
+      });
+    }
+
+    await sendInBatches(priceAlerts as PriceAlertRow[], processPriceAlert, 10);
+  }
+
   await supabase.from("cron_runs").insert({
     flights_processed: flights.length,
     notifications_sent: notificationsSent,

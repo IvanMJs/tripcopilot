@@ -36,6 +36,7 @@ import { FlightCountdownBadge } from "./FlightCountdownBadge";
 import { LayoverGuide } from "./LayoverGuide";
 import { TripPassengers } from "./TripPassengers";
 import { TripExpenses } from "./TripExpenses";
+import { CarbonFootprint } from "./CarbonFootprint";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ interface TripPanelProps {
   onUpdateBoardingPass?: (tripId: string, flightId: string, url: string | null) => void;
   onUpdatePassengers?: (tripId: string, passengers: import("@/lib/types").Passenger[]) => void;
   onToggleUpgrade?: (tripId: string, flightId: string, wants: boolean) => void;
+  onUpdateCabinClass?: (tripId: string, flightId: string, cabin: import("@/lib/types").TripFlight["cabinClass"]) => void;
   onDeleteTrip?: () => void;
   onRenameTrip?: (name: string) => void;
   onDuplicateTrip?: () => void;
@@ -81,6 +83,7 @@ export function TripPanel({
   onUpdateBoardingPass,
   onUpdatePassengers,
   onToggleUpgrade,
+  onUpdateCabinClass,
   onDeleteTrip,
   onRenameTrip,
   onDuplicateTrip,
@@ -818,6 +821,17 @@ export function TripPanel({
 
       {/* Trip expenses */}
       {!isDraft && <TripExpenses tripId={trip.id} locale={locale} />}
+
+      {/* Carbon footprint */}
+      {sorted.length > 0 && (
+        <CarbonFootprint
+          flights={sorted}
+          locale={locale}
+          onUpdateCabinClass={onUpdateCabinClass
+            ? (flightId, cabin) => onUpdateCabinClass(trip.id, flightId, cabin)
+            : undefined}
+        />
+      )}
 
       {/* Add flight */}
       {sorted.length > 0 && !showAddForm && (
