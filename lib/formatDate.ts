@@ -3,6 +3,24 @@
  */
 
 /**
+ * Formats an ISO date string as a full timeline section header.
+ * ES: "DOMINGO 29 DE MARZO" | EN: "SUNDAY, MARCH 29"
+ */
+export function formatTimelineDate(isoDate: string, locale: "es" | "en"): string {
+  const d = new Date(isoDate + "T12:00:00");
+  if (locale === "es") {
+    const weekday = new Intl.DateTimeFormat("es-AR", { weekday: "long" }).format(d);
+    const day = d.getDate();
+    const month = new Intl.DateTimeFormat("es-AR", { month: "long" }).format(d);
+    return `${weekday.toUpperCase()} ${day} DE ${month.toUpperCase()}`;
+  }
+  const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(d);
+  const month = new Intl.DateTimeFormat("en-US", { month: "long" }).format(d);
+  const day = d.getDate();
+  return `${weekday.toUpperCase()}, ${month.toUpperCase()} ${day}`;
+}
+
+/**
  * Formats an ISO date string (YYYY-MM-DD) as a relative label.
  * Returns "Hoy" / "Today", "Mañana" / "Tomorrow", "Pasado mañana" / "Day after tomorrow",
  * "Ayer" / "Yesterday", or a localized short date.

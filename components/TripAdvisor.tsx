@@ -607,7 +607,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
         <MapPin className="h-4 w-4 text-blue-400 shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white leading-snug">
-            {locale === "es" ? "Recomendaciones del viaje" : "Trip recommendations"}
+            {locale === "es" ? "Consejos para tu viaje" : "Trip tips"}
           </p>
           <p className="text-[11px] text-gray-500 mt-0.5">
             {stays.length} {locale === "es" ? "destinos" : "destinations"} ·{" "}
@@ -647,6 +647,19 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
           {/* Activity chip selector — only before first fetch */}
           {!activitiesConfirmed && (
             <div className="px-4 py-3 border-b border-white/[0.04]">
+              {/* Empty state description */}
+              <div className="mb-4 space-y-1">
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  {locale === "es"
+                    ? "La IA puede prepararte consejos de:"
+                    : "The AI can prepare tips about:"}
+                </p>
+                <ul className="space-y-0.5 text-xs text-gray-500">
+                  <li>🌡 {locale === "es" ? "Clima y qué llevar" : "Weather and what to pack"}</li>
+                  <li>🎯 {locale === "es" ? "Qué hacer en cada ciudad" : "Things to do in each city"}</li>
+                  <li>💡 {locale === "es" ? "Tips locales" : "Local tips"}</li>
+                </ul>
+              </div>
               {/* Destination preview strip */}
               {stays.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
@@ -688,7 +701,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
                 onClick={handleGenerateAdvice}
                 className="shimmer-btn w-full py-2 rounded-xl bg-violet-700/40 border border-violet-500/40 text-sm font-semibold text-violet-100 hover:bg-violet-700/60 transition-colors"
               >
-                {locale === "es" ? "Generar recomendaciones →" : "Generate recommendations →"}
+                {locale === "es" ? "Pedirle consejos a la IA →" : "Ask the AI for tips →"}
               </button>
             </div>
           )}

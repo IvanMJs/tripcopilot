@@ -30,7 +30,7 @@ import { useTsaWait } from "@/hooks/useTsaWait";
 import { FlightCard } from "./FlightCard";
 import { FlightCardSkeleton } from "./FlightCardSkeleton";
 import { TRIP_PANEL_LABELS } from "./TripPanelLabels";
-import { formatRelativeDate } from "@/lib/formatDate";
+import { formatRelativeDate, formatTimelineDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
 
@@ -495,6 +495,16 @@ export function TripPanel({
               const todayIso = new Date().toISOString().slice(0, 10);
               const todayFlights = sorted.filter((f) => f.isoDate === todayIso);
               const otherFlights = sorted.filter((f) => f.isoDate !== todayIso);
+              // Collect accommodation-only dates: accommodations whose checkInDate
+              // differs from any flight's isoDate, so they appear as standalone day blocks
+              const flightDates = new Set(sorted.map((f) => f.isoDate));
+              const standaloneAccsByDate: Record<string, Accommodation[]> = {};
+              for (const acc of trip.accommodations) {
+                const d = acc.checkInDate;
+                if (d && !flightDates.has(d)) {
+                  (standaloneAccsByDate[d] = standaloneAccsByDate[d] ?? []).push(acc);
+                }
+              }
 
               function renderFlightCard(flight: TripFlight) {
                 const globalIdx = sorted.indexOf(flight);
@@ -550,10 +560,16 @@ export function TripPanel({
                         }`}>
                           <AlertTriangle className="w-3 h-3" />
                           {connAnalysis.risk === "missed"
-                            ? (locale === "es" ? "Conexión imposible" : "Missed connection")
+                            ? (locale === "es"
+                                ? "No llegarías a tomar el siguiente vuelo"
+                                : "You'd likely miss the next flight")
                             : connAnalysis.risk === "at_risk"
-                            ? (locale === "es" ? "Conexión en riesgo" : "Connection at risk")
-                            : (locale === "es" ? "Conexión ajustada" : "Tight connection")
+                            ? (locale === "es"
+                                ? `Conexión en riesgo — ${formatBuffer(connAnalysis.effectiveBufferMinutes)} en ${connAnalysis.connectionAirport}`
+                                : `At risk — ${formatBuffer(connAnalysis.effectiveBufferMinutes)} to connect in ${connAnalysis.connectionAirport}`)
+                            : (locale === "es"
+                                ? `Justo — ${formatBuffer(connAnalysis.effectiveBufferMinutes)} para cambiar de avión en ${connAnalysis.connectionAirport}`
+                                : `Tight — ${formatBuffer(connAnalysis.effectiveBufferMinutes)} to connect in ${connAnalysis.connectionAirport}`)
                           }
                         </span>
                         <div className={`flex-1 h-px ${
@@ -573,15 +589,23 @@ export function TripPanel({
                 return acc;
               }, {} as Record<string, TripFlight[]>);
 
+              // Merge flight dates + standalone accommodation dates for full sorted order
+              const allDates = Array.from(
+                new Set([...Object.keys(grouped), ...Object.keys(standaloneAccsByDate)])
+              ).sort((a, b) => a.localeCompare(b));
+
               return (
                 <>
                   {/* Today pinned section */}
                   {todayFlights.length > 0 && (
                     <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-2 px-1">
+                      <div className="flex items-center gap-2 mb-3 px-1">
                         <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse inline-block" />
                         <span className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">
                           {locale === "es" ? "Hoy" : "Today"}
+                        </span>
+                        <span className="text-[10px] text-gray-600 font-medium">
+                          {formatTimelineDate(todayIso, locale)}
                         </span>
                       </div>
                       {todayFlights.map((flight) => (
@@ -593,21 +617,39 @@ export function TripPanel({
                     </div>
                   )}
 
-                  {/* Remaining flights grouped by date */}
-                  {Object.entries(grouped)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([date, dayFlights]) => (
+                  {/* Remaining days — flights + standalone accommodations — grouped by date */}
+                  {allDates.map((date) => {
+                    const dayFlights = grouped[date] ?? [];
+                    const dayStandaloneAccs = standaloneAccsByDate[date] ?? [];
+                    return (
                       <div key={date}>
                         <div className="flex items-center gap-3 my-3">
                           <div className="flex-1 h-px bg-white/5" />
-                          <span className="text-xs text-gray-500 font-medium px-2">
-                            {formatRelativeDate(date, locale)}
+                          <span className="text-[10px] text-gray-500 font-semibold tracking-wider px-2">
+                            {formatTimelineDate(date, locale)}
                           </span>
                           <div className="flex-1 h-px bg-white/5" />
                         </div>
                         {dayFlights.map((flight) => renderFlightCard(flight))}
+                        {dayStandaloneAccs.map((acc) => (
+                          <div key={acc.id} className="mb-4 px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] flex items-start gap-3">
+                            <span className="text-base shrink-0">🏨</span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-gray-200 truncate">{acc.name}</p>
+                              {acc.checkInTime && (
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {locale === "es" ? "Check-in" : "Check-in"}: {acc.checkInTime}
+                                </p>
+                              )}
+                              {acc.address && (
+                                <p className="text-xs text-gray-600 mt-0.5 truncate">{acc.address}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    );
+                  })}
                 </>
               );
             })()
