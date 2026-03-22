@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -14,6 +15,11 @@ export async function GET(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 60 log requests per hour per user
+  if (!(await checkUserRateLimit(supabase, user.id, "notifications-log", 60))) {
+    return rateLimitResponse();
   }
 
   // Verify the flight belongs to this user

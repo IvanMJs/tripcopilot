@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { TripAdviceResult } from "@/lib/types/tripAdvice";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const StaySchema = z.object({
   code:          z.string().length(3),
@@ -44,13 +45,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit: 5 advice requests per hour per user (more expensive than parse-flight)
-  const { data: allowed } = await supabase.rpc("check_rate_limit", {
-    p_user_id:      user.id,
-    p_endpoint:     "trip-advice",
-    p_max_per_hour: 5,
-  });
-  if (!allowed) {
-    return NextResponse.json({ error: "Rate limit exceeded — try again later" }, { status: 429 });
+  if (!(await checkUserRateLimit(supabase, user.id, "trip-advice", 5))) {
+    return rateLimitResponse();
   }
 
   const raw = await req.json();

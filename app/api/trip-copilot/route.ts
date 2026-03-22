@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const TripFlightSchema = z.object({
   flightCode:      z.string().max(10),
@@ -33,13 +34,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit: 20 chat requests per hour per user
-  const { data: allowed } = await supabase.rpc("check_rate_limit", {
-    p_user_id:      user.id,
-    p_endpoint:     "trip-copilot",
-    p_max_per_hour: 20,
-  });
-  if (!allowed) {
-    return NextResponse.json({ error: "Rate limit exceeded — try again later" }, { status: 429 });
+  if (!(await checkUserRateLimit(supabase, user.id, "trip-copilot", 20))) {
+    return rateLimitResponse();
   }
 
   const raw = await req.json();

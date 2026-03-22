@@ -1,5 +1,7 @@
 import webpush from "web-push";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/server";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 webpush.setVapidDetails(
   "mailto:support@tripcopilot.app",
@@ -8,10 +10,37 @@ webpush.setVapidDetails(
 );
 
 export async function POST(request: Request) {
+  // Allow internal cron/n8n callers with CRON_SECRET to bypass auth
+  const authHeader = request.headers.get("Authorization");
+  const cronSecret = process.env.CRON_SECRET;
+  const isCronRequest =
+    cronSecret !== undefined &&
+    cronSecret !== "" &&
+    authHeader === `Bearer ${cronSecret}`;
+
   const { user_id, title, body, tag, url } = await request.json();
 
   if (!user_id || !title) {
     return Response.json({ error: "user_id and title required" }, { status: 400 });
+  }
+
+  if (!isCronRequest) {
+    // Require an authenticated session whose user matches the requested user_id
+    const supabaseAuth = await createClient();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+
+    if (!user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (user.id !== user_id) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Rate limit: 30 notify requests per hour per user
+    if (!(await checkUserRateLimit(supabaseAuth, user.id, "push-notify", 30))) {
+      return rateLimitResponse();
+    }
   }
 
   const supabase = createServiceClient(
