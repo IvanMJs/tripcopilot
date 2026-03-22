@@ -4,14 +4,24 @@ import { AIRPORTS } from "@/lib/airports";
 import { parseAeroDataBox } from "@/lib/aerodatabox";
 import { parseXML } from "@/lib/faa";
 import { localToUTC, localHourInTimezone, CRON_LABELS, CronLocale } from "@/lib/cronUtils";
+import { analyzeConnection } from "@/lib/connectionRisk";
+import { TripFlight } from "@/lib/types";
 
 type FlightRow = {
   id: string;
+  trip_id: string;
   flight_code: string;
+  airline_code: string;
+  airline_name: string;
+  airline_icao: string;
+  flight_number: string;
   origin_code: string;
   destination_code: string;
   iso_date: string;
   departure_time: string | null;
+  arrival_date: string | null;
+  arrival_time: string | null;
+  arrival_buffer: number;
   trips: { user_id: string };
 };
 
@@ -82,7 +92,7 @@ export async function GET(request: Request) {
   // Get all flights departing in the next 3 days, with their user_id via trip
   const { data: flights, error } = await supabase
     .from("flights")
-    .select("*, trips!inner(user_id)")
+    .select("id, trip_id, flight_code, airline_code, airline_name, airline_icao, flight_number, origin_code, destination_code, iso_date, departure_time, arrival_date, arrival_time, arrival_buffer, trips!inner(user_id)")
     .gte("iso_date", todayISO)
     .lte("iso_date", threeDaysISO);
 
@@ -95,9 +105,11 @@ export async function GET(request: Request) {
     return Response.json({ ok: true, processed: 0, sent: 0 });
   }
 
+  const flightRows = flights as unknown as FlightRow[];
+
   // Collect unique origin airports
   const uniqueAirports = Array.from(
-    new Set((flights as FlightRow[]).map((f) => f.origin_code)),
+    new Set(flightRows.map((f) => f.origin_code)),
   );
 
   // Fetch airport statuses (FAA + international)
@@ -204,7 +216,7 @@ export async function GET(request: Request) {
   // Process each flight
   let notificationsSent = 0;
 
-  for (const flight of flights as FlightRow[]) {
+  for (const flight of flightRows) {
     const userId: string = flight.trips.user_id;
     const departureTime: string | null = flight.departure_time;
     const isoDate: string = flight.iso_date;
@@ -332,6 +344,63 @@ export async function GET(request: Request) {
             const { title, body } = L.flightDelay(flight.flight_code, delayText, flightStatus.estimatedDeparture, departureTime ?? "?", gateText, originCode, destCode, flightStatus.delayMinutes);
             await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_delay_real", { title, body, url: "/app" });
             notificationsSent++;
+
+            // A6: Connection rescue — check if this delay impacts the next flight in the trip
+            if (flightStatus.delayMinutes >= 20) {
+              const tripId: string = (flight as FlightRow).trip_id;
+              // Find next flight in same trip (chronologically after this one)
+              const nextFlight = (flightRows).find((f) =>
+                f.trip_id === tripId &&
+                f.id !== flight.id &&
+                (f.iso_date > isoDate ||
+                  (f.iso_date === isoDate && (f.departure_time ?? "") > (departureTime ?? ""))),
+              );
+
+              if (nextFlight) {
+                // Build minimal TripFlight objects for analyzeConnection
+                const delayedTripFlight: TripFlight = {
+                  id:              flight.id,
+                  flightCode:      flight.flight_code,
+                  airlineCode:     (flight as FlightRow).airline_code,
+                  airlineName:     (flight as FlightRow).airline_name,
+                  airlineIcao:     (flight as FlightRow).airline_icao,
+                  flightNumber:    (flight as FlightRow).flight_number,
+                  originCode:      originCode,
+                  destinationCode: destCode,
+                  isoDate:         isoDate,
+                  departureTime:   departureTime ?? "",
+                  arrivalBuffer:   (flight as FlightRow).arrival_buffer ?? 2,
+                };
+                const nextTripFlight: TripFlight = {
+                  id:              nextFlight.id,
+                  flightCode:      nextFlight.flight_code,
+                  airlineCode:     nextFlight.airline_code,
+                  airlineName:     nextFlight.airline_name,
+                  airlineIcao:     nextFlight.airline_icao,
+                  flightNumber:    nextFlight.flight_number,
+                  originCode:      nextFlight.origin_code,
+                  destinationCode: nextFlight.destination_code,
+                  isoDate:         nextFlight.iso_date,
+                  departureTime:   nextFlight.departure_time ?? "",
+                  arrivalBuffer:   nextFlight.arrival_buffer ?? 2,
+                };
+
+                const connAnalysis = analyzeConnection(delayedTripFlight, nextTripFlight, {});
+                if (connAnalysis && (connAnalysis.risk === "at_risk" || connAnalysis.risk === "missed")) {
+                  const alreadySentConn = await checkFlightLog(supabase, flight.id, "connection_rescue", 20);
+                  if (!alreadySentConn) {
+                    const connTitle = locale === "es"
+                      ? `⚠️ Conexión en riesgo — ${nextFlight.flight_code}`
+                      : `⚠️ Connection at risk — ${nextFlight.flight_code}`;
+                    const connBody = locale === "es"
+                      ? "El delay afecta tu conexión. Avisá a la tripulación al aterrizar."
+                      : "The delay impacts your connection. Alert the crew when landing.";
+                    await sendAndLogFlight(supabase, subs, flight.id, userId, "connection_rescue", { title: connTitle, body: connBody, url: "/app" });
+                    notificationsSent++;
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -351,11 +420,63 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── A5: Weather alert at destination (1–3 days before arrival) ───────────
+  for (const flight of flightRows) {
+    const userId: string = flight.trips.user_id;
+    const isoDate: string = flight.iso_date;
+    const destCode: string = flight.destination_code;
+
+    const todayMidnight = new Date(todayISO + "T00:00:00").getTime();
+    const flightMidnight = new Date(isoDate + "T00:00:00").getTime();
+    const daysUntilFlight = Math.ceil((flightMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilFlight < 1 || daysUntilFlight > 3) continue;
+
+    const destInfo = AIRPORTS[destCode];
+    if (!destInfo?.lat || !destInfo?.lng) continue;
+
+    const { data: subs } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("user_id", userId);
+    if (!subs?.length) continue;
+
+    const alreadySent = await checkFlightLog(supabase, flight.id, `weather_alert_destination_${isoDate}`, Infinity);
+    if (alreadySent) continue;
+
+    try {
+      const weatherUrl =
+        `https://api.open-meteo.com/v1/forecast?latitude=${destInfo.lat}&longitude=${destInfo.lng}` +
+        `&daily=weather_code&timezone=auto&start_date=${isoDate}&end_date=${isoDate}`;
+      const weatherRes = await fetch(weatherUrl, { signal: AbortSignal.timeout(8000) });
+      if (!weatherRes.ok) continue;
+      const weatherData = await weatherRes.json() as { daily?: { weather_code?: number[] } };
+      const wmoCode = weatherData?.daily?.weather_code?.[0] ?? 0;
+
+      if (wmoCode >= 65) {
+        const locale = await getUserLocale(userId);
+        const destCity = destInfo.city ?? destCode;
+        const [, month, day] = isoDate.split("-");
+        const dateStr = `${day}/${month}`;
+        const title = locale === "es"
+          ? `🌧 Mal tiempo en ${destCity} el ${dateStr}`
+          : `🌧 Bad weather in ${destCity} on ${dateStr}`;
+        const body = locale === "es"
+          ? "Llevá paraguas / ropa de abrigo"
+          : "Bring an umbrella / warm clothes";
+        await sendAndLogFlight(supabase, subs, flight.id, userId, `weather_alert_destination_${isoDate}`, { title, body, url: "/app" });
+        notificationsSent++;
+      }
+    } catch (e) {
+      cronErrors.push(`Weather alert ${destCode}: ${String(e)}`);
+    }
+  }
+
   // ── Flight countdown push (lock screen) ──────────────────────────────────
   // Sends a push with tag "flight_countdown" every cron run when a flight is
   // 30 min–4 h away. The shared tag means the browser replaces the previous
   // countdown notification rather than stacking them.
-  for (const flight of flights as FlightRow[]) {
+  for (const flight of flightRows) {
     const userId: string = flight.trips.user_id;
     const departureTime: string | null = flight.departure_time;
     const isoDate: string = flight.iso_date;
