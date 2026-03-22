@@ -100,6 +100,7 @@ function staysKey(stays: StayInfo[]): string {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+// SectionHeader is used only by the static (non-AI) packing fallback in PackingSection
 function SectionHeader({
   emoji,
   label,
@@ -142,9 +143,7 @@ function DestinationCard({
   aiTips?: string[];
 }) {
   const [open, setOpen] = useState(true);
-  const [packingOpen, setPackingOpen] = useState(true);
-  const [activitiesOpen, setActivitiesOpen] = useState(true);
-  const [tipsOpen, setTipsOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<"packing" | "activities" | "tips">("packing");
 
   const profile = getDestinationProfile(stay.code, stay.arrivalIso);
   const city = locale === "es" ? stay.city : stay.cityEn;
@@ -155,8 +154,16 @@ function DestinationCard({
     ? aiTips.map((t) => ({ es: t, en: t }))
     : profile?.tips ?? [];
 
+  function getClimateBorderClass(): string {
+    const c = stay.climateEn.toLowerCase();
+    if (c.includes("tropical") || c.includes("humid")) return "border-l-2 border-l-blue-500/50";
+    if (c.includes("dry") || c.includes("arid")) return "border-l-2 border-l-amber-500/50";
+    if (c.includes("temperate")) return "border-l-2 border-l-green-500/50";
+    return "border-l-2 border-l-violet-500/30";
+  }
+
   return (
-    <div className="border-b border-white/[0.04] last:border-b-0">
+    <div id={`dest-${stay.code}-${stay.arrivalIso}`} className={`border-b border-white/[0.04] last:border-b-0 ${getClimateBorderClass()}`}>
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left tap-scale"
@@ -174,13 +181,33 @@ function DestinationCard({
             </span>
           </div>
           {profile && (
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <Thermometer className="h-2.5 w-2.5" />
-                {stay.tempMin}–{stay.tempMax}°C
-              </span>
-              {climate && (
-                <span className="text-xs text-gray-600 truncate">{climate}</span>
+            <div className="mt-0.5">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <Thermometer className="h-2.5 w-2.5" />
+                  {stay.tempMin}–{stay.tempMax}°C
+                </span>
+                {climate && (
+                  <span className="text-xs text-gray-600 truncate">{climate}</span>
+                )}
+              </div>
+              {/* Temperature gradient bar */}
+              <div className="mt-2 mb-1">
+                <div className="h-1.5 rounded-full overflow-hidden bg-gradient-to-r from-blue-500 via-green-400 to-orange-500 opacity-60" />
+                <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                  <span>{stay.tempMin}°</span>
+                  <span>{stay.tempMax}°</span>
+                </div>
+              </div>
+              {/* Weather alert pills */}
+              {profile.weatherAlerts.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {profile.weatherAlerts.map((alert, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                      ⚠ {locale === "es" ? alert.es : alert.en}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -191,107 +218,77 @@ function DestinationCard({
       </button>
 
       {open && profile && (
-        <div className="divide-y divide-white/[0.03]">
-          {/* Weather alerts */}
-          {profile.weatherAlerts.length > 0 && (
-            <div className="px-4 py-2 space-y-1">
-              {profile.weatherAlerts.map((w, i) => (
-                <p key={i} className="text-xs text-yellow-400/80 flex items-start gap-1.5">
-                  <span className="shrink-0 mt-0.5">⚠️</span>
-                  <span>{locale === "es" ? w.es : w.en}</span>
-                </p>
-              ))}
-            </div>
-          )}
+        <div>
+          {/* Tab bar */}
+          <div className="flex border-b border-white/[0.06] px-4">
+            {(["packing", "activities", "tips"] as const).map((tab) => {
+              const labels = {
+                packing: locale === "es" ? "Equipaje" : "Packing",
+                activities: locale === "es" ? "Qué hacer" : "What to do",
+                tips: locale === "es" ? "Tips" : "Tips",
+              };
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
+                    activeTab === tab
+                      ? "border-violet-500 text-violet-300"
+                      : "border-transparent text-gray-500 hover:text-gray-300"
+                  }`}
+                >
+                  {labels[tab]}
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Packing */}
-          {profile.packing.length > 0 && (
-            <div>
-              <SectionHeader
-                emoji="👕"
-                label={locale === "es" ? "Equipaje" : "Packing"}
-                count={profile.packing.length}
-                open={packingOpen}
-                onToggle={() => setPackingOpen((v) => !v)}
-              />
-              {packingOpen && (
-                <ul className="px-4 pb-2 space-y-1.5">
-                  {profile.packing.map((p, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-gray-600 shrink-0 mt-1 text-xs">•</span>
-                      <span className="text-xs text-gray-300 leading-snug">
-                        {locale === "es" ? p.es : p.en}
-                      </span>
+          {/* Tab content */}
+          <div className="px-4 py-3">
+            {activeTab === "packing" && (
+              <ul className="space-y-1">
+                {profile.packing.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-gray-400">
+                    <span className="text-gray-600 mt-0.5">•</span>
+                    <span>{locale === "es" ? item.es : item.en}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {activeTab === "activities" && profile && (
+              <ul className="space-y-2">
+                {profile.activities.length === 0 ? (
+                  <li className="text-xs text-gray-500">
+                    {locale === "es" ? "Sin actividades registradas." : "No activities listed."}
+                  </li>
+                ) : (
+                  profile.activities.map((act, i) => (
+                    <li key={i} className="text-xs">
+                      <span className="font-medium text-gray-300">{locale === "es" ? act.name : act.nameEn}</span>
+                      {(locale === "es" ? act.desc : act.descEn) && (
+                        <span className="text-gray-500 ml-1">— {locale === "es" ? act.desc : act.descEn}</span>
+                      )}
                     </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* Activities */}
-          {profile.activities && profile.activities.length > 0 && (
-            <div>
-              <SectionHeader
-                emoji="🗺️"
-                label={locale === "es" ? "Qué hacer" : "Things to do"}
-                count={profile.activities.length}
-                open={activitiesOpen}
-                onToggle={() => setActivitiesOpen((v) => !v)}
-              />
-              {activitiesOpen && (
-                <ul className="px-4 pb-2 space-y-2">
-                  {profile.activities.map((a, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-blue-400 shrink-0 text-xs mt-0.5">→</span>
-                      <div>
-                        <p className="text-xs font-semibold text-gray-200">
-                          {locale === "es" ? a.name : a.nameEn}
-                        </p>
-                        <p className="text-[11px] text-gray-500 leading-snug">
-                          {locale === "es" ? a.desc : a.descEn}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* Tips — AI or static */}
-          {tips.length > 0 && (
-            <div>
-              <SectionHeader
-                emoji={aiTips ? "✨" : "💡"}
-                label={locale === "es" ? "Tips" : "Tips"}
-                count={tips.length}
-                open={tipsOpen}
-                onToggle={() => setTipsOpen((v) => !v)}
-              />
-              {tipsOpen && (
-                <ul className="px-4 pb-2 space-y-1.5">
-                  {tips.map((t, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className={`shrink-0 mt-1 text-xs ${aiTips ? "text-purple-400" : "text-gray-600"}`}>
-                        {aiTips ? "✦" : "•"}
-                      </span>
-                      <span className={`text-xs leading-snug ${aiTips ? "text-gray-200" : "text-gray-300"}`}>
-                        {locale === "es" ? t.es : t.en}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+                  ))
+                )}
+              </ul>
+            )}
+            {activeTab === "tips" && (
+              <ul className="space-y-1">
+                {tips.map((t, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-gray-400">
+                    <span className="text-violet-500 mt-0.5">✦</span>
+                    <span>{locale === "es" ? t.es : t.en}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 }
-
-type PriorityFilter = "all" | "essential" | "recommended" | "optional";
 
 function PackingSection({
   stays,
@@ -303,7 +300,6 @@ function PackingSection({
   aiPacking?: TripAdviceResult["packing"];
 }) {
   const [open, setOpen] = useState(true);
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [listCopied, setListCopied] = useState(false);
 
   const signature = staysKey(stays);
@@ -326,21 +322,6 @@ function PackingSection({
   }
 
   if (aiPacking && aiPacking.length > 0) {
-    const priorityColor: Record<string, string> = {
-      essential: "text-red-400",
-      recommended: "text-yellow-400",
-      optional: "text-gray-500",
-    };
-    const priorityLabel: Record<string, Record<string, string>> = {
-      essential: { es: "esencial", en: "essential" },
-      recommended: { es: "recomendado", en: "recommended" },
-      optional: { es: "opcional", en: "optional" },
-    };
-
-    const visibleItems = aiPacking.filter(
-      (i) => priorityFilter === "all" || i.priority === priorityFilter,
-    );
-
     const copyList = () => {
       const text = aiPacking
         .map(
@@ -386,64 +367,46 @@ function PackingSection({
 
         {open && (
           <div className="px-4 pb-3">
-            {/* Priority filter chips */}
-            <div className="flex gap-2 mb-3 flex-wrap">
-              {(["all", "essential", "recommended", "optional"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPriorityFilter(p)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
-                    priorityFilter === p
-                      ? "bg-violet-600 border-violet-500 text-white"
-                      : "border-white/10 text-gray-400 hover:border-white/20"
-                  }`}
-                >
-                  {p === "all"
-                    ? locale === "es"
-                      ? "Todo"
-                      : "All"
-                    : p === "essential"
-                    ? "🔴 " + (locale === "es" ? "Esencial" : "Essential")
-                    : p === "recommended"
-                    ? "🟡 " + (locale === "es" ? "Recomendado" : "Recommended")
-                    : "⚪ " + (locale === "es" ? "Opcional" : "Optional")}
-                </button>
-              ))}
-            </div>
-
-            <ul className="space-y-2">
-              {visibleItems.map((p, i) => (
-                <li key={i}>
-                  <label
-                    className={`flex items-start gap-2 cursor-pointer ${checked[p.item] ? "opacity-50" : ""}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={!!checked[p.item]}
-                      onChange={() => toggleItem(p.item)}
-                      className="mt-0.5 accent-violet-500 w-4 h-4 rounded shrink-0"
-                    />
-                    <div>
-                      <p
-                        className={`text-xs font-medium ${
-                          checked[p.item] ? "line-through text-gray-500" : "text-gray-200"
-                        }`}
-                      >
-                        {p.item}
-                      </p>
-                      <p className="text-[11px] text-gray-500 leading-snug flex items-center gap-1">
-                        <span
-                          className={`text-xs font-semibold ${priorityColor[p.priority] ?? "text-gray-500"}`}
-                        >
-                          {priorityLabel[p.priority]?.[locale] ?? p.priority}
-                        </span>
-                        · {p.reason}
-                      </p>
-                    </div>
-                  </label>
-                </li>
-              ))}
-            </ul>
+            {(["essential", "recommended", "optional"] as const).map((priority) => {
+              const items = aiPacking.filter((item) => item.priority === priority);
+              if (items.length === 0) return null;
+              const labels = {
+                essential: locale === "es" ? "Esencial" : "Essential",
+                recommended: locale === "es" ? "Recomendado" : "Recommended",
+                optional: locale === "es" ? "Opcional" : "Optional",
+              };
+              const colors = {
+                essential: "text-red-400 bg-red-500/10 border-red-500/20",
+                recommended: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
+                optional: "text-gray-400 bg-white/[0.04] border-white/[0.08]",
+              };
+              return (
+                <div key={priority} className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${colors[priority]}`}>
+                      {labels[priority]}
+                    </span>
+                    <span className="text-[10px] text-gray-600">{items.length}</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {items.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={!!checked[item.item]}
+                          onChange={() => toggleItem(item.item)}
+                          className="mt-0.5 shrink-0 accent-violet-500"
+                        />
+                        <div>
+                          <span className="text-gray-300">{item.item}</span>
+                          {item.reason && <p className="text-[11px] text-gray-500 mt-0.5">{item.reason}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -654,9 +617,22 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
         <div className="flex items-center gap-2 shrink-0">
           {isLoadingAi && <TripCopilotIcon spinning size={40} />}
           {aiStatus === "done" && <TripCopilotIcon size={40} />}
-          <div className="flex gap-1">
-            {stays.map((s) => (
-              <span key={s.code} className="text-base">{s.flag}</span>
+          <div className="flex items-center gap-1 flex-wrap">
+            {stays.map((stay, i) => (
+              <span key={stay.code + stay.arrivalIso} className="flex items-center gap-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const el = document.getElementById(`dest-${stay.code}-${stay.arrivalIso}`);
+                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-200 transition-colors tap-scale"
+                >
+                  <span>{stay.flag}</span>
+                  <span>{locale === "es" ? stay.city : stay.cityEn}</span>
+                </button>
+                {i < stays.length - 1 && <span className="text-gray-600 text-[10px] mx-0.5">→</span>}
+              </span>
             ))}
           </div>
         </div>
@@ -671,6 +647,20 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
           {/* Activity chip selector — only before first fetch */}
           {!activitiesConfirmed && (
             <div className="px-4 py-3 border-b border-white/[0.04]">
+              {/* Destination preview strip */}
+              {stays.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+                  {stays.map((stay) => (
+                    <div key={stay.code + stay.arrivalIso} className="shrink-0 flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                      <span className="text-lg">{stay.flag}</span>
+                      <div>
+                        <p className="text-xs font-medium text-gray-300">{locale === "es" ? stay.city : stay.cityEn}</p>
+                        <p className="text-[10px] text-gray-500">{stay.nights} {locale === "es" ? "noches" : "nights"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
                 {locale === "es" ? "¿Qué vas a hacer en este viaje?" : "What are you doing on this trip?"}
               </p>
@@ -681,12 +671,13 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
                     <button
                       key={chip.id}
                       onClick={() => toggleActivity(chip.id)}
-                      className={`inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                      className={`inline-flex items-center gap-1 text-xs font-medium px-4 py-2 rounded-xl border transition-all ${
                         selected
-                          ? "bg-blue-900/50 text-blue-200 border-blue-600/50"
-                          : "bg-white/[0.04] text-gray-400 border-white/[0.08] hover:border-white/20"
+                          ? "bg-violet-600/20 text-violet-200 border-violet-500/50 scale-[1.02]"
+                          : "bg-white/[0.04] text-gray-300 border-white/[0.08] hover:border-white/20"
                       }`}
                     >
+                      {selected && <span className="text-violet-400 text-[10px]">✓ </span>}
                       <span>{chip.emoji}</span>
                       <span>{locale === "es" ? chip.label : chip.labelEn}</span>
                     </button>
@@ -695,7 +686,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
               </div>
               <button
                 onClick={handleGenerateAdvice}
-                className="w-full py-1.5 rounded-lg bg-blue-800/40 border border-blue-700/40 text-xs font-medium text-blue-200 hover:bg-blue-800/60 transition-colors"
+                className="shimmer-btn w-full py-2 rounded-xl bg-violet-700/40 border border-violet-500/40 text-sm font-semibold text-violet-100 hover:bg-violet-700/60 transition-colors"
               >
                 {locale === "es" ? "Generar recomendaciones →" : "Generate recommendations →"}
               </button>
