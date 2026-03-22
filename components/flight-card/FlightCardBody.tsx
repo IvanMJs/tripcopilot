@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useNotificationLog } from "@/hooks/useNotificationLog";
 import { useFlightNotes } from "@/hooks/useFlightNotes";
+import { useFlightLive } from "@/hooks/useFlightLive";
 import { AirportStatusMap, TripFlight, AirportStatus } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
 import { WeatherData } from "@/hooks/useWeather";
@@ -21,6 +22,7 @@ import { TsaAirportData } from "@/hooks/useTsaWait";
 import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, TripPanelLabels } from "@/components/TripPanelLabels";
 import { getVisaRequirement } from "@/lib/visaRequirements";
 import { DaysCountdown, ExchangeRateRow } from "./helpers";
+import { LoungeInfo } from "@/components/LoungeInfo";
 
 export interface FlightCardBodyProps {
   flight: TripFlight;
@@ -91,6 +93,13 @@ export function FlightCardBody({
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [noteText, setNoteText] = useState("");
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const isToday = daysUntil === 0;
+  const { data: liveData, loading: liveLoading } = useFlightLive(
+    flight.flightCode,
+    flight.isoDate,
+    isToday,
+  );
 
   return (
     <div className={`overflow-hidden transition-all duration-300 ease-out ${expanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}>
@@ -293,6 +302,15 @@ export function FlightCardBody({
         );
       })()}
 
+      {/* SECTION: Lounge finder — only when flight is today or tomorrow */}
+      {daysUntil <= 1 && (
+        <LoungeInfo
+          airportIata={flight.originCode}
+          airlineCode={flight.airlineCode}
+          locale={locale}
+        />
+      )}
+
       {/* SECTION: Flight notes */}
       <div className="px-4 py-2.5 border-t border-white/5">
         {currentNote && !showNoteInput && (
@@ -482,18 +500,96 @@ export function FlightCardBody({
 
           {/* Live tracking */}
           <div className={`px-4 py-3 border-t border-white/5 ${isImminent ? "bg-blue-950/15" : "bg-transparent"}`}>
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1.5">
-                  <Radar className="h-3 w-3" />
-                  {L.sectionTracking}
-                </p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1.5">
+              <Radar className="h-3 w-3" />
+              {L.sectionTracking}
+            </p>
+            {isToday ? (
+              liveLoading && !liveData ? (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span className="inline-block w-3 h-3 border-2 border-gray-600 border-t-gray-300 rounded-full animate-spin" />
+                  {locale === "es" ? "Obteniendo estado en vivo..." : "Getting live status..."}
+                </div>
+              ) : liveData ? (
+                <div className="space-y-2">
+                  {/* Status badge */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {liveData.status === "enroute" && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-900/50 border border-emerald-600/50 text-emerald-300">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        {locale === "es" ? "En vuelo" : "En Route"}
+                      </span>
+                    )}
+                    {liveData.status === "landed" && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/50 border border-blue-600/50 text-blue-300">
+                        ✅ {locale === "es" ? "Aterrizó" : "Landed"}
+                      </span>
+                    )}
+                    {(liveData.status === "canceled") && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/50 border border-red-600/50 text-red-300">
+                        ❌ {locale === "es" ? "Cancelado" : "Canceled"}
+                      </span>
+                    )}
+                    {liveData.status === "scheduled" && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-800 border border-gray-600/50 text-gray-300">
+                        🕐 {locale === "es" ? "Programado" : "Scheduled"}
+                      </span>
+                    )}
+                    {liveData.status === "unknown" && (
+                      <span className="text-xs text-gray-500">
+                        {locale === "es" ? "Estado desconocido" : "Status unknown"}
+                      </span>
+                    )}
+                    {liveData.delayMinutes !== null && liveData.delayMinutes > 0 && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-900/50 border border-orange-600/50 text-orange-300">
+                        ⚠️ {locale === "es" ? `Demora de ${liveData.delayMinutes} min` : `Delayed ${liveData.delayMinutes} min`}
+                      </span>
+                    )}
+                  </div>
+                  {/* Progress bar */}
+                  {liveData.status === "enroute" && liveData.progress !== null && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] text-gray-500">
+                        <span>{flight.originCode}</span>
+                        <span className="text-gray-400 font-semibold">{liveData.progress}%</span>
+                        <span>{flight.destinationCode}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500 transition-all duration-500"
+                          style={{ width: `${liveData.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {/* Times */}
+                  <div className="flex gap-4 flex-wrap text-[11px] text-gray-400">
+                    {liveData.departedAt && (
+                      <span>
+                        {locale === "es" ? "Salió a las" : "Departed at"}{" "}
+                        <span className="font-semibold text-gray-200">{liveData.departedAt}</span>
+                      </span>
+                    )}
+                    {liveData.estimatedArrival && (
+                      <span>
+                        {locale === "es" ? "Llega estimado" : "Est. arrival"}{" "}
+                        <span className="font-semibold text-gray-200">{liveData.estimatedArrival}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-[11px] text-gray-500">{L.trackNote}</p>
+                  <LinkButton href={originUrl} variant="default">{L.trackInbound}</LinkButton>
+                </div>
+              )
+            ) : (
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <p className="text-[11px] text-gray-500">{L.trackNote}</p>
-              </div>
-              <div className="flex flex-col gap-1.5 items-end shrink-0">
                 <LinkButton href={originUrl} variant="default">{L.trackInbound}</LinkButton>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Notification log */}
