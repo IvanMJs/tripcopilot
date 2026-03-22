@@ -624,15 +624,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
           <p className="text-sm font-bold text-white leading-snug">
             {locale === "es" ? "Consejos para tu viaje" : "Trip tips"}
           </p>
-          <p className="text-[11px] text-gray-500 mt-0.5">
-            {stays.length} {locale === "es" ? "destinos" : "destinations"} ·{" "}
-            {totalNights} {locale === "es" ? "noches" : "nights"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isLoadingAi && <TripCopilotIcon spinning size={40} />}
-          {aiStatus === "done" && <TripCopilotIcon size={40} />}
-          <div className="flex items-center gap-1 flex-wrap">
+          <div className="flex items-center gap-1 flex-wrap mt-0.5">
             {stays.map((stay, i) => (
               <span key={stay.code + stay.arrivalIso} className="flex items-center gap-1">
                 <button
@@ -650,6 +642,14 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
               </span>
             ))}
           </div>
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            {stays.length} {locale === "es" ? "destinos" : "destinations"} ·{" "}
+            {totalNights} {locale === "es" ? "noches" : "nights"}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {isLoadingAi && <TripCopilotIcon spinning size={40} />}
+          {aiStatus === "done" && <TripCopilotIcon size={40} />}
         </div>
         <ChevronDown
           className={`h-4 w-4 text-gray-500 shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
