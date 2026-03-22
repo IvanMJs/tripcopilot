@@ -63,8 +63,12 @@ export function LayoverGuide({ airportIata, bufferMinutes, locale }: LayoverGuid
             </div>
             <p className="text-[11px] text-gray-500 ml-6">
               {locale === "es"
-                ? "Escala larga · Tips para aprovecharla"
-                : "Long layover · Tips to make the most of it"}
+                ? bufferMinutes >= 300
+                  ? "Escala larga · Tips para aprovecharla"
+                  : "Escala · Tips para aprovecharla"
+                : bufferMinutes >= 300
+                  ? "Long layover · Tips to make the most of it"
+                  : "Layover · Tips to make the most of it"}
             </p>
           </div>
           <button

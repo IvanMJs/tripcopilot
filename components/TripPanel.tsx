@@ -639,7 +639,7 @@ export function TripPanel({
                         }`} />
                       </div>
                     )}
-                    {connAnalysis && connAnalysis.scheduledBufferMinutes > 180 && globalIdx < sorted.length - 1 && (
+                    {connAnalysis && connAnalysis.scheduledBufferMinutes > 180 && connAnalysis.scheduledBufferMinutes < 1380 && globalIdx < sorted.length - 1 && (
                       <LayoverGuide
                         airportIata={connAnalysis.connectionAirport}
                         bufferMinutes={connAnalysis.scheduledBufferMinutes}

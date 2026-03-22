@@ -175,7 +175,7 @@ export function FlightCard({
 
   const originStatus = statusMap[flight.originCode];
   const status       = originStatus?.status ?? "unknown";
-  const hasIssue     = status !== "ok";
+  const hasIssue     = status !== "ok" && status !== "unknown";
   const isImminent   = daysUntil >= 0 && daysUntil <= 1;
 
   const relevantTafPeriod = (() => {
@@ -216,7 +216,11 @@ export function FlightCard({
         onClick={handleDeleteTap}
         aria-label={locale === "es" ? "Eliminar vuelo" : "Delete flight"}
         className="absolute inset-y-0 right-0 bg-red-600 flex items-center px-4 rounded-r-xl z-0 transition-opacity"
-        style={{ opacity: swipeOffset >= 80 ? 1 : swipeOffset / 80 }}
+        style={{
+          opacity: swipeOffset >= 80 ? 1 : swipeOffset / 80,
+          pointerEvents: swipeOffset >= 40 ? "auto" : "none",
+          visibility: swipeOffset > 0 ? "visible" : "hidden",
+        }}
       >
         <Trash2 className="h-5 w-5 text-white" />
       </button>
