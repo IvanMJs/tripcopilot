@@ -6,6 +6,7 @@ import { parseXML } from "@/lib/faa";
 import { localToUTC, localHourInTimezone, CRON_LABELS, CronLocale } from "@/lib/cronUtils";
 import { analyzeConnection } from "@/lib/connectionRisk";
 import { TripFlight } from "@/lib/types";
+import { sendInBatches } from "@/lib/retry";
 
 type FlightRow = {
   id: string;
@@ -215,8 +216,9 @@ export async function GET(request: Request) {
 
   // Process each flight
   let notificationsSent = 0;
+  let notificationsFailed = 0;
 
-  for (const flight of flightRows) {
+  async function processFlightRow(flight: FlightRow): Promise<void> {
     const userId: string = flight.trips.user_id;
     const departureTime: string | null = flight.departure_time;
     const isoDate: string = flight.iso_date;
@@ -246,14 +248,14 @@ export async function GET(request: Request) {
     const isPastDeparture = hoursUntil !== null && hoursUntil < 0;
     const isRecentlyDeparted = isPastDeparture && hoursUntil !== null && hoursUntil >= -18;
 
-    if (isPastDeparture && !isRecentlyDeparted) continue;
+    if (isPastDeparture && !isRecentlyDeparted) return;
 
     const { data: subs } = await supabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
       .eq("user_id", userId);
 
-    if (!subs?.length) continue;
+    if (!subs?.length) return;
 
     const locale = await getUserLocale(userId);
     const L = CRON_LABELS[locale];
@@ -265,11 +267,11 @@ export async function GET(request: Request) {
         const landingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey);
         if (landingStatus?.landed) {
           const { title, body } = L.flightLanded(flight.flight_code, originCode, destCode);
-          await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_landed", { title, body, url: "/app" });
+          notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_landed", { title, body, url: "/app" });
           notificationsSent++;
         }
       }
-      continue;
+      return;
     }
 
     const airportStatus = statusMap[originCode] ?? "ok";
@@ -280,7 +282,7 @@ export async function GET(request: Request) {
       const alreadySent = await checkFlightLog(supabase, flight.id, `delay_${airportStatus}`, 20);
       if (!alreadySent) {
         const { title, body } = L.delayAlert(originCode, flight.flight_code, destCode, formatDate(isoDate), statusLabel);
-        await sendAndLogFlight(supabase, subs, flight.id, userId, `delay_${airportStatus}`, { title, body, url: "/app" });
+        notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, `delay_${airportStatus}`, { title, body, url: "/app" });
         notificationsSent++;
       }
     }
@@ -292,7 +294,7 @@ export async function GET(request: Request) {
         const alreadySent = await checkFlightLog(supabase, flight.id, "morning_briefing", Infinity);
         if (!alreadySent) {
           const { title, body } = L.morningBriefing(flight.flight_code, departureTime ?? "?", originCode, destCode, statusLabel);
-          await sendAndLogFlight(supabase, subs, flight.id, userId, "morning_briefing", { title, body, url: "/app" });
+          notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "morning_briefing", { title, body, url: "/app" });
           notificationsSent++;
         }
       }
@@ -303,7 +305,7 @@ export async function GET(request: Request) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "checkin_24h", Infinity);
       if (!alreadySent) {
         const { title, body } = L.checkin24h(flight.flight_code, originCode, destCode, departureTime ?? "?");
-        await sendAndLogFlight(supabase, subs, flight.id, userId, "checkin_24h", { title, body, url: "/app" });
+        notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "checkin_24h", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
@@ -313,7 +315,7 @@ export async function GET(request: Request) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "preflight_3h", Infinity);
       if (!alreadySent) {
         const { title, body } = L.preflight3h(flight.flight_code, originCode, destCode, departureTime ?? "?", statusLabel);
-        await sendAndLogFlight(supabase, subs, flight.id, userId, "preflight_3h", { title, body, url: "/app" });
+        notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "preflight_3h", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
@@ -334,7 +336,7 @@ export async function GET(request: Request) {
         if (flightStatus) {
           if (flightStatus.cancelled) {
             const { title, body } = L.flightCancelled(flight.flight_code, originCode, destCode);
-            await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_cancelled", { title, body, url: "/app" });
+            notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_cancelled", { title, body, url: "/app" });
             notificationsSent++;
           } else if (flightStatus.delayMinutes >= 20) {
             const delayText = flightStatus.delayMinutes >= 60
@@ -342,14 +344,14 @@ export async function GET(request: Request) {
               : `${flightStatus.delayMinutes} min`;
             const gateText = flightStatus.gate ? ` · ${locale === "es" ? "Puerta" : "Gate"} ${flightStatus.gate}` : "";
             const { title, body } = L.flightDelay(flight.flight_code, delayText, flightStatus.estimatedDeparture, departureTime ?? "?", gateText, originCode, destCode, flightStatus.delayMinutes);
-            await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_delay_real", { title, body, url: "/app" });
+            notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_delay_real", { title, body, url: "/app" });
             notificationsSent++;
 
             // A6: Connection rescue — check if this delay impacts the next flight in the trip
             if (flightStatus.delayMinutes >= 20) {
-              const tripId: string = (flight as FlightRow).trip_id;
+              const tripId: string = flight.trip_id;
               // Find next flight in same trip (chronologically after this one)
-              const nextFlight = (flightRows).find((f) =>
+              const nextFlight = flightRows.find((f) =>
                 f.trip_id === tripId &&
                 f.id !== flight.id &&
                 (f.iso_date > isoDate ||
@@ -361,15 +363,15 @@ export async function GET(request: Request) {
                 const delayedTripFlight: TripFlight = {
                   id:              flight.id,
                   flightCode:      flight.flight_code,
-                  airlineCode:     (flight as FlightRow).airline_code,
-                  airlineName:     (flight as FlightRow).airline_name,
-                  airlineIcao:     (flight as FlightRow).airline_icao,
-                  flightNumber:    (flight as FlightRow).flight_number,
+                  airlineCode:     flight.airline_code,
+                  airlineName:     flight.airline_name,
+                  airlineIcao:     flight.airline_icao,
+                  flightNumber:    flight.flight_number,
                   originCode:      originCode,
                   destinationCode: destCode,
                   isoDate:         isoDate,
                   departureTime:   departureTime ?? "",
-                  arrivalBuffer:   (flight as FlightRow).arrival_buffer ?? 2,
+                  arrivalBuffer:   flight.arrival_buffer ?? 2,
                 };
                 const nextTripFlight: TripFlight = {
                   id:              nextFlight.id,
@@ -395,7 +397,7 @@ export async function GET(request: Request) {
                     const connBody = locale === "es"
                       ? "El delay afecta tu conexión. Avisá a la tripulación al aterrizar."
                       : "The delay impacts your connection. Alert the crew when landing.";
-                    await sendAndLogFlight(supabase, subs, flight.id, userId, "connection_rescue", { title: connTitle, body: connBody, url: "/app" });
+                    notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "connection_rescue", { title: connTitle, body: connBody, url: "/app" });
                     notificationsSent++;
                   }
                 }
@@ -414,14 +416,18 @@ export async function GET(request: Request) {
         const boardingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey);
         const gateText = boardingStatus?.gate ? ` — ${locale === "es" ? "Puerta" : "Gate"} ${boardingStatus.gate}` : "";
         const { title, body } = L.boardingOpen(flight.flight_code, originCode, destCode, gateText);
-        await sendAndLogFlight(supabase, subs, flight.id, userId, "boarding_open", { title, body, url: "/app" });
+        notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "boarding_open", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
   }
 
+  {
+    await sendInBatches(flightRows, processFlightRow, 10);
+  }
+
   // ── A5: Weather alert at destination (1–3 days before arrival) ───────────
-  for (const flight of flightRows) {
+  async function processWeatherAlert(flight: FlightRow): Promise<void> {
     const userId: string = flight.trips.user_id;
     const isoDate: string = flight.iso_date;
     const destCode: string = flight.destination_code;
@@ -430,26 +436,26 @@ export async function GET(request: Request) {
     const flightMidnight = new Date(isoDate + "T00:00:00").getTime();
     const daysUntilFlight = Math.ceil((flightMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
 
-    if (daysUntilFlight < 1 || daysUntilFlight > 3) continue;
+    if (daysUntilFlight < 1 || daysUntilFlight > 3) return;
 
     const destInfo = AIRPORTS[destCode];
-    if (!destInfo?.lat || !destInfo?.lng) continue;
+    if (!destInfo?.lat || !destInfo?.lng) return;
 
     const { data: subs } = await supabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
       .eq("user_id", userId);
-    if (!subs?.length) continue;
+    if (!subs?.length) return;
 
     const alreadySent = await checkFlightLog(supabase, flight.id, `weather_alert_destination_${isoDate}`, Infinity);
-    if (alreadySent) continue;
+    if (alreadySent) return;
 
     try {
       const weatherUrl =
         `https://api.open-meteo.com/v1/forecast?latitude=${destInfo.lat}&longitude=${destInfo.lng}` +
         `&daily=weather_code&timezone=auto&start_date=${isoDate}&end_date=${isoDate}`;
       const weatherRes = await fetch(weatherUrl, { signal: AbortSignal.timeout(8000) });
-      if (!weatherRes.ok) continue;
+      if (!weatherRes.ok) return;
       const weatherData = await weatherRes.json() as { daily?: { weather_code?: number[] } };
       const wmoCode = weatherData?.daily?.weather_code?.[0] ?? 0;
 
@@ -464,7 +470,7 @@ export async function GET(request: Request) {
         const body = locale === "es"
           ? "Llevá paraguas / ropa de abrigo"
           : "Bring an umbrella / warm clothes";
-        await sendAndLogFlight(supabase, subs, flight.id, userId, `weather_alert_destination_${isoDate}`, { title, body, url: "/app" });
+        notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, `weather_alert_destination_${isoDate}`, { title, body, url: "/app" });
         notificationsSent++;
       }
     } catch (e) {
@@ -472,11 +478,15 @@ export async function GET(request: Request) {
     }
   }
 
+  {
+    await sendInBatches(flightRows, processWeatherAlert, 10);
+  }
+
   // ── Flight countdown push (lock screen) ──────────────────────────────────
   // Sends a push with tag "flight_countdown" every cron run when a flight is
   // 30 min–4 h away. The shared tag means the browser replaces the previous
   // countdown notification rather than stacking them.
-  for (const flight of flightRows) {
+  async function processCountdown(flight: FlightRow): Promise<void> {
     const userId: string = flight.trips.user_id;
     const departureTime: string | null = flight.departure_time;
     const isoDate: string = flight.iso_date;
@@ -484,25 +494,25 @@ export async function GET(request: Request) {
     const destCode: string = flight.destination_code;
     const flightCode: string = flight.flight_code;
 
-    if (!departureTime) continue;
+    if (!departureTime) return;
 
     const airportTz = AIRPORTS[originCode]?.timezone ?? "UTC";
     let departureDateTime: Date | null = null;
     try {
       departureDateTime = localToUTC(isoDate, departureTime, airportTz);
     } catch {
-      continue;
+      return;
     }
 
     const hoursUntil = (departureDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-    if (hoursUntil < 0.5 || hoursUntil > 4) continue;
+    if (hoursUntil < 0.5 || hoursUntil > 4) return;
 
     const { data: subs } = await supabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
       .eq("user_id", userId);
 
-    if (!subs?.length) continue;
+    if (!subs?.length) return;
 
     const locale = await getUserLocale(userId);
 
@@ -518,8 +528,13 @@ export async function GET(request: Request) {
         : `${flightCode} · Departs in ${formatted}`;
     const body = `${originCode} → ${destCode}`;
 
-    await pushToAll(subs, supabase, { title, body, url: "/app" }, "flight_countdown");
+    const failed = await pushToAll(subs, supabase, { title, body, url: "/app" }, "flight_countdown");
     notificationsSent++;
+    notificationsFailed += failed;
+  }
+
+  {
+    await sendInBatches(flightRows, processCountdown, 10);
   }
 
   // ── Hotel notifications ───────────────────────────────────────────────────
@@ -533,13 +548,13 @@ export async function GET(request: Request) {
     .select("*, trips!inner(user_id)")
     .or(`check_in_date.eq.${todayStr},check_in_date.eq.${tomorrowISO},check_out_date.eq.${todayStr},check_out_date.eq.${tomorrowISO}`);
 
-  for (const acc of (hotelAccs ?? []) as AccommodationRow[]) {
+  async function processAccommodation(acc: AccommodationRow): Promise<void> {
     const userId: string = acc.trips.user_id;
     const { data: subs } = await supabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
       .eq("user_id", userId);
-    if (!subs?.length) continue;
+    if (!subs?.length) return;
 
     const locale = await getUserLocale(userId);
     const L = CRON_LABELS[locale];
@@ -549,7 +564,7 @@ export async function GET(request: Request) {
       const alreadySent = await checkAccommodationLog(supabase, acc.id, "hotel_checkin_reminder");
       if (!alreadySent) {
         const { title, body } = L.hotelCheckinReminder(acc.name);
-        await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkin_reminder", { title, body, url: "/app" });
+        notificationsFailed += await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkin_reminder", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
@@ -560,7 +575,7 @@ export async function GET(request: Request) {
         const alreadySent = await checkAccommodationLog(supabase, acc.id, "hotel_checkin_time");
         if (!alreadySent) {
           const { title, body } = L.hotelCheckinTime(acc.name, acc.check_in_time);
-          await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkin_time", { title, body, url: "/app" });
+          notificationsFailed += await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkin_time", { title, body, url: "/app" });
           notificationsSent++;
         }
       }
@@ -571,7 +586,7 @@ export async function GET(request: Request) {
       const alreadySent = await checkAccommodationLog(supabase, acc.id, "hotel_checkout_reminder");
       if (!alreadySent) {
         const { title, body } = L.hotelCheckoutReminder(acc.name);
-        await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkout_reminder", { title, body, url: "/app" });
+        notificationsFailed += await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkout_reminder", { title, body, url: "/app" });
         notificationsSent++;
       }
     }
@@ -582,11 +597,19 @@ export async function GET(request: Request) {
         const alreadySent = await checkAccommodationLog(supabase, acc.id, "hotel_checkout_time");
         if (!alreadySent) {
           const { title, body } = L.hotelCheckoutTime(acc.name, acc.check_out_time);
-          await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkout_time", { title, body, url: "/app" });
+          notificationsFailed += await sendAndLogAccommodation(supabase, subs, acc.id, userId, "hotel_checkout_time", { title, body, url: "/app" });
           notificationsSent++;
         }
       }
     }
+  }
+
+  {
+    await sendInBatches(
+      (hotelAccs ?? []) as AccommodationRow[],
+      processAccommodation,
+      10,
+    );
   }
 
   await supabase.from("cron_runs").insert({
@@ -600,6 +623,7 @@ export async function GET(request: Request) {
     ok: true,
     processed: flights.length,
     sent: notificationsSent,
+    failed: notificationsFailed,
     errors: cronErrors.length,
   });
 }
@@ -686,14 +710,15 @@ async function sendAndLogFlight(
   userId: string,
   type: string,
   notification: { title: string; body: string; url: string },
-) {
-  await pushToAll(subs, supabase, notification, type);
+): Promise<number> {
+  const failed = await pushToAll(subs, supabase, notification, type);
   await supabase.from("notification_log").insert({
     flight_id: flightId,
     user_id: userId,
     type,
     sent_at: new Date().toISOString(),
   });
+  return failed;
 }
 
 async function sendAndLogAccommodation(
@@ -703,14 +728,15 @@ async function sendAndLogAccommodation(
   userId: string,
   type: string,
   notification: { title: string; body: string; url: string },
-) {
-  await pushToAll(subs, supabase, notification, type);
+): Promise<number> {
+  const failed = await pushToAll(subs, supabase, notification, type);
   await supabase.from("notification_log").insert({
     accommodation_id: accommodationId,
     user_id: userId,
     type,
     sent_at: new Date().toISOString(),
   });
+  return failed;
 }
 
 async function pushToAll(
@@ -718,7 +744,8 @@ async function pushToAll(
   supabase: SupabaseClient,
   notification: { title: string; body: string; url: string },
   tag: string,
-) {
+): Promise<number> {
+  let failed = 0;
   await Promise.allSettled(
     subs.map(async (sub) => {
       try {
@@ -726,14 +753,17 @@ async function pushToAll(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           JSON.stringify({ ...notification, tag }),
         );
-      } catch (e: unknown) {
-        const err = e as { statusCode?: number };
-        if (err.statusCode === 404 || err.statusCode === 410) {
+      } catch (err: unknown) {
+        const status = (err as { statusCode?: number }).statusCode;
+        if (status === 404 || status === 410) {
           await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+        } else {
+          failed++;
         }
       }
     }),
   );
+  return failed;
 }
 
 // ── Utility ────────────────────────────────────────────────────────────────
