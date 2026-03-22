@@ -769,6 +769,7 @@ export default function HomePage() {
                 onUpdateAccommodation={() => {}}
                 onDeleteTrip={discardDraft}
                 onRenameTrip={(name) => renameTripFromPanel(DRAFT_ID, name)}
+                onViewAirports={() => setActiveTab("airports")}
                 isDraft={true}
                 onSave={saveDraftTrip}
               />
@@ -813,6 +814,7 @@ export default function HomePage() {
                   onAddAccommodation={() => {}}
                   onRemoveAccommodation={() => {}}
                   onUpdateAccommodation={() => {}}
+                  onViewAirports={() => setActiveTab("airports")}
                 />
               </div>
             )}
@@ -868,6 +870,7 @@ export default function HomePage() {
                   onDuplicateTrip={() => handleDuplicateTrip(trip.id)}
                   onDeleteTrip={() => deleteTrip(trip.id)}
                   onRenameTrip={(name) => renameTripFromPanel(trip.id, name)}
+                  onViewAirports={() => setActiveTab("airports")}
                 />
                 </div>
               ) : null

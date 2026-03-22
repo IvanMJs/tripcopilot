@@ -183,6 +183,19 @@ export function FlightCard({
     return getTafAtTime(tafData, depUnix);
   })();
 
+  const leftBorderClass = (() => {
+    if (status === "ground_stop" || status === "ground_delay" || status === "closure") {
+      return "border-l-2 border-l-red-500/60";
+    }
+    if (status === "delay_minor" || status === "delay_moderate" || status === "delay_severe") {
+      return "border-l-2 border-l-yellow-500/60";
+    }
+    if (status === "ok") {
+      return "border-l-2 border-l-emerald-500/40";
+    }
+    return "";
+  })();
+
   return (
     <div
       id={`flight-card-${idx}`}
@@ -193,7 +206,7 @@ export function FlightCard({
         hasIssue                                                  ? "border-orange-600/50" :
         isImminent                                               ? "border-blue-700/40"   :
         "border-white/6"
-      } ${removing ? "opacity-0 -translate-x-6 scale-95" : "opacity-100 translate-x-0 scale-100"}`}
+      } ${leftBorderClass} ${removing ? "opacity-0 -translate-x-6 scale-95" : "opacity-100 translate-x-0 scale-100"}`}
       style={{ animationDelay: `${idx * 0.08}s` }}
     >
       {/* Swipe-to-delete: delete button revealed behind card */}

@@ -8,7 +8,7 @@ import {
   Save, PlaneTakeoff, ChevronRight, AlertTriangle, Clock, CheckCircle, Link,
   Sparkles, Loader2, List, GitBranch,
 } from "lucide-react";
-import { AirportStatusMap, TripFlight, TripTab, Accommodation } from "@/lib/types";
+import { AirportStatusMap, DelayStatus, TripFlight, TripTab, Accommodation } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
 import { subtractHours } from "@/lib/flightUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -58,6 +58,7 @@ interface TripPanelProps {
   onDeleteTrip?: () => void;
   onRenameTrip?: (name: string) => void;
   onDuplicateTrip?: () => void;
+  onViewAirports?: () => void;
   isDraft?: boolean;
   onSave?: () => void;
   loading?: boolean;
@@ -76,6 +77,7 @@ export function TripPanel({
   onDeleteTrip,
   onRenameTrip,
   onDuplicateTrip,
+  onViewAirports,
   isDraft,
   onSave,
   loading,
@@ -407,6 +409,41 @@ export function TripPanel({
       {/* Trip Risk Score */}
       {sorted.length > 0 && <TripRiskBadge risk={riskScore} locale={locale} />}
 
+      {/* Airport strip — unique airports from trip flights */}
+      {sorted.length > 0 && (() => {
+        const uniqueAirports = Array.from(
+          new Set(sorted.flatMap((f) => [f.originCode, f.destinationCode]))
+        );
+        function getStatusDotClass(iata: string): string {
+          const s: DelayStatus = statusMap[iata]?.status ?? "unknown";
+          if (s === "ok") return "inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0";
+          if (s === "delay_minor" || s === "delay_moderate" || s === "delay_severe") {
+            return "inline-block w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0";
+          }
+          if (s === "ground_stop" || s === "ground_delay" || s === "closure") {
+            return "inline-block w-1.5 h-1.5 rounded-full bg-red-500 shrink-0";
+          }
+          return "inline-block w-1.5 h-1.5 rounded-full bg-gray-500 shrink-0";
+        }
+        return (
+          <div>
+            <p className="text-xs text-gray-500 mb-2">{locale === "es" ? "Monitor" : "Monitor"}</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {uniqueAirports.map((iata) => (
+                <button
+                  key={iata}
+                  onClick={onViewAirports}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 text-sm whitespace-nowrap hover:bg-gray-700 transition-colors"
+                >
+                  <span className={getStatusDotClass(iata)} />
+                  <span className="font-mono font-bold text-gray-200">{iata}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Flight cards */}
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center gap-5 py-12 px-6 text-center">
@@ -464,7 +501,7 @@ export function TripPanel({
           {[1, 2, 3].map((i) => <FlightCardSkeleton key={i} />)}
         </div>
       ) : (
-        <div className="space-y-0">
+        <div className="space-y-3">
           {/* View mode toggle + Timeline header */}
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">

@@ -358,6 +358,21 @@ function PackingSection({
               <Copy className="w-3.5 h-3.5" />
             )}
           </button>
+          <button
+            onClick={() => {
+              const text = aiPacking
+                .map((i) => `${checked[i.item] ? "✅" : "☐"} ${i.item}`)
+                .join("\n");
+              window.open(
+                `https://wa.me/?text=${encodeURIComponent((locale === "es" ? "Lista de equipaje:\n" : "Packing list:\n") + text)}`,
+                "_blank",
+              );
+            }}
+            className="flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 transition-colors"
+            title="WhatsApp"
+          >
+            <span>WhatsApp</span>
+          </button>
           <button onClick={() => setOpen((v) => !v)}>
             <ChevronDown
               className={`h-3 w-3 text-gray-600 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
@@ -395,7 +410,7 @@ function PackingSection({
                           type="checkbox"
                           checked={!!checked[item.item]}
                           onChange={() => toggleItem(item.item)}
-                          className="mt-0.5 shrink-0 accent-violet-500"
+                          className="w-5 h-5 mt-0.5 shrink-0 cursor-pointer accent-violet-500"
                         />
                         <div>
                           <span className="text-gray-300">{item.item}</span>
@@ -714,6 +729,15 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
             </div>
           )}
 
+          {/* Packing section — shown before destination cards when AI data is ready */}
+          {aiData && (
+            <PackingSection
+              stays={stays}
+              locale={locale}
+              aiPacking={aiData.packing}
+            />
+          )}
+
           {/* Per-destination cards */}
           <div className="divide-y divide-white/[0.04]">
             {stays.map((stay) => {
@@ -729,12 +753,13 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
             })}
           </div>
 
-          {/* Packing section */}
-          <PackingSection
-            stays={stays}
-            locale={locale}
-            aiPacking={aiData?.packing}
-          />
+          {/* Packing section — static fallback (no AI data yet) */}
+          {!aiData && (
+            <PackingSection
+              stays={stays}
+              locale={locale}
+            />
+          )}
 
           {/* by_leg notes */}
           {aiData?.by_leg && aiData.by_leg.length > 0 && (

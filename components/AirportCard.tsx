@@ -268,7 +268,7 @@ function FaaExplainButton({
       </button>
 
       {open && explainState === "done" && explanation && (
-        <p className="mt-1.5 text-xs text-gray-300 leading-relaxed bg-violet-950/20 border border-violet-800/20 rounded-lg p-3">
+        <p className="mt-1.5 text-sm text-gray-300 leading-relaxed bg-violet-950/20 border border-violet-800/20 rounded-lg p-3">
           {explanation}
         </p>
       )}
@@ -408,7 +408,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
       {metar && showTechnical && <MetarRow metar={metar} />}
 
       {status?.delays && (
-        <div className="mt-2 space-y-1 text-xs text-gray-300">
+        <div className="mt-2 space-y-1 text-sm text-gray-300">
           <p>
             <span className="text-gray-500">{t.delay}:</span>{" "}
             <span className="font-medium">
@@ -432,7 +432,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
       )}
 
       {status?.groundStop && (
-        <div className="mt-2 space-y-1 text-xs text-red-300">
+        <div className="mt-2 space-y-1 text-sm text-red-300">
           <p>
             <span className="font-bold">🛑 {t.groundStop}</span>{" "}
             {t.until} {status.groundStop.endTime ?? t.indefinite}
@@ -442,7 +442,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
       )}
 
       {status?.groundDelay && (
-        <div className="mt-2 space-y-1 text-xs text-red-300">
+        <div className="mt-2 space-y-1 text-sm text-red-300">
           <p className="font-bold">{t.groundDelayProgram}</p>
           <p>
             {t.average}: <span className="font-medium">{status.groundDelay.avgMinutes} min</span>
@@ -453,7 +453,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
       )}
 
       {status?.closure && (
-        <div className="mt-2 space-y-1 text-xs text-gray-300">
+        <div className="mt-2 space-y-1 text-sm text-gray-300">
           <p className="font-bold text-gray-200">⛔ {t.airportClosed}</p>
           <p><span className="text-gray-500">{t.cause}:</span> {status.closure.reason}</p>
         </div>
