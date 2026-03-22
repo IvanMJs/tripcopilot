@@ -173,11 +173,11 @@ export function AccommodationInline({
           )}
         </div>
         <button onClick={() => setEditing(true)} title={L.accEdit}
-          className="shrink-0 p-1 rounded-md text-gray-600 hover:text-blue-400 transition-colors">
+          className="shrink-0 p-1 rounded-md text-gray-600 hover:text-blue-400 transition-colors flex items-center justify-center">
           <Pencil className="h-3 w-3" />
         </button>
         <button onClick={onRemove} title={L.accRemove}
-          className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors">
+          className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors flex items-center justify-center">
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
@@ -321,7 +321,7 @@ export function AddAccommodationInlineForm({
           <Hotel className="h-3 w-3" />
           {locale === "es" ? `Hotel en ${destCity}` : `Hotel in ${destCity}`}
         </span>
-        <button onClick={onClose} className="p-0.5 text-gray-600 hover:text-gray-300 transition-colors">
+        <button onClick={onClose} className="p-0.5 text-gray-600 hover:text-gray-300 transition-colors flex items-center justify-center">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>

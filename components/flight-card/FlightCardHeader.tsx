@@ -1,6 +1,6 @@
 "use client";
 
-import { Plane, Globe, Trash2, ChevronDown } from "lucide-react";
+import { Plane, Globe, Trash2, ChevronDown, Check, ArrowUpCircle } from "lucide-react";
 import { TripFlight, AirportStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TripPanelLabels } from "@/components/TripPanelLabels";
@@ -22,6 +22,9 @@ export interface FlightCardHeaderProps {
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
   onRemove: () => void;
+  // upgrade toggle
+  wantsUpgrade?: boolean;
+  onToggleUpgrade?: (flightId: string, value: boolean) => void;
   // expand toggle
   expanded: boolean;
   onToggleExpanded: () => void;
@@ -41,6 +44,8 @@ export function FlightCardHeader({
   onConfirmDelete,
   onCancelDelete,
   onRemove,
+  wantsUpgrade,
+  onToggleUpgrade,
   expanded,
   onToggleExpanded,
 }: FlightCardHeaderProps) {
@@ -50,8 +55,8 @@ export function FlightCardHeader({
     <>
       {/* ── Boarding-pass header (always visible) ─────────────────────────── */}
       <div className={`px-4 pt-3 pb-2 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
-        {/* Row 1: flight code + status badge + remove */}
-        <div className="flex items-center justify-between gap-2 mb-2">
+        {/* Row 1: flight code + remove */}
+        <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="flex items-center gap-2">
             <Plane className="h-3.5 w-3.5 text-gray-500" />
             <span className="text-sm font-bold tracking-wide text-white">{flight.flightCode}</span>
@@ -59,12 +64,8 @@ export function FlightCardHeader({
               <span className="text-[11px] text-gray-500 truncate max-w-[120px]">{flight.airlineName}</span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {isNonFAA && !originStatus ? (
-              <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
-            ) : (
-              <StatusBadge status={status} className="text-sm px-3 py-1" />
-            )}
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {/* Trash / confirm-delete */}
             {confirmDelete ? (
               <div className="flex items-center gap-1.5 animate-scale-in">
                 <button
@@ -84,12 +85,49 @@ export function FlightCardHeader({
               <button
                 onClick={onConfirmDelete}
                 title={L.removeTitle}
-                className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors"
+                className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors flex items-center justify-center"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
+            {/* Upgrade toggle — moved from Row 1b */}
+            {daysUntil > 0 && onToggleUpgrade && (
+              <button
+                onClick={() => onToggleUpgrade(flight.id, !wantsUpgrade)}
+                title={
+                  wantsUpgrade
+                    ? (locale === "es" ? "Upgrade activado" : "Upgrade alert on")
+                    : (locale === "es" ? "Avisarme si hay upgrade disponible" : "Notify me if upgrade is available")
+                }
+                className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors ${
+                  wantsUpgrade
+                    ? "bg-violet-600 text-white"
+                    : "border border-white/15 text-gray-400 hover:text-white hover:border-white/30"
+                }`}
+              >
+                {wantsUpgrade ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    <span className="hidden sm:inline">Upgrade</span>
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpCircle className="h-3 w-3" />
+                    <span className="hidden sm:inline">Upgrade</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
+        </div>
+
+        {/* Row 1b: status badge only */}
+        <div className="flex items-center gap-1.5 mb-2">
+          {isNonFAA && !originStatus ? (
+            <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
+          ) : (
+            <StatusBadge status={status} className="text-sm px-3 py-1" />
+          )}
         </div>
 
         {/* Row 2: EZE → MIA with times */}
