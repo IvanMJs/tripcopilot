@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const BodySchema = z.object({
   text:        z.string().max(20_000).optional(),
@@ -43,13 +44,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: allowed } = await supabase.rpc("check_rate_limit", {
-    p_user_id:      user.id,
-    p_endpoint:     "parse-accommodation",
-    p_max_per_hour: 20,
-  });
-  if (!allowed) {
-    return NextResponse.json({ error: "Rate limit exceeded — try again later" }, { status: 429 });
+  if (!(await checkUserRateLimit(supabase, user.id, "parse-accommodation", 20))) {
+    return rateLimitResponse();
   }
 
   try {

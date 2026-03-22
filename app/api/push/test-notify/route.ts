@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 webpush.setVapidDetails(
   "mailto:support@tripcopilot.app",
@@ -63,6 +64,11 @@ export async function GET(request: Request) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) {
     return Response.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Rate limit: 30 test notifications per hour per user
+  if (!(await checkUserRateLimit(supabaseAuth, user.id, "push-test-notify", 30))) {
+    return rateLimitResponse();
   }
 
   const supabase = createServiceClient(

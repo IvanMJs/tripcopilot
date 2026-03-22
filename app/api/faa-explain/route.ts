@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-
-export const runtime = "edge";
+import { createClient } from "@/utils/supabase/server";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const BodySchema = z.object({
   airportCode: z.string().length(3),
@@ -11,6 +11,17 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 10 explain requests per hour per user
+  if (!(await checkUserRateLimit(supabase, user.id, "faa-explain", 10))) {
+    return rateLimitResponse();
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
