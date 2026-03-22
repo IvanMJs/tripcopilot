@@ -6,6 +6,7 @@ import { TripTab } from "@/lib/types";
 import { AirportStatusMap } from "@/lib/types";
 import { calculateTripRiskScore } from "@/lib/tripRiskScore";
 import { TripListSkeleton } from "./TripListSkeleton";
+import { formatRelativeDate } from "@/lib/formatDate";
 
 interface TripListViewProps {
   trips: TripTab[];
@@ -66,12 +67,7 @@ function getNextFlightLabel(trip: TripTab, locale: "es" | "en"): { label: string
   if (upcoming.length === 0) return null;
   const next = upcoming[0];
   const isToday = next.isoDate === today;
-  const dateLabel = isToday
-    ? (locale === "es" ? "Hoy" : "Today")
-    : new Date(next.isoDate + "T00:00:00").toLocaleDateString(
-        locale === "en" ? "en-US" : "es-AR",
-        { day: "numeric", month: "short" },
-      );
+  const dateLabel = formatRelativeDate(next.isoDate, locale);
   const timeLabel = next.departureTime ? ` · ${next.departureTime}` : "";
   return { label: `✈ ${dateLabel}${timeLabel}`, isToday };
 }
@@ -155,6 +151,17 @@ export function TripListView({
         </div>
       )}
 
+      {/* N4: FAB for new trip — only when no trips exist */}
+      {trips.length === 0 && (
+        <button
+          onClick={onCreateTrip}
+          className="fixed bottom-24 right-4 z-30 w-14 h-14 rounded-full btn-primary shadow-lg shadow-violet-900/40 flex items-center justify-center"
+          aria-label={locale === "es" ? "Crear viaje" : "Create trip"}
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
+
       {/* Example trip card */}
       {exampleTrip && (
         <div className="rounded-2xl border border-dashed border-violet-600/40 overflow-hidden bg-violet-950/10">
@@ -165,7 +172,7 @@ export function TripListView({
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400 border border-violet-600/40 bg-violet-900/30 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-bold uppercase tracking-wider text-violet-400 border border-violet-600/40 bg-violet-900/30 px-1.5 py-0.5 rounded">
                     {locale === "es" ? "Ejemplo" : "Example"}
                   </span>
                 </div>
@@ -214,10 +221,13 @@ export function TripListView({
         const routeLabel = buildRouteLabel(trip);
         const nextFlightLabel = getNextFlightLabel(trip, locale);
 
+        const today = new Date().toISOString().slice(0, 10);
+        const isDepartureDay = trip.flights.some((f) => f.isoDate === today);
+
         return (
           <div
             key={trip.id}
-            className="rounded-2xl border border-white/[0.07] overflow-hidden transition-all hover:border-white/[0.14]"
+            className={`rounded-2xl border border-white/[0.07] overflow-hidden transition-all hover:border-white/[0.14] ${isDepartureDay ? "animate-pulse-aura" : ""}`}
             style={{ background: "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)" }}
           >
             <div className="flex items-center gap-2 pr-3">
@@ -229,7 +239,7 @@ export function TripListView({
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-base font-bold text-white truncate">{trip.name}</span>
                     {riskStyle && (
-                      <span className={`flex items-center gap-1 text-[10px] font-semibold shrink-0 ${riskStyle.text}`}>
+                      <span className={`flex items-center gap-1 text-xs font-semibold shrink-0 ${riskStyle.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${riskStyle.dot}`} />
                         {riskStyle.label[locale]}
                       </span>
@@ -310,7 +320,7 @@ export function TripListView({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-sm font-bold text-gray-300 truncate">{trip.name}</span>
-                            <span className="text-[10px] text-gray-600 font-medium shrink-0">{range}</span>
+                            <span className="text-xs text-gray-600 font-medium shrink-0">{range}</span>
                           </div>
                           <div className="flex items-center gap-3 flex-wrap">
                             <span className="flex items-center gap-1 text-xs text-gray-600">

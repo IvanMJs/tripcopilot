@@ -31,13 +31,28 @@ export function BoardingPassView({ flight, gate, onClose }: BoardingPassViewProp
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-fade-in-up"
+        className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "linear-gradient(160deg, #1e0a3c 0%, #0f172a 100%)",
           border: "1px solid rgba(139,92,246,0.25)",
         }}
       >
+        {/* D7: Star background */}
+        <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+          {Array.from({length: 30}).map((_, i) => (
+            <div key={i} className="absolute rounded-full bg-white"
+              style={{
+                width: i % 3 === 0 ? '2px' : '1px',
+                height: i % 3 === 0 ? '2px' : '1px',
+                opacity: 0.1 + (i % 5) * 0.05,
+                left: `${(i * 37) % 100}%`,
+                top: `${(i * 23) % 100}%`,
+              }}
+            />
+          ))}
+        </div>
+
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4">
           <button
@@ -77,17 +92,17 @@ export function BoardingPassView({ flight, gate, onClose }: BoardingPassViewProp
         {/* Details row */}
         <div className="px-6 pb-4 grid grid-cols-3 gap-3">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Salida</p>
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-0.5">Salida</p>
             <p className="text-lg font-black text-white">
               {flight.departureTime ?? "--:--"}
             </p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Clase</p>
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-0.5">Clase</p>
             <p className="text-lg font-black text-white">ECO</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-0.5">
               {gate ? "Puerta" : "Terminal"}
             </p>
             <p className={`text-lg font-black ${gate ? "text-emerald-400" : "text-gray-600"}`}>
@@ -125,7 +140,7 @@ export function BoardingPassView({ flight, gate, onClose }: BoardingPassViewProp
               ))}
             </div>
           </div>
-          <p className="text-[10px] uppercase tracking-widest text-gray-600">
+          <p className="text-xs uppercase tracking-widest text-gray-600">
             Scan at gate
           </p>
         </div>

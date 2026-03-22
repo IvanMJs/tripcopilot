@@ -1,7 +1,10 @@
 "use client";
 
 import { useFlightStatus } from "@/hooks/useFlightStatus";
-import { RefreshCw, DoorOpen, Clock, Plane, AlertCircle } from "lucide-react";
+import {
+  RefreshCw, DoorOpen, Plane, AlertCircle,
+  CheckCircle, Clock, AlertTriangle, X, Minus, Loader2,
+} from "lucide-react";
 
 const STATUS_CFG = {
   scheduled: { es: "Programado", en: "Scheduled",  cls: "border-blue-700/60 bg-blue-900/20 text-blue-300" },
@@ -24,6 +27,40 @@ function daysUntilFlight(isoDate: string): number {
   today.setHours(0, 0, 0, 0);
   const flight = new Date(isoDate + "T00:00:00");
   return Math.ceil((flight.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/** Inline delay status badge: icon + text */
+function DelayStatusBadge({ delayMin, locale }: { delayMin: number | null | undefined; locale: "es" | "en" }) {
+  if (delayMin == null) {
+    return (
+      <span className="flex items-center gap-1 text-xs font-medium text-gray-500">
+        <Minus className="w-3.5 h-3.5" />
+        {locale === "es" ? "Sin datos" : "No data"}
+      </span>
+    );
+  }
+  if (delayMin === 0) {
+    return (
+      <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
+        <CheckCircle className="w-3.5 h-3.5" />
+        {locale === "es" ? "A tiempo" : "On time"}
+      </span>
+    );
+  }
+  if (delayMin >= 45) {
+    return (
+      <span className="flex items-center gap-1 text-xs font-medium text-red-400">
+        <AlertTriangle className="w-3.5 h-3.5" />
+        {locale === "es" ? `Demora ${delayMin}min` : `Delay ${delayMin}min`}
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 text-xs font-medium text-amber-400">
+      <Clock className="w-3.5 h-3.5" />
+      {locale === "es" ? `Demora ${delayMin}min` : `Delay ${delayMin}min`}
+    </span>
+  );
 }
 
 export function FlightStatusBadge({ flightIata, isoDate, locale }: Props) {
@@ -51,9 +88,10 @@ export function FlightStatusBadge({ flightIata, isoDate, locale }: Props) {
       </p>
 
       {loading && !data && (
-        <p className="text-xs text-gray-600 animate-pulse">
-          {locale === "en" ? "Fetching live data…" : "Obteniendo datos en vivo…"}
-        </p>
+        <span className="flex items-center gap-1 text-xs font-medium text-gray-500">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ...
+        </span>
       )}
 
       {error && !data && (
@@ -65,29 +103,30 @@ export function FlightStatusBadge({ flightIata, isoDate, locale }: Props) {
 
       {data && (
         <div className="flex flex-wrap gap-2 items-center">
+          {/* Flight status pill */}
           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${cfg.cls}`}>
             {locale === "en" ? cfg.en : cfg.es}
           </span>
 
-            {/* B2 — Departure gate (prominent) */}
+          {/* Cancelled icon+text */}
+          {data.status === "cancelled" && (
+            <span className="flex items-center gap-1 text-xs font-medium text-red-400">
+              <X className="w-3.5 h-3.5" />
+              {locale === "es" ? "Cancelado" : "Cancelled"}
+            </span>
+          )}
+
+          {/* Delay status badge */}
+          {data.status !== "cancelled" && (
+            <DelayStatusBadge delayMin={data.departure.delay} locale={locale} />
+          )}
+
+          {/* B2 — Departure gate (prominent) */}
           {data.departure.gate && (
             <span className="flex items-center gap-1 text-sm font-semibold text-white">
               <DoorOpen className="w-3.5 h-3.5 text-violet-400" />
               {locale === "en" ? "Gate" : "Puerta"} {data.departure.gate}
               {data.departure.terminal ? ` · T${data.departure.terminal}` : ""}
-            </span>
-          )}
-
-          {data.departure.delay != null && data.departure.delay > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-300 bg-orange-900/20 border border-orange-700/60 px-2 py-0.5 rounded-full">
-              <Clock className="h-3 w-3" />
-              +{data.departure.delay} min
-            </span>
-          )}
-
-          {data.departure.delay === 0 && data.status === "scheduled" && (
-            <span className="text-xs text-emerald-500/70">
-              {locale === "en" ? "On time" : "A tiempo"}
             </span>
           )}
 

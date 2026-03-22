@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   locale: "es" | "en";
@@ -11,11 +12,30 @@ interface Props {
 
 export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [creating, setCreating] = useState(false);
 
-  function handleConfirm() {
+  // A7: Focus trap — focus first input on open, close on Escape
+  useEffect(() => {
+    const firstInput = modalRef.current?.querySelector<HTMLElement>("input, button, textarea");
+    firstInput?.focus();
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  async function handleConfirm() {
     const val = inputRef.current?.value.trim() ?? "";
     const name = val || (locale === "en" ? `Trip ${tripCount + 1}` : `Viaje ${tripCount + 1}`);
-    onConfirm(name);
+    setCreating(true);
+    try {
+      await Promise.resolve(onConfirm(name));
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
@@ -23,6 +43,7 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
       <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
         <div
+          ref={modalRef}
           className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4"
           style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
         >
@@ -35,10 +56,7 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
             </p>
           </div>
 
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-              {locale === "es" ? "Nombre del viaje" : "Trip name"}
-            </label>
+          <div className="input-float-wrapper mt-6">
             <input
               ref={inputRef}
               onKeyDown={(e) => {
@@ -48,22 +66,34 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
               placeholder={locale === "es" ? "Ej: Vacaciones Miami 2026" : "E.g. Miami Trip 2026"}
               maxLength={40}
               autoFocus
-              className="w-full rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
+            <label>
+              {locale === "es" ? "Nombre del viaje" : "Trip name"}
+            </label>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={onClose}
-              className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors"
+              disabled={creating}
+              className="w-full sm:w-auto flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors disabled:opacity-50"
             >
               {locale === "es" ? "Cancelar" : "Cancel"}
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 py-2.5 text-sm font-semibold text-white transition-colors tap-scale"
+              disabled={creating}
+              className={`btn-primary w-full sm:w-auto flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold tap-scale ${creating ? "opacity-70 cursor-not-allowed" : ""}`}
             >
-              {locale === "es" ? "Crear viaje" : "Create trip"}
+              {creating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {locale === "es" ? "Creando..." : "Creating..."}
+                </>
+              ) : (
+                locale === "es" ? "Crear viaje" : "Create trip"
+              )}
             </button>
           </div>
         </div>

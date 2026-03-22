@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
+import Anthropic from "@anthropic-ai/sdk";
 
 const TripFlightSchema = z.object({
   flightCode:      z.string().max(10),
@@ -61,38 +62,38 @@ export async function POST(req: NextRequest) {
 
   const tripSummary = `Viaje: "${tripContext.tripName}"\nVuelos:\n${flightsText}`;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
+  const systemPrompt = `Sos un asistente de viaje conciso y práctico. El usuario tiene el siguiente itinerario:\n\n${tripSummary}\n\nRespondé sus preguntas de forma concisa (máximo 3-4 oraciones). Si la pregunta no tiene que ver con viajes, redirigí amablemente al tema.`;
+
+  const anthropic = new Anthropic({ apiKey });
+
+  const encoder = new TextEncoder();
+
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      try {
+        const stream = anthropic.messages.stream({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 512,
+          system: systemPrompt,
+          messages: [{ role: "user", content: question }],
+        });
+
+        for await (const event of stream) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err);
+      }
     },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 512,
-      system: `Sos un asistente de viaje conciso y práctico. El usuario tiene el siguiente itinerario:\n\n${tripSummary}\n\nRespondé sus preguntas de forma concisa (máximo 3-4 oraciones). Si la pregunta no tiene que ver con viajes, redirigí amablemente al tema.`,
-      messages: [{ role: "user", content: question }],
-    }),
   });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({})) as { error?: { message?: string; type?: string } };
-    const type = err.error?.type ?? "";
-    const friendly =
-      type === "authentication_error" ? "API key inválida"
-      : type === "permission_error"   ? "Sin permisos en la API"
-      : response.status === 529       ? "API con sobrecarga, reintentá en unos segundos"
-      : "No se pudo generar la respuesta";
-    return NextResponse.json({ error: friendly }, { status: 500 });
-  }
-
-  const apiRaw = await response.json() as { content: { type: string; text: string }[] };
-  const answer = apiRaw.content?.find((c) => c.type === "text")?.text ?? "";
-
-  if (!answer) {
-    return NextResponse.json({ error: "No se obtuvo respuesta del modelo" }, { status: 502 });
-  }
-
-  return NextResponse.json({ answer });
+  return new Response(readableStream, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }

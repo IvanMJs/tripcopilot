@@ -95,7 +95,7 @@ export function DayOfTravelBanner({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 bg-red-900/40 border border-red-700/50 rounded-full px-2.5 py-0.5">
+              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-red-400 bg-red-900/40 border border-red-700/50 rounded-full px-2.5 py-0.5">
                 <Radio className="h-2.5 w-2.5 animate-pulse" />
                 {locale === "es" ? "Modo viaje activo" : "Travel day — live"}
               </span>
@@ -118,7 +118,7 @@ export function DayOfTravelBanner({
             </p>
           ) : (
             <>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/70 mb-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-red-400/70 mb-1">
                 {locale === "es" ? "Tiempo hasta despegue" : "Time to departure"}
               </p>
               <p className="text-4xl font-black text-white tabular leading-none">

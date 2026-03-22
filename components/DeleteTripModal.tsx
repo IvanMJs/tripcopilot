@@ -33,16 +33,16 @@ export function DeleteTripModal({ locale, tripName, flightCount, onClose, onConf
                 : `Are you sure you want to delete "${tripName}"${flightSuffix}? This can't be undone.`}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={onClose}
-              className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors"
+              className="w-full sm:w-auto flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors"
             >
               {locale === "es" ? "Cancelar" : "Cancel"}
             </button>
             <button
               onClick={onConfirm}
-              className="flex-1 rounded-xl bg-red-700 hover:bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors"
+              className="w-full sm:w-auto flex-1 rounded-xl bg-red-700 hover:bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors"
             >
               {locale === "es" ? "Eliminar" : "Delete"}
             </button>

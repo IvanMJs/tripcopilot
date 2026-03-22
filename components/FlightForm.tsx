@@ -1,10 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Upload, AlertTriangle } from "lucide-react";
+import { Plus, Search, AlertTriangle, Sparkles } from "lucide-react";
 import { TripFlight } from "@/lib/types";
 import { AIRLINES, parseFlightCode } from "@/lib/flightUtils";
 import { analytics } from "@/lib/analytics";
+
+// ── Airline preview map ────────────────────────────────────────────────────────
+const AIRLINE_NAMES: Record<string, string> = {
+  AA: "American Airlines", AR: "Aerolíneas Argentinas", LA: "LATAM",
+  AV: "Avianca", CM: "Copa Airlines", UA: "United Airlines",
+  DL: "Delta Air Lines", BA: "British Airways", IB: "Iberia",
+  AF: "Air France", KL: "KLM", LH: "Lufthansa", EK: "Emirates",
+  QR: "Qatar Airways", TK: "Turkish Airlines", G3: "Gol", JJ: "LATAM Brasil",
+  AM: "Aeroméxico", VB: "VivaAerobus", Y4: "Volaris", FR: "Ryanair",
+  U2: "easyJet", W6: "Wizz Air", NK: "Spirit", B6: "JetBlue", WN: "Southwest",
+};
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 
@@ -146,10 +157,15 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
     if (e.key === "Enter") handleAdd();
   }
 
+  const isValidFlightCode = /^[A-Z]{2}\d{1,4}$/.test(form.flightCode);
+  const showValidation = form.flightCode.length >= 3;
+  const airlinePreviewCode = form.flightCode.slice(0, 2).toUpperCase();
+  const airlinePreviewName = form.flightCode.length >= 2 ? AIRLINE_NAMES[airlinePreviewCode] : undefined;
+
   const inputClass =
     "w-full rounded-xl border border-white/[0.12] bg-[#080810] px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500/70";
   const labelClass =
-    "block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5";
+    "block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5";
 
   return (
     <div
@@ -164,9 +180,9 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
         </div>
         <button
           onClick={onOpenImport}
-          className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+          className="btn-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
         >
-          <Upload className="h-3 w-3" />
+          <Sparkles className="h-3 w-3" />
           {L.importBtn}
         </button>
       </div>
@@ -176,13 +192,23 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
         <label className={labelClass}>
           {locale === "es" ? "Código de vuelo" : "Flight code"}
         </label>
-        <input
-          value={form.flightCode}
-          onChange={(e) => update("flightCode", e.target.value)}
-          onKeyDown={handleKey}
-          placeholder={L.flightPlaceholder}
-          className={inputClass}
-        />
+        <div className="relative">
+          <input
+            value={form.flightCode}
+            onChange={(e) => update("flightCode", e.target.value.toUpperCase())}
+            onKeyDown={handleKey}
+            placeholder={L.flightPlaceholder}
+            className={inputClass + " pr-16"}
+          />
+          {showValidation && (
+            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ${isValidFlightCode ? "text-green-400" : "text-red-400"}`}>
+              {isValidFlightCode ? "✓" : "AA1234"}
+            </span>
+          )}
+        </div>
+        {airlinePreviewName && (
+          <p className="mt-1 text-xs text-violet-400">{airlinePreviewName}</p>
+        )}
       </div>
 
       {/* Row 2: Origin · Destination · Date */}

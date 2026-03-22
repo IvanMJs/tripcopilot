@@ -98,16 +98,16 @@ export function BottomNav({
                     if (e.key === "Escape") setRenameInPickerId(null);
                   }}
                   maxLength={40}
-                  className="flex-1 min-w-0 bg-white/[0.06] border border-blue-500/50 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
+                  className="flex-1 min-w-0 bg-white/[0.06] border border-violet-500/50 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
                 />
               ) : (
                 <button
                   onClick={() => { onNavigate(draftId); setShowTripPicker(false); setRenameInPickerId(null); }}
                   className="flex-1 min-w-0 text-left"
                 >
-                  <p className={`text-sm font-semibold truncate ${activeTab === draftId ? "text-blue-400" : "text-white"}`}>
+                  <p className={`text-sm font-semibold truncate ${activeTab === draftId ? "text-violet-400" : "text-white"}`}>
                     {draftTrip.name}
-                    <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5">
+                    <span className="ml-2 text-[11px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5">
                       {locale === "es" ? "Borrador" : "Draft"}
                     </span>
                   </p>
@@ -165,14 +165,14 @@ export function BottomNav({
                     if (e.key === "Escape") setRenameInPickerId(null);
                   }}
                   maxLength={40}
-                  className="flex-1 min-w-0 bg-white/[0.06] border border-blue-500/50 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
+                  className="flex-1 min-w-0 bg-white/[0.06] border border-violet-500/50 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
                 />
               ) : (
                 <button
                   onClick={() => { onNavigate(trip.id); setShowTripPicker(false); setRenameInPickerId(null); }}
                   className="flex-1 min-w-0 text-left"
                 >
-                  <p className={`text-sm font-semibold truncate ${activeTab === trip.id ? "text-blue-400" : "text-white"}`}>
+                  <p className={`text-sm font-semibold truncate ${activeTab === trip.id ? "text-violet-400" : "text-white"}`}>
                     {trip.name}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
@@ -211,23 +211,20 @@ export function BottomNav({
           {/* Mi viaje / Mis viajes */}
           <button
             onClick={handleTripNavTap}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-all duration-150 ${tripsActive ? "text-blue-400" : "text-gray-500"}`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${tripsActive ? "text-violet-400" : "text-gray-500"}`}
           >
-            {tripsActive && (
-              <span className="absolute top-0 inset-x-0 flex justify-center">
-                <span className="h-[3px] w-10 rounded-full bg-blue-400" />
-              </span>
-            )}
-            <div className={`relative flex items-center justify-center rounded-xl transition-all duration-150 ${tripsActive ? "bg-blue-500/10 px-2.5 py-1" : "px-2.5 py-1"}`}>
-              <Map className="h-[20px] w-[20px]" strokeWidth={tripsActive ? 2.5 : 1.5} />
+            <div className="relative">
+              <div className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${tripsActive ? "bg-violet-500/20" : ""}`}>
+                <Map className={`w-[22px] h-[22px] transition-colors ${tripsActive ? "text-violet-400" : "text-gray-500"}`} strokeWidth={tripsActive ? 2.5 : 1.5} />
+              </div>
               {totalTrips > 1 && (
-                <span className="absolute -top-1 -right-1 h-4 min-w-[16px] bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] bg-violet-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                   {totalTrips}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-0.5">
-              <span className={`text-[10px] leading-none transition-all duration-150 ${tripsActive ? "font-bold" : "font-semibold"}`}>{tripsLabel}</span>
+              <span className={`text-xs leading-none ${tripsActive ? "font-bold" : "font-semibold"}`}>{tripsLabel}</span>
               {totalTrips > 1 && (
                 <ChevronUp className={`h-3 w-3 transition-transform ${showTripPicker ? "rotate-180" : ""}`} />
               )}
@@ -237,44 +234,34 @@ export function BottomNav({
           {/* Aeropuertos */}
           <button
             onClick={() => onNavigate("airports")}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-all duration-150 ${activeTab === "airports" ? "text-blue-400" : "text-gray-500"}`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "airports" ? "text-violet-400" : "text-gray-500"}`}
           >
-            {activeTab === "airports" && (
-              <span className="absolute top-0 inset-x-0 flex justify-center">
-                <span className="h-[3px] w-10 rounded-full bg-blue-400" />
-              </span>
-            )}
-            <div className={`flex items-center justify-center rounded-xl transition-all duration-150 ${activeTab === "airports" ? "bg-blue-500/10 px-2.5 py-1" : "px-2.5 py-1"}`}>
-              <MapPin className="h-[20px] w-[20px]" strokeWidth={activeTab === "airports" ? 2.5 : 1.5} />
+            <div className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "airports" ? "bg-violet-500/20" : ""}`}>
+              <MapPin className={`w-[22px] h-[22px] transition-colors ${activeTab === "airports" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "airports" ? 2.5 : 1.5} />
             </div>
-            <span className={`text-[10px] leading-none transition-all duration-150 ${activeTab === "airports" ? "font-bold" : "font-semibold"}`}>{tabLabels.airports}</span>
+            <span className={`text-xs leading-none ${activeTab === "airports" ? "font-bold" : "font-semibold"}`}>{tabLabels.airports}</span>
           </button>
 
           {/* Vuelos */}
           <button
             onClick={() => onNavigate("search")}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-all duration-150 ${activeTab === "search" ? "text-blue-400" : "text-gray-500"}`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "search" ? "text-violet-400" : "text-gray-500"}`}
           >
-            {activeTab === "search" && (
-              <span className="absolute top-0 inset-x-0 flex justify-center">
-                <span className="h-[3px] w-10 rounded-full bg-blue-400" />
-              </span>
-            )}
-            <div className={`flex items-center justify-center rounded-xl transition-all duration-150 ${activeTab === "search" ? "bg-blue-500/10 px-2.5 py-1" : "px-2.5 py-1"}`}>
-              <Plane className="h-[20px] w-[20px]" strokeWidth={activeTab === "search" ? 2.5 : 1.5} />
+            <div className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "search" ? "bg-violet-500/20" : ""}`}>
+              <Plane className={`w-[22px] h-[22px] transition-colors ${activeTab === "search" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "search" ? 2.5 : 1.5} />
             </div>
-            <span className={`text-[10px] leading-none transition-all duration-150 ${activeTab === "search" ? "font-bold" : "font-semibold"}`}>{tabLabels.search}</span>
+            <span className={`text-xs leading-none ${activeTab === "search" ? "font-bold" : "font-semibold"}`}>{tabLabels.search}</span>
           </button>
 
           {/* Nuevo viaje */}
           <button
             onClick={() => { setShowTripPicker(false); onNewTrip(); }}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-all duration-150 text-gray-500 hover:text-blue-400"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors text-gray-500 hover:text-violet-400"
           >
-            <div className="flex items-center justify-center rounded-xl px-2.5 py-1">
-              <Plus className="h-[20px] w-[20px]" strokeWidth={1.5} />
+            <div className="flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200">
+              <Plus className="w-[22px] h-[22px]" strokeWidth={1.5} />
             </div>
-            <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Nuevo" : "New"}</span>
+            <span className="text-xs font-semibold leading-none">{locale === "es" ? "Nuevo" : "New"}</span>
           </button>
 
         </div>

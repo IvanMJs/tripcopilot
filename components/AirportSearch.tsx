@@ -22,6 +22,16 @@ const COUNTRY_FLAGS: Record<string, string> = {
   "USA":            "🇺🇸",
 };
 
+const AIRPORT_FLAGS: Record<string, string> = {
+  EZE: "🇦🇷", AEP: "🇦🇷", COR: "🇦🇷", MDZ: "🇦🇷", BRC: "🇦🇷",
+  MIA: "🇺🇸", JFK: "🇺🇸", LAX: "🇺🇸", ORD: "🇺🇸", ATL: "🇺🇸",
+  GRU: "🇧🇷", SCL: "🇨🇱", BOG: "🇨🇴", LIM: "🇵🇪", MEX: "🇲🇽",
+  MAD: "🇪🇸", BCN: "🇪🇸", LHR: "🇬🇧", CDG: "🇫🇷", FCO: "🇮🇹",
+  GCM: "🇰🇾", NRT: "🇯🇵", DXB: "🇦🇪", IST: "🇹🇷", SYD: "🇦🇺",
+};
+
+const POPULAR = ["EZE", "AEP", "MIA", "GRU", "SCL", "MAD", "JFK", "LHR"];
+
 interface AirportSearchProps {
   watchedAirports: string[];
   onAdd: (iata: string) => void;
@@ -145,6 +155,26 @@ export function AirportSearch({ watchedAirports, onAdd }: AirportSearchProps) {
             ))}
           </div>
 
+          {/* Popular suggestions — shown when query is empty and no airports watched */}
+          {!query && watchedAirports.length === 0 && (
+            <div className="p-3 border-b border-gray-700/50">
+              <p className="text-xs text-gray-500 mb-2">
+                {locale === "es" ? "Aeropuertos populares" : "Popular airports"}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {POPULAR.map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => handleAdd(code)}
+                    className="text-xs bg-white/5 hover:bg-violet-500/20 border border-white/10 hover:border-violet-500/40 text-gray-300 px-2.5 py-1 rounded-full transition-all"
+                  >
+                    {AIRPORT_FLAGS[code]} {code}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Results */}
           <div className="max-h-64 overflow-y-auto">
             {!query && available.length > 0 && (
@@ -163,7 +193,9 @@ export function AirportSearch({ watchedAirports, onAdd }: AirportSearchProps) {
                   onClick={() => handleAdd(code)}
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-800 transition-colors"
                 >
-                  <span className="w-12 font-bold text-white text-sm">{code}</span>
+                  <span className="w-12 font-bold text-white text-sm">
+                    {AIRPORT_FLAGS[code] ? `${AIRPORT_FLAGS[code]} ` : ""}{code}
+                  </span>
                   <span className="flex-1 text-xs text-gray-400 leading-tight">
                     {info.name}
                     <br />

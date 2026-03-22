@@ -11,6 +11,7 @@ interface Props {
   draftTrip: { name: string } | null;
   tabLabels: { airports: string; search: string };
   draftId: string;
+  alertTripIds?: string[];
   onTabChange: (id: string) => void;
   onRenameTrip: (id: string, name: string) => void;
   onDeleteTrip: (id: string) => void;
@@ -18,12 +19,12 @@ interface Props {
   onNewTrip: () => void;
 }
 
-const tabBase = "px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap rounded-lg mx-0.5 my-1";
-const tabActive   = "bg-blue-500/15 text-blue-400 font-semibold shadow-sm";
-const tabInactive = "text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]";
+const tabBase = "px-4 py-2.5 text-sm font-medium transition-all duration-150 whitespace-nowrap rounded-lg mx-0.5 my-1 border-b-2 -mb-px";
+const tabActive   = "bg-violet-500/15 border-violet-500 text-violet-400 font-semibold shadow-sm";
+const tabInactive = "border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]";
 
 export function TripTabBar({
-  locale, activeTab, userTrips, draftTrip, tabLabels, draftId,
+  locale, activeTab, userTrips, draftTrip, tabLabels, draftId, alertTripIds,
   onTabChange, onRenameTrip, onDeleteTrip, onDiscardDraft, onNewTrip,
 }: Props) {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
@@ -109,7 +110,10 @@ export function TripTabBar({
           const isEditing = editingTabId === trip.id;
 
           return (
-            <div key={trip.id} className="flex items-center">
+            <div key={trip.id} className="relative flex items-center -mb-px">
+              {alertTripIds?.includes(trip.id) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 z-10 pointer-events-none" />
+              )}
               {isEditing ? (
                 <div className={`${tabBase} ${tabActive} flex items-center`}>
                   <input
@@ -123,7 +127,7 @@ export function TripTabBar({
                     }}
                     onClick={(e) => e.stopPropagation()}
                     maxLength={30}
-                    className="bg-transparent border-b border-blue-400 outline-none text-blue-300 w-28 text-sm"
+                    className="bg-transparent border-b border-violet-400 outline-none text-violet-300 w-28 text-sm"
                   />
                 </div>
               ) : (
@@ -164,7 +168,7 @@ export function TripTabBar({
               className={`${tabBase} ${activeTab === draftId ? tabActive : tabInactive} flex items-center gap-2`}
             >
               {draftTrip.name}
-              <span className="text-[9px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5 leading-none">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5 leading-none">
                 {locale === "es" ? "Borrador" : "Draft"}
               </span>
             </button>

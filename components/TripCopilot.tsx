@@ -55,7 +55,7 @@ interface TripCopilotProps {
 
 interface ChatMessage {
   role: "user" | "assistant";
-  text: string;
+  content: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ function AlertsSection({
 
   return (
     <div className="border-t border-white/[0.04] px-4 py-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-2">
+      <p className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
         ⚠️ {locale === "es" ? "Alertas climáticas" : "Weather alerts"}
       </p>
       <ul className="space-y-1">
@@ -255,7 +255,7 @@ function PackingSection({
               {items.map((pk, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <span
-                    className={`shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${
+                    className={`shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border ${
                       PRIORITY_STYLE[pk.priority]
                     }`}
                   >
@@ -264,7 +264,7 @@ function PackingSection({
                   <div className="min-w-0">
                     <span className="text-xs text-gray-200">{pk.item}</span>
                     {pk.reason && (
-                      <span className="text-[10px] text-gray-500 ml-1.5">{pk.reason}</span>
+                      <span className="text-xs text-gray-500 ml-1.5">{pk.reason}</span>
                     )}
                   </div>
                 </li>
@@ -315,22 +315,22 @@ function DestinationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-bold text-white">{city}</span>
-            <span className="flex items-center gap-1 text-[10px] text-gray-500">
+            <span className="flex items-center gap-1 text-xs text-gray-500">
               <Moon className="h-2.5 w-2.5" />
               {stay.nights} {locale === "es" ? "noches" : "nights"}
             </span>
-            <span className="text-[10px] text-gray-600">
+            <span className="text-xs text-gray-600">
               {fmtDate(stay.arrivalIso, locale)} → {fmtDate(stay.departureIso, locale)}
             </span>
           </div>
           {profile && (
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="flex items-center gap-1 text-[10px] text-gray-500">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
                 <Thermometer className="h-2.5 w-2.5" />
                 {profile.tempMinC}–{profile.tempMaxC}°C
               </span>
               {climate && (
-                <span className="text-[10px] text-gray-600 truncate">{climate}</span>
+                <span className="text-xs text-gray-600 truncate">{climate}</span>
               )}
             </div>
           )}
@@ -353,7 +353,7 @@ function DestinationCard({
                 <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex-1">
                   {locale === "es" ? "Qué hacer" : "Things to do"}
                 </span>
-                <span className="text-[10px] text-gray-600">{profile.activities.length}</span>
+                <span className="text-xs text-gray-600">{profile.activities.length}</span>
                 <ChevronDown
                   className={`h-3 w-3 text-gray-600 transition-transform duration-150 ${activitiesOpen ? "rotate-180" : ""}`}
                 />
@@ -381,7 +381,7 @@ function DestinationCard({
           {/* Tips */}
           {(tips.length > 0 || status === "loading") && (
             <div className="px-4 py-2.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-2 flex items-center gap-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2 flex items-center gap-1">
                 <span>💡</span> Tips
                 {aiTips?.length && status === "done" ? (
                   <TripCopilotLogo className="h-4 w-auto opacity-60 ml-1" />
@@ -396,7 +396,7 @@ function DestinationCard({
                 <ul className="space-y-1.5">
                   {tips.map((tip, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-gray-600 shrink-0 mt-1 text-[10px]">•</span>
+                      <span className="text-gray-600 shrink-0 mt-1 text-xs">•</span>
                       <span className="text-xs text-gray-300 leading-snug">{tip}</span>
                     </li>
                   ))}
@@ -422,13 +422,13 @@ function LegNotes({
   if (!data?.by_leg?.length) return null;
   return (
     <div className="border-t border-white/[0.04] px-4 py-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-2">
+      <p className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
         ✈️ {locale === "es" ? "Por tramo" : "Per leg"}
       </p>
       <ul className="space-y-1.5">
         {data.by_leg.map((leg, i) => (
           <li key={i} className="flex items-start gap-2">
-            <span className="text-[10px] text-blue-500 font-mono shrink-0 mt-0.5">
+            <span className="text-xs text-blue-500 font-mono shrink-0 mt-0.5">
               {leg.from}→{leg.to}
             </span>
             <span className="text-xs text-gray-400 leading-snug">{leg.note}</span>
@@ -459,12 +459,14 @@ function ChatSection({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function handleSend() {
-    const q = input.trim();
-    if (!q || loading) return;
+  const quickPrompts = locale === "es"
+    ? ["¿Llego a la conexión?", "¿Qué llevar?", "¿Hay demoras hoy?", "Resumen del viaje"]
+    : ["Will I make my connection?", "What to pack?", "Any delays today?", "Trip summary"];
 
-    const newMessages: ChatMessage[] = [...messages, { role: "user", text: q }];
-    setMessages(newMessages);
+  async function sendMessage(q: string) {
+    if (!q.trim() || loading) return;
+
+    setMessages((prev) => [...prev, { role: "user", content: q.trim() }]);
     setInput("");
     setLoading(true);
 
@@ -473,7 +475,7 @@ function ChatSection({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          question: q,
+          question: q.trim(),
           tripContext: {
             flights: flights.map((f) => ({
               flightCode:      "",
@@ -486,27 +488,46 @@ function ChatSection({
         }),
       });
 
-      const body = await res.json() as { answer?: string; error?: string };
-      const answer = body.answer ?? body.error ?? (locale === "es" ? "No se pudo obtener respuesta." : "Could not get a response.");
-      // Keep last 5 exchanges (10 messages total: the new user msg was already added)
-      setMessages((prev) => {
-        const updated = [...prev, { role: "assistant" as const, text: answer }];
-        return updated.slice(-10);
-      });
+      if (!res.ok || !res.body) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        const errMsg = body.error ?? (locale === "es" ? "No se pudo obtener respuesta." : "Could not get a response.");
+        setMessages((prev) => [...prev, { role: "assistant", content: errMsg }]);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let answer = "";
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        answer += decoder.decode(value, { stream: true });
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: answer };
+          return updated.slice(-10);
+        });
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: locale === "es" ? "Error al conectar con el asistente." : "Error connecting to assistant." },
+        { role: "assistant", content: locale === "es" ? "Error al conectar con el asistente." : "Error connecting to assistant." },
       ]);
     } finally {
       setLoading(false);
     }
   }
 
+  async function handleSend() {
+    await sendMessage(input);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   }
 
@@ -539,11 +560,11 @@ function ChatSection({
                     : "bg-white/[0.04] text-gray-300 border border-white/[0.06]"
                 }`}
               >
-                {m.text}
+                {m.content}
               </div>
             </div>
           ))}
-          {loading && (
+          {loading && messages[messages.length - 1]?.role !== "assistant" && (
             <div className="flex gap-2 justify-start">
               <TripCopilotLogo className="h-4 w-auto shrink-0 mt-0.5 opacity-80" />
               <div className="rounded-xl px-3 py-1.5 text-xs text-gray-500 bg-white/[0.04] border border-white/[0.06] animate-pulse">
@@ -554,6 +575,20 @@ function ChatSection({
           <div ref={bottomRef} />
         </div>
       )}
+
+      {/* Quick prompt chips */}
+      <div className="flex gap-2 flex-wrap px-4 mt-1 mb-2">
+        {quickPrompts.map((prompt) => (
+          <button
+            key={prompt}
+            onClick={() => void sendMessage(prompt)}
+            disabled={loading}
+            className="text-xs bg-violet-900/40 hover:bg-violet-800/60 border border-violet-700/40 text-violet-300 px-3 py-1.5 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
 
       {/* Input row */}
       <div className="px-4 pb-3 flex items-center gap-2">
@@ -567,7 +602,7 @@ function ChatSection({
           className="flex-1 min-w-0 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-purple-700/50 transition-colors disabled:opacity-50"
         />
         <button
-          onClick={handleSend}
+          onClick={() => void handleSend()}
           disabled={!input.trim() || loading}
           className="p-1.5 rounded-lg bg-purple-800/40 border border-purple-700/30 text-purple-300 hover:bg-purple-800/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           aria-label={locale === "es" ? "Enviar pregunta" : "Send question"}
@@ -619,14 +654,14 @@ export function TripCopilot({ flights, locale, tripName = "Mi viaje" }: TripCopi
               TripCopilot
             </p>
             {status === "loading" && expanded && (
-              <span className="text-[9px] text-gray-600 animate-pulse">
+              <span className="text-[11px] text-gray-600 animate-pulse">
                 {locale === "es" ? "analizando…" : "analyzing…"}
               </span>
             )}
           </div>
           {/* Collapsed subtitle */}
           {!expanded && (
-            <p className="text-[10px] text-gray-600 leading-snug mt-0.5">
+            <p className="text-xs text-gray-600 leading-snug mt-0.5">
               {locale === "es" ? "Tu copiloto para este viaje" : "Your travel copilot"}
             </p>
           )}
@@ -634,18 +669,18 @@ export function TripCopilot({ flights, locale, tripName = "Mi viaje" }: TripCopi
           {/* Collapsed: feature pills showing what's inside */}
           {!expanded && (
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
                 👕 {locale === "es" ? "Equipaje" : "Packing"}
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
                 💡 Tips
               </span>
               {hasAlerts && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-yellow-600 bg-yellow-950/30 border border-yellow-800/30 rounded-full px-2 py-0.5">
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-600 bg-yellow-950/30 border border-yellow-800/30 rounded-full px-2 py-0.5">
                   ⚠️ {locale === "es" ? "Alertas" : "Alerts"}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
                 🗺️ {stays.length} {locale === "es" ? "destinos" : "destinations"}
               </span>
             </div>

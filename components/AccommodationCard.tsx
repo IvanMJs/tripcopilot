@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Hotel, Pencil, Trash2, X, Plus, Upload, RotateCcw, MapPin, Hash } from "lucide-react";
+import { Hotel, Pencil, Trash2, X, Plus, Upload, RotateCcw, MapPin, Hash, Sun, Moon } from "lucide-react";
 import { analytics } from "@/lib/analytics";
 
 function TripCopilotIcon({ spinning, size = 16 }: { spinning?: boolean; size?: number }) {
@@ -114,11 +114,11 @@ export function AccommodationInline({
         />
         <div className="flex gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-600 mb-1">{L.accCheckIn}</p>
+            <p className="text-xs text-gray-600 mb-1">{L.accCheckIn}</p>
             <input type="time" value={editCheckIn} onChange={(e) => setEditCheckIn(e.target.value)} className={timeCls} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gray-600 mb-1">{L.accCheckOut}</p>
+            <p className="text-xs text-gray-600 mb-1">{L.accCheckOut}</p>
             <input type="time" value={editCheckOut} onChange={(e) => setEditCheckOut(e.target.value)} className={timeCls} />
           </div>
         </div>
@@ -140,35 +140,69 @@ export function AccommodationInline({
     );
   }
 
+  const checkinDateFormatted = checkInDate
+    ? new Intl.DateTimeFormat(locale === "es" ? "es-AR" : "en-US", {
+        day: "numeric", month: "short",
+      }).format(new Date(checkInDate + "T00:00:00"))
+    : "";
+  const checkoutDateFormatted = checkOutDate
+    ? new Intl.DateTimeFormat(locale === "es" ? "es-AR" : "en-US", {
+        day: "numeric", month: "short",
+      }).format(new Date(checkOutDate + "T00:00:00"))
+    : "";
+
   return (
-    <div className="mt-3 pt-3 border-t border-white/[0.05] flex items-start gap-2">
-      <Hotel className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-white truncate">{acc.name}</p>
-        <p className="text-[11px] text-gray-500">
-          {acc.checkInTime ? `Check-in ${acc.checkInTime}` : "Check-in"}
-          {acc.checkOutTime ? ` · Check-out ${acc.checkOutTime}` : ""}
-          {nights !== null && <span className="text-gray-600 ml-1.5">· {L.accNights(nights)}</span>}
-        </p>
-        {acc.confirmationCode && (
-          <p className="text-[10px] text-gray-600 mt-0.5 flex items-center gap-1">
-            <Hash className="h-2.5 w-2.5" />{acc.confirmationCode}
-          </p>
-        )}
-        {acc.address && (
-          <p className="text-[10px] text-gray-600 mt-0.5 flex items-center gap-1 truncate">
-            <MapPin className="h-2.5 w-2.5 shrink-0" />{acc.address}
-          </p>
-        )}
+    <div className="mt-3 pt-3 border-t border-white/[0.05]">
+      {/* Name row */}
+      <div className="flex items-start gap-2 mb-2">
+        <Hotel className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-white truncate">{acc.name}</p>
+          {nights !== null && (
+            <p className="text-[10px] text-gray-600">{L.accNights(nights)}</p>
+          )}
+          {acc.confirmationCode && (
+            <p className="text-[10px] text-gray-600 mt-0.5 flex items-center gap-1">
+              <Hash className="h-2.5 w-2.5" />{acc.confirmationCode}
+            </p>
+          )}
+          {acc.address && (
+            <p className="text-[10px] text-gray-600 mt-0.5 flex items-center gap-1 truncate">
+              <MapPin className="h-2.5 w-2.5 shrink-0" />{acc.address}
+            </p>
+          )}
+        </div>
+        <button onClick={() => setEditing(true)} title={L.accEdit}
+          className="shrink-0 p-1 rounded-md text-gray-600 hover:text-blue-400 transition-colors">
+          <Pencil className="h-3 w-3" />
+        </button>
+        <button onClick={onRemove} title={L.accRemove}
+          className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors">
+          <Trash2 className="h-3 w-3" />
+        </button>
       </div>
-      <button onClick={() => setEditing(true)} title={L.accEdit}
-        className="shrink-0 p-1 rounded-md text-gray-600 hover:text-blue-400 transition-colors">
-        <Pencil className="h-3 w-3" />
-      </button>
-      <button onClick={onRemove} title={L.accRemove}
-        className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors">
-        <Trash2 className="h-3 w-3" />
-      </button>
+
+      {/* Time blocks grid */}
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+          <p className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+            <Sun className="w-3 h-3" /> {L.accCheckIn}
+          </p>
+          <p className="text-xl font-bold tabular-nums text-white">{acc.checkInTime || "--:--"}</p>
+          {checkinDateFormatted && (
+            <p className="text-xs text-gray-400 mt-0.5">{checkinDateFormatted}</p>
+          )}
+        </div>
+        <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+          <p className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+            <Moon className="w-3 h-3" /> {L.accCheckOut}
+          </p>
+          <p className="text-xl font-bold tabular-nums text-white">{acc.checkOutTime || "--:--"}</p>
+          {checkoutDateFormatted && (
+            <p className="text-xs text-gray-400 mt-0.5">{checkoutDateFormatted}</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -283,7 +317,7 @@ export function AddAccommodationInlineForm({
     <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
+        <span className="text-xs font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
           <Hotel className="h-3 w-3" />
           {locale === "es" ? `Hotel en ${destCity}` : `Hotel in ${destCity}`}
         </span>
@@ -366,13 +400,13 @@ export function AddAccommodationInlineForm({
       {tab === "ai" && parsed && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider flex items-center gap-1">
+            <p className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center gap-1">
               <TripCopilotIcon size={12} />
               {L.accAIReview}
             </p>
             <button
               onClick={() => { setParsed(null); setAiError(null); }}
-              className="flex items-center gap-1 text-[10px] text-gray-600 hover:text-gray-400 transition-colors"
+              className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-400 transition-colors"
             >
               <RotateCcw className="h-3 w-3" />
               {L.accAIRetry}
@@ -384,11 +418,11 @@ export function AddAccommodationInlineForm({
 
           <div className="flex gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-gray-600 mb-1">{L.accCheckIn}</p>
+              <p className="text-xs text-gray-600 mb-1">{L.accCheckIn}</p>
               <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} className={timeCls} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-gray-600 mb-1">{L.accCheckOut}</p>
+              <p className="text-xs text-gray-600 mb-1">{L.accCheckOut}</p>
               <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} className={timeCls} />
             </div>
           </div>
@@ -416,11 +450,11 @@ export function AddAccommodationInlineForm({
           />
           <div className="flex gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-gray-600 mb-1">{L.accCheckIn}</p>
+              <p className="text-xs text-gray-600 mb-1">{L.accCheckIn}</p>
               <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} className={timeCls} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-gray-600 mb-1">{L.accCheckOut}</p>
+              <p className="text-xs text-gray-600 mb-1">{L.accCheckOut}</p>
               <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} className={timeCls} />
             </div>
           </div>

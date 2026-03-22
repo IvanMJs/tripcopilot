@@ -295,7 +295,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Floating pill — top right */}
-                <div className="absolute -top-3 -right-3 inline-flex items-center gap-1 rounded-full bg-violet-600 px-3 py-1 text-[10px] text-white font-bold shadow-lg">
+                <div className="absolute -top-3 -right-3 inline-flex items-center gap-1 rounded-full bg-violet-600 px-3 py-1 text-xs text-white font-bold shadow-lg">
                   <Zap className="h-3 w-3" />
                   IA Import
                 </div>
@@ -492,7 +492,7 @@ export default function LandingPage() {
                 <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${n.bg} border ${n.border} text-base`}>
                   {n.icon}
                 </div>
-                <p className={`text-[10px] font-bold uppercase tracking-widest ${n.color}`}>{n.timing}</p>
+                <p className={`text-xs font-bold uppercase tracking-widest ${n.color}`}>{n.timing}</p>
                 <h3 className="text-xs font-bold text-white">{n.title}</h3>
                 <p className="text-[11px] text-gray-500 leading-relaxed">{n.desc}</p>
               </div>
@@ -621,7 +621,7 @@ export default function LandingPage() {
 
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-white/[0.06]" />
-                  <span className="text-[10px] text-gray-600 uppercase tracking-wider">o con email</span>
+                  <span className="text-xs text-gray-600 uppercase tracking-wider">o con email</span>
                   <div className="flex-1 h-px bg-white/[0.06]" />
                 </div>
 
@@ -651,7 +651,7 @@ export default function LandingPage() {
               </>
             )}
 
-            <p className="text-center text-[10px] text-gray-700 leading-relaxed">
+            <p className="text-center text-xs text-gray-700 leading-relaxed">
               Sin contraseña · Datos seguros · Gratis para empezar
             </p>
           </div>

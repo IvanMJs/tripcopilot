@@ -4,8 +4,9 @@ import { useState, useMemo, Fragment } from "react";
 import toast from "react-hot-toast";
 import {
   Plus, X, Calendar, Share2, CheckCheck,
-  Plane, Trash2, Pencil, Copy,
+  Plane, Trash2, Pencil, Copy, Check,
   Save, PlaneTakeoff, ChevronRight, AlertTriangle, Clock, CheckCircle, Link,
+  Sparkles, Loader2, List, GitBranch,
 } from "lucide-react";
 import { AirportStatusMap, TripFlight, TripTab, Accommodation } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
@@ -29,6 +30,7 @@ import { useTsaWait } from "@/hooks/useTsaWait";
 import { FlightCard } from "./FlightCard";
 import { FlightCardSkeleton } from "./FlightCardSkeleton";
 import { TRIP_PANEL_LABELS } from "./TripPanelLabels";
+import { formatRelativeDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
 
@@ -86,6 +88,8 @@ export function TripPanel({
   const [showAddForm, setShowAddForm]   = useState(false);
   const [isRenamingTrip, setIsRenamingTrip]     = useState(false);
   const [renamingTripName, setRenamingTripName] = useState("");
+  const [saving, setSaving]             = useState(false);
+  const [viewMode, setViewMode]         = useState<"list" | "timeline">("list");
 
   const sorted = useMemo(
     () => [...trip.flights].sort((a, b) => {
@@ -229,7 +233,7 @@ export function TripPanel({
     const ok = await copyToClipboard(url);
     if (ok) analytics.sharedLink();
     setCopied(ok);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   }
 
   async function handleFamilyLink() {
@@ -281,7 +285,7 @@ export function TripPanel({
       {/* Trip header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-0.5">
             {locale === "es" ? "Viaje" : "Trip"}
           </p>
           {isRenamingTrip ? (
@@ -310,6 +314,7 @@ export function TripPanel({
                 <button
                   onClick={() => { setRenamingTripName(trip.name); setIsRenamingTrip(true); }}
                   title={locale === "es" ? "Renombrar viaje" : "Rename trip"}
+                  aria-label={locale === "es" ? "Editar" : "Edit"}
                   className="shrink-0 p-1 rounded-md text-gray-600 hover:text-gray-300 transition-colors"
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -361,7 +366,7 @@ export function TripPanel({
             <span className="text-violet-400">✏️</span>
             <div>
               <p className="text-xs font-bold text-violet-300">{locale === "es" ? "Borrador — no guardado" : "Draft — not saved"}</p>
-              <p className="text-[10px] text-violet-500">
+              <p className="text-xs text-violet-500">
                 {locale === "es"
                   ? `${trip.flights.length} vuelo${trip.flights.length !== 1 ? "s" : ""} · listo para guardar`
                   : `${trip.flights.length} flight${trip.flights.length !== 1 ? "s" : ""} · ready to save`}
@@ -369,11 +374,25 @@ export function TripPanel({
             </div>
           </div>
           <button
-            onClick={() => { navigator.vibrate?.(30); onSave?.(); }}
-            className="flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-bold text-white transition-colors shrink-0"
+            onClick={async () => {
+              navigator.vibrate?.(30);
+              setSaving(true);
+              try { await Promise.resolve(onSave?.()); } finally { setSaving(false); }
+            }}
+            disabled={saving}
+            className={`btn-primary flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shrink-0 ${saving ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            <Save className="h-3.5 w-3.5" />
-            {locale === "es" ? "Guardar viaje" : "Save trip"}
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {locale === "es" ? "Guardando..." : "Saving..."}
+              </>
+            ) : (
+              <>
+                <Save className="h-3.5 w-3.5" />
+                {locale === "es" ? "Guardar viaje" : "Save trip"}
+              </>
+            )}
           </button>
         </div>
       )}
@@ -386,18 +405,26 @@ export function TripPanel({
       {/* Trip Risk Score */}
       {sorted.length > 0 && <TripRiskBadge risk={riskScore} locale={locale} />}
 
-      {/* Trip Timeline */}
-      <TripTimeline flights={trip.flights} statusMap={statusMap} connectionMap={connectionMap} />
-
       {/* Flight cards */}
       {sorted.length === 0 ? (
-        <div className="flex flex-col items-center gap-6 py-12 text-center">
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-14 w-14 rounded-2xl bg-blue-950/40 border border-blue-800/30 flex items-center justify-center">
-              <PlaneTakeoff className="h-7 w-7 text-blue-400" />
-            </div>
-            <p className="text-sm font-semibold text-white">{locale === "es" ? "Tu itinerario está vacío" : "Your itinerary is empty"}</p>
-            <p className="text-xs text-gray-500 max-w-xs">{locale === "es" ? "Agregá tus vuelos para ver el riesgo de conexión, clima y alertas en tiempo real" : "Add your flights to see connection risk, weather and real-time alerts"}</p>
+        <div className="flex flex-col items-center gap-5 py-12 px-6 text-center">
+          <svg viewBox="0 0 120 80" className="w-32 h-20 opacity-50" fill="none">
+            <ellipse cx="30" cy="62" rx="26" ry="12" fill="rgba(139,92,246,0.15)" />
+            <ellipse cx="75" cy="57" rx="36" ry="16" fill="rgba(139,92,246,0.12)" />
+            <ellipse cx="95" cy="63" rx="20" ry="10" fill="rgba(139,92,246,0.15)" />
+            <path d="M18 38 L54 26 L92 31 L76 40 L54 38 Z" fill="rgba(139,92,246,0.55)" />
+            <path d="M54 38 L57 56 L48 52 Z" fill="rgba(139,92,246,0.45)" />
+            <path d="M26 35 L38 28 L42 33 Z" fill="rgba(139,92,246,0.35)" />
+          </svg>
+          <div>
+            <p className="text-base font-semibold text-gray-200 mb-1.5">
+              {locale === "es" ? "Tu viaje te espera" : "Your journey awaits"}
+            </p>
+            <p className="text-sm text-gray-500 max-w-xs mx-auto leading-relaxed">
+              {locale === "es"
+                ? "Importá el texto de tu reserva y la IA extrae todos los vuelos"
+                : "Paste your booking text and AI extracts all flights instantly"}
+            </p>
           </div>
 
           {/* 3 micro-steps */}
@@ -421,6 +448,14 @@ export function TripPanel({
             <Plus className="h-4 w-4" />
             {locale === "es" ? "Agregar primer vuelo" : "Add first flight"}
           </button>
+
+          <button
+            onClick={() => setShowImport(true)}
+            className="btn-primary w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
+          >
+            <Sparkles className="w-4 h-4" />
+            {locale === "es" ? "Importar vuelos con IA" : "Import flights with AI"}
+          </button>
         </div>
       ) : loading ? (
         <div className="space-y-4">
@@ -428,74 +463,152 @@ export function TripPanel({
         </div>
       ) : (
         <div className="space-y-0">
-          {sorted.map((flight, idx) => {
-            const acc = trip.accommodations.find((a) => a.flightId === flight.id) ?? null;
-            const connAnalysis = connByFlight.get(flight.id);
-            return (
-              <Fragment key={flight.id}>
-                <div className="mb-4">
-                  <FlightCard
-                    flight={flight}
-                    statusMap={statusMap}
-                    weatherMap={weatherMap}
-                    locale={locale}
-                    onRemove={() => onRemoveFlight(trip.id, flight.id)}
-                    idx={idx}
-                    connectionToNext={connAnalysis}
-                    nextDestination={sorted[idx + 1]?.destinationCode}
-                    nextDate={sorted[idx + 1]?.isoDate}
-                    tafData={tafMap[flight.originCode]}
-                    activeSigmets={sigmetsByFlight.get(flight.id)}
-                    tsaData={tsaData[flight.originCode]}
-                    accommodation={acc}
-                    onAddAccommodation={(data) =>
-                      onAddAccommodation(trip.id, {
-                        flightId:         flight.id,
-                        name:             data.name,
-                        checkInDate:      estimateArrivalDate(flight.isoDate, flight.departureTime, flight.arrivalBuffer),
-                        checkInTime:      data.checkInTime,
-                        checkOutDate:     sorted[idx + 1]?.isoDate,
-                        checkOutTime:     data.checkOutTime,
-                        confirmationCode: data.confirmationCode,
-                        address:          data.address,
-                      })
-                    }
-                    onRemoveAccommodation={() => acc && onRemoveAccommodation(trip.id, acc.id)}
-                    onEditAccommodation={(name, checkInTime, checkOutTime, confirmationCode, address) =>
-                      acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
-                    }
-                  />
-                </div>
-                {connAnalysis && connAnalysis.risk !== "safe" && idx < sorted.length - 1 && (
-                  <div className="flex items-center gap-2 my-1 px-2">
-                    <div className={`flex-1 h-px ${
-                      connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                        ? "bg-red-500/40"
-                        : "bg-yellow-500/40"
-                    }`} />
-                    <span className={`text-xs flex items-center gap-1 ${
-                      connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                        ? "text-red-400"
-                        : "text-yellow-400"
-                    }`}>
-                      <AlertTriangle className="w-3 h-3" />
-                      {connAnalysis.risk === "missed"
-                        ? (locale === "es" ? "Conexión imposible" : "Missed connection")
-                        : connAnalysis.risk === "at_risk"
-                        ? (locale === "es" ? "Conexión en riesgo" : "Connection at risk")
-                        : (locale === "es" ? "Conexión ajustada" : "Tight connection")
-                      }
-                    </span>
-                    <div className={`flex-1 h-px ${
-                      connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                        ? "bg-red-500/40"
-                        : "bg-yellow-500/40"
-                    }`} />
-                  </div>
-                )}
-              </Fragment>
-            );
-          })}
+          {/* View mode toggle + Timeline header */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+              {locale === "es" ? "Vuelos" : "Flights"}
+            </span>
+            <div className="flex items-center bg-white/5 rounded-lg p-0.5 gap-0.5">
+              <button
+                onClick={() => setViewMode("list")}
+                aria-label={locale === "es" ? "Vista lista" : "List view"}
+                className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode("timeline")}
+                aria-label={locale === "es" ? "Vista cronograma" : "Timeline view"}
+                className={`p-1.5 rounded-md transition-all ${viewMode === "timeline" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
+              >
+                <GitBranch className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {viewMode === "timeline" ? (
+            <TripTimeline flights={trip.flights} statusMap={statusMap} connectionMap={connectionMap} />
+          ) : (
+            (() => {
+              const todayIso = new Date().toISOString().slice(0, 10);
+              const todayFlights = sorted.filter((f) => f.isoDate === todayIso);
+              const otherFlights = sorted.filter((f) => f.isoDate !== todayIso);
+
+              function renderFlightCard(flight: TripFlight) {
+                const globalIdx = sorted.indexOf(flight);
+                const acc = trip.accommodations.find((a) => a.flightId === flight.id) ?? null;
+                const connAnalysis = connByFlight.get(flight.id);
+                return (
+                  <Fragment key={flight.id}>
+                    <div className="mb-4">
+                      <FlightCard
+                        flight={flight}
+                        statusMap={statusMap}
+                        weatherMap={weatherMap}
+                        locale={locale}
+                        onRemove={() => onRemoveFlight(trip.id, flight.id)}
+                        idx={globalIdx}
+                        connectionToNext={connAnalysis}
+                        nextDestination={sorted[globalIdx + 1]?.destinationCode}
+                        nextDate={sorted[globalIdx + 1]?.isoDate}
+                        tafData={tafMap[flight.originCode]}
+                        activeSigmets={sigmetsByFlight.get(flight.id)}
+                        tsaData={tsaData[flight.originCode]}
+                        accommodation={acc}
+                        onAddAccommodation={(data) =>
+                          onAddAccommodation(trip.id, {
+                            flightId:         flight.id,
+                            name:             data.name,
+                            checkInDate:      estimateArrivalDate(flight.isoDate, flight.departureTime, flight.arrivalBuffer),
+                            checkInTime:      data.checkInTime,
+                            checkOutDate:     sorted[globalIdx + 1]?.isoDate,
+                            checkOutTime:     data.checkOutTime,
+                            confirmationCode: data.confirmationCode,
+                            address:          data.address,
+                          })
+                        }
+                        onRemoveAccommodation={() => acc && onRemoveAccommodation(trip.id, acc.id)}
+                        onEditAccommodation={(name, checkInTime, checkOutTime, confirmationCode, address) =>
+                          acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
+                        }
+                      />
+                    </div>
+                    {connAnalysis && connAnalysis.risk !== "safe" && globalIdx < sorted.length - 1 && (
+                      <div className="flex items-center gap-2 my-1 px-2">
+                        <div className={`flex-1 h-px ${
+                          connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
+                            ? "bg-red-500/40"
+                            : "bg-yellow-500/40"
+                        }`} />
+                        <span className={`text-xs flex items-center gap-1 ${
+                          connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
+                            ? "text-red-400"
+                            : "text-yellow-400"
+                        }`}>
+                          <AlertTriangle className="w-3 h-3" />
+                          {connAnalysis.risk === "missed"
+                            ? (locale === "es" ? "Conexión imposible" : "Missed connection")
+                            : connAnalysis.risk === "at_risk"
+                            ? (locale === "es" ? "Conexión en riesgo" : "Connection at risk")
+                            : (locale === "es" ? "Conexión ajustada" : "Tight connection")
+                          }
+                        </span>
+                        <div className={`flex-1 h-px ${
+                          connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
+                            ? "bg-red-500/40"
+                            : "bg-yellow-500/40"
+                        }`} />
+                      </div>
+                    )}
+                  </Fragment>
+                );
+              }
+
+              // Group other flights by date
+              const grouped = otherFlights.reduce((acc, f) => {
+                (acc[f.isoDate] = acc[f.isoDate] || []).push(f);
+                return acc;
+              }, {} as Record<string, TripFlight[]>);
+
+              return (
+                <>
+                  {/* Today pinned section */}
+                  {todayFlights.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse inline-block" />
+                        <span className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">
+                          {locale === "es" ? "Hoy" : "Today"}
+                        </span>
+                      </div>
+                      {todayFlights.map((flight) => (
+                        <div key={flight.id} className="relative">
+                          <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-violet-600/30 to-transparent pointer-events-none" />
+                          <div className="relative">{renderFlightCard(flight)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Remaining flights grouped by date */}
+                  {Object.entries(grouped)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([date, dayFlights]) => (
+                      <div key={date}>
+                        <div className="flex items-center gap-3 my-3">
+                          <div className="flex-1 h-px bg-white/5" />
+                          <span className="text-xs text-gray-500 font-medium px-2">
+                            {formatRelativeDate(date, locale)}
+                          </span>
+                          <div className="flex-1 h-px bg-white/5" />
+                        </div>
+                        {dayFlights.map((flight) => renderFlightCard(flight))}
+                      </div>
+                    ))}
+                </>
+              );
+            })()
+          )}
         </div>
       )}
 
@@ -572,7 +685,7 @@ export function TripPanel({
               title={locale === "es" ? "Genera un link de seguimiento en tiempo real para tu familia" : "Generate a real-time tracking link for your family"}
               className="flex items-center gap-1.5 rounded-lg border border-violet-800/50 bg-violet-950/20 px-3 py-1.5 text-xs text-violet-400 hover:bg-violet-950/40 hover:text-violet-300 transition-colors"
             >
-              <Link className="h-3.5 w-3.5" />
+              {linkCopied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Link className="h-3.5 w-3.5" />}
               {linkCopied
                 ? (locale === "en" ? "Link copied!" : "¡Link copiado!")
                 : (locale === "en" ? "Family link" : "Link familiar")}
@@ -583,7 +696,7 @@ export function TripPanel({
             onClick={handleShareLink}
             className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-colors"
           >
-            {copied ? <CheckCheck className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
+            {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
             {copied
               ? (locale === "en" ? "Copied!" : "¡Copiado!")
               : (locale === "en" ? "Copy link" : "Copiar link")}
@@ -609,9 +722,10 @@ export function TripPanel({
         <div>
           {showAddForm && sorted.length > 0 && (
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{L.addMoreFlights}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">{L.addMoreFlights}</span>
               <button
                 onClick={() => setShowAddForm(false)}
+                aria-label={locale === "es" ? "Cerrar" : "Close"}
                 className="p-1 rounded-lg text-gray-600 hover:text-gray-300 transition-colors"
               >
                 <X className="h-4 w-4" />

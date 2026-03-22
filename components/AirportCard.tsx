@@ -33,7 +33,7 @@ function AirportClock({ iata }: { iata: string }) {
   return (
     <span className="flex items-center gap-1 text-xs text-gray-400 tabular font-medium">
       🕐 {time}
-      {tzLabel && <span className="text-gray-600 text-[10px]">{tzLabel}</span>}
+      {tzLabel && <span className="text-gray-600 text-xs">{tzLabel}</span>}
     </span>
   );
 }
@@ -328,13 +328,25 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
 
   const cardTranslateY = Math.min(pullOffset * 0.5, 40);
 
+  // P7: gradient top border based on status severity
+  const borderTopClass =
+    s === "ok"             ? "border-top-success" :
+    s === "delay_minor"    ? "border-top-warning" :
+    s === "delay_moderate" ? "border-top-warning" :
+    s === "delay_severe"   ? "border-top-danger"  :
+    s === "ground_delay"   ? "border-top-danger"  :
+    s === "ground_stop"    ? "border-top-danger"  :
+    "";
+
   return (
     <div
       className={cn(
         // Outer wrapper: border + bg + glow + hover lift
-        "relative rounded-xl border overflow-hidden transition-all duration-200 stagger-item",
+        // C4: breathing animation since data updates live
+        "animate-breathing relative rounded-xl border overflow-hidden transition-all duration-200 stagger-item",
         "hover:-translate-y-1 hover:shadow-card-hover",
         cs.border, cs.bg, cs.glow,
+        borderTopClass,
         highlight && "animate-highlight-flash"
       )}
       style={{ transform: `translateY(${cardTranslateY}px)`, transition: isPulling.current ? "none" : "transform 0.2s ease" }}
@@ -358,7 +370,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
         <button
           onClick={onRemove}
           className="absolute right-2 top-2 rounded-full p-1 text-gray-600 hover:bg-white/8 hover:text-gray-300 transition-colors z-10"
-          aria-label={`Remove ${iata}`}
+          aria-label={locale === "es" ? "Eliminar" : "Delete"}
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -366,7 +378,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
 
       <div className="pl-5 pr-4 pt-4 pb-0">
         <div className="mb-3 pr-6">
-          <span className="block text-4xl font-black tracking-tight text-white tabular">{iata}</span>
+          <span className="block text-4xl font-black tracking-tight text-white tabular font-mono">{iata}</span>
           <span className="text-xs text-gray-500 leading-tight">
             {name}
             {city && state ? ` · ${city}, ${state}` : city ? ` · ${city}` : ""}
@@ -451,7 +463,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
         const minutesAgo = Math.floor((Date.now() - new Date(status.lastChecked).getTime()) / 60000);
         return (
           <>
-            <p className="mt-3 text-[10px] text-gray-500 tabular">
+            <p className="mt-3 text-xs text-gray-500 tabular">
               {t.updated}:{" "}
               {status.lastChecked.toLocaleTimeString(locale === "en" ? "en-US" : "es-AR", { hour: "2-digit", minute: "2-digit" })}
             </p>
