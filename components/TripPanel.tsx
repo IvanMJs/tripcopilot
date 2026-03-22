@@ -8,7 +8,7 @@ import {
   Save, PlaneTakeoff, ChevronRight, AlertTriangle, Clock, CheckCircle, Link,
   Sparkles, Loader2, List, GitBranch,
 } from "lucide-react";
-import { AirportStatusMap, DelayStatus, TripFlight, TripTab, Accommodation } from "@/lib/types";
+import { AirportStatusMap, TripFlight, TripTab, Accommodation } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
 import { subtractHours } from "@/lib/flightUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -30,13 +30,9 @@ import { useTsaWait } from "@/hooks/useTsaWait";
 import { FlightCard } from "./FlightCard";
 import { FlightCardSkeleton } from "./FlightCardSkeleton";
 import { TRIP_PANEL_LABELS } from "./TripPanelLabels";
-import { formatRelativeDate, formatTimelineDate } from "@/lib/formatDate";
+import { formatRelativeDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
-import { LayoverGuide } from "./LayoverGuide";
-import { TripPassengers } from "./TripPassengers";
-import { TripExpenses } from "./TripExpenses";
-import { CarbonFootprint } from "./CarbonFootprint";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -58,17 +54,17 @@ interface TripPanelProps {
   onAddAccommodation: (tripId: string, acc: Omit<Accommodation, "id" | "tripId">) => void;
   onRemoveAccommodation: (tripId: string, accId: string) => void;
   onUpdateAccommodation: (tripId: string, accId: string, updates: Pick<Accommodation, "name" | "checkInTime" | "checkOutTime" | "confirmationCode" | "address">) => void;
-  onUpdateBoardingPass?: (tripId: string, flightId: string, url: string | null) => void;
-  onUpdatePassengers?: (tripId: string, passengers: import("@/lib/types").Passenger[]) => void;
-  onToggleUpgrade?: (tripId: string, flightId: string, wants: boolean) => void;
-  onUpdateCabinClass?: (tripId: string, flightId: string, cabin: import("@/lib/types").TripFlight["cabinClass"]) => void;
   onDeleteTrip?: () => void;
   onRenameTrip?: (name: string) => void;
   onDuplicateTrip?: () => void;
-  onViewAirports?: () => void;
+  onBoardingPassSaved?: (flightId: string, url: string | null) => void;
+  onToggleUpgrade?: (flightId: string, wants: boolean) => void;
   isDraft?: boolean;
   onSave?: () => void;
   loading?: boolean;
+  showDeviceTz?: boolean;
+  deviceTz?: string;
+  onToggleDeviceTz?: () => void;
 }
 
 export function TripPanel({
@@ -80,17 +76,17 @@ export function TripPanel({
   onAddAccommodation,
   onRemoveAccommodation,
   onUpdateAccommodation,
-  onUpdateBoardingPass,
-  onUpdatePassengers,
-  onToggleUpgrade,
-  onUpdateCabinClass,
   onDeleteTrip,
   onRenameTrip,
   onDuplicateTrip,
-  onViewAirports,
+  onBoardingPassSaved,
+  onToggleUpgrade,
   isDraft,
   onSave,
   loading,
+  showDeviceTz,
+  deviceTz,
+  onToggleDeviceTz,
 }: TripPanelProps) {
   const { locale } = useLanguage();
   const L = TRIP_PANEL_LABELS[locale];
@@ -419,51 +415,6 @@ export function TripPanel({
       {/* Trip Risk Score */}
       {sorted.length > 0 && <TripRiskBadge risk={riskScore} locale={locale} />}
 
-      {/* Airport strip — unique airports from trip flights */}
-      {sorted.length > 0 && (() => {
-        const uniqueAirports = Array.from(
-          new Set(sorted.flatMap((f) => [f.originCode, f.destinationCode]))
-        );
-        function getStatusDotClass(iata: string): string {
-          const s: DelayStatus = statusMap[iata]?.status ?? "unknown";
-          if (s === "ok") return "inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0";
-          if (s === "delay_minor" || s === "delay_moderate" || s === "delay_severe") {
-            return "inline-block w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0";
-          }
-          if (s === "ground_stop" || s === "ground_delay" || s === "closure") {
-            return "inline-block w-1.5 h-1.5 rounded-full bg-red-500 shrink-0";
-          }
-          return "inline-block w-1.5 h-1.5 rounded-full bg-gray-500 shrink-0";
-        }
-        return (
-          <div>
-            <p className="text-xs text-gray-500 mb-2">{"Monitor"}</p>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {uniqueAirports.map((iata) => (
-                <button
-                  key={iata}
-                  onClick={onViewAirports}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 text-sm whitespace-nowrap hover:bg-gray-700 transition-colors"
-                >
-                  <span className={getStatusDotClass(iata)} />
-                  <span className="font-mono font-bold text-gray-200">{iata}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Passengers */}
-      {!isDraft && onUpdatePassengers && (
-        <TripPassengers
-          tripId={trip.id}
-          passengers={trip.passengers ?? []}
-          onUpdate={onUpdatePassengers}
-          locale={locale}
-        />
-      )}
-
       {/* Flight cards */}
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center gap-5 py-12 px-6 text-center">
@@ -521,7 +472,7 @@ export function TripPanel({
           {[1, 2, 3].map((i) => <FlightCardSkeleton key={i} />)}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-0">
           {/* View mode toggle + Timeline header */}
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
@@ -552,16 +503,6 @@ export function TripPanel({
               const todayIso = new Date().toISOString().slice(0, 10);
               const todayFlights = sorted.filter((f) => f.isoDate === todayIso);
               const otherFlights = sorted.filter((f) => f.isoDate !== todayIso);
-              // Collect accommodation-only dates: accommodations whose checkInDate
-              // differs from any flight's isoDate, so they appear as standalone day blocks
-              const flightDates = new Set(sorted.map((f) => f.isoDate));
-              const standaloneAccsByDate: Record<string, Accommodation[]> = {};
-              for (const acc of trip.accommodations) {
-                const d = acc.checkInDate;
-                if (d && !flightDates.has(d)) {
-                  (standaloneAccsByDate[d] = standaloneAccsByDate[d] ?? []).push(acc);
-                }
-              }
 
               function renderFlightCard(flight: TripFlight) {
                 const globalIdx = sorted.indexOf(flight);
@@ -600,10 +541,11 @@ export function TripPanel({
                         onEditAccommodation={(name, checkInTime, checkOutTime, confirmationCode, address) =>
                           acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
                         }
-                        onBoardingPassSaved={(url) => onUpdateBoardingPass?.(trip.id, flight.id, url)}
-                        onToggleUpgrade={onToggleUpgrade
-                          ? (flightId, wants) => onToggleUpgrade(trip.id, flightId, wants)
-                          : undefined}
+                        onBoardingPassSaved={(url) => onBoardingPassSaved?.(flight.id, url)}
+                        onToggleUpgrade={onToggleUpgrade}
+                        showDeviceTz={showDeviceTz}
+                        deviceTz={deviceTz}
+                        onToggleDeviceTz={onToggleDeviceTz}
                       />
                     </div>
                     {connAnalysis && connAnalysis.risk !== "safe" && globalIdx < sorted.length - 1 && (
@@ -620,16 +562,10 @@ export function TripPanel({
                         }`}>
                           <AlertTriangle className="w-3 h-3" />
                           {connAnalysis.risk === "missed"
-                            ? (locale === "es"
-                                ? "No llegarías a tomar el siguiente vuelo"
-                                : "You'd likely miss the next flight")
+                            ? (locale === "es" ? "Conexión imposible" : "Missed connection")
                             : connAnalysis.risk === "at_risk"
-                            ? (locale === "es"
-                                ? `Conexión en riesgo — ${formatBuffer(connAnalysis.effectiveBufferMinutes)} en ${connAnalysis.connectionAirport}`
-                                : `At risk — ${formatBuffer(connAnalysis.effectiveBufferMinutes)} to connect in ${connAnalysis.connectionAirport}`)
-                            : (locale === "es"
-                                ? `Justo — ${formatBuffer(connAnalysis.effectiveBufferMinutes)} para cambiar de avión en ${connAnalysis.connectionAirport}`
-                                : `Tight — ${formatBuffer(connAnalysis.effectiveBufferMinutes)} to connect in ${connAnalysis.connectionAirport}`)
+                            ? (locale === "es" ? "Conexión en riesgo" : "Connection at risk")
+                            : (locale === "es" ? "Conexión ajustada" : "Tight connection")
                           }
                         </span>
                         <div className={`flex-1 h-px ${
@@ -638,13 +574,6 @@ export function TripPanel({
                             : "bg-yellow-500/40"
                         }`} />
                       </div>
-                    )}
-                    {connAnalysis && connAnalysis.scheduledBufferMinutes > 180 && connAnalysis.scheduledBufferMinutes < 1380 && globalIdx < sorted.length - 1 && (
-                      <LayoverGuide
-                        airportIata={connAnalysis.connectionAirport}
-                        bufferMinutes={connAnalysis.scheduledBufferMinutes}
-                        locale={locale}
-                      />
                     )}
                   </Fragment>
                 );
@@ -656,23 +585,15 @@ export function TripPanel({
                 return acc;
               }, {} as Record<string, TripFlight[]>);
 
-              // Merge flight dates + standalone accommodation dates for full sorted order
-              const allDates = Array.from(
-                new Set([...Object.keys(grouped), ...Object.keys(standaloneAccsByDate)])
-              ).sort((a, b) => a.localeCompare(b));
-
               return (
                 <>
                   {/* Today pinned section */}
                   {todayFlights.length > 0 && (
                     <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-3 px-1">
+                      <div className="flex items-center gap-2 mb-2 px-1">
                         <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse inline-block" />
                         <span className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">
                           {locale === "es" ? "Hoy" : "Today"}
-                        </span>
-                        <span className="text-[10px] text-gray-600 font-medium">
-                          {formatTimelineDate(todayIso, locale)}
                         </span>
                       </div>
                       {todayFlights.map((flight) => (
@@ -684,39 +605,21 @@ export function TripPanel({
                     </div>
                   )}
 
-                  {/* Remaining days — flights + standalone accommodations — grouped by date */}
-                  {allDates.map((date) => {
-                    const dayFlights = grouped[date] ?? [];
-                    const dayStandaloneAccs = standaloneAccsByDate[date] ?? [];
-                    return (
+                  {/* Remaining flights grouped by date */}
+                  {Object.entries(grouped)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([date, dayFlights]) => (
                       <div key={date}>
                         <div className="flex items-center gap-3 my-3">
                           <div className="flex-1 h-px bg-white/5" />
-                          <span className="text-[10px] text-gray-500 font-semibold tracking-wider px-2">
-                            {formatTimelineDate(date, locale)}
+                          <span className="text-xs text-gray-500 font-medium px-2">
+                            {formatRelativeDate(date, locale)}
                           </span>
                           <div className="flex-1 h-px bg-white/5" />
                         </div>
                         {dayFlights.map((flight) => renderFlightCard(flight))}
-                        {dayStandaloneAccs.map((acc) => (
-                          <div key={acc.id} className="mb-4 px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] flex items-start gap-3">
-                            <span className="text-base shrink-0">🏨</span>
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold text-gray-200 truncate">{acc.name}</p>
-                              {acc.checkInTime && (
-                                <p className="text-xs text-gray-500 mt-0.5">
-                                  {locale === "es" ? "Check-in" : "Check-in"}: {acc.checkInTime}
-                                </p>
-                              )}
-                              {acc.address && (
-                                <p className="text-xs text-gray-600 mt-0.5 truncate">{acc.address}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
                       </div>
-                    );
-                  })}
+                    ))}
                 </>
               );
             })()
@@ -818,20 +721,6 @@ export function TripPanel({
 
       {/* Trip guide */}
       {sorted.length > 0 && <TripAdvisor flights={advisorFlights} locale={locale} />}
-
-      {/* Trip expenses */}
-      {!isDraft && <TripExpenses tripId={trip.id} locale={locale} />}
-
-      {/* Carbon footprint */}
-      {sorted.length > 0 && (
-        <CarbonFootprint
-          flights={sorted}
-          locale={locale}
-          onUpdateCabinClass={onUpdateCabinClass
-            ? (flightId, cabin) => onUpdateCabinClass(trip.id, flightId, cabin)
-            : undefined}
-        />
-      )}
 
       {/* Add flight */}
       {sorted.length > 0 && !showAddForm && (

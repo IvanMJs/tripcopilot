@@ -1,6 +1,6 @@
 "use client";
 
-import { Plane, Globe, Trash2, ChevronDown, ArrowUpCircle, Check } from "lucide-react";
+import { Plane, Globe, Trash2, ChevronDown, Check, ArrowUpCircle } from "lucide-react";
 import { TripFlight, AirportStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TripPanelLabels } from "@/components/TripPanelLabels";
@@ -22,12 +22,15 @@ export interface FlightCardHeaderProps {
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
   onRemove: () => void;
+  // upgrade toggle
+  wantsUpgrade?: boolean;
+  onToggleUpgrade?: (flightId: string, value: boolean) => void;
   // expand toggle
   expanded: boolean;
   onToggleExpanded: () => void;
-  // upgrade wish
-  wantsUpgrade?: boolean;
-  onToggleUpgrade?: (flightId: string, wants: boolean) => void;
+  // device timezone display overrides
+  displayDepartureTime?: string;
+  displayArrivalTime?: string;
 }
 
 export function FlightCardHeader({
@@ -44,27 +47,30 @@ export function FlightCardHeader({
   onConfirmDelete,
   onCancelDelete,
   onRemove,
-  expanded,
-  onToggleExpanded,
   wantsUpgrade,
   onToggleUpgrade,
+  expanded,
+  onToggleExpanded,
+  displayDepartureTime,
+  displayArrivalTime,
 }: FlightCardHeaderProps) {
   const status = originStatus?.status ?? "ok";
 
   return (
     <>
       {/* ── Boarding-pass header (always visible) ─────────────────────────── */}
-      <div className={`pl-4 pr-5 pt-3 pb-2 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
-        {/* Row 1: flight code + trash only */}
+      <div className={`px-4 pt-3 pb-2 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
+        {/* Row 1: flight code + remove */}
         <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <Plane className="h-3.5 w-3.5 text-gray-500 shrink-0" />
-            <span className="text-sm font-bold tracking-wide text-white shrink-0">{flight.flightCode}</span>
+          <div className="flex items-center gap-2">
+            <Plane className="h-3.5 w-3.5 text-gray-500" />
+            <span className="text-sm font-bold tracking-wide text-white">{flight.flightCode}</span>
             {flight.airlineName && (
-              <span className="text-[11px] text-gray-500 truncate">{flight.airlineName}</span>
+              <span className="text-[11px] text-gray-500 truncate max-w-[120px]">{flight.airlineName}</span>
             )}
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
+            {/* Trash / confirm-delete */}
             {confirmDelete ? (
               <div className="flex items-center gap-1.5 animate-scale-in">
                 <button
@@ -89,6 +95,7 @@ export function FlightCardHeader({
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
+            {/* Upgrade toggle — moved from Row 1b */}
             {daysUntil > 0 && onToggleUpgrade && (
               <button
                 onClick={() => onToggleUpgrade(flight.id, !wantsUpgrade)}
@@ -119,7 +126,7 @@ export function FlightCardHeader({
           </div>
         </div>
 
-        {/* Row 1b: status badge */}
+        {/* Row 1b: status badge only */}
         <div className="flex items-center gap-1.5 mb-2">
           {isNonFAA && !originStatus ? (
             <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
@@ -133,8 +140,8 @@ export function FlightCardHeader({
           {/* Origin */}
           <div>
             <p className="text-2xl font-bold font-mono text-white leading-none">{flight.originCode}</p>
-            {flight.departureTime && (
-              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">{flight.departureTime}</p>
+            {(displayDepartureTime ?? flight.departureTime) && (
+              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">{displayDepartureTime ?? flight.departureTime}</p>
             )}
             <p className="text-xs text-gray-400 mt-0.5 truncate">{originName}</p>
           </div>
@@ -147,9 +154,9 @@ export function FlightCardHeader({
           {/* Destination */}
           <div className="text-right">
             <p className="text-2xl font-bold font-mono text-white leading-none">{flight.destinationCode}</p>
-            {(flight.arrivalTime || flight.arrivalDate) && (
+            {((displayArrivalTime ?? flight.arrivalTime) || flight.arrivalDate) && (
               <p className="text-lg font-semibold tabular-nums text-white mt-0.5">
-                {flight.arrivalTime ?? ""}
+                {displayArrivalTime ?? flight.arrivalTime ?? ""}
                 {flight.arrivalDate && flight.arrivalDate !== flight.isoDate && (
                   <sup className="text-xs text-gray-400 ml-0.5">+1</sup>
                 )}
@@ -162,7 +169,7 @@ export function FlightCardHeader({
         {/* Row 3: bottom strip */}
         <div className="border-t border-white/5 pt-2 flex items-center gap-2 flex-wrap text-[11px] text-gray-500">
           <DaysCountdown days={daysUntil} L={L} />
-          {flight.departureTime && (
+          {(displayDepartureTime ?? flight.departureTime) && (
             <span className="tabular-nums">
               {daysUntil === 0
                 ? (locale === "es" ? "Hoy" : "Today")
@@ -172,7 +179,7 @@ export function FlightCardHeader({
                     locale === "en" ? "en-US" : "es-AR",
                     { day: "2-digit", month: locale === "en" ? "short" : "2-digit" },
                   )}{" "}
-              {flight.departureTime}
+              {displayDepartureTime ?? flight.departureTime}
             </span>
           )}
           {flight.airlineName && (

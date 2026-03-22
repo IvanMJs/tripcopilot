@@ -13,6 +13,7 @@ import { TsaAirportData } from "@/hooks/useTsaWait";
 import { TRIP_PANEL_LABELS } from "@/components/TripPanelLabels";
 import { formatRelativeDate } from "@/lib/formatDate";
 import { getTzAbbr, getDaysUntil } from "./helpers";
+import { convertFlightTime } from "@/lib/airportTimezone";
 import { FlightCardHeader } from "./FlightCardHeader";
 import { FlightCardBody } from "./FlightCardBody";
 import { FlightCardAccommodation } from "./FlightCardAccommodation";
@@ -37,6 +38,9 @@ export interface FlightCardProps {
   onEditAccommodation: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
   onBoardingPassSaved: (url: string | null) => void;
   onToggleUpgrade?: (flightId: string, wants: boolean) => void;
+  showDeviceTz?: boolean;
+  deviceTz?: string;
+  onToggleDeviceTz?: () => void;
 }
 
 export function FlightCard({
@@ -58,6 +62,9 @@ export function FlightCard({
   onEditAccommodation,
   onBoardingPassSaved,
   onToggleUpgrade,
+  showDeviceTz,
+  deviceTz,
+  onToggleDeviceTz,
 }: FlightCardProps) {
   const L = TRIP_PANEL_LABELS[locale];
 
@@ -131,6 +138,20 @@ export function FlightCard({
   const originTz    = originInfo?.timezone ?? "UTC";
   const tzAbbr      = flight.departureTime ? getTzAbbr(originTz, flight.isoDate) : "";
 
+  const shouldShowDeviceTz = !!(showDeviceTz && deviceTz && deviceTz !== originTz);
+
+  const displayDepartureTime = shouldShowDeviceTz && flight.departureTime && deviceTz
+    ? convertFlightTime(flight.departureTime, flight.isoDate, originTz, deviceTz)
+    : flight.departureTime;
+
+  const displayArrivalTime = shouldShowDeviceTz && flight.arrivalTime && flight.arrivalDate && deviceTz
+    ? convertFlightTime(flight.arrivalTime, flight.arrivalDate, destInfo?.timezone ?? "UTC", deviceTz)
+    : flight.arrivalTime;
+
+  const displayTzAbbr = shouldShowDeviceTz && deviceTz
+    ? getTzAbbr(deviceTz, flight.isoDate)
+    : tzAbbr;
+
   const dateLabel = formatRelativeDate(flight.isoDate, locale);
   const daysUntil = getDaysUntil(flight.isoDate);
 
@@ -170,8 +191,7 @@ export function FlightCard({
   })();
 
   const showBoardingPassButton =
-    Boolean(flight.boardingPassUrl) ||
-    (hoursUntilDep !== null && hoursUntilDep < 24 && hoursUntilDep > -1);
+    hoursUntilDep !== null && hoursUntilDep < 4 && hoursUntilDep > -1;
 
   const originStatus = statusMap[flight.originCode];
   const status       = originStatus?.status ?? "unknown";
@@ -185,19 +205,6 @@ export function FlightCard({
     return getTafAtTime(tafData, depUnix);
   })();
 
-  const leftBorderClass = (() => {
-    if (status === "ground_stop" || status === "ground_delay" || status === "closure") {
-      return "border-l-2 border-l-red-500/60";
-    }
-    if (status === "delay_minor" || status === "delay_moderate" || status === "delay_severe") {
-      return "border-l-2 border-l-yellow-500/60";
-    }
-    if (status === "ok") {
-      return "border-l-2 border-l-emerald-500/40";
-    }
-    return "";
-  })();
-
   return (
     <div
       id={`flight-card-${idx}`}
@@ -208,7 +215,7 @@ export function FlightCard({
         hasIssue                                                  ? "border-orange-600/50" :
         isImminent                                               ? "border-blue-700/40"   :
         "border-white/6"
-      } ${leftBorderClass} ${removing ? "opacity-0 -translate-x-6 scale-95" : "opacity-100 translate-x-0 scale-100"}`}
+      } ${removing ? "opacity-0 -translate-x-6 scale-95" : "opacity-100 translate-x-0 scale-100"}`}
       style={{ animationDelay: `${idx * 0.08}s` }}
     >
       {/* Swipe-to-delete: delete button revealed behind card */}
@@ -251,6 +258,8 @@ export function FlightCard({
           onToggleExpanded={() => setExpanded((v) => !v)}
           wantsUpgrade={flight.wantsUpgrade}
           onToggleUpgrade={onToggleUpgrade}
+          displayDepartureTime={displayDepartureTime ?? undefined}
+          displayArrivalTime={displayArrivalTime ?? undefined}
         />
 
         <FlightCardBody
@@ -263,6 +272,8 @@ export function FlightCard({
           arrivalRec={arrivalRec}
           arrivalNote={arrivalNote}
           tzAbbr={tzAbbr}
+          displayTzAbbr={displayTzAbbr}
+          displayDepartureTime={displayDepartureTime ?? undefined}
           originName={originName}
           destName={destName}
           originInfo={originInfo}
@@ -279,6 +290,8 @@ export function FlightCard({
           activeSigmets={activeSigmets}
           tsaData={tsaData}
           connectionToNext={connectionToNext}
+          showDeviceTz={shouldShowDeviceTz}
+          onToggleDeviceTz={deviceTz && deviceTz !== originTz ? onToggleDeviceTz : undefined}
         />
 
         <FlightCardAccommodation

@@ -185,6 +185,20 @@ export function getAirportTime(iata: string): string | null {
 }
 
 /**
+ * Returns a short timezone label like "ET", "CT", "ART", etc.
+ */
+export function getAirportTzLabel(iata: string): string | null {
+  const tz = AIRPORT_TZ[iata];
+  if (!tz) return null;
+  // Extract the short abbreviation from the browser
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    timeZoneName: "short",
+  }).formatToParts(new Date());
+  return parts.find((p) => p.type === "timeZoneName")?.value ?? null;
+}
+
+/**
  * Converts a raw longOffset timezone name (e.g. "GMT-05:00", "GMT+05:30", "GMT")
  * to a consistent UTC±X label (e.g. "UTC-5", "UTC+5:30", "UTC").
  */
@@ -200,19 +214,75 @@ export function formatTzOffset(timezone: string, date: Date): string {
       .replace(/^GMT$/, "UTC")
       .replace(/^GMT([+-])0?(\d{1,2}):00$/, (_, sign, h) => `UTC${sign}${parseInt(h)}`)
       .replace(/^GMT([+-])0?(\d{1,2}):(\d{2})$/, (_, sign, h, m) => `UTC${sign}${parseInt(h)}:${m}`)
-      .replace(/^UTC[+-]0$/, "UTC"); // collapse UTC+0 or UTC-0 → UTC
+      .replace(/^UTC[+-]0$/, "UTC");
   } catch {
     return "";
   }
 }
 
 /**
- * Returns a consistent UTC±X timezone label for the given airport,
- * or null if the timezone is unknown.
+ * Convert a flight time string from one IANA timezone to another.
+ * E.g., "20:30" in "America/Argentina/Buenos_Aires" → "19:30" in "America/New_York"
+ * Uses the isoDate to correctly account for DST transitions.
  */
-export function getAirportTzLabel(iata: string): string | null {
-  const tz = AIRPORT_TZ[iata];
-  if (!tz) return null;
-  const label = formatTzOffset(tz, new Date());
-  return label || null;
+export function convertFlightTime(
+  timeStr: string,
+  isoDate: string,
+  fromTz: string,
+  toTz: string,
+): string {
+  try {
+    if (fromTz === toTz) return timeStr;
+    const [h, m] = timeStr.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return timeStr;
+
+    // Use the actual departure clock time to compute the UTC offset in fromTz
+    // This correctly handles DST transitions (e.g., clocks at 02:00 on DST change day)
+    const refStr = `${isoDate}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+    // Interpret refStr as a UTC timestamp, then ask Intl what local time that is in fromTz
+    // But we want the reverse: given local time in fromTz, find UTC.
+    // Strategy: binary-search-free — use the offset at that moment via Intl.
+    const utcRef = new Date(refStr + "Z"); // naive UTC: treats HH:mm as UTC
+    const fromParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: fromTz,
+      hour: "2-digit", minute: "2-digit",
+      hour12: false,
+    }).formatToParts(utcRef);
+    const fromH = parseInt(fromParts.find((p) => p.type === "hour")?.value ?? "0") % 24;
+    const fromM = parseInt(fromParts.find((p) => p.type === "minute")?.value ?? "0");
+
+    // Difference between naive-UTC interpretation and actual fromTz local time
+    // This gives us the UTC offset at that moment
+    const diffMin = (h * 60 + m) - (fromH * 60 + fromM);
+    // diffMin = localMin - utcMin = offset (e.g., UTC-3 → diffMin = -3*60 = -180)
+
+    // Now compute the true UTC timestamp for this local departure time
+    const [yr, mo, dy] = isoDate.split("-").map(Number);
+    const midnightUtcMs = Date.UTC(yr, mo - 1, dy);
+    const depUtcMs = midnightUtcMs + (h * 60 + m - diffMin) * 60_000;
+
+    // Format in target timezone
+    const toParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: toTz,
+      hour: "2-digit", minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date(depUtcMs));
+    const toH = parseInt(toParts.find((p) => p.type === "hour")?.value ?? "0") % 24;
+    const toM = parseInt(toParts.find((p) => p.type === "minute")?.value ?? "0");
+
+    return `${String(toH).padStart(2, "0")}:${String(toM).padStart(2, "0")}`;
+  } catch {
+    return timeStr;
+  }
+}
+
+/**
+ * Extract city name from an IANA timezone string.
+ * "America/New_York" → "New York", "Europe/London" → "London",
+ * "America/Argentina/Buenos_Aires" → "Buenos Aires"
+ */
+export function cityFromTimezone(tz: string): string {
+  const parts = tz.split("/");
+  const city = parts[parts.length - 1];
+  return city.replace(/_/g, " ");
 }

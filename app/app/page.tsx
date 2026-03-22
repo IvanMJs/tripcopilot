@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
-import { RefreshCw, Bell, HelpCircle, LogOut, MoreHorizontal } from "lucide-react";
+import { RefreshCw, Bell, HelpCircle, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
@@ -39,9 +39,8 @@ import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { makeExampleTrip } from "@/lib/exampleTrip";
 import { createClient } from "@/utils/supabase/client";
 import { GlobalAlertBar } from "@/components/GlobalAlertBar";
-import { ImportFlightsModal } from "@/components/ImportFlightsModal";
-import { ParsedFlight } from "@/lib/importFlights";
-import { PriceAlerts } from "@/components/PriceAlerts";
+import { useDeviceTimezone } from "@/hooks/useDeviceTimezone";
+import { TimezoneBanner } from "@/components/TimezoneBanner";
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -65,8 +64,6 @@ export default function HomePage() {
   const isOnline = useOnlineStatus();
   const router = useRouter();
   const [showNotifSheet, setShowNotifSheet] = useState(false);
-  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
-  const headerMenuRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTabRaw] = useState<string>("airports");
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
@@ -87,12 +84,8 @@ export default function HomePage() {
     addAccommodation: addAccommodationDB,
     removeAccommodation: removeAccommodationDB,
     updateAccommodation: updateAccommodationDB,
-    updateBoardingPass: updateBoardingPassDB,
-    updatePassengers: updatePassengersDB,
-    toggleUpgradeWish: toggleUpgradeWishDB,
     saveDraftTrip: saveDraftTripDB,
     duplicateTripWithLocale: duplicateTripWithLocaleDB,
-    updateCabinClass: updateCabinClassDB,
   } = useUserTrips();
 
   // All navigable tab IDs in display order for directional slide
@@ -124,8 +117,39 @@ export default function HomePage() {
   // Draft leave confirmation (shown when navigating away from unsaved draft)
   const [draftLeaveConfirm, setDraftLeaveConfirm] = useState<{ targetTab: string } | null>(null);
 
-  // Import modal triggered from the "no flights" banner inside a saved trip
-  const [importBannerTripId, setImportBannerTripId] = useState<string | null>(null);
+  // Device timezone detection
+  const [showDeviceTz, setShowDeviceTz] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("tripcopilot-show-device-tz") === "true";
+  });
+  const [showBanner, setShowBanner] = useState(false);
+
+  const { deviceTz, tzChanged, clearTzChanged } = useDeviceTimezone();
+
+  useEffect(() => {
+    if (tzChanged) {
+      setShowBanner(true);
+      clearTzChanged();
+    }
+  }, [tzChanged, clearTzChanged]);
+
+  function handleAcceptDeviceTz() {
+    setShowDeviceTz(true);
+    setShowBanner(false);
+    localStorage.setItem("tripcopilot-show-device-tz", "true");
+  }
+
+  function handleDismissBanner() {
+    setShowBanner(false);
+  }
+
+  function handleToggleDeviceTz() {
+    setShowDeviceTz((v) => {
+      const next = !v;
+      localStorage.setItem("tripcopilot-show-device-tz", String(next));
+      return next;
+    });
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -135,17 +159,6 @@ export default function HomePage() {
     }
   // locale intentionally omitted — locale might not be hydrated yet, example trip handles it statically
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Close header menu on outside click
-  useEffect(() => {
-    function handleMouseDown(e: MouseEvent) {
-      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
-        setShowHeaderMenu(false);
-      }
-    }
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
   // Check-in push notifications
@@ -470,39 +483,6 @@ export default function HomePage() {
         />
       )}
 
-      {importBannerTripId && (
-        <ImportFlightsModal
-          locale={locale}
-          onClose={() => setImportBannerTripId(null)}
-          onImport={(parsedFlights: ParsedFlight[]) => {
-            const tripId = importBannerTripId;
-            const trip = userTrips.find((t) => t.id === tripId);
-            if (!trip) return;
-            for (const pf of parsedFlights) {
-              const duplicate = trip.flights.some(
-                (f) => f.flightCode === pf.flightCode && f.isoDate === pf.isoDate,
-              );
-              if (!duplicate) {
-                addFlightDB(tripId, {
-                  id:              `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
-                  flightCode:      pf.flightCode,
-                  airlineCode:     pf.airlineCode,
-                  airlineName:     pf.airlineName,
-                  airlineIcao:     pf.airlineIcao,
-                  flightNumber:    pf.flightNumber,
-                  originCode:      pf.originCode,
-                  destinationCode: pf.destinationCode,
-                  isoDate:         pf.isoDate,
-                  departureTime:   pf.departureTime,
-                  arrivalBuffer:   pf.arrivalBuffer,
-                });
-              }
-            }
-            setImportBannerTripId(null);
-          }}
-        />
-      )}
-
       {/* Offline banner */}
       {mounted && !isOnline && (
         <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-2 bg-yellow-900/95 border-b border-yellow-700/60 px-4 py-2.5 backdrop-blur-sm"
@@ -541,13 +521,31 @@ export default function HomePage() {
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-              {/* Notification bell — always visible */}
+              {/* Theme toggle */}
+              <ThemeToggle />
+
+              {/* Language toggle */}
+              <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
+                {(["es", "en"] as Locale[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLocale(l)}
+                    className={`px-2.5 py-1.5 md:px-3 transition-colors ${
+                      locale === l ? "bg-blue-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200"
+                    }`}
+                  >
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              {/* Notification bell */}
               {mounted && (
                 <button
                   onClick={() => {
                     if (notificationsEnabled) {
                       disableNotifications();
-                      unsubscribeFromPush();
+                      unsubscribeFromPush(); // remove from server so cron stops sending
                     } else {
                       setShowNotifSheet(true);
                     }
@@ -568,7 +566,27 @@ export default function HomePage() {
                 </button>
               )}
 
-              {/* Refresh button — always visible */}
+              {/* Mobile logout */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center rounded-md border border-gray-700 bg-gray-900 p-1.5 text-gray-500 hover:text-red-400 hover:border-red-800/60 transition-colors md:hidden"
+                title={locale === "en" ? "Sign out" : "Cerrar sesión"}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Refresh interval — hidden on mobile */}
+              <select
+                value={refreshInterval}
+                onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                className="hidden sm:block rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {REFRESH_OPTIONS.map((min) => (
+                  <option key={min} value={min}>{min}m</option>
+                ))}
+              </select>
+
+              {/* Refresh button */}
               <button
                 onClick={refresh}
                 disabled={loading}
@@ -578,90 +596,38 @@ export default function HomePage() {
                 <span className="hidden sm:inline">{loading ? t.updating : t.update}</span>
               </button>
 
-              {/* ··· overflow menu */}
-              <div className="relative" ref={headerMenuRef}>
-                <button
-                  onClick={() => setShowHeaderMenu((v) => !v)}
-                  className="flex items-center rounded-md border border-gray-700 bg-gray-900 p-1.5 text-gray-400 hover:text-gray-200 hover:border-gray-600 transition-colors"
-                  title={locale === "en" ? "More options" : "Más opciones"}
-                  aria-expanded={showHeaderMenu}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
+              {/* Help — desktop only */}
+              <button
+                onClick={() => setActiveTab(activeTab === "help" ? "airports" : "help")}
+                title={locale === "en" ? "Help & documentation" : "Ayuda y documentación"}
+                className={`hidden md:flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                  activeTab === "help"
+                    ? "border-blue-700/60 bg-blue-900/20 text-blue-400"
+                    : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
 
-                {showHeaderMenu && (
-                  <div className="absolute right-0 top-full mt-1.5 z-50 w-52 rounded-xl border border-white/[0.08] bg-gray-950/95 shadow-2xl backdrop-blur-sm overflow-hidden">
-                    {/* Theme toggle */}
-                    <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/[0.05]">
-                      <span className="text-xs text-gray-400">{locale === "es" ? "Tema" : "Theme"}</span>
-                      <ThemeToggle />
-                    </div>
-
-                    {/* Language toggle */}
-                    <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/[0.05]">
-                      <span className="text-xs text-gray-400">{locale === "es" ? "Idioma" : "Language"}</span>
-                      <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
-                        {(["es", "en"] as Locale[]).map((l) => (
-                          <button
-                            key={l}
-                            onClick={() => setLocale(l)}
-                            className={`px-2.5 py-1 transition-colors ${
-                              locale === l ? "bg-blue-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200"
-                            }`}
-                          >
-                            {l.toUpperCase()}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Refresh interval */}
-                    <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-white/[0.05]">
-                      <span className="text-xs text-gray-400">{locale === "es" ? "Intervalo" : "Interval"}</span>
-                      <select
-                        value={refreshInterval}
-                        onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                        className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        {REFRESH_OPTIONS.map((min) => (
-                          <option key={min} value={min}>{min}m</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Refresh countdown */}
-                    <div className="px-3 py-2.5 border-b border-white/[0.05]">
-                      <RefreshCountdown
-                        secondsUntilRefresh={secondsUntilRefresh}
-                        totalSeconds={totalSeconds}
-                        lastUpdated={lastUpdated}
-                        isStale={isStale}
-                      />
-                    </div>
-
-                    {/* Help */}
-                    <button
-                      onClick={() => { setShowHeaderMenu(false); setActiveTab(activeTab === "help" ? "airports" : "help"); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2.5 text-xs transition-colors border-b border-white/[0.05] ${
-                        activeTab === "help" ? "text-blue-400" : "text-gray-400 hover:text-gray-200"
-                      }`}
-                    >
-                      <HelpCircle className="h-3.5 w-3.5" />
-                      {locale === "en" ? "Help & documentation" : "Ayuda y documentación"}
-                    </button>
-
-                    {/* Logout */}
-                    <button
-                      onClick={() => { setShowHeaderMenu(false); handleLogout(); }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-gray-400 hover:text-red-400 transition-colors"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      {locale === "en" ? "Sign out" : "Cerrar sesión"}
-                    </button>
-                  </div>
-                )}
-              </div>
+              {/* Logout — desktop only */}
+              <button
+                onClick={handleLogout}
+                title={locale === "en" ? "Sign out" : "Cerrar sesión"}
+                className="hidden md:flex items-center gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-2.5 py-1.5 text-xs text-gray-500 hover:border-red-800/60 hover:text-red-400 transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
             </div>
+          </div>
+
+          {/* RefreshCountdown — desktop only */}
+          <div className="hidden sm:block -mt-2">
+            <RefreshCountdown
+              secondsUntilRefresh={secondsUntilRefresh}
+              totalSeconds={totalSeconds}
+              lastUpdated={lastUpdated}
+              isStale={isStale}
+            />
           </div>
 
           {activeTab !== "flights" && (
@@ -689,6 +655,16 @@ export default function HomePage() {
             onDiscardDraft={discardDraft}
             onNewTrip={openCreateTripModal}
           />
+
+          {/* ── Timezone banner ── */}
+          {mounted && showBanner && (
+            <TimezoneBanner
+              deviceTz={deviceTz}
+              locale={locale}
+              onAccept={handleAcceptDeviceTz}
+              onDismiss={handleDismissBanner}
+            />
+          )}
 
           {/* ── Tab content ── */}
           <ErrorBoundary>
@@ -724,11 +700,7 @@ export default function HomePage() {
             )}
 
             {activeTab === "flights" && (
-              <MyFlightsPanel
-                statusMap={statusMap}
-                weatherMap={weatherMap}
-                onImport={() => { navigateAway("trips"); openCreateTripModal(); }}
-              />
+              <MyFlightsPanel statusMap={statusMap} weatherMap={weatherMap} />
             )}
 
             {activeTab === "search" && (
@@ -740,21 +712,18 @@ export default function HomePage() {
             )}
 
             {activeTab === "trips" && (
-              <div className="space-y-4">
-                <TripListView
-                  trips={userTrips}
-                  statusMap={statusMap}
-                  locale={locale}
-                  loading={tripsLoading}
-                  onSelect={(id) => setActiveTab(id)}
-                  onCreateTrip={openCreateTripModal}
-                  onDeleteTrip={deleteTrip}
-                  exampleTrip={exampleTrip}
-                  onSelectExample={() => setActiveTab(EXAMPLE_ID)}
-                  onDismissExample={handleDismissExample}
-                />
-                <PriceAlerts locale={locale} />
-              </div>
+              <TripListView
+                trips={userTrips}
+                statusMap={statusMap}
+                locale={locale}
+                loading={tripsLoading}
+                onSelect={(id) => setActiveTab(id)}
+                onCreateTrip={openCreateTripModal}
+                onDeleteTrip={deleteTrip}
+                exampleTrip={exampleTrip}
+                onSelectExample={() => setActiveTab(EXAMPLE_ID)}
+                onDismissExample={handleDismissExample}
+              />
             )}
 
             {/* Trip loading skeleton */}
@@ -776,9 +745,11 @@ export default function HomePage() {
                 onUpdateAccommodation={() => {}}
                 onDeleteTrip={discardDraft}
                 onRenameTrip={(name) => renameTripFromPanel(DRAFT_ID, name)}
-                onViewAirports={() => setActiveTab("airports")}
                 isDraft={true}
                 onSave={saveDraftTrip}
+                showDeviceTz={showDeviceTz}
+                deviceTz={deviceTz}
+                onToggleDeviceTz={handleToggleDeviceTz}
               />
             )}
 
@@ -821,7 +792,9 @@ export default function HomePage() {
                   onAddAccommodation={() => {}}
                   onRemoveAccommodation={() => {}}
                   onUpdateAccommodation={() => {}}
-                  onViewAirports={() => setActiveTab("airports")}
+                  showDeviceTz={showDeviceTz}
+                  deviceTz={deviceTz}
+                  onToggleDeviceTz={handleToggleDeviceTz}
                 />
               </div>
             )}
@@ -829,28 +802,7 @@ export default function HomePage() {
             {/* Saved trip panels */}
             {!tripsLoading && userTrips.map((trip) =>
               activeTab === trip.id ? (
-                <div key={trip.id} className="space-y-4">
-                  {trip.flights.length === 0 && (
-                    <div className="rounded-xl border border-violet-700/30 bg-violet-950/20 px-5 py-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-100">
-                          {locale === "es" ? "Todavía no hay vuelos en este viaje" : "No flights in this trip yet"}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {locale === "es"
-                            ? "La IA puede cargarlos desde tu email o screenshot"
-                            : "AI can load them from your email or screenshot"}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setImportBannerTripId(trip.id)}
-                        className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-4 py-2.5 transition-all tap-scale"
-                      >
-                        📷 {locale === "es" ? "La IA carga tu vuelo" : "AI loads your flight"}
-                      </button>
-                    </div>
-                  )}
-                  <TripPanel
+                <TripPanel
                   key={trip.id}
                   trip={trip}
                   statusMap={statusMap}
@@ -873,16 +825,13 @@ export default function HomePage() {
                   onAddAccommodation={(_, acc) => addAccommodationDB(trip.id, acc)}
                   onRemoveAccommodation={(_, accId) => removeAccommodationDB(trip.id, accId)}
                   onUpdateAccommodation={(_, accId, updates) => updateAccommodationDB(trip.id, accId, updates)}
-                  onUpdateBoardingPass={(_, flightId, url) => updateBoardingPassDB(trip.id, flightId, url)}
-                  onUpdatePassengers={(_, passengers) => updatePassengersDB(trip.id, passengers)}
-                  onToggleUpgrade={(_, flightId, wants) => toggleUpgradeWishDB(trip.id, flightId, wants)}
-                  onUpdateCabinClass={(_, flightId, cabin) => updateCabinClassDB(trip.id, flightId, cabin)}
                   onDuplicateTrip={() => handleDuplicateTrip(trip.id)}
                   onDeleteTrip={() => deleteTrip(trip.id)}
                   onRenameTrip={(name) => renameTripFromPanel(trip.id, name)}
-                  onViewAirports={() => setActiveTab("airports")}
+                  showDeviceTz={showDeviceTz}
+                  deviceTz={deviceTz}
+                  onToggleDeviceTz={handleToggleDeviceTz}
                 />
-                </div>
               ) : null
             )}
             </div>

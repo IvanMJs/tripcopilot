@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { useNotificationLog } from "@/hooks/useNotificationLog";
 import { useFlightNotes } from "@/hooks/useFlightNotes";
-import { useFlightLive } from "@/hooks/useFlightLive";
 import { AirportStatusMap, TripFlight, AirportStatus } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
 import { WeatherData } from "@/hooks/useWeather";
@@ -22,7 +21,6 @@ import { TsaAirportData } from "@/hooks/useTsaWait";
 import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, TripPanelLabels } from "@/components/TripPanelLabels";
 import { getVisaRequirement } from "@/lib/visaRequirements";
 import { DaysCountdown, ExchangeRateRow } from "./helpers";
-import { LoungeInfo } from "@/components/LoungeInfo";
 
 export interface FlightCardBodyProps {
   flight: TripFlight;
@@ -35,6 +33,7 @@ export interface FlightCardBodyProps {
   arrivalRec: string | null;
   arrivalNote: string | null;
   tzAbbr: string;
+  displayTzAbbr?: string;
   originName: string;
   destName: string;
   originInfo: (typeof AIRPORTS)[string] | undefined;
@@ -52,6 +51,10 @@ export interface FlightCardBodyProps {
   activeSigmets: SigmetFeature[] | undefined;
   tsaData: TsaAirportData | undefined;
   connectionToNext: ConnectionAnalysis | undefined;
+  // device timezone
+  displayDepartureTime?: string;
+  showDeviceTz?: boolean;
+  onToggleDeviceTz?: () => void;
 }
 
 export function FlightCardBody({
@@ -64,6 +67,7 @@ export function FlightCardBody({
   arrivalRec,
   arrivalNote,
   tzAbbr,
+  displayTzAbbr,
   originName,
   destName,
   originInfo,
@@ -79,12 +83,14 @@ export function FlightCardBody({
   tafData,
   activeSigmets,
   tsaData,
+  displayDepartureTime,
+  showDeviceTz,
+  onToggleDeviceTz,
 }: FlightCardBodyProps) {
   const originStatus: AirportStatus | undefined = statusMap[flight.originCode];
   const weather = weatherMap[flight.originCode];
 
   const [showNotifLog, setShowNotifLog] = useState(false);
-  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const { logs: notifLogs, loading: notifLoading } = useNotificationLog(flight.id, showNotifLog);
 
   const flightKey = flight.id;
@@ -94,15 +100,8 @@ export function FlightCardBody({
   const [noteText, setNoteText] = useState("");
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const isToday = daysUntil === 0;
-  const { data: liveData, loading: liveLoading } = useFlightLive(
-    flight.flightCode,
-    flight.isoDate,
-    isToday,
-  );
-
   return (
-    <div className={`overflow-hidden transition-all duration-300 ease-out ${expanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}>
+    <div className={`overflow-hidden transition-all duration-300 ease-out ${expanded ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"}`}>
 
       {daysUntil === 1 && (
         <div className="px-4 py-2.5 bg-emerald-950/30 border-b border-emerald-800/40 flex items-center justify-between gap-3 flex-wrap">
@@ -133,9 +132,7 @@ export function FlightCardBody({
         </div>
       )}
 
-      {/* ── LEVEL 1: Always visible when expanded ───────────────────────────── */}
-
-      {/* SECTION 1: Airport status */}
+      {/* SECTION 1: Airport */}
       <div className={`px-4 py-3 border-t border-white/5 ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -160,13 +157,21 @@ export function FlightCardBody({
                 <span>{weather.description}</span>
               </div>
             )}
+            {tsaData && tsaData.avgWaitTime > 0 && (
+              <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
+                <span>🛡️</span>
+                <span>{locale === "en" ? "TSA avg wait:" : "Espera TSA prom:"}</span>
+                <span className={`font-semibold ${
+                  tsaData.avgWaitTime <= 15 ? "text-emerald-400" :
+                  tsaData.avgWaitTime <= 30 ? "text-yellow-400" : "text-orange-400"
+                }`}>{tsaData.avgWaitTime} min</span>
+              </div>
+            )}
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
-            {hasIssue && (
-              <LinkButton href={originUrl} variant="orange">
-                FlightAware
-              </LinkButton>
-            )}
+            <LinkButton href={originUrl} variant={hasIssue ? "orange" : "default"}>
+              FlightAware
+            </LinkButton>
           </div>
         </div>
 
@@ -177,6 +182,10 @@ export function FlightCardBody({
                 <Zap className="h-3 w-3" />
                 {locale === "en" ? "FAA Live Alert" : "Alerta FAA en vivo"}
               </span>
+              <a href={originUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs text-orange-500/70 hover:text-orange-400 transition-colors">
+                FlightAware ↗
+              </a>
             </div>
             {originStatus?.delays && (
               <p className="text-orange-200">
@@ -202,7 +211,40 @@ export function FlightCardBody({
         )}
       </div>
 
-      {/* SECTION: My flight — departure time + arrival recommendation */}
+      {/* SECTION 2: Route */}
+      <div className="px-4 py-3 border-t border-white/5">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">
+              {L.sectionRoute}
+            </p>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-bold text-white font-mono">{flight.originCode}</span>
+              <Plane className="h-3.5 w-3.5 text-gray-700" />
+              <span className="font-bold text-gray-400 font-mono">{flight.destinationCode}</span>
+              <span className="text-gray-700">·</span>
+              <span className="text-gray-500 text-xs">{originName} → {destName}</span>
+            </div>
+            {/* Visa indicator */}
+            {(() => {
+              const visa = getVisaRequirement(flight.destinationCode);
+              if (!visa) return null;
+              return visa.required ? (
+                <span className="text-xs text-amber-400">🛂 {visa.notes}</span>
+              ) : (
+                <span className="text-xs text-green-400">✅ {visa.notes}</span>
+              );
+            })()}
+            {/* Exchange rate */}
+            <ExchangeRateRow destinationCode={flight.destinationCode} />
+          </div>
+          <LinkButton href={routeUrl} variant="default">
+            {L.seeOtherFlights(flight.originCode, flight.destinationCode)}
+          </LinkButton>
+        </div>
+      </div>
+
+      {/* SECTION 3: My flight */}
       <div className="px-4 py-3 border-t border-white/5 bg-white/[0.01]">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2">
           {L.sectionFlight}
@@ -230,11 +272,21 @@ export function FlightCardBody({
               <span className="flex items-center gap-1.5 text-gray-400">
                 <Clock className="h-3.5 w-3.5 text-gray-600" />
                 {L.departs}{" "}
-                <span className="font-bold text-white ml-1 tabular-nums">{flight.departureTime}</span>
-                {tzAbbr && (
-                  <span className="text-xs text-gray-500">
-                    ({locale === "es" ? `hora local de ${originName}` : `local time in ${originName}`})
+                <span className="font-bold text-white ml-1 tabular-nums">{displayDepartureTime ?? flight.departureTime}</span>
+                {(displayTzAbbr ?? tzAbbr) && (
+                  <span className="text-xs font-medium text-gray-500 bg-white/5 border border-white/8 rounded px-1 py-0.5">
+                    {displayTzAbbr ?? tzAbbr}
                   </span>
+                )}
+                {onToggleDeviceTz && (
+                  <button
+                    onClick={onToggleDeviceTz}
+                    className="text-[10px] text-blue-400/70 hover:text-blue-400 transition-colors underline-offset-2 hover:underline ml-1"
+                  >
+                    {showDeviceTz
+                      ? (locale === "es" ? "ver hora del aeropuerto" : "show airport time")
+                      : (locale === "es" ? "ver en mi hora" : "show in my time")}
+                  </button>
                 )}
               </span>
               {arrivalRec && (
@@ -252,66 +304,7 @@ export function FlightCardBody({
         </div>
       </div>
 
-      {/* SECTION: Live flight status */}
-      <FlightStatusBadge
-        flightIata={flight.flightCode.replace(/\s+/g, "")}
-        isoDate={flight.isoDate}
-        locale={locale}
-      />
-
-      {/* SECTION: Gate / Terminal */}
-      {daysUntil >= 0 && (() => {
-        const airlineAppUrl = AIRLINE_APP_URLS[flight.airlineCode] ?? null;
-        const isToday = daysUntil === 0;
-        return (
-          <div className={`px-4 py-3 border-t border-white/5 ${isToday ? "bg-yellow-950/15" : "bg-transparent"}`}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1.5">
-              <DoorOpen className="h-3 w-3" />
-              {L.sectionGate}
-              {isToday && (
-                <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded border border-yellow-600/50 bg-yellow-900/40 text-yellow-400 animate-pulse">
-                  LIVE
-                </span>
-              )}
-            </p>
-            {daysUntil > 3 && (
-              <div className="space-y-2">
-                <p className="text-xs text-gray-500">{L.gateNotAssigned}</p>
-                <LinkButton href={flightUrl} variant="blue">{L.gateLiveStatus} FlightAware</LinkButton>
-              </div>
-            )}
-            {daysUntil >= 1 && daysUntil <= 3 && (
-              <div className="space-y-2">
-                <p className="text-xs text-gray-500">{L.gateConfirmSoon}</p>
-                <LinkButton href={flightUrl} variant="blue">{L.gateLiveStatus} FlightAware</LinkButton>
-              </div>
-            )}
-            {isToday && (
-              <div className="space-y-2">
-                <p className="text-xs text-yellow-300/80">{L.gateLiveDay}</p>
-                <p className="text-xs text-gray-500">{L.gateCheckApp}</p>
-                <div className="flex gap-2 flex-wrap">
-                  <LinkButton href={flightUrl} variant="blue">{L.gateLiveStatus} FlightAware</LinkButton>
-                  {airlineAppUrl && (
-                    <LinkButton href={airlineAppUrl} variant="default">{L.airlineApp}</LinkButton>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* SECTION: Lounge finder — only when flight is today or tomorrow */}
-      {daysUntil <= 1 && (
-        <LoungeInfo
-          airportIata={flight.originCode}
-          airlineCode={flight.airlineCode}
-          locale={locale}
-        />
-      )}
-
-      {/* SECTION: Flight notes */}
+      {/* SECTION 3n: Flight notes */}
       <div className="px-4 py-2.5 border-t border-white/5">
         {currentNote && !showNoteInput && (
           <div className="flex items-start gap-1.5 mb-1.5">
@@ -364,282 +357,185 @@ export function FlightCardBody({
         )}
       </div>
 
-      {/* ── LEVEL 2 toggle ───────────────────────────────────────────────────── */}
-      <div className="border-t border-white/5">
-        <button
-          onClick={() => setShowTechnicalDetails((v) => !v)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] text-gray-500 hover:text-gray-400 transition-colors"
-        >
-          <span>
-            {showTechnicalDetails
-              ? (locale === "es" ? "Ocultar detalles del vuelo ↑" : "Hide flight details ↑")
-              : (locale === "es" ? "Ver detalles del vuelo ↓" : "See flight details ↓")}
-          </span>
-          {showTechnicalDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </button>
-      </div>
-
-      {/* ── LEVEL 2: On-demand technical details ─────────────────────────────── */}
-      {showTechnicalDetails && (
-        <>
-          {/* SECTION: Route */}
-          <div className="px-4 py-3 border-t border-white/5">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">
-                  {L.sectionRoute}
-                </p>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="font-bold text-white font-mono">{flight.originCode}</span>
-                  <Plane className="h-3.5 w-3.5 text-gray-700" />
-                  <span className="font-bold text-gray-400 font-mono">{flight.destinationCode}</span>
-                  <span className="text-gray-700">·</span>
-                  <span className="text-gray-500 text-xs">{originName} → {destName}</span>
-                </div>
-                {/* Visa indicator */}
-                {(() => {
-                  const visa = getVisaRequirement(flight.destinationCode);
-                  if (!visa) return null;
-                  return visa.required ? (
-                    <span className="text-xs text-amber-400">🛂 {visa.notes}</span>
-                  ) : (
-                    <span className="text-xs text-green-400">✅ {visa.notes}</span>
-                  );
-                })()}
-                {/* Exchange rate */}
-                <ExchangeRateRow destinationCode={flight.destinationCode} />
+      {/* SECTION 3c: Gate / Terminal */}
+      {daysUntil >= 0 && (() => {
+        const airlineAppUrl = AIRLINE_APP_URLS[flight.airlineCode] ?? null;
+        const isToday = daysUntil === 0;
+        return (
+          <div className={`px-4 py-3 border-t border-white/5 ${isToday ? "bg-yellow-950/15" : "bg-transparent"}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1.5">
+              <DoorOpen className="h-3 w-3" />
+              {L.sectionGate}
+              {isToday && (
+                <span className="ml-1 text-xs font-bold px-1.5 py-0.5 rounded border border-yellow-600/50 bg-yellow-900/40 text-yellow-400 animate-pulse">
+                  LIVE
+                </span>
+              )}
+            </p>
+            {daysUntil > 3 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500">{L.gateNotAssigned}</p>
+                <LinkButton href={flightUrl} variant="blue">{L.gateLiveStatus} FlightAware</LinkButton>
               </div>
-              <div className="flex flex-col gap-1.5 items-end">
-                <LinkButton href={flightUrl} variant="blue">
-                  <Plane className="h-3 w-3" />
-                  {L.trackFlight(flight.flightCode)}
-                </LinkButton>
-                <LinkButton href={routeUrl} variant="default">
-                  {L.seeOtherFlights(flight.originCode, flight.destinationCode)}
-                </LinkButton>
+            )}
+            {daysUntil >= 1 && daysUntil <= 3 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500">{L.gateConfirmSoon}</p>
+                <LinkButton href={flightUrl} variant="blue">{L.gateLiveStatus} FlightAware</LinkButton>
               </div>
-            </div>
-          </div>
-
-          {/* TSA wait times */}
-          {tsaData && tsaData.avgWaitTime > 0 && (
-            <div className="px-4 py-3 border-t border-white/5">
-              <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                <span>🛡️</span>
-                <span>{locale === "en" ? "TSA avg wait:" : "Espera TSA prom:"}</span>
-                <span className={`font-semibold ${
-                  tsaData.avgWaitTime <= 15 ? "text-emerald-400" :
-                  tsaData.avgWaitTime <= 30 ? "text-yellow-400" : "text-orange-400"
-                }`}>{tsaData.avgWaitTime} min</span>
-              </div>
-            </div>
-          )}
-
-          {/* TAF Forecast at departure */}
-          {relevantTafPeriod && (() => {
-            const p = relevantTafPeriod;
-            const fcStyles: Record<string, string> = {
-              VFR:  "bg-emerald-900/50 border-emerald-600/50 text-emerald-300",
-              MVFR: "bg-blue-900/50 border-blue-600/50 text-blue-300",
-              IFR:  "bg-orange-900/50 border-orange-600/50 text-orange-300",
-              LIFR: "bg-red-900/60 border-red-600/60 text-red-300 animate-pulse",
-            };
-            const fcStyle = fcStyles[p.flightCategory] ?? fcStyles["VFR"];
-            let windStr = p.windSpeedKt === 0 ? "CALM" : p.isVRB ? `VRB/${p.windSpeedKt}kt` : `${String(p.windDirDeg).padStart(3, "0")}°/${p.windSpeedKt}kt`;
-            if (p.windGustKt) windStr += ` G${p.windGustKt}kt`;
-            const visStr  = p.visibilitySM < 5 ? `${p.visibilitySM} SM` : null;
-            const ceilStr = p.ceilingFt != null && p.ceilingFt < 3000 ? `ceil ${p.ceilingFt}ft` : null;
-            const nowSec  = Math.floor(Date.now() / 1000);
-            const agoHours = Math.round((nowSec - (tafData?.issueTime ?? nowSec)) / 3600);
-            const issuedAgo = locale === "es" ? `Emitido hace ${agoHours}h` : `Issued ${agoHours}h ago`;
-            const infoChunks = [windStr, visStr, ceilStr, p.weatherString].filter(Boolean) as string[];
-            return (
-              <div className="px-4 py-3 border-t border-white/5 bg-blue-950/20">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2">{L.sectionForecast}</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${fcStyle}`}>{p.flightCategory}</span>
-                  <span className="text-xs text-gray-300 font-mono">{infoChunks.join("  ·  ")}</span>
-                  {p.changeType === "TEMPO" && (
-                    <span className="text-[11px] text-yellow-500/80 italic">
-                      {locale === "es" ? "(temporal)" : "(temporary)"}
-                    </span>
+            )}
+            {isToday && (
+              <div className="space-y-2">
+                <p className="text-xs text-yellow-300/80">{L.gateLiveDay}</p>
+                <p className="text-xs text-gray-500">{L.gateCheckApp}</p>
+                <div className="flex gap-2 flex-wrap">
+                  <LinkButton href={flightUrl} variant="blue">{L.gateLiveStatus} FlightAware</LinkButton>
+                  {airlineAppUrl && (
+                    <LinkButton href={airlineAppUrl} variant="default">{L.airlineApp}</LinkButton>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-500 mt-1.5">{issuedAgo}</p>
               </div>
-            );
-          })()}
+            )}
+          </div>
+        );
+      })()}
 
-          {/* SIGMET alerts on route */}
-          {activeSigmets && activeSigmets.length > 0 && (
-            <div className="px-4 py-3 border-t border-white/5 bg-purple-950/30">
-              <p className="text-xs font-semibold text-purple-300 flex items-center gap-1.5 mb-1.5">
-                <Zap className="h-3.5 w-3.5 text-purple-400" />
-                {activeSigmets.length} {L.sectionSigmet}
-              </p>
-              <ul className="space-y-0.5">
-                {activeSigmets.map((s, i) => {
-                  const validToDate = s.validTo ? new Date(s.validTo) : null;
-                  const validUntil = validToDate && !isNaN(validToDate.getTime())
-                    ? validToDate.toLocaleTimeString(locale === "en" ? "en-US" : "es-AR", { hour: "2-digit", minute: "2-digit", timeZoneName: "short" })
-                    : s.validTo;
-                  return (
-                    <li key={i} className="text-[11px] text-purple-200/70 leading-relaxed">
-                      &bull; {[s.hazard, s.severity].filter(Boolean).join(" ")}
-                      {validUntil && (
-                        <span className="text-purple-300/50">
-                          {" "}&middot; {locale === "en" ? "Valid until" : "Válido hasta"} {validUntil}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
+      {/* SECTION 3d: Live flight status */}
+      <FlightStatusBadge
+        flightIata={flight.flightCode.replace(/\s+/g, "")}
+        isoDate={flight.isoDate}
+        locale={locale}
+      />
+
+      {/* SECTION 3b: TAF Forecast at departure */}
+      {relevantTafPeriod && (() => {
+        const p = relevantTafPeriod;
+        const fcStyles: Record<string, string> = {
+          VFR:  "bg-emerald-900/50 border-emerald-600/50 text-emerald-300",
+          MVFR: "bg-blue-900/50 border-blue-600/50 text-blue-300",
+          IFR:  "bg-orange-900/50 border-orange-600/50 text-orange-300",
+          LIFR: "bg-red-900/60 border-red-600/60 text-red-300 animate-pulse",
+        };
+        const fcStyle = fcStyles[p.flightCategory] ?? fcStyles["VFR"];
+        let windStr = p.windSpeedKt === 0 ? "CALM" : p.isVRB ? `VRB/${p.windSpeedKt}kt` : `${String(p.windDirDeg).padStart(3, "0")}°/${p.windSpeedKt}kt`;
+        if (p.windGustKt) windStr += ` G${p.windGustKt}kt`;
+        const visStr  = p.visibilitySM < 5 ? `${p.visibilitySM} SM` : null;
+        const ceilStr = p.ceilingFt != null && p.ceilingFt < 3000 ? `ceil ${p.ceilingFt}ft` : null;
+        const nowSec  = Math.floor(Date.now() / 1000);
+        const agoHours = Math.round((nowSec - (tafData?.issueTime ?? nowSec)) / 3600);
+        const issuedAgo = locale === "es" ? `Emitido hace ${agoHours}h` : `Issued ${agoHours}h ago`;
+        const infoChunks = [windStr, visStr, ceilStr, p.weatherString].filter(Boolean) as string[];
+        return (
+          <div className="px-4 py-3 border-t border-white/5 bg-blue-950/20">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2">{L.sectionForecast}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${fcStyle}`}>{p.flightCategory}</span>
+              <span className="text-xs text-gray-300 font-mono">{infoChunks.join("  ·  ")}</span>
+              {p.changeType === "TEMPO" && (
+                <span className="text-[11px] text-yellow-500/80 italic">
+                  {locale === "es" ? "(temporal)" : "(temporary)"}
+                </span>
+              )}
             </div>
-          )}
+            <p className="text-[11px] text-gray-500 mt-1.5">{issuedAgo}</p>
+          </div>
+        );
+      })()}
 
-          {/* Live tracking */}
-          <div className={`px-4 py-3 border-t border-white/5 ${isImminent ? "bg-blue-950/15" : "bg-transparent"}`}>
+      {/* SECTION 3c: SIGMET alerts on route */}
+      {activeSigmets && activeSigmets.length > 0 && (
+        <div className="px-4 py-3 border-t border-white/5 bg-purple-950/30">
+          <p className="text-xs font-semibold text-purple-300 flex items-center gap-1.5 mb-1.5">
+            <Zap className="h-3.5 w-3.5 text-purple-400" />
+            {activeSigmets.length} {L.sectionSigmet}
+          </p>
+          <ul className="space-y-0.5">
+            {activeSigmets.map((s, i) => {
+              const validToDate = s.validTo ? new Date(s.validTo) : null;
+              const validUntil = validToDate && !isNaN(validToDate.getTime())
+                ? validToDate.toLocaleTimeString(locale === "en" ? "en-US" : "es-AR", { hour: "2-digit", minute: "2-digit", timeZoneName: "short" })
+                : s.validTo;
+              return (
+                <li key={i} className="text-[11px] text-purple-200/70 leading-relaxed">
+                  &bull; {[s.hazard, s.severity].filter(Boolean).join(" ")}
+                  {validUntil && (
+                    <span className="text-purple-300/50">
+                      {" "}&middot; {locale === "en" ? "Valid until" : "Válido hasta"} {validUntil}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* SECTION 4: Live tracking */}
+      <div className={`px-4 py-3 border-t border-white/5 ${isImminent ? "bg-blue-950/15" : "bg-transparent"}`}>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1.5">
               <Radar className="h-3 w-3" />
               {L.sectionTracking}
             </p>
-            {isToday ? (
-              liveLoading && !liveData ? (
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span className="inline-block w-3 h-3 border-2 border-gray-600 border-t-gray-300 rounded-full animate-spin" />
-                  {locale === "es" ? "Obteniendo estado en vivo..." : "Getting live status..."}
-                </div>
-              ) : liveData ? (
-                <div className="space-y-2">
-                  {/* Status badge */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {liveData.status === "enroute" && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-900/50 border border-emerald-600/50 text-emerald-300">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        {locale === "es" ? "En vuelo" : "En Route"}
-                      </span>
-                    )}
-                    {liveData.status === "landed" && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/50 border border-blue-600/50 text-blue-300">
-                        ✅ {locale === "es" ? "Aterrizó" : "Landed"}
-                      </span>
-                    )}
-                    {(liveData.status === "canceled") && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/50 border border-red-600/50 text-red-300">
-                        ❌ {locale === "es" ? "Cancelado" : "Canceled"}
-                      </span>
-                    )}
-                    {liveData.status === "scheduled" && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-800 border border-gray-600/50 text-gray-300">
-                        🕐 {locale === "es" ? "Programado" : "Scheduled"}
-                      </span>
-                    )}
-                    {liveData.status === "unknown" && (
-                      <span className="text-xs text-gray-500">
-                        {locale === "es" ? "Estado desconocido" : "Status unknown"}
-                      </span>
-                    )}
-                    {liveData.delayMinutes !== null && liveData.delayMinutes > 0 && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-900/50 border border-orange-600/50 text-orange-300">
-                        ⚠️ {locale === "es" ? `Demora de ${liveData.delayMinutes} min` : `Delayed ${liveData.delayMinutes} min`}
-                      </span>
-                    )}
-                  </div>
-                  {/* Progress bar */}
-                  {liveData.status === "enroute" && liveData.progress !== null && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] text-gray-500">
-                        <span>{flight.originCode}</span>
-                        <span className="text-gray-400 font-semibold">{liveData.progress}%</span>
-                        <span>{flight.destinationCode}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500 transition-all duration-500"
-                          style={{ width: `${liveData.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {/* Times */}
-                  <div className="flex gap-4 flex-wrap text-[11px] text-gray-400">
-                    {liveData.departedAt && (
-                      <span>
-                        {locale === "es" ? "Salió a las" : "Departed at"}{" "}
-                        <span className="font-semibold text-gray-200">{liveData.departedAt}</span>
-                      </span>
-                    )}
-                    {liveData.estimatedArrival && (
-                      <span>
-                        {locale === "es" ? "Llega estimado" : "Est. arrival"}{" "}
-                        <span className="font-semibold text-gray-200">{liveData.estimatedArrival}</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <p className="text-[11px] text-gray-500">{L.trackNote}</p>
-                  <LinkButton href={originUrl} variant="default">{L.trackInbound}</LinkButton>
-                </div>
-              )
-            ) : (
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <p className="text-[11px] text-gray-500">{L.trackNote}</p>
-                <LinkButton href={originUrl} variant="default">{L.trackInbound}</LinkButton>
-              </div>
-            )}
+            <p className="text-[11px] text-gray-500">{L.trackNote}</p>
           </div>
+          <div className="flex flex-col gap-1.5 items-end shrink-0">
+            <LinkButton href={flightUrl} variant="blue">
+              <Plane className="h-3 w-3" />
+              {L.trackFlight(flight.flightCode)}
+            </LinkButton>
+            <LinkButton href={originUrl} variant="default">{L.trackInbound}</LinkButton>
+          </div>
+        </div>
+      </div>
 
-          {/* Notification log */}
-          <div className="border-t border-white/5">
-            <button
-              onClick={() => setShowNotifLog((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] text-gray-500 hover:text-gray-400 transition-colors"
-            >
-              <span className="flex items-center gap-1.5">
-                <Bell className="h-3 w-3" />
-                {L.notifLogTitle}
-              </span>
-              {showNotifLog ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </button>
-            {showNotifLog && (
-              <div className="px-4 pb-3">
-                {notifLoading ? (
-                  <p className="text-[11px] text-gray-600">{L.notifLogLoading}</p>
-                ) : notifLogs.length === 0 ? (
-                  <p className="text-[11px] text-gray-600">{L.notifLogEmpty}</p>
-                ) : (
-                  <ul className="space-y-1">
-                    {notifLogs.map((entry, i) => {
-                      const typeLabel =
-                        L.notifTypes[entry.type] ??
-                        (entry.type.startsWith("delay_")
-                          ? locale === "es" ? "Alerta de estado" : "Status alert"
-                          : entry.type);
-                      const sentDate = new Date(entry.sent_at);
-                      const timeStr = sentDate.toLocaleString(
-                        locale === "en" ? "en-US" : "es-AR",
-                        { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" },
-                      );
-                      return (
-                        <li key={i} className="flex items-center justify-between gap-3 text-[11px]">
-                          <span className="flex items-center gap-1.5 text-gray-400">
-                            <span className="text-emerald-500">✓</span>
-                            {typeLabel}
-                          </span>
-                          <span className="text-gray-600 tabular-nums shrink-0">{timeStr}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
+      {/* Notification log */}
+      <div className="border-t border-white/5">
+        <button
+          onClick={() => setShowNotifLog((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] text-gray-500 hover:text-gray-400 transition-colors"
+        >
+          <span className="flex items-center gap-1.5">
+            <Bell className="h-3 w-3" />
+            {L.notifLogTitle}
+          </span>
+          {showNotifLog ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+        {showNotifLog && (
+          <div className="px-4 pb-3">
+            {notifLoading ? (
+              <p className="text-[11px] text-gray-600">{L.notifLogLoading}</p>
+            ) : notifLogs.length === 0 ? (
+              <p className="text-[11px] text-gray-600">{L.notifLogEmpty}</p>
+            ) : (
+              <ul className="space-y-1">
+                {notifLogs.map((entry, i) => {
+                  const typeLabel =
+                    L.notifTypes[entry.type] ??
+                    (entry.type.startsWith("delay_")
+                      ? locale === "es" ? "Alerta de estado" : "Status alert"
+                      : entry.type);
+                  const sentDate = new Date(entry.sent_at);
+                  const timeStr = sentDate.toLocaleString(
+                    locale === "en" ? "en-US" : "es-AR",
+                    { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" },
+                  );
+                  return (
+                    <li key={i} className="flex items-center justify-between gap-3 text-[11px]">
+                      <span className="flex items-center gap-1.5 text-gray-400">
+                        <span className="text-emerald-500">✓</span>
+                        {typeLabel}
+                      </span>
+                      <span className="text-gray-600 tabular-nums shrink-0">{timeStr}</span>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
-        </>
-      )}
+        )}
+      </div>
 
     </div>
   );
