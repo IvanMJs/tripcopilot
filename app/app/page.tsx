@@ -327,11 +327,13 @@ export default function HomePage() {
   async function saveDraftTrip() {
     if (!draftTrip) return;
     // Single atomic PostgreSQL transaction via RPC — no partial saves
-    const id = await saveDraftTripDB(draftTrip.name, draftTrip.flights, draftTrip.accommodations);
-    if (id) {
+    const result = await saveDraftTripDB(draftTrip.name, draftTrip.flights, draftTrip.accommodations);
+    if (result && "id" in result) {
       toast.success(locale === "es" ? "Viaje guardado ✓" : "Trip saved ✓");
       setDraftTrip(null);
-      setActiveTab(id);
+      setActiveTab(result.id);
+    } else if (result && "error" in result && result.error === "auth") {
+      toast.error(locale === "es" ? "Sesión expirada. Volvé a iniciar sesión." : "Session expired. Please sign in again.");
     } else {
       toast.error(locale === "es" ? "Error al guardar. Intentá de nuevo." : "Save failed. Please try again.");
     }
@@ -557,6 +559,12 @@ export default function HomePage() {
                       ? (locale === "en" ? "Notifications ON — tap to disable" : "Alertas activas — tap para desactivar")
                       : (locale === "en" ? "Enable notifications" : "Activar alertas")
                   }
+                  aria-label={
+                    notificationsEnabled
+                      ? (locale === "es" ? "Notificaciones push activas" : "Push notifications on")
+                      : (locale === "es" ? "Notificaciones push inactivas" : "Push notifications off")
+                  }
+                  aria-pressed={notificationsEnabled}
                   className={`flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs transition-colors ${
                     notificationsEnabled
                       ? "border-blue-700/60 bg-blue-900/20 text-blue-400"
@@ -573,6 +581,7 @@ export default function HomePage() {
                 onClick={handleLogout}
                 className="flex items-center justify-center rounded-md border border-gray-700 bg-gray-900 p-1.5 text-gray-500 hover:text-red-400 hover:border-red-800/60 transition-colors md:hidden"
                 title={locale === "en" ? "Sign out" : "Cerrar sesión"}
+                aria-label={locale === "es" ? "Cerrar sesión" : "Sign out"}
               >
                 <LogOut className="h-3.5 w-3.5" />
               </button>
@@ -581,6 +590,7 @@ export default function HomePage() {
               <select
                 value={refreshInterval}
                 onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                aria-label={locale === "es" ? "Intervalo de actualización" : "Refresh interval"}
                 className="hidden sm:block rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 {REFRESH_OPTIONS.map((min) => (
@@ -592,6 +602,7 @@ export default function HomePage() {
               <button
                 onClick={refresh}
                 disabled={loading}
+                aria-label={locale === "es" ? "Actualizar ahora" : "Refresh now"}
                 className="flex items-center justify-center gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />

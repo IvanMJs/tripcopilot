@@ -499,7 +499,7 @@ export function useUserTrips() {
     name: string,
     flights: TripFlight[],
     accommodations: Accommodation[],
-  ): Promise<string | null> => {
+  ): Promise<{ id: string } | { error: "auth" | "rpc"; message?: string } | null> => {
     const supabase = createClient();
 
     // Validate & refresh auth token before RPC — prevents silent failures on mobile
@@ -507,7 +507,7 @@ export function useUserTrips() {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (!user) {
       console.error("[saveDraftTrip] No authenticated user:", authError?.message);
-      return null;
+      return { error: "auth" };
     }
 
     // Normalize flights before RPC:
@@ -531,7 +531,7 @@ export function useUserTrips() {
 
     if (error || !data) {
       console.error("[saveDraftTrip] RPC error:", error?.message, "code:", error?.code);
-      return null;
+      return { error: "rpc", message: error?.message };
     }
 
     navigator.vibrate?.(30);
@@ -559,7 +559,7 @@ export function useUserTrips() {
       setTrips((prev) => [...prev, newTrip]);
     }
 
-    return newTripId;
+    return { id: newTripId };
   }, []);
 
   const duplicateTrip = useCallback(async (tripId: string): Promise<string | null> => {
