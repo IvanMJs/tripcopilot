@@ -28,6 +28,7 @@ import { TripAdvisor } from "./TripAdvisor";
 import { ImportFlightsModal } from "./ImportFlightsModal";
 import { CarbonFootprint } from "./CarbonFootprint";
 import { TripExpenses } from "./TripExpenses";
+import { TripBudgetCard } from "./TripBudgetCard";
 import { ParsedFlight } from "@/lib/importFlights";
 import { FlightCard } from "./FlightCard";
 import { FlightCardSkeleton } from "./FlightCardSkeleton";
@@ -494,7 +495,10 @@ export function TripPanel({
 
       {/* Expenses tab */}
       {panelTab === "expenses" && !isDraft && (
-        <TripExpenses tripId={trip.id} locale={locale} />
+        <>
+          <TripBudgetCard trip={trip} locale={locale} />
+          <TripExpenses tripId={trip.id} locale={locale} />
+        </>
       )}
 
       {/* Alerts tab */}
