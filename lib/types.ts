@@ -81,6 +81,21 @@ export interface Passenger {
   email?: string;
 }
 
+export type CollaboratorRole = "viewer" | "editor";
+
+export interface TripCollaborator {
+  id: string;
+  tripId: string;
+  inviterEmail?: string;
+  inviteeEmail: string;
+  inviteeId?: string | null;
+  role: CollaboratorRole;
+  status: "pending" | "accepted" | "declined";
+  inviteToken: string;
+  invitedAt: string;
+  acceptedAt?: string | null;
+}
+
 export interface TripExpense {
   id: string;
   tripId: string;
