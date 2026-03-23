@@ -40,11 +40,11 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0 pointer-events-none">
+      <div className="fixed inset-x-0 top-0 h-dvh z-50 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-x-0 top-0 h-dvh z-50 flex items-center justify-center px-4 pointer-events-none">
         <div
           ref={modalRef}
-          className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4 overflow-y-auto max-h-[85dvh] sm:max-h-none"
+          className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4 overflow-y-auto max-h-[80dvh]"
           style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
         >
           <div>
