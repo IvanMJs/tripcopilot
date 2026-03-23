@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Shield, Brain, Bell, Calendar, Search,
@@ -90,7 +90,15 @@ export default function LandingPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [priceUSD, setPriceUSD] = useState<number | null>(null);
   const loginRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/ars-price")
+      .then((r) => r.json())
+      .then((d: { usd: number | null }) => { if (d.usd !== null) setPriceUSD(d.usd); })
+      .catch(() => {});
+  }, []);
 
   function scrollToLogin() {
     loginRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -816,8 +824,13 @@ export default function LandingPage() {
               </div>
               <div className="text-gray-600 text-xl font-black">vs</div>
               <div className="rounded-2xl border border-emerald-700/30 bg-emerald-950/15 px-6 py-4 text-center">
-                <p className="text-2xl sm:text-3xl font-black text-emerald-400">$7/mes</p>
+                <p className="text-2xl sm:text-3xl font-black text-emerald-400">
+                  {priceUSD !== null ? `≈$${priceUSD}` : "$10.000 ARS"}<span className="text-lg">/mes</span>
+                </p>
                 <p className="text-xs text-gray-500 mt-1">TripCopilot monitoreando</p>
+                {priceUSD !== null && (
+                  <p className="text-[10px] text-gray-600 mt-0.5">$10.000 ARS · cotización del día</p>
+                )}
               </div>
             </div>
 

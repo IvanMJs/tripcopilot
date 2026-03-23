@@ -24,8 +24,7 @@ export const PLANS = {
   },
   premium: {
     name: "Premium",
-    priceMonthlyUSD: 4.99,
-    mpAmount: Number(process.env.MP_PRICE_AMOUNT ?? "4990"),
+    mpAmount: Number(process.env.MP_PRICE_AMOUNT ?? "1000000"), // 10.000 ARS in centavos
     mpCurrencyId: process.env.MP_CURRENCY_ID ?? "ARS",
     maxTrips: Infinity,
     maxFlightsPerTrip: Infinity,

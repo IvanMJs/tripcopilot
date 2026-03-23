@@ -111,7 +111,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                 PREMIUM
               </span>
               <p className="text-xl font-black text-white">{PLANS.premium.name}</p>
-              <p className="text-sm text-amber-400/80 mt-0.5">${PLANS.premium.priceMonthlyUSD}/mes</p>
+              <p className="text-sm text-amber-400/80 mt-0.5">$10.000 ARS/mes</p>
             </div>
 
             <ul className="space-y-2 flex-1">

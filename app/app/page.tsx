@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
-import { RefreshCw, Bell, HelpCircle, LogOut, Settings } from "lucide-react";
+import { Bell, HelpCircle, LogOut, Settings, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
@@ -61,7 +61,6 @@ const SEVERITY_ORDER: Record<DelayStatus, number> = {
   unknown:        7,
 };
 
-const REFRESH_OPTIONS = [5, 10, 15, 30];
 const FLIGHT_AIRPORTS = ["EZE", "MIA", "GCM", "JFK"];
 const DRAFT_ID   = "__draft__";
 const EXAMPLE_ID = "__example__";
@@ -77,8 +76,8 @@ export default function HomePage() {
   const [activeTab, setActiveTabRaw] = useState<string>("airports");
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef<string>("airports");
-  const [refreshInterval, setRefreshInterval] = useState(5);
   const [mounted, setMounted] = useState(false);
+  const [userPlan, setUserPlan] = useState<"free" | "premium" | null>(null);
 
   // DB-backed state
   const { airports: watchedAirports, add: addAirportDB, remove: removeAirportDB } = useWatchedAirports();
@@ -164,6 +163,17 @@ export default function HomePage() {
   }
 
   useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("user_profiles").select("plan").eq("id", user.id).single()
+        .then(({ data }) => {
+          setUserPlan((data as { plan?: string } | null)?.plan === "premium" ? "premium" : "free");
+        });
+    });
+  }, []);
+
+  useEffect(() => {
     setMounted(true);
     if (!localStorage.getItem("tripcopilot-onboarded")) {
       setShowOnboarding(true);
@@ -236,7 +246,7 @@ export default function HomePage() {
     notificationsEnabled,
     requestNotifications,
     disableNotifications,
-  } = useAirportStatus(refreshInterval, locale, showSwNotification);
+  } = useAirportStatus(5, locale, showSwNotification);
 
   // International airport status (AeroDataBox)
   const [intlStatusMap, setIntlStatusMap] = useState<AirportStatusMap>({});
@@ -634,6 +644,18 @@ export default function HomePage() {
                 </button>
               )}
 
+              {/* Upgrade CTA — free plan only */}
+              {userPlan === "free" && (
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="flex items-center gap-1.5 rounded-md border border-violet-600/50 bg-violet-500/10 px-2.5 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/20 transition-colors"
+                  title={locale === "es" ? "Mejorar a Premium" : "Upgrade to Premium"}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Pro</span>
+                </button>
+              )}
+
               {/* Mobile logout */}
               <button
                 onClick={handleLogout}
@@ -642,29 +664,6 @@ export default function HomePage() {
                 aria-label={locale === "es" ? "Cerrar sesión" : "Sign out"}
               >
                 <LogOut className="h-3.5 w-3.5" />
-              </button>
-
-              {/* Refresh interval — hidden on mobile */}
-              <select
-                value={refreshInterval}
-                onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                aria-label={locale === "es" ? "Intervalo de actualización" : "Refresh interval"}
-                className="hidden sm:block rounded-md border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {REFRESH_OPTIONS.map((min) => (
-                  <option key={min} value={min}>{min}m</option>
-                ))}
-              </select>
-
-              {/* Refresh button */}
-              <button
-                onClick={refresh}
-                disabled={loading}
-                aria-label={locale === "es" ? "Actualizar ahora" : "Refresh now"}
-                className="flex items-center justify-center gap-1.5 rounded-md border border-gray-700 bg-gray-900 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-                <span className="hidden sm:inline">{loading ? t.updating : t.update}</span>
               </button>
 
               {/* Help — desktop only */}
