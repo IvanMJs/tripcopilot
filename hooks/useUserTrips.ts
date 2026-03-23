@@ -501,6 +501,15 @@ export function useUserTrips() {
     accommodations: Accommodation[],
   ): Promise<string | null> => {
     const supabase = createClient();
+
+    // Validate & refresh auth token before RPC — prevents silent failures on mobile
+    // getUser() contacts Supabase server (unlike getSession() which is local-only)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (!user) {
+      console.error("[saveDraftTrip] No authenticated user:", authError?.message);
+      return null;
+    }
+
     const { data, error } = await supabase.rpc("save_draft_trip", {
       p_name:           name,
       p_flights:        flights,
@@ -508,7 +517,7 @@ export function useUserTrips() {
     });
 
     if (error || !data) {
-      console.error("[saveDraftTrip] RPC error:", error);
+      console.error("[saveDraftTrip] RPC error:", error?.message, "code:", error?.code);
       return null;
     }
 

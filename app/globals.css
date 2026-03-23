@@ -524,6 +524,12 @@ html.light .skeleton {
   }
 }
 
+/* Loading indicators must always animate — functional feedback, not decorative */
+.spin-always {
+  animation-duration: 2s !important;
+  animation-iteration-count: infinite !important;
+}
+
 /* ── Floating label inputs ─────────────────────────────────────────────────── */
 .input-float-wrapper {
   position: relative;

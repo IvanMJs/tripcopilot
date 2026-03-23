@@ -362,15 +362,19 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
               <div className="relative h-16 w-16">
                 {/* Glow ring */}
                 <div className="absolute inset-0 rounded-full border-2 border-violet-500/30 animate-ping" />
-                {/* Spinning avatar */}
-                <Image
-                  src="/tripcopliot-avatar.svg"
-                  alt="TripCopilot"
-                  width={64}
-                  height={64}
-                  className="rounded-full animate-spin"
+                {/* Spinning avatar — wrapper div ensures animate-spin works on all mobile browsers */}
+                <div
+                  className="rounded-full animate-spin spin-always overflow-hidden"
                   style={{ animationDuration: "2s" }}
-                />
+                >
+                  <Image
+                    src="/tripcopliot-avatar.svg"
+                    alt="TripCopilot"
+                    width={64}
+                    height={64}
+                    className="rounded-full"
+                  />
+                </div>
               </div>
               <p className="text-sm text-gray-400 animate-pulse">{t.parsing}</p>
             </div>
