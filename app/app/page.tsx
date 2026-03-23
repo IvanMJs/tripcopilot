@@ -43,6 +43,8 @@ import { useDeviceTimezone } from "@/hooks/useDeviceTimezone";
 import { TimezoneBanner } from "@/components/TimezoneBanner";
 import { TripAssistant } from "@/components/TripAssistant";
 import { DepartureBoard } from "@/components/DepartureBoard";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { PLANS } from "@/lib/stripe";
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -105,6 +107,9 @@ export default function HomePage() {
 
   // Create trip modal
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Upgrade modal (shown when free-plan user hits trip limit)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Draft trip — local only, not persisted until "Guardar viaje"
   const [draftTrip, setDraftTrip] = useState<{ name: string; flights: TripFlight[]; accommodations: Accommodation[] } | null>(null);
@@ -315,8 +320,31 @@ export default function HomePage() {
 
   // ── Trip management ───────────────────────────────────────────────────────
 
-  function openCreateTripModal() {
+  async function openCreateTripModal() {
     if (draftTrip) { setActiveTab(DRAFT_ID); return; }
+
+    // Soft free-plan limit check — non-blocking: if query fails, allow creating trip
+    if (userTrips.length >= PLANS.free.maxTrips) {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("plan")
+            .eq("id", user.id)
+            .single();
+          const plan = (profile as { plan?: string } | null)?.plan ?? "free";
+          if (plan === "free") {
+            setShowUpgradeModal(true);
+            return;
+          }
+        }
+      } catch {
+        // fail open — allow creating trip if check fails
+      }
+    }
+
     setShowCreateModal(true);
   }
 
@@ -445,6 +473,11 @@ export default function HomePage() {
           onStartFresh={handleOnboardingStartFresh}
         />
       )}
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
 
       <NotificationSetupSheet
         open={showNotifSheet}

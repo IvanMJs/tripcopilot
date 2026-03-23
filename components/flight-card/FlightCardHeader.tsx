@@ -5,6 +5,8 @@ import { TripFlight, AirportStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TripPanelLabels } from "@/components/TripPanelLabels";
 import { DaysCountdown } from "./helpers";
+import { useFlightLiveStatus } from "@/hooks/useFlightLiveStatus";
+import { LiveStatusPill } from "./LiveStatusPill";
 
 export interface FlightCardHeaderProps {
   flight: TripFlight;
@@ -55,6 +57,10 @@ export function FlightCardHeader({
   displayArrivalTime,
 }: FlightCardHeaderProps) {
   const status = originStatus?.status ?? "ok";
+
+  // daysUntil: 0 = today, 1 = tomorrow; only fetch live status for those days
+  const liveEnabled = daysUntil === 0 || daysUntil === 1;
+  const { liveData } = useFlightLiveStatus(flight.flightCode, flight.isoDate, liveEnabled);
 
   return (
     <>
@@ -133,12 +139,15 @@ export function FlightCardHeader({
           </div>
         </div>
 
-        {/* Row 1b: status badge only */}
-        <div className="flex items-center gap-1.5 mb-2">
+        {/* Row 1b: status badge + live status pill */}
+        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
           {isNonFAA && !originStatus ? (
             <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
           ) : (
             <StatusBadge status={status} className="text-sm px-3 py-1" />
+          )}
+          {liveData && liveEnabled && (
+            <LiveStatusPill liveData={liveData} locale={locale} />
           )}
         </div>
 
