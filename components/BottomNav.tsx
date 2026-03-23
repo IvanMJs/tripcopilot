@@ -49,6 +49,7 @@ export function BottomNav({
 
   return (
     <nav
+      aria-label={locale === "es" ? "Navegación principal" : "Main navigation"}
       className="fixed bottom-0 inset-x-0 z-50 md:hidden bottom-nav-bg"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
@@ -125,6 +126,7 @@ export function BottomNav({
                   onClick={() => { setRenameInPickerId(draftId); setRenameInPickerName(draftTrip.name); }}
                   className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/[0.06] transition-colors"
                   title={locale === "es" ? "Renombrar" : "Rename"}
+                  aria-label={locale === "es" ? "Renombrar borrador" : "Rename draft"}
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
@@ -134,6 +136,7 @@ export function BottomNav({
                   onClick={onDiscardDraft}
                   className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
                   title={locale === "es" ? "Descartar borrador" : "Discard draft"}
+                  aria-label={locale === "es" ? "Descartar borrador" : "Discard draft"}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -190,6 +193,7 @@ export function BottomNav({
                     onClick={() => { setRenameInPickerId(trip.id); setRenameInPickerName(trip.name); }}
                     className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/[0.06] transition-colors"
                     title={locale === "es" ? "Renombrar" : "Rename"}
+                    aria-label={locale === "es" ? `Renombrar viaje ${trip.name}` : `Rename trip ${trip.name}`}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
@@ -197,6 +201,7 @@ export function BottomNav({
                     onClick={() => onDeleteTrip(trip.id)}
                     className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
                     title={locale === "es" ? "Eliminar" : "Delete"}
+                    aria-label={locale === "es" ? `Eliminar viaje ${trip.name}` : `Delete trip ${trip.name}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

@@ -44,11 +44,14 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
       <div className="fixed inset-x-0 top-0 h-dvh z-50 flex items-center justify-center px-4 pointer-events-none">
         <div
           ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-trip-modal-title"
           className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4 overflow-y-auto max-h-[80dvh]"
           style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
         >
           <div>
-            <h3 className="text-base font-black text-white">
+            <h3 id="create-trip-modal-title" className="text-base font-black text-white">
               {locale === "es" ? "Nuevo viaje" : "New trip"}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
@@ -58,6 +61,7 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
 
           <div className="input-float-wrapper mt-6">
             <input
+              id="trip-name-input"
               ref={inputRef}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleConfirm();
@@ -67,7 +71,7 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
               maxLength={40}
               className="w-full rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <label>
+            <label htmlFor="trip-name-input">
               {locale === "es" ? "Nombre del viaje" : "Trip name"}
             </label>
           </div>

@@ -51,6 +51,9 @@ export function NotificationSetupSheet({ open, onClose, locale }: NotificationSe
       {/* Modal — centered on screen */}
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notif-setup-modal-title"
           className={`w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl transition-all duration-200 ease-out
             ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
           style={{
@@ -66,7 +69,7 @@ export function NotificationSetupSheet({ open, onClose, locale }: NotificationSe
                 <Bell className="h-5 w-5 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-base font-black text-white">
+                <h3 id="notif-setup-modal-title" className="text-base font-black text-white">
                   {locale === "es" ? "Activar alertas" : "Enable alerts"}
                 </h3>
                 <p className="text-xs text-gray-400 mt-0.5">
@@ -76,7 +79,11 @@ export function NotificationSetupSheet({ open, onClose, locale }: NotificationSe
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 tap-scale">
+            <button
+              onClick={onClose}
+              aria-label={locale === "es" ? "Cerrar configuración de notificaciones" : "Close notification setup"}
+              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 tap-scale"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>

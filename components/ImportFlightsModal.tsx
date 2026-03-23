@@ -227,7 +227,12 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
       style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full max-w-2xl rounded-2xl border border-white/8 bg-[#0f0f17] shadow-2xl animate-fade-in-up max-h-[90vh] flex flex-col">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-flights-modal-title"
+        className="relative w-full max-w-2xl rounded-2xl border border-white/8 bg-[#0f0f17] shadow-2xl animate-fade-in-up max-h-[90vh] flex flex-col"
+      >
 
         {/* Confetti burst on successful import */}
         {showConfetti && (
@@ -248,7 +253,7 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-4 border-b border-white/6 shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 id="import-flights-modal-title" className="text-lg font-bold text-white flex items-center gap-2">
               <Image
                 src="/tripcopliot-avatar.svg"
                 alt="TripCopilot"
@@ -262,6 +267,7 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
           </div>
           <button
             onClick={onClose}
+            aria-label={locale === "es" ? "Cerrar importación de vuelos" : "Close flight import"}
             className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/8 transition-colors"
           >
             <X className="h-4 w-4" />
@@ -306,8 +312,17 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
               {/* Image input */}
               {tab === "image" && (
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={locale === "es" ? "Zona para soltar imagen" : "Image drop zone"}
                   className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-[#080810] p-6 cursor-pointer hover:border-violet-500/40 transition-colors"
                   onClick={() => fileRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      fileRef.current?.click();
+                    }
+                  }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();

@@ -90,6 +90,7 @@ export function FlightCardHeader({
               <button
                 onClick={onConfirmDelete}
                 title={L.removeTitle}
+                aria-label={locale === "es" ? "Eliminar vuelo" : "Delete flight"}
                 className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors flex items-center justify-center"
               >
                 <Trash2 className="h-4 w-4" />
@@ -104,6 +105,12 @@ export function FlightCardHeader({
                     ? (locale === "es" ? "Upgrade activado" : "Upgrade alert on")
                     : (locale === "es" ? "Avisarme si hay upgrade disponible" : "Notify me if upgrade is available")
                 }
+                aria-label={
+                  wantsUpgrade
+                    ? (locale === "es" ? "Upgrade activado" : "Upgrade alert on")
+                    : (locale === "es" ? "Avisarme si hay upgrade disponible" : "Notify me if upgrade is available")
+                }
+                aria-pressed={wantsUpgrade}
                 className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors ${
                   wantsUpgrade
                     ? "bg-violet-600 text-white"
