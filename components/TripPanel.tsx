@@ -37,6 +37,7 @@ import { formatRelativeDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
 import { ConnectionRiskBar } from "./ConnectionRiskBar";
+import { TripStatsCard } from "./TripStatsCard";
 import { TripShareModal } from "./TripShareModal";
 import { TripPassengers } from "./TripPassengers";
 import { PriceAlerts } from "./PriceAlerts";
@@ -440,6 +441,9 @@ export function TripPanel({
 
       {/* Trip Risk Score */}
       {sorted.length > 0 && <TripRiskBadge risk={riskScore} locale={locale} />}
+
+      {/* Trip Stats */}
+      {!isDraft && trip.flights.length > 0 && <TripStatsCard trip={trip} locale={locale} />}
 
       {/* Panel tab switcher */}
       {!isDraft && (
