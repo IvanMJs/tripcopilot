@@ -1,13 +1,58 @@
 export const dynamic = "force-dynamic";
 
-const AVIATIONSTACK_BASE = "http://api.aviationstack.com/v1";
+import { getFlightData } from "@/lib/flightDataFetcher";
+import type { FlightData } from "@/lib/flightDataProvider";
+
+// Shape that useFlightStatus expects from /api/flight-status
+interface LegacyFlightResponse {
+  data: LegacyFlightRecord[];
+}
+
+interface LegacyFlightRecord {
+  flight_status: string;
+  flight: { iata: string };
+  departure: {
+    terminal: string | null;
+    gate: string | null;
+    delay: number | null;
+    scheduled: string | null;
+    estimated: string | null;
+    actual: string | null;
+  };
+  arrival: {
+    terminal: string | null;
+    gate: string | null;
+    baggage: string | null;
+    delay: number | null;
+    estimated: string | null;
+  };
+  aircraft: { iata: string | null; registration: string | null } | null;
+}
+
+function toLegacyRecord(fd: FlightData): LegacyFlightRecord {
+  return {
+    flight_status: fd.status,
+    flight: { iata: fd.flightCode },
+    departure: {
+      terminal: fd.departure.terminal ?? null,
+      gate: fd.departure.gate ?? null,
+      delay: fd.departure.delay ?? null,
+      scheduled: fd.departure.scheduledTime ?? null,
+      estimated: fd.departure.estimatedTime ?? null,
+      actual: fd.departure.actualTime ?? null,
+    },
+    arrival: {
+      terminal: fd.arrival.terminal ?? null,
+      gate: fd.arrival.gate ?? null,
+      baggage: null, // not provided by any current provider
+      delay: fd.arrival.delay ?? null,
+      estimated: fd.arrival.estimatedTime ?? null,
+    },
+    aircraft: fd.aircraft ? { iata: fd.aircraft, registration: null } : null,
+  };
+}
 
 export async function GET(req: Request) {
-  const apiKey = process.env.AVIATIONSTACK_API_KEY;
-  if (!apiKey) {
-    return Response.json({ error: "AVIATIONSTACK_API_KEY not configured" }, { status: 503 });
-  }
-
   const url = new URL(req.url);
   const flightIata = url.searchParams.get("flight_iata") ?? "";
   const flightDate = url.searchParams.get("flight_date") ?? "";
@@ -16,34 +61,21 @@ export async function GET(req: Request) {
     return Response.json({ error: "flight_iata required" }, { status: 400 });
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+  const result = await getFlightData(flightIata, flightDate);
 
-  try {
-    const params = new URLSearchParams({
-      access_key: apiKey,
-      flight_iata: flightIata,
-      limit: "1",
-    });
-    if (flightDate) params.set("flight_date", flightDate);
-
-    const res = await fetch(`${AVIATIONSTACK_BASE}/flights?${params}`, {
-      headers: { "User-Agent": "AirportMonitor/1.0" },
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (!res.ok) throw new Error(`AviationStack returned ${res.status}`);
-
-    const json = await res.json();
-    return Response.json(json, {
-      headers: { "Cache-Control": "public, max-age=300, s-maxage=300" },
-    });
-  } catch (err) {
-    clearTimeout(timeout);
+  if (!result.success) {
+    const isUnconfigured = result.error.includes("not configured");
     return Response.json(
-      { error: "AviationStack unavailable", detail: String(err) },
-      { status: 502 },
+      { error: result.error },
+      { status: isUnconfigured ? 503 : 502 },
     );
   }
+
+  const body: LegacyFlightResponse = {
+    data: [toLegacyRecord(result.data)],
+  };
+
+  return Response.json(body, {
+    headers: { "Cache-Control": "public, max-age=300, s-maxage=300" },
+  });
 }
