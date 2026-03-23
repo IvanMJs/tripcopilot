@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
-import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { checkRateLimit } from "@/lib/rateLimiter";
+
+const HOUR_MS = 3_600_000;
 
 const BodySchema = z.object({
   text:        z.string().max(20_000).optional(),
@@ -55,10 +57,58 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Rate limit: 10 parses per hour per user
-  if (!(await checkUserRateLimit(supabase, user.id, "parse-flight", 10))) {
-    return rateLimitResponse();
+  // Rate limit by IP (20 req/hour) — applied first as a broad guard.
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+
+  const ipLimit = checkRateLimit({
+    windowMs: HOUR_MS,
+    maxRequests: 20,
+    identifier: `parse-flight:ip:${ip}`,
+  });
+
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests", resetIn: ipLimit.resetIn },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(ipLimit.resetIn),
+          "Retry-After": String(ipLimit.resetIn),
+        },
+      },
+    );
   }
+
+  // Rate limit by userId (50 req/hour for authenticated users).
+  const userLimit = checkRateLimit({
+    windowMs: HOUR_MS,
+    maxRequests: 50,
+    identifier: `parse-flight:user:${user.id}`,
+  });
+
+  if (!userLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests", resetIn: userLimit.resetIn },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(userLimit.resetIn),
+          "Retry-After": String(userLimit.resetIn),
+        },
+      },
+    );
+  }
+
+  // Attach rate limit headers to all successful responses further down.
+  const rateLimitHeaders = {
+    "X-RateLimit-Remaining": String(Math.min(ipLimit.remaining, userLimit.remaining)),
+    "X-RateLimit-Reset": String(Math.min(ipLimit.resetIn, userLimit.resetIn)),
+  };
 
   try {
     const raw = await req.json();
@@ -106,7 +156,7 @@ export async function POST(req: NextRequest) {
     // Extract JSON from response (handle cases where model adds extra text)
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return NextResponse.json({ flights: [] });
+      return NextResponse.json({ flights: [] }, { headers: rateLimitHeaders });
     }
 
     const jsonParsed = JSON.parse(jsonMatch[0]) as { flights?: unknown[] };
@@ -128,7 +178,7 @@ export async function POST(req: NextRequest) {
     });
 
     const flights = z.array(FlightSchema).max(20).catch([]).parse(jsonParsed.flights ?? []);
-    return NextResponse.json({ flights });
+    return NextResponse.json({ flights }, { headers: rateLimitHeaders });
   } catch (err) {
     console.error("[parse-flight]", err);
     return NextResponse.json({ error: "Failed to parse" }, { status: 500 });

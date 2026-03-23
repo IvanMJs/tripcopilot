@@ -5,6 +5,37 @@ import { AirportStatusMap } from "@/lib/types";
 import { parseXML } from "@/lib/faa";
 import toast from "react-hot-toast";
 
+const CACHE_KEY = "apt-status-cache";
+const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+
+interface AirportStatusCache {
+  data: AirportStatusMap;
+  ts: number;
+}
+
+function readCache(): AirportStatusCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AirportStatusCache;
+    if (typeof parsed.ts !== "number" || !parsed.data) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(data: AirportStatusMap): void {
+  if (typeof window === "undefined") return;
+  try {
+    const entry: AirportStatusCache = { data, ts: Date.now() };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+  } catch {
+    // localStorage may be unavailable (private mode, quota exceeded) — fail silently.
+  }
+}
+
 const TOAST_MESSAGES = {
   es: { cleared: "Demoras despejadas", changed: "Estado cambió" },
   en: { cleared: "Delays cleared", changed: "Status changed" },
@@ -15,7 +46,13 @@ export function useAirportStatus(
   locale: "es" | "en" = "es",
   showSwNotification?: (title: string, options?: NotificationOptions) => void,
 ) {
-  const [statusMap, setStatusMap] = useState<AirportStatusMap>({});
+  const [statusMap, setStatusMap] = useState<AirportStatusMap>(() => {
+    const cached = readCache();
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+      return cached.data;
+    }
+    return {};
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -103,6 +140,7 @@ export function useAirportStatus(
 
       prevStatusRef.current = newMap;
       setStatusMap(newMap);
+      writeCache(newMap);
       setLastUpdated(new Date());
       setSecondsUntilRefresh(refreshIntervalMinutes * 60);
       initialLoadDone.current = true;

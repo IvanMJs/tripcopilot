@@ -3,13 +3,87 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
-  Plane, Shield, Brain, Bell, Calendar, Search,
-  ArrowRight, Mail, Loader2, MapPin, Clock,
-  Zap, Star, CheckCircle, ChevronDown, LogIn,
+  Shield, Brain, Bell, Calendar, Search,
+  ArrowRight, Mail, Loader2, MapPin,
+  Zap, CheckCircle, ChevronDown, LogIn,
   Building2, Smartphone, ArrowUpCircle, DoorOpen
 } from "lucide-react";
 import { NotifCarousel } from "@/components/NotifCarousel";
 import { AppScreenshotCarousel } from "@/components/AppScreenshotCarousel";
+
+const FAQ_ITEMS = [
+  {
+    q: "¿Es gratis?",
+    a: "Sí, completamente gratis durante el beta.",
+  },
+  {
+    q: "¿Qué aeropuertos cubre?",
+    a: "Todos los aeropuertos de USA vía FAA + aeropuertos internacionales vía AeroDataBox. En constante expansión.",
+  },
+  {
+    q: "¿Funciona offline?",
+    a: "Sí. TripCopilot es una PWA instalable. Tus viajes y vuelos están disponibles sin conexión.",
+  },
+  {
+    q: "¿Es seguro subir mi boarding pass?",
+    a: "Sí. Las imágenes se analizan con IA y no se almacenan en nuestros servidores.",
+  },
+  {
+    q: "¿Cómo se detectan las demoras?",
+    a: "Consultamos los datos de la FAA cada 5 minutos y AeroDataBox para vuelos internacionales.",
+  },
+];
+
+function FaqSection() {
+  const [open, setOpen] = useState<number | null>(null);
+
+  function toggle(i: number) {
+    setOpen((prev) => (prev === i ? null : i));
+  }
+
+  return (
+    <section id="faq" className="py-16 px-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-10">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">FAQ</p>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Preguntas frecuentes</h2>
+        </div>
+        <div className="space-y-2">
+          {FAQ_ITEMS.map((item, i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-white/[0.06] overflow-hidden"
+              style={{ background: "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)" }}
+            >
+              <button
+                onClick={() => toggle(i)}
+                className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-white hover:text-gray-200 transition-colors"
+                aria-expanded={open === i}
+              >
+                <span>{item.q}</span>
+                <span
+                  className="shrink-0 h-5 w-5 rounded-full border border-white/[0.10] bg-white/[0.04] flex items-center justify-center text-gray-400 transition-transform duration-200"
+                  style={{ transform: open === i ? "rotate(45deg)" : "rotate(0deg)" }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <line x1="5" y1="1" x2="5" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    <line x1="1" y1="5" x2="9" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </span>
+              </button>
+              <div
+                className="overflow-hidden transition-all duration-300"
+                style={{ maxHeight: open === i ? 200 : 0 }}
+              >
+                <p className="px-5 pb-4 text-sm text-gray-400 leading-relaxed">{item.a}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -200,6 +274,9 @@ export default function LandingPage() {
             <a href="#como-funciona" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
               Cómo funciona
             </a>
+            <a href="#faq" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              FAQ
+            </a>
             <button
               onClick={scrollToLogin}
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-semibold text-white transition-colors"
@@ -212,8 +289,8 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section className="relative pt-24 pb-16 px-4 overflow-hidden">
-        {/* Background glows */}
+      <section className="hero-gradient relative pt-24 pb-16 px-4 overflow-hidden">
+        {/* Background glows layered on top of animated gradient */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-10"
             style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
@@ -281,6 +358,20 @@ export default function LandingPage() {
                 <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Gratis para empezar</span>
                 <span className="hidden sm:block h-3 w-px bg-gray-800" />
                 <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Datos 100% seguros</span>
+              </div>
+
+              {/* Social proof counter */}
+              <div className="mt-6 inline-flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
+                <div className="flex items-center gap-1 text-base" aria-label="Viajeros de USA, Argentina, México y España">
+                  <span title="USA">🇺🇸</span>
+                  <span title="Argentina">🇦🇷</span>
+                  <span title="México">🇲🇽</span>
+                  <span title="España">🇪🇸</span>
+                </div>
+                <p className="text-xs text-gray-400 leading-snug">
+                  <span className="font-bold text-white">Más de 1.200 viajeros</span>{" "}
+                  confían en TripCopilot
+                </p>
               </div>
             </div>
 
@@ -738,6 +829,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── FAQ ─────────────────────────────────────────────────────────── */}
+      <FaqSection />
+
       {/* ── LOGIN / CTA ──────────────────────────────────────────────────── */}
       <section ref={loginRef} id="empezar" className="py-20 px-4">
         <div className="max-w-sm mx-auto">
@@ -819,18 +913,29 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/[0.05] py-8 px-4">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-6 w-auto" />
-            <span className="text-xs font-bold text-gray-600">TripCopilot</span>
+      <footer className="border-t border-white/[0.05] py-10 px-4">
+        <div className="max-w-5xl mx-auto space-y-6">
+          {/* Top row: logo + links */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-6 w-auto" />
+              <span className="text-sm font-black tracking-tight text-gray-400">TripCopilot</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-gray-600">
+              <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacidad</a>
+              <span className="h-3 w-px bg-gray-800" />
+              <a href="/terms" className="hover:text-gray-400 transition-colors">Términos</a>
+              <span className="h-3 w-px bg-gray-800" />
+              <a href="/support" className="hover:text-gray-400 transition-colors">Soporte</a>
+              <span className="h-3 w-px bg-gray-800" />
+              <a href="mailto:hola@tripcopilot.app" className="hover:text-gray-400 transition-colors">hola@tripcopilot.app</a>
+            </div>
           </div>
-          <p className="text-[11px] text-gray-700">
-            Hecho con ♥ para viajeros que vuelan seguido
-          </p>
-          <p className="text-[11px] text-gray-700">
-            © {new Date().getFullYear()} TripCopilot
-          </p>
+          {/* Bottom row: copyright + tagline */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-700">
+            <p>© 2026 TripCopilot</p>
+            <p>Hecho con ❤️ para viajeros</p>
+          </div>
         </div>
       </footer>
 

@@ -603,6 +603,77 @@ body::after {
   transition: background 2s ease;
 }
 
+/* ── Hero animated gradient ────────────────────────────────────────────────── */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.hero-gradient {
+  background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e, #0d0d2b);
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+}
+
+/* ── Micro-animations ────────────────────────────────────────────────────── */
+
+/* Slide-in desde abajo — for modals and new cards */
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-slide-up { animation: slide-up 0.25s ease-out; }
+
+/* Bounce-in — for important alerts */
+@keyframes bounce-in {
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.05); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+.animate-bounce-in { animation: bounce-in 0.3s ease-out; }
+
+/* Shimmer — for loading skeleton states (replaces animate-pulse) */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+html.light .shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.04) 25%,
+    rgba(0,0,0,0.10) 50%,
+    rgba(0,0,0,0.04) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* Hero section animated gradient overlay */
+@keyframes hero-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hero-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.04) 0%,
+    rgba(124, 58, 237, 0.06) 33%,
+    rgba(16, 185, 129, 0.03) 66%,
+    rgba(59, 130, 246, 0.04) 100%
+  );
+  background-size: 300% 300%;
+  animation: hero-gradient-shift 8s ease infinite;
+}
+
 /* ── P7: Gradient top border on status cards ───────────────────────────────── */
 .border-top-success {
   border-top: 1px solid transparent;

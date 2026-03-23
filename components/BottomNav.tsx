@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plane, Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays } from "lucide-react";
 import { TripTab } from "@/lib/types";
+import { haptics } from "@/lib/haptics";
 
 interface Props {
   locale: "es" | "en";
@@ -42,7 +43,7 @@ export function BottomNav({
       setShowTripPicker(next);
       setRenameInPickerId(null);
       if (next && typeof navigator !== "undefined") {
-        navigator.vibrate?.(10);
+        haptics.impact();
       }
     }
   }

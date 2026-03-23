@@ -9,6 +9,7 @@ import {
   Sparkles, Loader2, List, GitBranch,
 } from "lucide-react";
 import { AirportStatusMap, TripFlight, TripTab, Accommodation } from "@/lib/types";
+import { haptics } from "@/lib/haptics";
 import { AIRPORTS } from "@/lib/airports";
 import { subtractHours } from "@/lib/flightUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -330,7 +331,7 @@ export function TripPanel({
             )}
             {onDeleteTrip && (
               <button
-                onClick={() => { navigator.vibrate?.([50, 30, 50]); onDeleteTrip(); }}
+                onClick={() => { haptics.delete(); onDeleteTrip(); }}
                 title={locale === "es" ? "Eliminar viaje" : "Delete trip"}
                 className="shrink-0 flex items-center gap-1.5 rounded-xl border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-950/40 hover:text-red-400 transition-colors"
               >
@@ -342,7 +343,7 @@ export function TripPanel({
         )}
         {isDraft && onDeleteTrip && !isRenamingTrip && (
           <button
-            onClick={() => { navigator.vibrate?.([50, 30, 50]); onDeleteTrip(); }}
+            onClick={() => { haptics.delete(); onDeleteTrip(); }}
             title={locale === "es" ? "Eliminar viaje" : "Delete trip"}
             className="shrink-0 flex items-center gap-1.5 rounded-xl border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-950/40 hover:text-red-400 transition-colors"
           >
@@ -369,7 +370,7 @@ export function TripPanel({
           <button
             type="button"
             onClick={async () => {
-              navigator.vibrate?.(30);
+              haptics.success();
               setSaving(true);
               try { await Promise.resolve(onSave?.()); } finally { setSaving(false); }
             }}

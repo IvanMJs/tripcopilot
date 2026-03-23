@@ -389,12 +389,12 @@ export function useUserTrips() {
       ),
     );
 
-    navigator.vibrate?.([50, 30, 50]);
+    haptics.delete();
     const supabase = createClient();
     const { error } = await supabase.from("flights").delete().eq("id", flightId);
     if (error) {
       setTrips(snapshot);
-      navigator.vibrate?.([100, 50, 100]);
+      haptics.error();
       toast.error("No se pudo eliminar el vuelo / Could not delete flight");
     }
   }, [trips]);
@@ -535,7 +535,7 @@ export function useUserTrips() {
       return { error: "rpc", message: error?.message };
     }
 
-    navigator.vibrate?.(30);
+    haptics.success();
     const newTripId = data as string;
 
     // Fetch the newly created trip with its real DB IDs
