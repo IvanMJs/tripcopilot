@@ -37,6 +37,7 @@ import { formatRelativeDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
 import { ConnectionRiskBar } from "./ConnectionRiskBar";
+import { StopoverBadge } from "./StopoverBadge";
 import { TripStatsCard } from "./TripStatsCard";
 import { TripShareModal } from "./TripShareModal";
 import { TripPassengers } from "./TripPassengers";
@@ -648,9 +649,27 @@ export function TripPanel({
                         locale={locale}
                       />
                     )}
-                    {connAnalysis && globalIdx < sorted.length - 1 && (
-                      <ConnectionRiskBar analysis={connAnalysis} locale={locale} />
-                    )}
+                    {globalIdx < sorted.length - 1 && (() => {
+                      const nextFlight = sorted[globalIdx + 1];
+                      if (connAnalysis) {
+                        return <ConnectionRiskBar analysis={connAnalysis} locale={locale} />;
+                      }
+                      // No connection analysis → check if it's an intentional stopover
+                      // (same route, but gap ≥ 24h so analyzeConnection returned null)
+                      if (
+                        nextFlight &&
+                        nextFlight.originCode === flight.destinationCode &&
+                        flight.isoDate && nextFlight.isoDate &&
+                        nextFlight.isoDate > flight.isoDate
+                      ) {
+                        const days = Math.round(
+                          (new Date(nextFlight.isoDate).getTime() - new Date(flight.isoDate).getTime()) /
+                          (1000 * 60 * 60 * 24),
+                        );
+                        return <StopoverBadge airport={flight.destinationCode} days={days} locale={locale} />;
+                      }
+                      return null;
+                    })()}
                   </Fragment>
                 );
               }
