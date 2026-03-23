@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
-import { Bell, HelpCircle, LogOut, Settings, Sparkles } from "lucide-react";
+import { Bell, Gem, HelpCircle, LogOut, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
@@ -648,10 +648,10 @@ export default function HomePage() {
               {userPlan === "free" && (
                 <button
                   onClick={() => setShowUpgradeModal(true)}
-                  className="flex items-center gap-1.5 rounded-md border border-violet-600/50 bg-violet-500/10 px-2.5 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/20 transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded-md border border-amber-500/50 bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 hover:border-amber-400/70 transition-colors"
                   title={locale === "es" ? "Mejorar a Premium" : "Upgrade to Premium"}
                 >
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <Gem className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Pro</span>
                 </button>
               )}
