@@ -510,9 +510,22 @@ export function useUserTrips() {
       return null;
     }
 
+    // Normalize flights before RPC:
+    // - Exclude client-generated temp IDs (not valid UUIDs — let DB generate them)
+    // - Convert empty strings to null for time/date fields (Postgres rejects "" for TIME cols)
+    // - Ensure new optional fields have safe defaults
+    const normalizedFlights = flights.map(({ id: _clientId, boardingPassUrl: _bp, ...f }) => ({
+      ...f,
+      departureTime: f.departureTime || null,
+      arrivalDate:   f.arrivalDate   || null,
+      arrivalTime:   f.arrivalTime   || null,
+      wantsUpgrade:  f.wantsUpgrade  ?? false,
+      cabinClass:    f.cabinClass    ?? "economy",
+    }));
+
     const { data, error } = await supabase.rpc("save_draft_trip", {
       p_name:           name,
-      p_flights:        flights,
+      p_flights:        normalizedFlights,
       p_accommodations: accommodations,
     });
 

@@ -272,7 +272,7 @@ export function TripPanel({
     analytics.flightImported({ count: parsedFlights.length });
     for (const pf of parsedFlights) {
       const newFlight: TripFlight = {
-        id:              `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+        id:              crypto.randomUUID(),
         flightCode:      pf.flightCode,
         airlineCode:     pf.airlineCode,
         airlineName:     pf.airlineName,
@@ -282,6 +282,8 @@ export function TripPanel({
         destinationCode: pf.destinationCode,
         isoDate:         pf.isoDate,
         departureTime:   pf.departureTime,
+        arrivalDate:     pf.arrivalDate   || undefined,
+        arrivalTime:     pf.arrivalTime   || undefined,
         arrivalBuffer:   pf.arrivalBuffer,
       };
       onAddFlight(trip.id, newFlight);
