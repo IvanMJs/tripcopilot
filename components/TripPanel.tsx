@@ -41,6 +41,8 @@ import { TripShareModal } from "./TripShareModal";
 import { TripPassengers } from "./TripPassengers";
 import { PriceAlerts } from "./PriceAlerts";
 import { LoungeInfo } from "./LoungeInfo";
+import { VisaInfo } from "./VisaInfo";
+import { airportToCountry } from "@/lib/visaRequirements";
 import { LayoverGuide } from "./LayoverGuide";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
@@ -635,6 +637,13 @@ export function TripPanel({
                         onToggleDeviceTz={onToggleDeviceTz}
                       />
                     </div>
+                    {airportToCountry(flight.originCode) !== airportToCountry(flight.destinationCode) && (
+                      <VisaInfo
+                        originAirport={flight.originCode}
+                        destinationAirport={flight.destinationCode}
+                        locale={locale}
+                      />
+                    )}
                     {connAnalysis && globalIdx < sorted.length - 1 && (
                       <ConnectionRiskBar analysis={connAnalysis} locale={locale} />
                     )}

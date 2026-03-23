@@ -19,7 +19,6 @@ import { ConnectionAnalysis } from "@/lib/connectionRisk";
 import { FlightStatusBadge } from "@/components/FlightStatusBadge";
 import { TsaAirportData } from "@/hooks/useTsaWait";
 import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, TripPanelLabels } from "@/components/TripPanelLabels";
-import { getVisaRequirement } from "@/lib/visaRequirements";
 import { DaysCountdown, ExchangeRateRow } from "./helpers";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { AirportInfoCard } from "@/components/AirportInfoCard";
@@ -228,16 +227,6 @@ export function FlightCardBody({
               <span className="text-gray-700">·</span>
               <span className="text-gray-500 text-xs">{originName} → {destName}</span>
             </div>
-            {/* Visa indicator */}
-            {(() => {
-              const visa = getVisaRequirement(flight.destinationCode);
-              if (!visa) return null;
-              return visa.required ? (
-                <span className="text-xs text-amber-400">🛂 {visa.notes}</span>
-              ) : (
-                <span className="text-xs text-green-400">✅ {visa.notes}</span>
-              );
-            })()}
             {/* Destination weather */}
             <WeatherWidget airportIata={flight.destinationCode} isoDate={flight.isoDate} locale={locale} />
             {/* Exchange rate */}

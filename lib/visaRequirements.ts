@@ -1,7 +1,21 @@
-// Visa requirements for Argentine passport holders (AR)
+// Visa requirements — static lookup table for common passport/destination pairs
 // Source: official government / Timatic data (approximate, verify before travel)
 
-const IATA_TO_COUNTRY: Record<string, string> = {
+export interface VisaRequirement {
+  originCountry: string;    // ISO 2-letter code
+  destinationCountry: string;
+  requirement: "visa_free" | "visa_on_arrival" | "e_visa" | "visa_required";
+  maxStayDays: number | null;
+  notes: string | null;
+}
+
+// ── IATA → Country ────────────────────────────────────────────────────────────
+
+export const IATA_TO_COUNTRY: Record<string, string> = {
+  // Argentina
+  EZE: "AR", AEP: "AR", MDZ: "AR", COR: "AR", BRC: "AR", IGR: "AR",
+  SLA: "AR", TUC: "AR", ROS: "AR", NQN: "AR", CRD: "AR", USH: "AR",
+  PMY: "AR", RGL: "AR", FTE: "AR",
   // USA
   JFK: "US", LAX: "US", MIA: "US", EWR: "US", ORD: "US",
   SFO: "US", DFW: "US", ATL: "US", BOS: "US", MCO: "US",
@@ -48,9 +62,11 @@ const IATA_TO_COUNTRY: Record<string, string> = {
   HAV: "CU",
   NAS: "BS",
   GCM: "KY",
-  // Other
+  // North America
   YYZ: "CA", YVR: "CA", YUL: "CA",
+  // Oceania
   SYD: "AU", MEL: "AU",
+  // Asia
   NRT: "JP", KIX: "JP",
   DXB: "AE", AUH: "AE",
   IST: "TR",
@@ -59,94 +75,211 @@ const IATA_TO_COUNTRY: Record<string, string> = {
   KUL: "MY",
   ICN: "KR",
   PEK: "CN", PVG: "CN",
+  // Africa
   JNB: "ZA",
   CAI: "EG",
   CMN: "MA",
 };
 
-const VISA_REQUIREMENTS: Record<string, { required: boolean; notes: string }> = {
-  // Requires visa / pre-travel authorization
-  "AR→US": { required: true,  notes: "ESTA obligatorio — tramitar en esta.cbp.dhs.gov" },
-  "AR→GB": { required: true,  notes: "ETA UK requerida — gov.uk/check-uk-visa" },
-  "AR→AU": { required: true,  notes: "ETA requerida — immi.homeaffairs.gov.au" },
-  "AR→CA": { required: true,  notes: "eTA requerida — canada.ca" },
-  "AR→CN": { required: true,  notes: "Visa requerida — solicitar con anticipación" },
-  "AR→KR": { required: true,  notes: "K-ETA requerida — k-eta.go.kr" },
-  "AR→EG": { required: true,  notes: "Visa on arrival disponible" },
-  "AR→MA": { required: true,  notes: "Visa requerida — consulado marroquí" },
+// ── Visa lookup table ─────────────────────────────────────────────────────────
+// Key format: "PASSPORT→DESTINATION"
 
-  // Visa-free / easy access
-  "AR→JP": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→AE": { required: false, notes: "Sin visa hasta 30 días" },
-  "AR→TR": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→SG": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→TH": { required: false, notes: "Sin visa hasta 30 días" },
-  "AR→MY": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→ZA": { required: false, notes: "Sin visa hasta 30 días" },
+type VisaEntry = Pick<VisaRequirement, "requirement" | "maxStayDays" | "notes">;
 
-  // Latam (all visa-free for AR)
-  "AR→BR": { required: false, notes: "Sin visa — ingreso libre" },
-  "AR→CL": { required: false, notes: "Sin visa — ingreso libre" },
-  "AR→PE": { required: false, notes: "Sin visa hasta 183 días" },
-  "AR→CO": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→MX": { required: false, notes: "Sin visa hasta 180 días" },
-  "AR→EC": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→UY": { required: false, notes: "Sin visa — ingreso libre" },
-  "AR→PY": { required: false, notes: "Sin visa — ingreso libre" },
-  "AR→BO": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→VE": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→GT": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→SV": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→HN": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→NI": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→CR": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→PA": { required: false, notes: "Sin visa hasta 180 días" },
-
+const VISA_TABLE: Record<string, VisaEntry> = {
+  // ── Argentine passport (AR) ───────────────────────────────────────────────
+  // USA / Canada / Australia — electronic travel authorization (treated as e_visa)
+  "AR→US": { requirement: "e_visa",        maxStayDays: 90,   notes: "ESTA required — esta.cbp.dhs.gov" },
+  "AR→CA": { requirement: "e_visa",        maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "AR→AU": { requirement: "e_visa",        maxStayDays: 90,   notes: "ETA required — immi.homeaffairs.gov.au" },
+  "AR→GB": { requirement: "e_visa",        maxStayDays: 180,  notes: "UK ETA required — gov.uk/check-uk-visa" },
+  "AR→KR": { requirement: "e_visa",        maxStayDays: 90,   notes: "K-ETA required — k-eta.go.kr" },
+  "AR→CN": { requirement: "visa_required", maxStayDays: null, notes: "Visa required — apply at Chinese consulate in advance" },
+  "AR→MA": { requirement: "visa_required", maxStayDays: null, notes: "Visa required — Moroccan consulate" },
+  "AR→EG": { requirement: "visa_on_arrival", maxStayDays: 30, notes: "Visa on arrival available at main airports" },
+  // Schengen (visa-free for AR up to 90 days)
+  "AR→ES": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→FR": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→IT": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→DE": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→NL": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→PT": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→AT": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→BE": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→DK": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→SE": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→FI": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→NO": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→PL": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→CZ": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→HU": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→GR": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "AR→CH": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  // Asia / Pacific
+  "AR→JP": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→AE": { requirement: "visa_free", maxStayDays: 30,  notes: null },
+  "AR→TR": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→SG": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→TH": { requirement: "visa_free", maxStayDays: 30,  notes: null },
+  "AR→MY": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  // Africa
+  "AR→ZA": { requirement: "visa_free", maxStayDays: 30,  notes: null },
+  // Latam — all visa-free for AR
+  "AR→BR": { requirement: "visa_free", maxStayDays: null, notes: "Free entry — Mercosur agreement" },
+  "AR→CL": { requirement: "visa_free", maxStayDays: null, notes: "Free entry — Mercosur agreement" },
+  "AR→UY": { requirement: "visa_free", maxStayDays: null, notes: "Free entry — Mercosur agreement" },
+  "AR→PY": { requirement: "visa_free", maxStayDays: null, notes: "Free entry — Mercosur agreement" },
+  "AR→PE": { requirement: "visa_free", maxStayDays: 183, notes: null },
+  "AR→CO": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→MX": { requirement: "visa_free", maxStayDays: 180, notes: null },
+  "AR→EC": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→BO": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→VE": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→GT": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→SV": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→HN": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→NI": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→CR": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→PA": { requirement: "visa_free", maxStayDays: 180, notes: null },
   // Caribbean
-  "AR→JM": { required: false, notes: "Sin visa hasta 90 días" },
-  "AR→DO": { required: false, notes: "Sin visa hasta 30 días" },
-  "AR→CU": { required: false, notes: "Sin visa hasta 30 días" },
-  "AR→BS": { required: false, notes: "Sin visa hasta 8 meses" },
-  "AR→KY": { required: false, notes: "Sin visa hasta 30 días" },
+  "AR→JM": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "AR→DO": { requirement: "visa_free", maxStayDays: 30,  notes: null },
+  "AR→CU": { requirement: "visa_free", maxStayDays: 30,  notes: null },
+  "AR→BS": { requirement: "visa_free", maxStayDays: 240, notes: null },
+  "AR→KY": { requirement: "visa_free", maxStayDays: 30,  notes: null },
 
-  // Schengen (all visa-free for AR up to 90 days)
-  "AR→ES": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→FR": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→IT": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→DE": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→NL": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→PT": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→AT": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→BE": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→DK": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→SE": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→FI": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→NO": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→PL": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→CZ": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→HU": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→GR": { required: false, notes: "Sin visa Schengen hasta 90 días" },
-  "AR→CH": { required: false, notes: "Sin visa hasta 90 días" },
+  // ── US passport ───────────────────────────────────────────────────────────
+  "US→AR": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "US→BR": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "US→CL": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "US→MX": { requirement: "visa_free", maxStayDays: 180, notes: null },
+  "US→CO": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "US→PE": { requirement: "visa_free", maxStayDays: 183, notes: null },
+  "US→ES": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "US→FR": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "US→IT": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "US→DE": { requirement: "visa_free", maxStayDays: 90,  notes: "Schengen — 90 days in any 180-day period" },
+  "US→GB": { requirement: "visa_free", maxStayDays: 180, notes: null },
+  "US→JP": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+  "US→AU": { requirement: "e_visa",    maxStayDays: 90,  notes: "ETA required — immi.homeaffairs.gov.au" },
+  "US→CN": { requirement: "visa_free", maxStayDays: 10,  notes: "Visa-free transit 10 days (72/144h also available)" },
+  "US→AE": { requirement: "visa_free", maxStayDays: 30,  notes: null },
+  "US→TH": { requirement: "visa_free", maxStayDays: 60,  notes: null },
+  "US→SG": { requirement: "visa_free", maxStayDays: 90,  notes: null },
+
+  // ── Brazilian passport (BR) ───────────────────────────────────────────────
+  "BR→AR": { requirement: "visa_free", maxStayDays: null, notes: "Free entry — Mercosur agreement" },
+  "BR→US": { requirement: "visa_required", maxStayDays: null, notes: "B1/B2 visa required — apply at US consulate" },
+  "BR→CA": { requirement: "e_visa",    maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "BR→AU": { requirement: "e_visa",    maxStayDays: 90,   notes: "ETA required — immi.homeaffairs.gov.au" },
+  "BR→ES": { requirement: "visa_free", maxStayDays: 90,   notes: "Schengen — 90 days in any 180-day period" },
+  "BR→FR": { requirement: "visa_free", maxStayDays: 90,   notes: "Schengen — 90 days in any 180-day period" },
+  "BR→GB": { requirement: "visa_free", maxStayDays: 180,  notes: null },
+  "BR→JP": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "BR→AE": { requirement: "visa_free", maxStayDays: 30,   notes: null },
+
+  // ── Mexican passport (MX) ─────────────────────────────────────────────────
+  "MX→US": { requirement: "visa_required", maxStayDays: null, notes: "B1/B2 visa required — apply at US consulate" },
+  "MX→CA": { requirement: "e_visa",    maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "MX→ES": { requirement: "visa_free", maxStayDays: 90,   notes: "Schengen — 90 days in any 180-day period" },
+  "MX→FR": { requirement: "visa_free", maxStayDays: 90,   notes: "Schengen — 90 days in any 180-day period" },
+  "MX→GB": { requirement: "visa_free", maxStayDays: 180,  notes: null },
+  "MX→AR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "MX→BR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "MX→JP": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+
+  // ── Spanish passport (ES) ─────────────────────────────────────────────────
+  "ES→US": { requirement: "e_visa",    maxStayDays: 90,   notes: "ESTA required — esta.cbp.dhs.gov" },
+  "ES→CA": { requirement: "e_visa",    maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "ES→AU": { requirement: "e_visa",    maxStayDays: 90,   notes: "ETA required — immi.homeaffairs.gov.au" },
+  "ES→AR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "ES→BR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "ES→MX": { requirement: "visa_free", maxStayDays: 180,  notes: null },
+  "ES→JP": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "ES→AE": { requirement: "visa_free", maxStayDays: 30,   notes: null },
+
+  // ── French passport (FR) ─────────────────────────────────────────────────
+  "FR→US": { requirement: "e_visa",    maxStayDays: 90,   notes: "ESTA required — esta.cbp.dhs.gov" },
+  "FR→CA": { requirement: "e_visa",    maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "FR→AU": { requirement: "e_visa",    maxStayDays: 90,   notes: "ETA required — immi.homeaffairs.gov.au" },
+  "FR→AR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "FR→BR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "FR→JP": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "FR→AE": { requirement: "visa_free", maxStayDays: 30,   notes: null },
+
+  // ── German passport (DE) ─────────────────────────────────────────────────
+  "DE→US": { requirement: "e_visa",    maxStayDays: 90,   notes: "ESTA required — esta.cbp.dhs.gov" },
+  "DE→CA": { requirement: "e_visa",    maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "DE→AU": { requirement: "e_visa",    maxStayDays: 90,   notes: "ETA required — immi.homeaffairs.gov.au" },
+  "DE→AR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "DE→BR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "DE→JP": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+
+  // ── British passport (GB) ─────────────────────────────────────────────────
+  "GB→US": { requirement: "e_visa",    maxStayDays: 90,   notes: "ESTA required — esta.cbp.dhs.gov" },
+  "GB→CA": { requirement: "e_visa",    maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "GB→AU": { requirement: "e_visa",    maxStayDays: 90,   notes: "ETA required — immi.homeaffairs.gov.au" },
+  "GB→AR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "GB→BR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "GB→JP": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "GB→AE": { requirement: "visa_free", maxStayDays: 30,   notes: null },
+
+  // ── Chinese passport (CN) ─────────────────────────────────────────────────
+  "CN→US": { requirement: "visa_required", maxStayDays: null, notes: "B1/B2 visa required — apply at US consulate" },
+  "CN→GB": { requirement: "visa_required", maxStayDays: null, notes: "UK visa required — gov.uk/check-uk-visa" },
+  "CN→AU": { requirement: "visa_required", maxStayDays: null, notes: "Visa required — immi.homeaffairs.gov.au" },
+  "CN→JP": { requirement: "visa_required", maxStayDays: null, notes: "Visa required — apply at Japanese consulate" },
+  "CN→SG": { requirement: "visa_free",     maxStayDays: 30,  notes: null },
+  "CN→TH": { requirement: "visa_free",     maxStayDays: 30,  notes: null },
+  "CN→AE": { requirement: "visa_on_arrival", maxStayDays: 30, notes: "Visa on arrival available" },
+  "CN→AR": { requirement: "visa_free",     maxStayDays: 90,  notes: null },
+
+  // ── Japanese passport (JP) ────────────────────────────────────────────────
+  "JP→US": { requirement: "e_visa",    maxStayDays: 90,   notes: "ESTA required — esta.cbp.dhs.gov" },
+  "JP→CA": { requirement: "e_visa",    maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "JP→AU": { requirement: "e_visa",    maxStayDays: 90,   notes: "ETA required — immi.homeaffairs.gov.au" },
+  "JP→AR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "JP→BR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "JP→ES": { requirement: "visa_free", maxStayDays: 90,   notes: "Schengen — 90 days in any 180-day period" },
+  "JP→GB": { requirement: "visa_free", maxStayDays: 180,  notes: null },
+  "JP→AE": { requirement: "visa_free", maxStayDays: 30,   notes: null },
+
+  // ── Australian passport (AU) ──────────────────────────────────────────────
+  "AU→US": { requirement: "e_visa",    maxStayDays: 90,   notes: "ESTA required — esta.cbp.dhs.gov" },
+  "AU→CA": { requirement: "e_visa",    maxStayDays: 180,  notes: "eTA required — canada.ca" },
+  "AU→AR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "AU→BR": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "AU→JP": { requirement: "visa_free", maxStayDays: 90,   notes: null },
+  "AU→GB": { requirement: "visa_free", maxStayDays: 180,  notes: null },
+  "AU→AE": { requirement: "visa_free", maxStayDays: 30,   notes: null },
 };
 
-// Argentine airport IATA codes — used to skip domestic/origin-side display
-const ARGENTINA_IATA = new Set([
-  "EZE", "AEP", "MDZ", "COR", "BRC", "IGR", "SLA", "TUC",
-  "ROS", "NQN", "CRD", "USH", "PMY", "RGL", "FTE",
-]);
+// ── Public API ────────────────────────────────────────────────────────────────
 
+/**
+ * Returns visa requirement for a passport/destination country pair.
+ * Returns null when origin equals destination or when no data is available.
+ */
 export function getVisaRequirement(
-  destinationCode: string,
-): { required: boolean; notes: string } | null {
-  // Skip Argentine airports (no visa needed for Argentina→Argentina)
-  if (ARGENTINA_IATA.has(destinationCode)) return null;
+  passportCountry: string,
+  destinationCountry: string,
+): VisaRequirement | null {
+  if (!passportCountry || !destinationCountry) return null;
+  const origin = passportCountry.toUpperCase();
+  const dest = destinationCountry.toUpperCase();
+  if (origin === dest) return null;
 
-  const country = IATA_TO_COUNTRY[destinationCode];
-  if (!country) return null;
+  const entry = VISA_TABLE[`${origin}→${dest}`];
+  if (!entry) return null;
 
-  return VISA_REQUIREMENTS[`AR→${country}`] ?? null;
+  return {
+    originCountry: origin,
+    destinationCountry: dest,
+    ...entry,
+  };
 }
 
-export function isArgentineAirport(iataCode: string): boolean {
-  return ARGENTINA_IATA.has(iataCode);
+/** Maps an airport IATA code to its country ISO-2 code. */
+export function airportToCountry(iata: string): string | null {
+  return IATA_TO_COUNTRY[iata.toUpperCase()] ?? null;
 }
