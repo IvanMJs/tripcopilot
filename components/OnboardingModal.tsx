@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Plane, Bell, Users, Import } from "lucide-react";
+import { useState, useCallback } from "react";
 
 interface OnboardingModalProps {
   locale: "es" | "en";
@@ -9,134 +8,207 @@ interface OnboardingModalProps {
   onStartFresh: () => void;
 }
 
-const STEPS = [
-  {
-    id: "welcome",
-    icon: null,
-    es: {
-      title: "Bienvenido a TripCopilot",
-      desc: "TripCopilot monitorea tus vuelos 24/7 con alertas en tiempo real.",
-    },
-    en: {
-      title: "Welcome to TripCopilot",
-      desc: "TripCopilot monitors your flights 24/7 with real-time alerts.",
-    },
-  },
-  {
-    id: "import",
-    icon: Import,
-    es: {
-      title: "Importá tus vuelos",
-      desc: "Pegá el texto de tu reserva y la IA extrae todo automáticamente.",
-    },
-    en: {
-      title: "Import your flights",
-      desc: "Paste your booking text and the AI extracts everything automatically.",
-    },
-  },
-  {
-    id: "alerts",
-    icon: Bell,
-    es: {
-      title: "Activá alertas",
-      desc: "Recibí push antes de que salga tu vuelo — demoras, puertas, cancelaciones.",
-    },
-    en: {
-      title: "Activate alerts",
-      desc: "Get push notifications before your flight — delays, gates, cancellations.",
-    },
-  },
-  {
-    id: "share",
-    icon: Users,
-    es: {
-      title: "Invitá familia",
-      desc: "Compartí el link de tracking con quien quieras en un tap.",
-    },
-    en: {
-      title: "Invite family",
-      desc: "Share the tracking link with anyone you want in one tap.",
-    },
-  },
-];
+const STEP_COUNT = 3;
 
 export function OnboardingModal({ locale, onSeeExample, onStartFresh }: OnboardingModalProps) {
   const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
   const es = locale === "es";
-  const isLast = step === STEPS.length - 1;
-  const current = STEPS[step];
-  const content = es ? current.es : current.en;
+  const isLast = step === STEP_COUNT - 1;
+
+  const goTo = useCallback((next: number) => {
+    setDirection(next > step ? "forward" : "back");
+    setStep(next);
+  }, [step]);
 
   function handleNext() {
     if (isLast) {
       onStartFresh();
     } else {
-      setStep((s) => s + 1);
+      goTo(step + 1);
     }
+  }
+
+  function handleBack() {
+    if (step > 0) goTo(step - 1);
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950 shadow-2xl overflow-hidden animate-fade-in-up">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950 shadow-2xl overflow-hidden animate-slide-up">
 
-        {/* Step content */}
-        <div className="px-6 pt-8 pb-4 text-center min-h-[220px] flex flex-col items-center justify-center gap-4">
-          {current.id === "welcome" ? (
-            /* Plane animation for step 0 */
-            <div className="relative h-16 w-16 flex items-center justify-center">
-              <div
-                className="absolute inset-0 rounded-2xl bg-blue-600/20 border border-blue-600/30"
-                style={{ animation: "pulse 2s ease-in-out infinite" }}
-              />
-              <Plane
-                className="h-8 w-8 text-blue-400 relative z-10"
-                style={{ animation: "onboarding-fly 2.5s ease-in-out infinite" }}
-              />
-              <style>{`
-                @keyframes onboarding-fly {
-                  0%, 100% { transform: translateX(-4px) rotate(-8deg); }
-                  50% { transform: translateX(4px) rotate(8deg); }
-                }
-              `}</style>
-            </div>
-          ) : current.icon ? (
-            <div className="h-16 w-16 rounded-2xl bg-blue-600/20 border border-blue-600/30 flex items-center justify-center">
-              <current.icon className="h-8 w-8 text-blue-400" />
-            </div>
-          ) : null}
+        {/* Steps — fixed height to prevent layout shift */}
+        <div className="relative overflow-hidden" style={{ minHeight: 260 }}>
 
-          <div>
-            <h2 className="text-xl font-black text-white mb-2">{content.title}</h2>
-            <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">{content.desc}</p>
-          </div>
+          {/* Step 0: Welcome */}
+          {step === 0 && (
+            <div
+              key="step-0"
+              className={`absolute inset-0 px-6 pt-10 pb-4 flex flex-col items-center justify-center text-center gap-5 ${
+                direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
+              }`}
+            >
+              {/* Animated plane icon */}
+              <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
+                <div
+                  className="absolute inset-0 rounded-2xl bg-blue-600/20 border border-blue-600/30"
+                  style={{ animation: "pulse 2s ease-in-out infinite" }}
+                />
+                <svg
+                  className="h-8 w-8 text-blue-400 relative z-10"
+                  style={{ animation: "onboarding-fly 2.5s ease-in-out infinite" }}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 2L11 13" />
+                  <path d="M22 2L15 22l-4-9-9-4 22-7z" />
+                </svg>
+                <style>{`
+                  @keyframes onboarding-fly {
+                    0%, 100% { transform: translateX(-4px) translateY(2px) rotate(-8deg); }
+                    50% { transform: translateX(4px) translateY(-2px) rotate(8deg); }
+                  }
+                `}</style>
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white mb-2">
+                  {es ? "Bienvenido a TripCopilot" : "Welcome to TripCopilot"}
+                </h2>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
+                  {es
+                    ? "TripCopilot monitorea tus vuelos 24/7 con alertas en tiempo real para que viajes tranquilo."
+                    : "TripCopilot monitors your flights 24/7 with real-time alerts so you travel stress-free."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: AI boarding pass scan */}
+          {step === 1 && (
+            <div
+              key="step-1"
+              className={`absolute inset-0 px-6 pt-10 pb-4 flex flex-col items-center justify-center text-center gap-5 ${
+                direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
+              }`}
+            >
+              {/* Scan animation */}
+              <div className="relative h-16 w-16 shrink-0">
+                <div className="h-16 w-16 rounded-2xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center overflow-hidden">
+                  {/* Document icon */}
+                  <svg className="h-8 w-8 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                    <rect x="4" y="2" width="16" height="20" rx="2" />
+                    <line x1="8" y1="8" x2="16" y2="8" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                    <line x1="8" y1="16" x2="12" y2="16" />
+                  </svg>
+                  {/* Scan line */}
+                  <div
+                    className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-90"
+                    style={{ animation: "scan-line 1.8s ease-in-out infinite" }}
+                  />
+                </div>
+                <style>{`
+                  @keyframes scan-line {
+                    0%   { top: 20%; }
+                    50%  { top: 75%; }
+                    100% { top: 20%; }
+                  }
+                `}</style>
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white mb-2">
+                  {es ? "IA que lee tus vuelos" : "AI that reads your flights"}
+                </h2>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
+                  {es
+                    ? "Sacá foto a tu boarding pass o pegá el texto de la reserva. TripCopilot extrae todo automáticamente — sin tipear nada."
+                    : "Take a photo of your boarding pass or paste your booking text. TripCopilot extracts everything automatically."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Real-time alerts */}
+          {step === 2 && (
+            <div
+              key="step-2"
+              className={`absolute inset-0 px-6 pt-10 pb-4 flex flex-col items-center justify-center text-center gap-5 ${
+                direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
+              }`}
+            >
+              {/* Bell with ping */}
+              <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
+                <span className="absolute inline-flex h-16 w-16 rounded-2xl bg-emerald-500/20 border border-emerald-600/30" />
+                <span
+                  className="absolute inline-flex h-16 w-16 rounded-2xl bg-emerald-500/10"
+                  style={{ animation: "ping-ring 1.5s cubic-bezier(0, 0, 0.2, 1) infinite" }}
+                />
+                <svg className="h-8 w-8 text-emerald-400 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                <style>{`
+                  @keyframes ping-ring {
+                    0%   { transform: scale(1); opacity: 0.6; }
+                    75%, 100% { transform: scale(1.4); opacity: 0; }
+                  }
+                `}</style>
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white mb-2">
+                  {es ? "Alertas en tiempo real" : "Real-time alerts"}
+                </h2>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
+                  {es
+                    ? "Push antes de que salga tu vuelo — demoras, cambios de puerta y cancelaciones. Siempre informado."
+                    : "Push notifications before your flight — delays, gate changes, and cancellations. Always informed."}
+                </p>
+              </div>
+            </div>
+          )}
+
         </div>
 
-        {/* Dot progress */}
-        <div className="flex justify-center gap-1.5 pb-2">
-          {STEPS.map((_, i) => (
+        {/* Dot pagination */}
+        <div className="flex justify-center gap-2 py-2">
+          {Array.from({ length: STEP_COUNT }).map((_, i) => (
             <button
               key={i}
-              onClick={() => setStep(i)}
+              onClick={() => goTo(i)}
               aria-label={`Step ${i + 1}`}
               className={`rounded-full transition-all duration-300 ${
                 i === step
                   ? "h-2 w-5 bg-blue-500"
-                  : "h-2 w-2 bg-white/20 hover:bg-white/30"
+                  : "h-2 w-2 bg-white/20 hover:bg-white/35"
               }`}
             />
           ))}
         </div>
 
         {/* CTAs */}
-        <div className="px-6 pb-7 pt-4 space-y-2">
-          <button
-            onClick={handleNext}
-            className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-bold py-3 transition-all tap-scale"
-          >
-            {isLast
-              ? (es ? "Empezar" : "Get started")
-              : (es ? "Siguiente →" : "Next →")}
-          </button>
+        <div className="px-6 pb-7 pt-3 space-y-2">
+          <div className="flex gap-2">
+            {step > 0 && (
+              <button
+                onClick={handleBack}
+                className="rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-gray-400 text-sm font-medium py-3 px-4 transition-all tap-scale"
+              >
+                {es ? "← Anterior" : "← Back"}
+              </button>
+            )}
+            <button
+              onClick={handleNext}
+              className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-bold py-3 transition-all tap-scale"
+            >
+              {isLast
+                ? (es ? "Comenzar" : "Get started")
+                : (es ? "Siguiente →" : "Next →")}
+            </button>
+          </div>
           {step === 0 && (
             <button
               onClick={onSeeExample}

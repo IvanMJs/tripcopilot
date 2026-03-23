@@ -3,9 +3,9 @@
 import { useState, useMemo, Fragment } from "react";
 import toast from "react-hot-toast";
 import {
-  Plus, X, Calendar, Share2, CheckCheck,
+  Plus, X, Calendar, Share2,
   Plane, Trash2, Pencil, Copy, Check,
-  Save, PlaneTakeoff, ChevronRight, AlertTriangle, Clock, CheckCircle, Link,
+  Save, ChevronRight,
   Sparkles, Loader2, List, GitBranch,
 } from "lucide-react";
 import { AirportStatusMap, TripFlight, TripTab, Accommodation } from "@/lib/types";
@@ -33,6 +33,8 @@ import { TRIP_PANEL_LABELS } from "./TripPanelLabels";
 import { formatRelativeDate } from "@/lib/formatDate";
 import { analytics } from "@/lib/analytics";
 import { FlightCountdownBadge } from "./FlightCountdownBadge";
+import { ConnectionRiskBar } from "./ConnectionRiskBar";
+import { TripShareModal } from "./TripShareModal";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -92,9 +94,9 @@ export function TripPanel({
   const L = TRIP_PANEL_LABELS[locale];
   const [copied, setCopied]             = useState(false);
   const [waCopied, setWaCopied]         = useState(false);
-  const [linkCopied, setLinkCopied]     = useState(false);
   const [showGcal, setShowGcal]         = useState(false);
   const [showImport, setShowImport]     = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [showAddForm, setShowAddForm]   = useState(false);
   const [isRenamingTrip, setIsRenamingTrip]     = useState(false);
   const [renamingTripName, setRenamingTripName] = useState("");
@@ -246,27 +248,6 @@ export function TripPanel({
     setTimeout(() => setCopied(false), 1500);
   }
 
-  async function handleFamilyLink() {
-    try {
-      const res = await fetch("/api/share/trip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tripId: trip.id }),
-      });
-      if (!res.ok) throw new Error("Failed to create share token");
-      const json = await res.json() as { token?: string };
-      if (!json.token) throw new Error("No token returned");
-      const url = `${window.location.origin}/share/${json.token}`;
-      const ok = await copyToClipboard(url);
-      if (ok) {
-        setLinkCopied(true);
-        setTimeout(() => setLinkCopied(false), 3000);
-      }
-    } catch {
-      navigator.vibrate?.([100, 50, 100]);
-      toast.error(locale === "es" ? "No se pudo crear el link familiar" : "Could not create family link");
-    }
-  }
 
   function handleImportFlights(parsedFlights: ParsedFlight[]) {
     analytics.flightImported({ count: parsedFlights.length });
@@ -551,32 +532,8 @@ export function TripPanel({
                         onToggleDeviceTz={onToggleDeviceTz}
                       />
                     </div>
-                    {connAnalysis && connAnalysis.risk !== "safe" && globalIdx < sorted.length - 1 && (
-                      <div className="flex items-center gap-2 my-1 px-2">
-                        <div className={`flex-1 h-px ${
-                          connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                            ? "bg-red-500/40"
-                            : "bg-yellow-500/40"
-                        }`} />
-                        <span className={`text-xs flex items-center gap-1 ${
-                          connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                            ? "text-red-400"
-                            : "text-yellow-400"
-                        }`}>
-                          <AlertTriangle className="w-3 h-3" />
-                          {connAnalysis.risk === "missed"
-                            ? (locale === "es" ? "Conexión imposible" : "Missed connection")
-                            : connAnalysis.risk === "at_risk"
-                            ? (locale === "es" ? "Conexión en riesgo" : "Connection at risk")
-                            : (locale === "es" ? "Conexión ajustada" : "Tight connection")
-                          }
-                        </span>
-                        <div className={`flex-1 h-px ${
-                          connAnalysis.risk === "missed" || connAnalysis.risk === "at_risk"
-                            ? "bg-red-500/40"
-                            : "bg-yellow-500/40"
-                        }`} />
-                      </div>
+                    {connAnalysis && globalIdx < sorted.length - 1 && (
+                      <ConnectionRiskBar analysis={connAnalysis} locale={locale} />
                     )}
                   </Fragment>
                 );
@@ -699,14 +656,12 @@ export function TripPanel({
 
           {!isDraft && (
             <button
-              onClick={handleFamilyLink}
-              title={locale === "es" ? "Genera un link de seguimiento en tiempo real para tu familia" : "Generate a real-time tracking link for your family"}
+              onClick={() => setShowShareModal(true)}
+              title={locale === "es" ? "Compartir viaje con colaboradores" : "Share trip with collaborators"}
               className="flex items-center gap-1.5 rounded-lg border border-violet-800/50 bg-violet-950/20 px-3 py-1.5 text-xs text-violet-400 hover:bg-violet-950/40 hover:text-violet-300 transition-colors"
             >
-              {linkCopied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Link className="h-3.5 w-3.5" />}
-              {linkCopied
-                ? (locale === "en" ? "Link copied!" : "¡Link copiado!")
-                : (locale === "en" ? "Family link" : "Link familiar")}
+              <Share2 className="h-3.5 w-3.5" />
+              {locale === "en" ? "Share" : "Compartir"}
             </button>
           )}
 
@@ -766,6 +721,15 @@ export function TripPanel({
           onImport={handleImportFlights}
           onClose={() => setShowImport(false)}
           locale={locale}
+        />
+      )}
+
+      {showShareModal && !isDraft && (
+        <TripShareModal
+          tripId={trip.id}
+          tripName={trip.name}
+          locale={locale}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </div>

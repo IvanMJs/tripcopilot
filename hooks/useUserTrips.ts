@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 import { TripTab, TripFlight, Accommodation, Passenger } from "@/lib/types";
 import { cacheTrips, getCachedTrips } from "@/lib/tripsCache";
+import { haptics } from "@/lib/haptics";
 
 interface DbAccommodation {
   id: string;
@@ -273,7 +274,7 @@ export function useUserTrips() {
 
     if (!error && data) {
       setTrips((prev) => [...prev, { id: data.id, name, flights: [], accommodations: [] }]);
-      navigator.vibrate?.(20);
+      haptics.success();
       toast.success(locale === "es" ? "Viaje creado" : "Trip created");
       return data.id;
     }
@@ -284,13 +285,13 @@ export function useUserTrips() {
     const snapshot = trips;
     setTrips((prev) => prev.filter((t) => t.id !== id));
 
-    navigator.vibrate?.([50, 30, 50]);
+    haptics.delete();
     const supabase = createClient();
     // Flights cascade on delete via FK
     const { error } = await supabase.from("trips").delete().eq("id", id);
     if (error) {
       setTrips(snapshot);
-      navigator.vibrate?.([100, 50, 100]);
+      haptics.error();
       toast.error("No se pudo eliminar el viaje / Could not delete trip");
     }
   }, [trips]);

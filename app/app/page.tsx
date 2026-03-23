@@ -892,6 +892,20 @@ export default function HomePage() {
           onSelectTrip={(id) => setActiveTab(id)}
         />
       )}
+
+      {/* ── AI Trip Assistant FAB — shown for active saved trips only ── */}
+      {mounted && (() => {
+        const activeSavedTrip = userTrips.find((t) => t.id === activeTab) ?? null;
+        if (!activeSavedTrip) return null;
+        return (
+          <TripAssistant
+            trip={activeSavedTrip}
+            statusMap={statusMap}
+            locale={locale}
+            deviceTz={deviceTz ?? Intl.DateTimeFormat().resolvedOptions().timeZone}
+          />
+        );
+      })()}
     </>
   );
 }

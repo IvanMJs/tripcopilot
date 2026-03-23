@@ -131,14 +131,71 @@ export function TripListView({
           style={{ background: "linear-gradient(150deg, rgba(12,12,22,0.97) 0%, rgba(8,8,16,0.99) 100%)" }}
         >
           <div className="px-6 py-12 flex flex-col items-center text-center">
-            <div className="text-5xl mb-4 select-none">🗺️</div>
+            {/* Inline SVG: stylized plane with trail */}
+            <div className="mb-5 select-none" aria-hidden="true">
+              <svg
+                width="120"
+                height="120"
+                viewBox="0 0 120 120"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Soft gradient background circle */}
+                <circle cx="60" cy="60" r="54" fill="url(#emptyBg)" opacity="0.6" />
+                {/* Trail lines */}
+                <line x1="14" y1="78" x2="44" y2="68" stroke="url(#trailGrad)" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+                <line x1="10" y1="86" x2="36" y2="78" stroke="url(#trailGrad)" strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
+                <line x1="8" y1="94" x2="28" y2="88" stroke="url(#trailGrad)" strokeWidth="1" strokeLinecap="round" opacity="0.2" />
+                {/* Plane body */}
+                <path
+                  d="M52 65 L88 42 C92 39 95 41 94 45 L78 78 C77 81 74 82 71 80 L62 74 L52 78 L54 70 L52 65Z"
+                  fill="url(#planeGrad)"
+                />
+                {/* Left wing */}
+                <path
+                  d="M62 74 L44 86 C41 88 40 86 42 83 L52 65 L62 74Z"
+                  fill="url(#wingGrad)"
+                  opacity="0.85"
+                />
+                {/* Tail fin */}
+                <path
+                  d="M78 78 L82 90 C83 93 80 94 78 92 L71 80 L78 78Z"
+                  fill="url(#wingGrad)"
+                  opacity="0.75"
+                />
+                {/* Window highlight */}
+                <circle cx="76" cy="56" r="3" fill="white" opacity="0.35" />
+                {/* Star dots around the plane */}
+                <circle cx="98" cy="30" r="1.5" fill="#a78bfa" opacity="0.7" />
+                <circle cx="104" cy="50" r="1" fill="#60a5fa" opacity="0.5" />
+                <circle cx="92" cy="22" r="1" fill="#a78bfa" opacity="0.4" />
+                <defs>
+                  <radialGradient id="emptyBg" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#312e81" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#1e1b4b" stopOpacity="0" />
+                  </radialGradient>
+                  <linearGradient id="planeGrad" x1="52" y1="42" x2="94" y2="80" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#818cf8" />
+                    <stop offset="100%" stopColor="#6366f1" />
+                  </linearGradient>
+                  <linearGradient id="wingGrad" x1="40" y1="65" x2="82" y2="94" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#a5b4fc" />
+                    <stop offset="100%" stopColor="#818cf8" />
+                  </linearGradient>
+                  <linearGradient id="trailGrad" x1="8" y1="78" x2="44" y2="68" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0" />
+                    <stop offset="100%" stopColor="#818cf8" stopOpacity="0.8" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
             <h3 className="text-base font-bold text-white mb-2">
-              {locale === "es" ? "Todavía no creaste ningún viaje" : "No trips created yet"}
+              {locale === "es" ? "Tu primera aventura empieza aquí" : "Your first adventure starts here"}
             </h3>
             <p className="text-sm text-gray-400 mb-6 max-w-xs leading-relaxed">
               {locale === "es"
-                ? "Creá un viaje, agregá tus vuelos y monitoreamos aeropuertos, conexiones y clima en tiempo real."
-                : "Create a trip, add your flights and we'll monitor airports, connections, and weather in real time."}
+                ? "Importá un boarding pass con IA en segundos. Sin tipear nada."
+                : "Import a boarding pass with AI in seconds. No typing needed."}
             </p>
             <button
               onClick={onCreateTrip}
