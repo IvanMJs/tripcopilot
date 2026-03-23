@@ -184,6 +184,16 @@ describe("analyzeConnection", () => {
     expect(result!.mctMinutes).toBe(90);
   });
 
+  it("returns null for a stopover (gap >= 24h between flights)", () => {
+    // EZE 29/3 20:30 → MIA (arrives ~00:30 UTC 30/3); AA956 departs MIA 31/3 → ~37h gap → stopover
+    const flightA = makeFlight({ id: "a", originCode: "EZE", destinationCode: "MIA", departureTime: "20:30", isoDate: "2026-03-29" });
+    const flightB = makeFlight({ id: "b", originCode: "MIA", destinationCode: "JFK", departureTime: "13:55", isoDate: "2026-03-31" });
+
+    const result = analyzeConnection(flightA, flightB, emptyStatusMap);
+
+    expect(result).toBeNull();
+  });
+
   it("returns correct connectionAirport value", () => {
     const flightA = makeFlight({ id: "a", originCode: "ATL", destinationCode: "MIA", departureTime: "08:00" });
     const flightB = makeFlight({ id: "b", originCode: "MIA", destinationCode: "GRU", departureTime: "15:00" });

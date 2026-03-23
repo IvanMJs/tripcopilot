@@ -36,6 +36,10 @@ const MCT: Record<string, { domestic: number; international: number }> = {
 
 const MCT_DEFAULT = { domestic: 60, international: 90 };
 
+// IATA definition: connection < 24h; stopover ≥ 24h.
+// Gaps of 24h+ are intentional stopovers — not analyzed as connections.
+const MAX_CONNECTION_MINUTES = 24 * 60; // 1440
+
 // US domestic airport codes (FAA-covered)
 const US_AIRPORTS = new Set([
   "ATL","LAX","ORD","DFW","DEN","JFK","SFO","SEA","LAS","MCO","MIA","CLT",
@@ -153,6 +157,9 @@ export function analyzeConnection(
   const estimatedDuration = estimateFlightDuration(flightA.originCode, flightA.destinationCode);
   const estimatedArrivalA = depAMin + estimatedDuration;
   const scheduledBufferMinutes = depBMin - estimatedArrivalA;
+
+  // Gaps ≥ 24h are planned stopovers, not connections — skip analysis.
+  if (scheduledBufferMinutes >= MAX_CONNECTION_MINUTES) return null;
 
   // ── Delay from FAA ──────────────────────────────────────────────────────────
   const connStatus = statusMap[connectionAirport];
