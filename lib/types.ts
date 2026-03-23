@@ -78,3 +78,19 @@ export interface TripTab {
   flights: TripFlight[];
   accommodations: Accommodation[];
 }
+
+export type CollaboratorRole = "viewer" | "editor";
+export type CollaboratorStatus = "pending" | "accepted" | "declined";
+
+export interface TripCollaborator {
+  id: string;
+  tripId: string;
+  inviterEmail?: string;
+  inviteeEmail: string;
+  inviteeId?: string;
+  role: CollaboratorRole;
+  status: CollaboratorStatus;
+  inviteToken: string;
+  invitedAt: string;
+  acceptedAt?: string;
+}
