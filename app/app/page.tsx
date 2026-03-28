@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
@@ -737,9 +738,13 @@ export default function HomePage() {
 
           {/* ── Tab content ── */}
           <ErrorBoundary>
-            <div
+            <AnimatePresence mode="wait" initial={false}>
+            <motion.div
               key={activeTab}
-              className="animate-fade-in-up"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
             >
             {activeTab === "airports" && (
               <div>
@@ -934,7 +939,8 @@ export default function HomePage() {
                 />
               ) : null
             )}
-            </div>
+            </motion.div>
+            </AnimatePresence>
           </ErrorBoundary>
 
           {/* Footer — desktop only */}

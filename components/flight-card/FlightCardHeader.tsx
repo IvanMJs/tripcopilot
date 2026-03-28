@@ -19,17 +19,19 @@ function SonarIcon() {
         <motion.span
           key={i}
           className="absolute inset-0 rounded-full border-2 border-green-400"
-          initial={{ scale: 0.6, opacity: 0.9 }}
-          animate={{ scale: 2.4, opacity: 0 }}
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: [0.5, 2.6], opacity: [0.85, 0] }}
           transition={{
-            duration: 2,
+            duration: 1.8,
             ease: "easeOut",
             repeat: Infinity,
-            delay: i * 0.65,
+            repeatDelay: 0.4,
+            delay: i * 0.6,
+            times: [0, 1],
           }}
         />
       ))}
-      <PlaneTakeoff className="relative z-10 w-4 h-4 text-green-400" />
+      <PlaneTakeoff className="relative z-10 w-4 h-4 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)]" />
     </div>
   );
 }
