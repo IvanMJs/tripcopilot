@@ -72,6 +72,7 @@ interface TripPanelProps {
   onDuplicateTrip?: () => void;
   onBoardingPassSaved?: (flightId: string, url: string | null) => void;
   onToggleUpgrade?: (flightId: string, wants: boolean) => void;
+  globalNextFlightId?: string | null;
   isDraft?: boolean;
   onSave?: () => void;
   loading?: boolean;
@@ -95,6 +96,7 @@ export function TripPanel({
   onDuplicateTrip,
   onBoardingPassSaved,
   onToggleUpgrade,
+  globalNextFlightId,
   isDraft,
   onSave,
   loading,
@@ -601,7 +603,7 @@ export function TripPanel({
               const todayFlights = sorted.filter((f) => f.isoDate === todayIso);
               const otherFlights = sorted.filter((f) => f.isoDate !== todayIso);
               const nextFlight = sorted.find((f) => f.isoDate >= todayIso);
-              const nextFlightId = nextFlight?.id ?? null;
+              const nextFlightId = globalNextFlightId !== undefined ? globalNextFlightId : (nextFlight?.id ?? null);
 
               function renderFlightCard(flight: TripFlight) {
                 const globalIdx = sorted.indexOf(flight);

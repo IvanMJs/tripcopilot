@@ -222,6 +222,14 @@ export default function HomePage() {
     t.flights.flatMap((f) => [f.originCode, f.destinationCode])
   );
 
+  const globalNextFlightId = (() => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    return userTrips
+      .flatMap((t) => t.flights)
+      .filter((f) => f.isoDate >= todayIso)
+      .sort((a, b) => a.isoDate.localeCompare(b.isoDate) || (a.departureTime ?? "").localeCompare(b.departureTime ?? ""))[0]?.id ?? null;
+  })();
+
   const {
     statusMap: faaStatusMap,
     loading,
@@ -896,6 +904,7 @@ export default function HomePage() {
                   trip={trip}
                   statusMap={statusMap}
                   weatherMap={weatherMap}
+                  globalNextFlightId={globalNextFlightId}
                   onAddFlight={(_, flight) => {
                     const duplicate = trip.flights.some(
                       (f) => f.flightCode === flight.flightCode && f.isoDate === flight.isoDate,
