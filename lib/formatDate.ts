@@ -28,7 +28,7 @@ export function formatTimelineDate(isoDate: string, locale: "es" | "en"): string
 export function formatRelativeDate(isoDate: string, locale: "es" | "en"): string {
   const now = new Date();
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(isoDate + "T12:00:00");
+  const target = new Date(isoDate + "T00:00:00");
   const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
 
   if (diffDays === 0)  return locale === "es" ? "Hoy"           : "Today";
