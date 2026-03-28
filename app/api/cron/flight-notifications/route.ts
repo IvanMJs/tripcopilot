@@ -302,8 +302,9 @@ export async function GET(request: Request) {
       }
     }
 
-    // B: Check-in 24h before
-    if (hoursUntil !== null && hoursUntil >= 23 && hoursUntil <= 25) {
+    // B: Check-in reminder — flight is tomorrow (any departure time)
+    const tomorrowISOLocal = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    if (isoDate === tomorrowISOLocal) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "checkin_24h", Infinity);
       if (!alreadySent) {
         const { title, body } = L.checkin24h(flight.flight_code, originCode, destCode, departureTime ?? "?");
