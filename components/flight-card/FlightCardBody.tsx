@@ -44,6 +44,7 @@ export interface FlightCardBodyProps {
   routeUrl: string;
   flightUrl: string;
   isImminent: boolean;
+  isNextFlight?: boolean;
   hasIssue: boolean;
   isNonFAA: boolean;
   relevantTafPeriod: TafPeriod | null;
@@ -78,6 +79,7 @@ export function FlightCardBody({
   routeUrl,
   flightUrl,
   isImminent,
+  isNextFlight,
   hasIssue,
   isNonFAA,
   relevantTafPeriod,
@@ -93,7 +95,7 @@ export function FlightCardBody({
   const originStatus: AirportStatus | undefined = statusMap[flight.originCode];
   const weather = weatherMap[flight.originCode];
   const { forecast: originForecast } = useDestinationWeather(flight.originCode, flight.isoDate, locale);
-  const geoEnabled = daysUntil >= 0 && daysUntil <= 1;
+  const geoEnabled = isNextFlight === true;
   const userPosition = useGeolocation(geoEnabled);
   const driving = userPosition ? drivingEstimate(userPosition.lat, userPosition.lng, flight.originCode) : null;
 

@@ -34,6 +34,7 @@ export interface FlightCardProps {
   onAddAccommodation: (data: { name: string; checkInTime?: string; checkOutTime?: string; confirmationCode?: string; address?: string }) => void;
   onRemoveAccommodation: () => void;
   onEditAccommodation: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
+  isNextFlight?: boolean;
   showDeviceTz?: boolean;
   deviceTz?: string;
   onToggleDeviceTz?: () => void;
@@ -55,6 +56,7 @@ export function FlightCard({
   onAddAccommodation,
   onRemoveAccommodation,
   onEditAccommodation,
+  isNextFlight,
   showDeviceTz,
   deviceTz,
   onToggleDeviceTz,
@@ -273,6 +275,7 @@ export function FlightCard({
           routeUrl={routeUrl}
           flightUrl={flightUrl}
           isImminent={isImminent}
+          isNextFlight={isNextFlight}
           hasIssue={hasIssue}
           isNonFAA={isNonFAA}
           relevantTafPeriod={relevantTafPeriod}

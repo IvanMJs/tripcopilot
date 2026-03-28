@@ -600,6 +600,8 @@ export function TripPanel({
               const todayIso = new Date().toISOString().slice(0, 10);
               const todayFlights = sorted.filter((f) => f.isoDate === todayIso);
               const otherFlights = sorted.filter((f) => f.isoDate !== todayIso);
+              const nextFlight = sorted.find((f) => f.isoDate >= todayIso);
+              const nextFlightId = nextFlight?.id ?? null;
 
               function renderFlightCard(flight: TripFlight) {
                 const globalIdx = sorted.indexOf(flight);
@@ -613,6 +615,7 @@ export function TripPanel({
                         statusMap={statusMap}
                         weatherMap={weatherMap}
                         locale={locale}
+                        isNextFlight={flight.id === nextFlightId}
                         onRemove={() => onRemoveFlight(trip.id, flight.id)}
                         idx={globalIdx}
                         connectionToNext={connAnalysis}
