@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useNotificationLog } from "@/hooks/useNotificationLog";
 import { useFlightNotes } from "@/hooks/useFlightNotes";
+import { useDestinationWeather } from "@/hooks/useDestinationWeather";
 import { AirportStatusMap, TripFlight, AirportStatus } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
 import { WeatherData } from "@/hooks/useWeather";
@@ -90,6 +91,7 @@ export function FlightCardBody({
 }: FlightCardBodyProps) {
   const originStatus: AirportStatus | undefined = statusMap[flight.originCode];
   const weather = weatherMap[flight.originCode];
+  const { forecast: originForecast } = useDestinationWeather(flight.originCode, flight.isoDate, locale);
 
   const [showNotifLog, setShowNotifLog] = useState(false);
   const { logs: notifLogs, loading: notifLoading } = useNotificationLog(flight.id, showNotifLog);
@@ -151,16 +153,29 @@ export function FlightCardBody({
                 <span className="text-xs text-gray-500">{originInfo.country}</span>
               )}
             </div>
-            {weather && (
-              <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
-                <span className="text-sm leading-none">{weather.icon}</span>
-                <span className="font-semibold text-gray-300">{weather.temperature}°C</span>
-                <span>{weather.description}</span>
-                <span className="text-gray-700">·</span>
-                <span className="text-gray-600">{locale === "es" ? "ahora" : "now"}</span>
+            {(weather || originForecast) && (
+              <div className="mt-2 rounded-lg border border-white/[0.07] bg-white/[0.03] divide-y divide-white/[0.05]">
+                {weather && (
+                  <div className="flex items-center gap-2 px-3 py-2 text-xs">
+                    <span className="text-base leading-none">{weather.icon}</span>
+                    <span className="font-semibold text-gray-200 tabular-nums">{weather.temperature}°C</span>
+                    <span className="text-gray-400">{weather.description}</span>
+                    <span className="ml-auto text-[10px] uppercase tracking-widest text-gray-600">{locale === "es" ? "ahora" : "now"}</span>
+                  </div>
+                )}
+                {originForecast && (
+                  <div className="flex items-center gap-2 px-3 py-2 text-xs">
+                    <span className="text-base leading-none">{originForecast.conditionEmoji}</span>
+                    <span className="font-semibold text-gray-200 tabular-nums">{originForecast.tempMaxC}°/{originForecast.tempMinC}°</span>
+                    <span className="text-gray-400 truncate">{originForecast.conditionLabel}</span>
+                    {originForecast.precipitationMm > 0 && (
+                      <span className="text-blue-400 tabular-nums shrink-0">{originForecast.precipitationMm}mm</span>
+                    )}
+                    <span className="ml-auto text-[10px] uppercase tracking-widest text-gray-600">{locale === "es" ? "día del vuelo" : "flight day"}</span>
+                  </div>
+                )}
               </div>
             )}
-            <WeatherWidget airportIata={flight.originCode} isoDate={flight.isoDate} locale={locale} />
             {tsaData && tsaData.avgWaitTime > 0 && (
               <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
                 <span>🛡️</span>
