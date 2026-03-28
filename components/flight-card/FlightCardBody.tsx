@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   ExternalLink, Clock, MapPin, Plane,
   AlertTriangle, Globe, Zap, DoorOpen,
@@ -110,7 +111,12 @@ export function FlightCardBody({
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   return (
-    <div className={`overflow-hidden transition-all duration-300 ease-out ${expanded ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"}`}>
+    <motion.div
+      initial={false}
+      animate={{ height: expanded ? "auto" : 0, opacity: expanded ? 1 : 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      style={{ overflow: "hidden" }}
+    >
 
       {daysUntil === 1 && (
         <div className="px-4 py-2.5 bg-emerald-950/30 border-b border-emerald-800/40 flex items-center justify-between gap-3 flex-wrap">
@@ -572,6 +578,6 @@ export function FlightCardBody({
         )}
       </div>
 
-    </div>
+    </motion.div>
   );
 }

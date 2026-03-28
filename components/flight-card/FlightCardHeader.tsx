@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, Check, ArrowUpCircle } from "lucide-react";
 import { TripFlight, AirportStatus } from "@/lib/types";
 import { WeatherData } from "@/hooks/useWeather";
@@ -236,12 +236,21 @@ export function FlightCardHeader({
               <span>{flight.airlineName}</span>
             </>
           )}
-          {originWeather && (
-            <span className="ml-auto flex items-center gap-1 shrink-0 text-[11px] text-gray-400">
-              <span className="leading-none">{originWeather.icon}</span>
-              <span className="tabular-nums font-medium">{originWeather.temperature}°C</span>
-            </span>
-          )}
+          <AnimatePresence>
+            {originWeather && (
+              <motion.span
+                key="weather"
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 8 }}
+                transition={{ duration: 0.25 }}
+                className="ml-auto flex items-center gap-1 shrink-0 text-[11px] text-gray-400"
+              >
+                <span className="leading-none">{originWeather.icon}</span>
+                <span className="tabular-nums font-medium">{originWeather.temperature}°C</span>
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

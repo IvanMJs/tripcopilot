@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { DelayStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -66,7 +67,8 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   const dotColor  = DOT_COLOR[status] ?? DOT_COLOR.unknown;
 
   return (
-    <span
+    <motion.span
+      layout
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide",
         PILL[status] ?? PILL.unknown,
@@ -84,6 +86,6 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         <span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", dotColor)} />
       </span>
       {label[status]}
-    </span>
+    </motion.span>
   );
 }
