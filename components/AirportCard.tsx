@@ -481,7 +481,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
           <>
             <p className="mt-3 text-xs text-gray-500 tabular">
               {t.updated}:{" "}
-              {status.lastChecked.toLocaleTimeString(locale === "en" ? "en-US" : "es-AR", { hour: "2-digit", minute: "2-digit" })}
+              {new Date(status.lastChecked).toLocaleTimeString(locale === "en" ? "en-US" : "es-AR", { hour: "2-digit", minute: "2-digit" })}
             </p>
             {minutesAgo > 10 && (
               <span className="mt-1 text-xs text-amber-400 flex items-center gap-1">
