@@ -23,17 +23,19 @@ interface TripAssistantProps {
   locale: Locale;
   deviceTz: string;
   hasNewAlert?: boolean;
+  userLocation?: { lat: number; lng: number } | null;
+  currentWeather?: { temperature: number; description: string } | null;
 }
 
 const QUICK_ACTIONS: Record<Locale, [string, string, string]> = {
   es: [
     "¿Cómo están mis vuelos?",
-    "¿Tengo tiempo de conexión?",
+    "¿Qué hago hoy donde estoy?",
     "¿Cuándo salgo para el aeropuerto?",
   ],
   en: [
     "How are my flights?",
-    "Do I have connection time?",
+    "What to do here today?",
     "When should I leave for the airport?",
   ],
 };
@@ -44,6 +46,8 @@ export function TripAssistant({
   locale,
   deviceTz,
   hasNewAlert = false,
+  userLocation,
+  currentWeather,
 }: TripAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState("");
@@ -59,6 +63,8 @@ export function TripAssistant({
     trip.flights,
     statusMap,
     deviceTz,
+    userLocation,
+    currentWeather,
   );
 
   // Scroll to bottom whenever messages update

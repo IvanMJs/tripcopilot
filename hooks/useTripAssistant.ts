@@ -22,6 +22,8 @@ export interface TripContext {
   currentDateTime: string;
   userTimezone: string;
   airportStatuses?: Record<string, { status: string; delay?: number }>;
+  userLocation?: { lat: number; lng: number } | null;
+  currentWeather?: { temperature: number; description: string } | null;
 }
 
 interface UseTripAssistantReturn {
@@ -37,6 +39,8 @@ function buildTripContext(
   flights: TripFlight[],
   statusMap: AirportStatusMap,
   userTimezone: string,
+  userLocation?: { lat: number; lng: number } | null,
+  currentWeather?: { temperature: number; description: string } | null,
 ): TripContext {
   const airportStatuses: Record<string, { status: string; delay?: number }> = {};
 
@@ -68,6 +72,8 @@ function buildTripContext(
     currentDateTime: new Date().toISOString(),
     userTimezone,
     airportStatuses,
+    userLocation,
+    currentWeather,
   };
 }
 
@@ -76,8 +82,10 @@ export function buildTripContextFromTrip(
   flights: TripFlight[],
   statusMap: AirportStatusMap,
   userTimezone: string,
+  userLocation?: { lat: number; lng: number } | null,
+  currentWeather?: { temperature: number; description: string } | null,
 ): TripContext {
-  return buildTripContext(tripName, flights, statusMap, userTimezone);
+  return buildTripContext(tripName, flights, statusMap, userTimezone, userLocation, currentWeather);
 }
 
 export function useTripAssistant(): UseTripAssistantReturn {

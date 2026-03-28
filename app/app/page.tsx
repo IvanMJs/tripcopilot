@@ -42,6 +42,7 @@ import { makeExampleTrip } from "@/lib/exampleTrip";
 import { createClient } from "@/utils/supabase/client";
 import { GlobalAlertBar } from "@/components/GlobalAlertBar";
 import { useDeviceTimezone } from "@/hooks/useDeviceTimezone";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { TimezoneBanner } from "@/components/TimezoneBanner";
 import { TripAssistant } from "@/components/TripAssistant";
 import { DepartureBoard } from "@/components/DepartureBoard";
@@ -283,6 +284,7 @@ export default function HomePage() {
   );
   const weatherMap = useWeather(allAirportsForWeather, locale);
   const metarMap   = useMetar(watchedAirports);
+  const userPosition = useGeolocation(true);
 
   // ── Logout ────────────────────────────────────────────────────────────────
 
@@ -988,6 +990,10 @@ export default function HomePage() {
             statusMap={statusMap}
             locale={locale}
             deviceTz={deviceTz ?? Intl.DateTimeFormat().resolvedOptions().timeZone}
+            userLocation={userPosition}
+            currentWeather={activeSavedTrip.flights.length > 0 && weatherMap[activeSavedTrip.flights[0].originCode]
+              ? { temperature: weatherMap[activeSavedTrip.flights[0].originCode].temperature, description: weatherMap[activeSavedTrip.flights[0].originCode].description }
+              : null}
           />
         );
       })()}

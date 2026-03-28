@@ -1,6 +1,6 @@
 "use client";
 
-import { Plane, Globe, Trash2, ChevronDown, Check, ArrowUpCircle } from "lucide-react";
+import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, Check, ArrowUpCircle } from "lucide-react";
 import { TripFlight, AirportStatus } from "@/lib/types";
 import { WeatherData } from "@/hooks/useWeather";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -36,6 +36,8 @@ export interface FlightCardHeaderProps {
   displayArrivalTime?: string;
   // current weather at origin airport
   originWeather?: WeatherData;
+  // sonar icon for next flight
+  isNextFlight?: boolean;
 }
 
 export function FlightCardHeader({
@@ -59,6 +61,7 @@ export function FlightCardHeader({
   displayDepartureTime,
   displayArrivalTime,
   originWeather,
+  isNextFlight,
 }: FlightCardHeaderProps) {
   const status = originStatus?.status ?? "ok";
 
@@ -168,7 +171,16 @@ export function FlightCardHeader({
 
           {/* Arrow */}
           <div className="flex flex-col items-center gap-0.5 px-1">
-            <Plane className="w-4 h-4 text-gray-500 rotate-90" />
+            {isNextFlight ? (
+              <div className="relative flex items-center justify-center w-8 h-8">
+                <div className="sonar-ring" />
+                <div className="sonar-ring" />
+                <div className="sonar-ring" />
+                <PlaneTakeoff className="relative z-10 w-4 h-4 text-green-400" />
+              </div>
+            ) : (
+              <Plane className="w-4 h-4 text-gray-500 rotate-90" />
+            )}
           </div>
 
           {/* Destination */}

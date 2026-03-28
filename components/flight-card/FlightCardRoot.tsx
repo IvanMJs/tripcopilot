@@ -254,6 +254,7 @@ export function FlightCard({
           displayDepartureTime={displayDepartureTime ?? undefined}
           displayArrivalTime={displayArrivalTime ?? undefined}
           originWeather={weatherMap[flight.originCode]}
+          isNextFlight={isNextFlight}
         />
 
         <FlightCardBody

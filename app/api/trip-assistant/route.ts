@@ -29,6 +29,8 @@ const TripContextSchema = z.object({
   currentDateTime: z.string(),
   userTimezone: z.string(),
   airportStatuses: z.record(z.string(), AirportStatusSchema).optional(),
+  userLocation: z.object({ lat: z.number(), lng: z.number() }).nullable().optional(),
+  currentWeather: z.object({ temperature: z.number(), description: z.string() }).nullable().optional(),
 });
 
 const MessageSchema = z.object({
@@ -74,12 +76,19 @@ ${airportLines}
 ### Current Date & Time
 ${context.currentDateTime} (user timezone: ${context.userTimezone})
 
+### User's Current Location
+${context.userLocation
+  ? `Lat ${context.userLocation.lat.toFixed(4)}, Lng ${context.userLocation.lng.toFixed(4)}${context.currentWeather ? ` — Currently: ${context.currentWeather.description}, ${context.currentWeather.temperature}°C` : ""}`
+  : "Location not available"}
+
 ## Your capabilities
 - Calculate connection times between flights and warn if they are too tight
 - Alert about active FAA delays, ground stops, or closures at relevant airports
 - Suggest when the user should leave for the airport (recommend arriving 2h domestic, 3h international before departure)
 - Answer questions about flight routes, airports, and travel logistics
 - Compute layover duration, total travel time, and next-day arrival situations
+- Suggest places to visit, restaurants, or activities based on the user's current location and weather
+- Give local tips for the city they are currently in
 
 ## Response guidelines
 - Respond in the same language as the user's message (detect Spanish vs English automatically)
