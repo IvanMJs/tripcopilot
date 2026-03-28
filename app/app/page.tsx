@@ -190,23 +190,12 @@ export default function HomePage() {
     if (!("Notification" in window)) return;
     if (Notification.permission !== "granted") return;
 
-    const MY_FLIGHT_DATES = [
-      { code: "AA 900",  isoDate: "2026-03-29", route: "EZE→MIA",  time: "20:30" },
-      { code: "AA 956",  isoDate: "2026-03-31", route: "MIA→GCM",  time: "12:55" },
-      { code: "B6 766",  isoDate: "2026-04-05", route: "GCM→JFK",  time: "15:40" },
-      { code: "DL 1514", isoDate: "2026-04-11", route: "JFK→MIA",  time: "11:10" },
-      { code: "AA 931",  isoDate: "2026-04-11", route: "MIA→EZE",  time: "21:15" },
-    ];
-
-    const allFlights = [
-      ...MY_FLIGHT_DATES,
-      ...userTrips.flatMap(t => t.flights.map(f => ({
-        code: f.flightCode,
-        isoDate: f.isoDate,
-        route: `${f.originCode}→${f.destinationCode}`,
-        time: f.departureTime ?? "",
-      }))),
-    ];
+    const allFlights = userTrips.flatMap(t => t.flights.map(f => ({
+      code: f.flightCode,
+      isoDate: f.isoDate,
+      route: `${f.originCode}→${f.destinationCode}`,
+      time: f.departureTime ?? "",
+    })));
 
     for (const f of allFlights) {
       const today = new Date(); today.setHours(0, 0, 0, 0);
