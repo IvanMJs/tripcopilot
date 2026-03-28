@@ -178,3 +178,35 @@ export const AIRPORTS: Record<string, {
 };
 
 export const DEFAULT_AIRPORTS = ["MIA", "JFK", "EZE", "GCM"];
+
+/** Haversine distance in km between two coordinates. */
+export function haversineKm(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number,
+): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLng = (lng2 - lng1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Estimates driving distance and time from a device position to an airport.
+ * Road distance ≈ haversine × 1.35; average speed 55 km/h (mixed urban/highway).
+ */
+export function drivingEstimate(
+  userLat: number, userLng: number,
+  airportIata: string,
+): { km: number; minutes: number } | null {
+  const airport = AIRPORTS[airportIata];
+  if (!airport?.lat) return null;
+  const straight = haversineKm(userLat, userLng, airport.lat, airport.lng);
+  const km = Math.round(straight * 1.35);
+  const minutes = Math.round((km / 55) * 60);
+  return { km, minutes };
+}

@@ -9,8 +9,9 @@ import {
 import { useNotificationLog } from "@/hooks/useNotificationLog";
 import { useFlightNotes } from "@/hooks/useFlightNotes";
 import { useDestinationWeather } from "@/hooks/useDestinationWeather";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { AirportStatusMap, TripFlight, AirportStatus } from "@/lib/types";
-import { AIRPORTS } from "@/lib/airports";
+import { AIRPORTS, drivingEstimate } from "@/lib/airports";
 import { WeatherData } from "@/hooks/useWeather";
 import { TafData, TafPeriod } from "@/hooks/useTaf";
 import { SigmetFeature } from "@/hooks/useSigmet";
@@ -92,6 +93,9 @@ export function FlightCardBody({
   const originStatus: AirportStatus | undefined = statusMap[flight.originCode];
   const weather = weatherMap[flight.originCode];
   const { forecast: originForecast } = useDestinationWeather(flight.originCode, flight.isoDate, locale);
+  const geoEnabled = daysUntil >= 0 && daysUntil <= 1;
+  const userPosition = useGeolocation(geoEnabled);
+  const driving = userPosition ? drivingEstimate(userPosition.lat, userPosition.lng, flight.originCode) : null;
 
   const [showNotifLog, setShowNotifLog] = useState(false);
   const { logs: notifLogs, loading: notifLoading } = useNotificationLog(flight.id, showNotifLog);
@@ -153,6 +157,23 @@ export function FlightCardBody({
                 <span className="text-xs text-gray-500">{originInfo.country}</span>
               )}
             </div>
+            {driving && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${AIRPORTS[flight.originCode]?.lat},${AIRPORTS[flight.originCode]?.lng}&travelmode=driving`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-blue-950/40 border border-blue-700/30 text-xs text-blue-300 hover:bg-blue-900/50 transition-colors"
+              >
+                <span>🚗</span>
+                <span className="font-semibold tabular-nums">{driving.km} km</span>
+                <span className="text-blue-400/70">·</span>
+                <span className="tabular-nums">~{driving.minutes >= 60
+                  ? `${Math.floor(driving.minutes / 60)}h ${driving.minutes % 60}min`
+                  : `${driving.minutes} min`}
+                </span>
+                <span className="text-blue-500/50 text-[10px]">↗</span>
+              </a>
+            )}
             {(weather || originForecast) && (
               <div className="mt-2 rounded-lg border border-white/[0.07] bg-white/[0.03] divide-y divide-white/[0.05]">
                 {weather && (
