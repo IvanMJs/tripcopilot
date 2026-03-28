@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, Fragment } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   Plus, X, Calendar, Share2,
@@ -611,7 +612,14 @@ export function TripPanel({
                 const connAnalysis = connByFlight.get(flight.id);
                 return (
                   <Fragment key={flight.id}>
-                    <div className="mb-4">
+                    <motion.div
+                      className="mb-4"
+                      layout
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -40, scale: 0.97 }}
+                      transition={{ duration: 0.25, ease: "easeOut", delay: globalIdx * 0.05 }}
+                    >
                       <FlightCard
                         flight={flight}
                         statusMap={statusMap}
@@ -646,7 +654,7 @@ export function TripPanel({
                         deviceTz={deviceTz}
                         onToggleDeviceTz={onToggleDeviceTz}
                       />
-                    </div>
+                    </motion.div>
                     {airportToCountry(flight.originCode) !== airportToCountry(flight.destinationCode) && (
                       <VisaInfo
                         originAirport={flight.originCode}
@@ -686,7 +694,7 @@ export function TripPanel({
               }, {} as Record<string, TripFlight[]>);
 
               return (
-                <>
+                <AnimatePresence initial={false}>
                   {/* Today pinned section */}
                   {todayFlights.length > 0 && (
                     <div className="mb-4">
@@ -720,7 +728,7 @@ export function TripPanel({
                         {dayFlights.map((flight) => renderFlightCard(flight))}
                       </div>
                     ))}
-                </>
+                </AnimatePresence>
               );
             })()
           )}

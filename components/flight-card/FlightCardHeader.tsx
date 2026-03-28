@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, Check, ArrowUpCircle } from "lucide-react";
 import { TripFlight, AirportStatus } from "@/lib/types";
 import { WeatherData } from "@/hooks/useWeather";
@@ -8,6 +9,30 @@ import { TripPanelLabels } from "@/components/TripPanelLabels";
 import { DaysCountdown } from "./helpers";
 import { useFlightLiveStatus } from "@/hooks/useFlightLiveStatus";
 import { LiveStatusPill } from "./LiveStatusPill";
+
+const SONAR_RINGS = [0, 1, 2];
+
+function SonarIcon() {
+  return (
+    <div className="relative flex items-center justify-center w-10 h-10">
+      {SONAR_RINGS.map((i) => (
+        <motion.span
+          key={i}
+          className="absolute inset-0 rounded-full border-2 border-green-400"
+          initial={{ scale: 0.6, opacity: 0.9 }}
+          animate={{ scale: 2.4, opacity: 0 }}
+          transition={{
+            duration: 2,
+            ease: "easeOut",
+            repeat: Infinity,
+            delay: i * 0.65,
+          }}
+        />
+      ))}
+      <PlaneTakeoff className="relative z-10 w-4 h-4 text-green-400" />
+    </div>
+  );
+}
 
 export interface FlightCardHeaderProps {
   flight: TripFlight;
@@ -171,15 +196,7 @@ export function FlightCardHeader({
 
           {/* Arrow */}
           <div className="flex flex-col items-center gap-0.5 px-1">
-            {isNextFlight ? (
-              <div className="relative flex items-center justify-center w-8 h-8">
-                <span className="absolute inline-flex w-full h-full rounded-full bg-green-400/40 animate-ping" />
-                <span className="absolute inline-flex w-full h-full rounded-full bg-green-400/25 animate-ping" style={{ animationDelay: "0.5s" }} />
-                <PlaneTakeoff className="relative z-10 w-4 h-4 text-green-400" />
-              </div>
-            ) : (
-              <Plane className="w-4 h-4 text-gray-500 rotate-90" />
-            )}
+            {isNextFlight ? <SonarIcon /> : <Plane className="w-4 h-4 text-gray-500 rotate-90" />}
           </div>
 
           {/* Destination */}
