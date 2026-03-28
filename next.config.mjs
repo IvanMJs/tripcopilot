@@ -38,6 +38,7 @@ const securityHeaders = [
         "wss://*.supabase.co",
         "https://nasstatus.faa.gov",
         "https://aerodatabox.p.rapidapi.com",
+        "https://api.open-meteo.com",
         "https://vercel.live",
       ].join(" "),
       // Sentry Session Replay uses a blob: Web Worker
