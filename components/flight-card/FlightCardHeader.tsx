@@ -173,9 +173,8 @@ export function FlightCardHeader({
           <div className="flex flex-col items-center gap-0.5 px-1">
             {isNextFlight ? (
               <div className="relative flex items-center justify-center w-8 h-8">
-                <div className="sonar-ring" />
-                <div className="sonar-ring" />
-                <div className="sonar-ring" />
+                <span className="absolute inline-flex w-full h-full rounded-full bg-green-400/40 animate-ping" />
+                <span className="absolute inline-flex w-full h-full rounded-full bg-green-400/25 animate-ping" style={{ animationDelay: "0.5s" }} />
                 <PlaneTakeoff className="relative z-10 w-4 h-4 text-green-400" />
               </div>
             ) : (
