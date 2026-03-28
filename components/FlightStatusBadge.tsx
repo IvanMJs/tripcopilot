@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useFlightStatus } from "@/hooks/useFlightStatus";
 import {
   RefreshCw, DoorOpen, Plane, AlertCircle,
@@ -83,7 +84,12 @@ export function FlightStatusBadge({ flightIata, isoDate, locale }: Props) {
           className="ml-auto text-gray-700 hover:text-gray-400 transition-colors disabled:opacity-40"
           title={locale === "en" ? "Refresh" : "Actualizar"}
         >
-          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          <motion.div
+            animate={{ rotate: loading ? 360 : 0 }}
+            transition={{ duration: 0.6, repeat: loading ? Infinity : 0, ease: "linear" }}
+          >
+            <RefreshCw className="h-3 w-3" />
+          </motion.div>
         </button>
       </p>
 

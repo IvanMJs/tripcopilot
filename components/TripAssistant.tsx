@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle,
   X,
@@ -9,6 +10,7 @@ import {
   Loader2,
   ChevronDown,
 } from "lucide-react";
+
 import {
   useTripAssistant,
   buildTripContextFromTrip,
@@ -39,6 +41,21 @@ const QUICK_ACTIONS: Record<Locale, [string, string, string]> = {
     "When should I leave for the airport?",
   ],
 };
+
+function TypingDots() {
+  return (
+    <span className="flex items-center gap-1 px-1 py-0.5">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400"
+          animate={{ y: [0, -5, 0] }}
+          transition={{ duration: 0.55, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
+        />
+      ))}
+    </span>
+  );
+}
 
 export function TripAssistant({
   trip,
@@ -113,13 +130,15 @@ export function TripAssistant({
       {/* bottom offset = nav height (60px) + safe-area-inset-bottom + 16px gap */}
       <div className="fixed bottom-[calc(60px+env(safe-area-inset-bottom)+16px)] right-4 z-[45] md:bottom-6 md:right-6">
         {!isOpen && (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
             onClick={handleOpen}
             aria-label={
               locale === "es" ? "Abrir asistente de viaje" : "Open travel assistant"
             }
             className={[
-              "relative flex h-14 w-14 items-center justify-center rounded-full shadow-2xl transition-transform hover:scale-105 active:scale-95",
+              "relative flex h-14 w-14 items-center justify-center rounded-full shadow-2xl",
               "bg-gradient-to-br from-blue-600 to-violet-600",
               hasNewAlert ? "animate-pulse" : "",
             ]
@@ -130,13 +149,20 @@ export function TripAssistant({
             {hasNewAlert && (
               <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-red-500 ring-2 ring-gray-950" />
             )}
-          </button>
+          </motion.button>
         )}
       </div>
 
       {/* Chat panel */}
+      <AnimatePresence>
       {isOpen && (
-        <div className="fixed bottom-[calc(60px+env(safe-area-inset-bottom)+16px)] right-4 z-[45] flex w-[calc(100vw-2rem)] max-w-sm flex-col rounded-2xl border border-white/10 bg-gray-900 shadow-2xl md:bottom-6 md:right-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom)+16px)] right-4 z-[45] flex w-[calc(100vw-2rem)] max-w-sm flex-col rounded-2xl border border-white/10 bg-gray-900 shadow-2xl md:bottom-6 md:right-6"
+        >
           {/* Header */}
           <div className="flex items-center justify-between gap-3 rounded-t-2xl border-b border-white/10 bg-gray-800/80 px-4 py-3 backdrop-blur-sm">
             <div className="flex min-w-0 items-center gap-2.5">
@@ -198,9 +224,13 @@ export function TripAssistant({
               </div>
             )}
 
+            <AnimatePresence mode="popLayout">
             {messages.map((msg) => (
-              <div
+              <motion.div
                 key={msg.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-2`}
               >
                 {msg.role === "assistant" && (
@@ -222,18 +252,14 @@ export function TripAssistant({
                     .join(" ")}
                 >
                   {msg.role === "assistant" && !msg.content ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-400" />
-                      <span className="text-xs text-gray-400">
-                        {locale === "es" ? "Pensando..." : "Thinking..."}
-                      </span>
-                    </>
+                    <TypingDots />
                   ) : (
                     <span className="whitespace-pre-wrap">{msg.content}</span>
                   )}
                 </div>
-              </div>
+              </motion.div>
             ))}
+            </AnimatePresence>
 
             {error && (
               <div className="rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-xs text-red-400">
@@ -291,8 +317,9 @@ export function TripAssistant({
               )}
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Backdrop for mobile */}
       {isOpen && (

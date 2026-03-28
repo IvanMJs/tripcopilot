@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Plane, Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass } from "lucide-react";
 import { TripTab } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
@@ -220,9 +221,9 @@ export function BottomNav({
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${tripsActive ? "text-violet-400" : "text-gray-500"}`}
           >
             <div className="relative">
-              <div className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${tripsActive ? "bg-violet-500/20" : ""}`}>
+              <motion.div whileTap={{ scale: 0.82 }} className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${tripsActive ? "bg-violet-500/20" : ""}`}>
                 <Map className={`w-[22px] h-[22px] transition-colors ${tripsActive ? "text-violet-400" : "text-gray-500"}`} strokeWidth={tripsActive ? 2.5 : 1.5} />
-              </div>
+              </motion.div>
               {totalTrips > 1 && (
                 <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] bg-violet-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                   {totalTrips}
@@ -242,9 +243,9 @@ export function BottomNav({
             onClick={() => onNavigate("airports")}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "airports" ? "text-violet-400" : "text-gray-500"}`}
           >
-            <div className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "airports" ? "bg-violet-500/20" : ""}`}>
+            <motion.div whileTap={{ scale: 0.82 }} className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "airports" ? "bg-violet-500/20" : ""}`}>
               <MapPin className={`w-[22px] h-[22px] transition-colors ${activeTab === "airports" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "airports" ? 2.5 : 1.5} />
-            </div>
+            </motion.div>
             <span className={`text-xs leading-none ${activeTab === "airports" ? "font-bold" : "font-semibold"}`}>{tabLabels.airports}</span>
           </button>
 
@@ -253,9 +254,9 @@ export function BottomNav({
             onClick={() => onNavigate("today")}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`}
           >
-            <div className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "today" ? "bg-violet-500/20" : ""}`}>
+            <motion.div whileTap={{ scale: 0.82 }} className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "today" ? "bg-violet-500/20" : ""}`}>
               <CalendarDays className={`w-[22px] h-[22px] transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "today" ? 2.5 : 1.5} />
-            </div>
+            </motion.div>
             <span className={`text-xs leading-none ${activeTab === "today" ? "font-bold" : "font-semibold"}`}>{locale === "es" ? "Hoy" : "Today"}</span>
           </button>
 
@@ -264,9 +265,9 @@ export function BottomNav({
             onClick={() => onNavigate("search")}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "search" ? "text-violet-400" : "text-gray-500"}`}
           >
-            <div className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "search" ? "bg-violet-500/20" : ""}`}>
+            <motion.div whileTap={{ scale: 0.82 }} className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "search" ? "bg-violet-500/20" : ""}`}>
               <Plane className={`w-[22px] h-[22px] transition-colors ${activeTab === "search" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "search" ? 2.5 : 1.5} />
-            </div>
+            </motion.div>
             <span className={`text-xs leading-none ${activeTab === "search" ? "font-bold" : "font-semibold"}`}>{tabLabels.search}</span>
           </button>
 
@@ -275,9 +276,9 @@ export function BottomNav({
             onClick={() => onNavigate("discover")}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "discover" ? "text-violet-400" : "text-gray-500"}`}
           >
-            <div className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "discover" ? "bg-violet-500/20" : ""}`}>
+            <motion.div whileTap={{ scale: 0.82 }} className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "discover" ? "bg-violet-500/20" : ""}`}>
               <Compass className={`w-[22px] h-[22px] transition-colors ${activeTab === "discover" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "discover" ? 2.5 : 1.5} />
-            </div>
+            </motion.div>
             <span className={`text-xs leading-none ${activeTab === "discover" ? "font-bold" : "font-semibold"}`}>
               {locale === "es" ? "Explorar" : "Explore"}
             </span>
@@ -288,9 +289,9 @@ export function BottomNav({
             onClick={() => { setShowTripPicker(false); onNewTrip(); }}
             className="flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors text-gray-500 hover:text-violet-400"
           >
-            <div className="flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200">
+            <motion.div whileTap={{ scale: 0.82 }} className="flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200">
               <Plus className="w-[22px] h-[22px]" strokeWidth={1.5} />
-            </div>
+            </motion.div>
             <span className="text-xs font-semibold leading-none">{locale === "es" ? "Nuevo" : "New"}</span>
           </button>
 
