@@ -203,7 +203,7 @@ export function FlightCard({
   return (
     <div
       id={`flight-card-${idx}`}
-      className={`relative rounded-xl border-2 overflow-hidden transition-all animate-fade-in-up stagger-item hover:-translate-y-1 ${
+      className={`relative rounded-xl border-2 transition-all animate-fade-in-up stagger-item hover:-translate-y-1 ${
         connectionToNext && connectionToNext.risk === "missed"   ? "border-red-700/60"    :
         connectionToNext && connectionToNext.risk === "at_risk"  ? "border-orange-600/60" :
         connectionToNext && connectionToNext.risk === "tight"    ? "border-yellow-700/50" :
