@@ -19,21 +19,38 @@ export const PLANS = {
   free: {
     name: "Free",
     maxTrips: 2,
-    maxFlightsPerTrip: 5,
-    features: ["Alertas básicas", "Importar boarding pass"],
+    maxFlightsPerTrip: 3,
+    features: ["2 viajes", "3 vuelos por viaje", "Alertas básicas de check-in"],
   },
-  premium: {
-    name: "Premium",
-    mpAmount: Number(process.env.MP_PRICE_AMOUNT ?? "1000000"), // 10.000 ARS in centavos
+  explorer: {
+    name: "Explorer",
+    mpAmount: Number(process.env.MP_EXPLORER_AMOUNT ?? "500000"),
+    mpCurrencyId: process.env.MP_CURRENCY_ID ?? "ARS",
+    maxTrips: 10,
+    maxFlightsPerTrip: 15,
+    features: [
+      "10 viajes · 15 vuelos c/u",
+      "Todas las notificaciones push",
+      "AI TripAdvisor",
+      "Mapa mundial de viajes",
+      "Travel Wrapped compartible",
+      "Trip Debrief",
+      "Export .ics / CSV",
+    ],
+  },
+  pilot: {
+    name: "Pilot",
+    mpAmount: Number(process.env.MP_PILOT_AMOUNT ?? "1000000"),
     mpCurrencyId: process.env.MP_CURRENCY_ID ?? "ARS",
     maxTrips: Infinity,
     maxFlightsPerTrip: Infinity,
     features: [
-      "Viajes ilimitados",
-      "AI Travel Assistant",
-      "Colaboradores",
-      "Export PDF",
-      "Alertas de precio",
+      "Viajes y vuelos ilimitados",
+      "Todo lo de Explorer",
+      "AI Health Check 48h antes",
+      "Viajes compartidos (coming soon)",
+      "Morning Briefing semanal",
+      "Soporte prioritario",
     ],
   },
 } as const;

@@ -9,12 +9,12 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"explorer" | "pilot" | null>(null);
 
   if (!isOpen) return null;
 
-  async function handleUpgrade() {
-    setLoading(true);
+  async function handleUpgrade(planId: "explorer" | "pilot") {
+    setLoading(planId);
     try {
       const successUrl = `${window.location.origin}/app?upgrade=success`;
       const cancelUrl  = `${window.location.origin}/app?upgrade=cancel`;
@@ -22,7 +22,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
       const res = await fetch("/api/mercadopago/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ successUrl, cancelUrl }),
+        body: JSON.stringify({ successUrl, cancelUrl, planId }),
       });
 
       if (!res.ok) {
@@ -36,7 +36,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
     } catch {
       // fail silently — user stays on modal and can retry
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   }
 
@@ -46,7 +46,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0a0a14] shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#0a0a14] shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -65,7 +65,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
         </div>
 
         {/* Cards */}
-        <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
 
           {/* Free card */}
           <div className="rounded-xl border border-white/[0.12] bg-white/[0.03] p-5 flex flex-col gap-4">
@@ -85,37 +85,55 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                   {feat}
                 </li>
               ))}
-              <li className="flex items-center gap-2 text-sm text-gray-500">
-                <span className="h-4 w-4 shrink-0 rounded-full border border-gray-700 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-2.5 w-2.5 text-gray-600">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </span>
-                Max. {PLANS.free.maxTrips} viajes
-              </li>
             </ul>
           </div>
 
-          {/* Premium card */}
-          <div className="rounded-xl border-2 border-amber-500/60 bg-gradient-to-b from-amber-950/30 to-[#0a0a14] p-5 flex flex-col gap-4 relative overflow-hidden">
-            {/* Glow */}
-            <div className="absolute inset-0 pointer-events-none rounded-xl" style={{ boxShadow: "inset 0 0 40px rgba(245,158,11,0.07)" }} />
-
+          {/* Explorer card */}
+          <div className="rounded-xl border border-sky-500/40 bg-gradient-to-b from-sky-950/30 to-[#0a0a14] p-5 flex flex-col gap-4 relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none rounded-xl" style={{ boxShadow: "inset 0 0 40px rgba(14,165,233,0.06)" }} />
             <div>
-              {/* Badge */}
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/20 border border-sky-500/40 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-sky-300 mb-2">
+                EXPLORER
+              </span>
+              <p className="text-xl font-black text-white">{PLANS.explorer.name}</p>
+              <p className="text-sm text-sky-400/80 mt-0.5">$5.000 ARS/mes</p>
+            </div>
+            <ul className="space-y-2 flex-1">
+              {PLANS.explorer.features.map((feat) => (
+                <li key={feat} className="flex items-center gap-2 text-sm text-gray-200">
+                  <span className="h-4 w-4 shrink-0 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-2.5 w-2.5 text-sky-400">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  {feat}
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => handleUpgrade("explorer")}
+              disabled={loading !== null}
+              className="relative z-10 w-full rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 disabled:opacity-60 text-white text-sm font-black py-3 transition-all"
+            >
+              {loading === "explorer" ? "Redirigiendo..." : "Ir a Explorer \u2192"}
+            </button>
+          </div>
+
+          {/* Pilot card */}
+          <div className="rounded-xl border-2 border-amber-500/60 bg-gradient-to-b from-amber-950/30 to-[#0a0a14] p-5 flex flex-col gap-4 relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none rounded-xl" style={{ boxShadow: "inset 0 0 40px rgba(245,158,11,0.07)" }} />
+            <div>
               <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-black mb-2">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
-                PREMIUM
+                PILOT
               </span>
-              <p className="text-xl font-black text-white">{PLANS.premium.name}</p>
+              <p className="text-xl font-black text-white">{PLANS.pilot.name}</p>
               <p className="text-sm text-amber-400/80 mt-0.5">$10.000 ARS/mes</p>
             </div>
-
             <ul className="space-y-2 flex-1">
-              {PLANS.premium.features.map((feat) => (
+              {PLANS.pilot.features.map((feat) => (
                 <li key={feat} className="flex items-center gap-2 text-sm text-gray-200">
                   <span className="h-4 w-4 shrink-0 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-2.5 w-2.5 text-amber-400">
@@ -125,22 +143,13 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                   {feat}
                 </li>
               ))}
-              <li className="flex items-center gap-2 text-sm text-gray-200">
-                <span className="h-4 w-4 shrink-0 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-2.5 w-2.5 text-amber-400">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </span>
-                Viajes ilimitados
-              </li>
             </ul>
-
             <button
-              onClick={handleUpgrade}
-              disabled={loading}
+              onClick={() => handleUpgrade("pilot")}
+              disabled={loading !== null}
               className="relative z-10 w-full rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 disabled:opacity-60 text-black text-sm font-black py-3 transition-all"
             >
-              {loading ? "Redirigiendo..." : "Actualizar a Premium \u2192"}
+              {loading === "pilot" ? "Redirigiendo..." : "Ir a Pilot \u2192"}
             </button>
           </div>
 
