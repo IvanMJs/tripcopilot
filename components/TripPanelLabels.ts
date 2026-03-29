@@ -218,7 +218,7 @@ export const AIRLINE_APP_URLS: Record<string, string> = {
 };
 
 export const AIRLINE_CHECKIN_URLS: Record<string, string> = {
-  AA: "https://www.aa.com/reservation/retrieveReservationSummaryPage.do",
+  AA: "https://www.aa.com/checkin",
   UA: "https://www.united.com/ual/en/us/checkin",
   DL: "https://www.delta.com/us/en/check-in/overview",
   B6: "https://www.jetblue.com/manage-trips/check-in",
