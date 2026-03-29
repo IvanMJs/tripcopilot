@@ -705,6 +705,52 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
                   {locale === "es" ? "Clima, equipaje y actividades" : "Weather, packing and activities"}
                 </p>
               </div>
+              {/* Destination preview strip */}
+              {stays.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
+                  {stays.map((stay) => (
+                    <div key={stay.code + stay.arrivalIso} className="shrink-0 flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
+                      <span className="text-lg">{stay.flag}</span>
+                      <div>
+                        <p className="text-xs font-medium text-gray-300">{locale === "es" ? stay.city : stay.cityEn}</p>
+                        <p className="text-[10px] text-gray-500">{stay.nights} {locale === "es" ? "noches" : "nights"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                {locale === "es" ? "¿Qué vas a hacer en este viaje?" : "What are you doing on this trip?"}
+              </p>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {ACTIVITY_CHIPS.map((chip) => {
+                  const selected = selectedActivities.includes(chip.id);
+                  return (
+                    <motion.button
+                      key={chip.id}
+                      onClick={() => toggleActivity(chip.id)}
+                      whileTap={{ scale: 0.91 }}
+                      animate={selected ? { scale: 1.04 } : { scale: 1 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                      className={`inline-flex items-center gap-1 text-xs font-medium px-4 py-2 rounded-xl border transition-colors ${
+                        selected
+                          ? "bg-violet-600/20 text-violet-200 border-violet-500/50"
+                          : "bg-white/[0.04] text-gray-300 border-white/[0.08] hover:border-white/20"
+                      }`}
+                    >
+                      {selected && <span className="text-violet-400 text-[10px]">✓ </span>}
+                      <span>{chip.emoji}</span>
+                      <span>{locale === "es" ? chip.label : chip.labelEn}</span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={handleGenerateAdvice}
+                className="shimmer-btn w-full py-2 rounded-xl bg-violet-700/40 border border-violet-500/40 text-sm font-semibold text-violet-100 hover:bg-violet-700/60 transition-colors"
+              >
+                {locale === "es" ? "Pedirle consejos a la IA →" : "Ask the AI for tips →"}
+              </button>
             </div>
           )}
 
