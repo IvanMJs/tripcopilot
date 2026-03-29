@@ -21,6 +21,10 @@ const LABELS = {
     airline:      "Aerolínea principal",
     offsetCta:    "Compensar →",
     airports:     (n: number) => `${n} aeropuerto${n !== 1 ? "s" : ""}`,
+    km:            (n: number) => `${Math.round(n).toLocaleString()} km`,
+    destinations:  (n: number) => `${n} destino${n !== 1 ? "s" : ""}`,
+    aroundEarth:   (n: number) => `${n}× Tierra`,
+    mostRoute:     "Ruta frecuente",
   },
   en: {
     title:        "Trip summary",
@@ -33,6 +37,10 @@ const LABELS = {
     airline:      "Main airline",
     offsetCta:    "Offset →",
     airports:     (n: number) => `${n} airport${n !== 1 ? "s" : ""}`,
+    km:            (n: number) => `${Math.round(n).toLocaleString()} km`,
+    destinations:  (n: number) => `${n} destination${n !== 1 ? "s" : ""}`,
+    aroundEarth:   (n: number) => `${n}× Earth`,
+    mostRoute:     "Top route",
   },
 } as const;
 
@@ -77,6 +85,30 @@ export function TripStatsCard({ trip, locale }: TripStatsCardProps) {
           </span>
         )}
 
+        {/* Km flown */}
+        {stats.totalDistanceKm > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/[0.08] px-2.5 py-1 text-xs font-semibold text-gray-300">
+            <span aria-hidden>📏</span>
+            {L.km(stats.totalDistanceKm)}
+          </span>
+        )}
+
+        {/* Unique destinations */}
+        {stats.uniqueDestinations.length > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/[0.08] px-2.5 py-1 text-xs font-semibold text-gray-300">
+            <span aria-hidden>📍</span>
+            {L.destinations(stats.uniqueDestinations.length)}
+          </span>
+        )}
+
+        {/* Times around Earth */}
+        {stats.timesAroundEarth >= 0.1 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-950/40 border border-blue-800/30 px-2.5 py-1 text-xs font-semibold text-blue-300">
+            <span aria-hidden>🌏</span>
+            {L.aroundEarth(stats.timesAroundEarth)}
+          </span>
+        )}
+
         {/* CO2 */}
         {stats.co2Kg > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/40 border border-emerald-800/30 px-2.5 py-1 text-xs font-semibold text-emerald-400">
@@ -105,6 +137,14 @@ export function TripStatsCard({ trip, locale }: TripStatsCardProps) {
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               <span className="font-semibold text-gray-400">{L.airline}:</span>
               <span className="text-gray-300">{stats.mostUsedAirline}</span>
+            </div>
+          )}
+
+          {/* Most frequent route */}
+          {stats.mostFrequentRoute && (
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <span className="font-semibold text-gray-400">{L.mostRoute}:</span>
+              <span className="font-mono text-gray-300 font-semibold">{stats.mostFrequentRoute}</span>
             </div>
           )}
         </div>

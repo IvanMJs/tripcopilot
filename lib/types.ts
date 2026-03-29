@@ -61,6 +61,8 @@ export interface TripFlight {
   wantsUpgrade?: boolean;   // user opted in for upgrade reminder notification
   cabinClass?: "economy" | "premium_economy" | "business" | "first";
   bookingCode?: string;    // PNR / confirmation code, e.g. "QDLHPV"
+  seatNumber?: string;     // seat assignment, e.g. "12A", "23F"
+  terminal?: string;       // departure terminal, e.g. "T2", "International"
 }
 
 export interface Accommodation {

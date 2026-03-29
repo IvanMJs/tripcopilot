@@ -32,6 +32,73 @@ const MCT: Record<string, { domestic: number; international: number }> = {
   BOG: { domestic: 60,  international: 75  },
   LIM: { domestic: 60,  international: 90  },
   SCL: { domestic: 45,  international: 75  },
+  // Europe
+  LHR: { domestic: 60,  international: 90  },  // London Heathrow
+  LGW: { domestic: 45,  international: 60  },  // London Gatwick
+  CDG: { domestic: 60,  international: 90  },  // Paris Charles de Gaulle
+  ORY: { domestic: 45,  international: 60  },  // Paris Orly
+  AMS: { domestic: 45,  international: 75  },  // Amsterdam Schiphol
+  FRA: { domestic: 45,  international: 75  },  // Frankfurt
+  MUC: { domestic: 45,  international: 60  },  // Munich
+  MAD: { domestic: 45,  international: 75  },  // Madrid Barajas
+  BCN: { domestic: 45,  international: 60  },  // Barcelona El Prat
+  FCO: { domestic: 60,  international: 90  },  // Rome Fiumicino
+  MXP: { domestic: 45,  international: 60  },  // Milan Malpensa
+  ZRH: { domestic: 45,  international: 75  },  // Zurich
+  VIE: { domestic: 45,  international: 75  },  // Vienna
+  BRU: { domestic: 45,  international: 75  },  // Brussels
+  CPH: { domestic: 45,  international: 75  },  // Copenhagen
+  ARN: { domestic: 45,  international: 60  },  // Stockholm Arlanda
+  HEL: { domestic: 45,  international: 60  },  // Helsinki
+  LIS: { domestic: 45,  international: 60  },  // Lisbon
+  DUB: { domestic: 45,  international: 60  },  // Dublin
+  MAN: { domestic: 45,  international: 60  },  // Manchester
+  OSL: { domestic: 45,  international: 60  },  // Oslo
+  WAW: { domestic: 45,  international: 60  },  // Warsaw
+  // Middle East & Africa
+  IST: { domestic: 60,  international: 90  },  // Istanbul
+  SAW: { domestic: 45,  international: 60  },  // Istanbul Sabiha
+  DXB: { domestic: 90,  international: 90  },  // Dubai
+  DOH: { domestic: 60,  international: 90  },  // Doha
+  AUH: { domestic: 60,  international: 90  },  // Abu Dhabi
+  CAI: { domestic: 60,  international: 90  },  // Cairo
+  JNB: { domestic: 60,  international: 90  },  // Johannesburg
+  NBO: { domestic: 60,  international: 75  },  // Nairobi
+  ADD: { domestic: 60,  international: 75  },  // Addis Ababa
+  CMN: { domestic: 60,  international: 75  },  // Casablanca
+  // Asia-Pacific
+  SIN: { domestic: 60,  international: 90  },  // Singapore Changi
+  BKK: { domestic: 60,  international: 90  },  // Bangkok Suvarnabhumi
+  HKG: { domestic: 60,  international: 90  },  // Hong Kong
+  NRT: { domestic: 90,  international: 90  },  // Tokyo Narita
+  HND: { domestic: 60,  international: 75  },  // Tokyo Haneda
+  ICN: { domestic: 60,  international: 90  },  // Seoul Incheon
+  PVG: { domestic: 60,  international: 90  },  // Shanghai Pudong
+  PEK: { domestic: 90,  international: 90  },  // Beijing Capital
+  SYD: { domestic: 60,  international: 90  },  // Sydney
+  MEL: { domestic: 45,  international: 60  },  // Melbourne
+  AKL: { domestic: 45,  international: 75  },  // Auckland
+  KUL: { domestic: 60,  international: 90  },  // Kuala Lumpur
+  MNL: { domestic: 60,  international: 90  },  // Manila
+  CGK: { domestic: 60,  international: 90  },  // Jakarta
+  DEL: { domestic: 60,  international: 90  },  // Delhi
+  BOM: { domestic: 60,  international: 90  },  // Mumbai
+  // Canada
+  YYZ: { domestic: 45,  international: 75  },  // Toronto Pearson
+  YVR: { domestic: 45,  international: 75  },  // Vancouver
+  YUL: { domestic: 45,  international: 75  },  // Montreal
+  // Latin America (additional)
+  MEX: { domestic: 60,  international: 90  },  // Mexico City
+  CUN: { domestic: 45,  international: 60  },  // Cancun
+  GDL: { domestic: 45,  international: 60  },  // Guadalajara
+  MDE: { domestic: 45,  international: 60  },  // Medellin
+  UIO: { domestic: 60,  international: 75  },  // Quito
+  GIG: { domestic: 60,  international: 90  },  // Rio de Janeiro
+  SSA: { domestic: 45,  international: 60  },  // Salvador
+  EZE: { domestic: 60,  international: 90  },  // Buenos Aires Ezeiza
+  AEP: { domestic: 30,  international: 60  },  // Buenos Aires Aeroparque
+  MVD: { domestic: 45,  international: 75  },  // Montevideo
+  ASU: { domestic: 45,  international: 60  },  // Asuncion
 };
 
 const MCT_DEFAULT = { domestic: 60, international: 90 };
@@ -45,6 +112,9 @@ const US_AIRPORTS = new Set([
   "ATL","LAX","ORD","DFW","DEN","JFK","SFO","SEA","LAS","MCO","MIA","CLT",
   "EWR","PHX","IAH","BOS","MSP","DTW","FLL","LGA","BWI","SLC","PHL","DCA",
   "IAD","HNL","MDW","SAN","TPA","PDX",
+  "AUS","BNA","BUF","CLE","CMH","CVG","DAL","DAY","ELP","GRR","HOU","IND",
+  "JAX","MCI","MEM","MKE","MSY","OAK","OKC","OMA","ONT","ORF","PBI","PIT",
+  "RDU","RIC","RSW","SJC","SNA","STL","TUS",
 ]);
 
 function isUSAirport(code: string): boolean {

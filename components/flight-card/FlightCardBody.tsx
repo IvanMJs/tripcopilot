@@ -21,7 +21,7 @@ import { buildGoogleCalendarUrl } from "@/lib/exportGoogleCalendar";
 import { ConnectionAnalysis } from "@/lib/connectionRisk";
 import { FlightStatusBadge } from "@/components/FlightStatusBadge";
 import { TsaAirportData } from "@/hooks/useTsaWait";
-import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, AIRLINE_CHECKIN_URLS, TripPanelLabels } from "@/components/TripPanelLabels";
+import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, AIRLINE_CHECKIN_URLS, AIRLINE_UPGRADE_URLS, TripPanelLabels } from "@/components/TripPanelLabels";
 import { DaysCountdown, ExchangeRateRow } from "./helpers";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { AirportInfoCard } from "@/components/AirportInfoCard";
@@ -57,6 +57,7 @@ export interface FlightCardBodyProps {
   tsaData?: TsaAirportData;
   connectionToNext: ConnectionAnalysis | undefined;
   hoursUntilDep?: number | null;
+  wantsUpgrade?: boolean;
   // device timezone
   displayDepartureTime?: string;
   showDeviceTz?: boolean;
@@ -91,6 +92,7 @@ export function FlightCardBody({
   activeSigmets,
   tsaData,
   hoursUntilDep,
+  wantsUpgrade,
   displayDepartureTime,
   showDeviceTz,
   onToggleDeviceTz,
@@ -153,6 +155,28 @@ export function FlightCardBody({
               }`}
             >
               {locale === "en" ? "Check in now" : "Hacer check-in"}
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
+      )}
+
+      {wantsUpgrade && (
+        <div className="px-4 py-2.5 border-b border-violet-800/30 bg-violet-950/20 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">⬆️</span>
+            <p className="text-xs font-bold text-violet-300">
+              {locale === "en" ? "Upgrade requested" : "Upgrade solicitado"}
+            </p>
+          </div>
+          {AIRLINE_UPGRADE_URLS[flight.airlineCode] && (
+            <a
+              href={AIRLINE_UPGRADE_URLS[flight.airlineCode]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-1.5 transition-colors border text-violet-300 border-violet-700/50 bg-violet-900/20 hover:bg-violet-900/40"
+            >
+              {locale === "en" ? "Manage upgrade" : "Gestionar upgrade"}
               <ExternalLink className="h-3 w-3" />
             </a>
           )}

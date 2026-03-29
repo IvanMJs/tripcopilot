@@ -82,6 +82,9 @@ export interface TripStats {
   co2Kg: number;
   earliestFlight: string | null;   // "HH:MM" departure time
   longestFlight: { flightCode: string; durationMin: number } | null;
+  uniqueDestinations: string[];        // unique destination airport codes
+  mostFrequentRoute: string | null;    // e.g. "EZE→MIA"
+  timesAroundEarth: number;            // totalDistanceKm / 40075, rounded to 1 decimal
 }
 
 export function computeTripStats(trip: TripTab): TripStats {
@@ -99,6 +102,9 @@ export function computeTripStats(trip: TripTab): TripStats {
       co2Kg: 0,
       earliestFlight: null,
       longestFlight: null,
+      uniqueDestinations: [],
+      mostFrequentRoute: null,
+      timesAroundEarth: 0,
     };
   }
 
@@ -114,11 +120,20 @@ export function computeTripStats(trip: TripTab): TripStats {
   let earliestTime: string | null = null;
   let longestDuration = 0;
   let longestFlightCode: string | null = null;
+  const destinationSet = new Set<string>();
+  const routeCounts = new Map<string, number>();
 
   for (const flight of flights) {
     // Airports visited (origin + destination)
     airportSet.add(flight.originCode);
     airportSet.add(flight.destinationCode);
+
+    // Unique destinations (only destination, not origin)
+    destinationSet.add(flight.destinationCode);
+
+    // Route frequency
+    const routeKey = `${flight.originCode}→${flight.destinationCode}`;
+    routeCounts.set(routeKey, (routeCounts.get(routeKey) ?? 0) + 1);
 
     // Countries from destination airport
     const destInfo = AIRPORTS[flight.destinationCode];
@@ -180,6 +195,18 @@ export function computeTripStats(trip: TripTab): TripStats {
     }
   });
 
+  // Most frequent route
+  let mostFrequentRoute: string | null = null;
+  let maxRouteCount = 0;
+  routeCounts.forEach((count, route) => {
+    if (count > maxRouteCount) {
+      maxRouteCount = count;
+      mostFrequentRoute = route;
+    }
+  });
+
+  const timesAroundEarth = Math.round((totalDistanceKm / 40075) * 10) / 10;
+
   return {
     totalFlights: flights.length,
     totalDistanceKm: Math.round(totalDistanceKm),
@@ -194,5 +221,8 @@ export function computeTripStats(trip: TripTab): TripStats {
       longestFlightCode !== null
         ? { flightCode: longestFlightCode, durationMin: longestDuration }
         : null,
+    uniqueDestinations: Array.from(destinationSet).sort(),
+    mostFrequentRoute,
+    timesAroundEarth,
   };
 }

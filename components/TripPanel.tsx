@@ -642,6 +642,7 @@ export function TripPanel({
                         showDeviceTz={showDeviceTz}
                         deviceTz={deviceTz}
                         onToggleDeviceTz={onToggleDeviceTz}
+                        onToggleUpgrade={onToggleUpgrade}
                       />
                     </motion.div>
                     {airportToCountry(flight.originCode) !== airportToCountry(flight.destinationCode) && (

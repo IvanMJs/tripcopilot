@@ -38,6 +38,7 @@ export interface FlightCardProps {
   showDeviceTz?: boolean;
   deviceTz?: string;
   onToggleDeviceTz?: () => void;
+  onToggleUpgrade?: (flightId: string, value: boolean) => void;
 }
 
 export function FlightCard({
@@ -60,6 +61,7 @@ export function FlightCard({
   showDeviceTz,
   deviceTz,
   onToggleDeviceTz,
+  onToggleUpgrade,
 }: FlightCardProps) {
   const L = TRIP_PANEL_LABELS[locale];
 
@@ -255,6 +257,8 @@ export function FlightCard({
           displayArrivalTime={displayArrivalTime ?? undefined}
           originWeather={weatherMap[flight.originCode]}
           isNextFlight={isNextFlight}
+          wantsUpgrade={flight.wantsUpgrade}
+          onToggleUpgrade={onToggleUpgrade}
         />
 
         <FlightCardBody
@@ -286,6 +290,7 @@ export function FlightCard({
           activeSigmets={activeSigmets}
           connectionToNext={connectionToNext}
           hoursUntilDep={hoursUntilDep}
+          wantsUpgrade={flight.wantsUpgrade}
           showDeviceTz={shouldShowDeviceTz}
           onToggleDeviceTz={deviceTz && deviceTz !== originTz ? onToggleDeviceTz : undefined}
         />
