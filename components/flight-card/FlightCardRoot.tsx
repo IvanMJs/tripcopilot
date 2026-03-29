@@ -259,6 +259,7 @@ export function FlightCard({
           isNextFlight={isNextFlight}
           wantsUpgrade={flight.wantsUpgrade}
           onToggleUpgrade={onToggleUpgrade}
+          hoursUntilDep={hoursUntilDep}
         />
 
         <FlightCardBody

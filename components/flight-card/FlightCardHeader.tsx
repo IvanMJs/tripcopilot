@@ -1,11 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, Check, ArrowUpCircle } from "lucide-react";
+import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, ExternalLink } from "lucide-react";
 import { TripFlight, AirportStatus } from "@/lib/types";
 import { WeatherData } from "@/hooks/useWeather";
-import { StatusBadge } from "@/components/StatusBadge";
-import { TripPanelLabels } from "@/components/TripPanelLabels";
+import { TripPanelLabels, AIRLINE_CHECKIN_URLS, AIRLINE_APP_URLS } from "@/components/TripPanelLabels";
 import { DaysCountdown } from "./helpers";
 import { useFlightLiveStatus } from "@/hooks/useFlightLiveStatus";
 import { LiveStatusPill } from "./LiveStatusPill";
@@ -15,13 +14,11 @@ const SONAR_RINGS = [0, 1, 2];
 function SonarIcon() {
   return (
     <div className="relative flex items-center justify-center w-12 h-12">
-      {/* Pulsing glow blob behind icon */}
       <motion.div
         className="absolute inset-0 rounded-full bg-green-400/15"
         animate={{ scale: [1, 1.18, 1], opacity: [0.4, 0.75, 0.4] }}
         transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
       />
-      {/* Sonar rings */}
       {SONAR_RINGS.map((i) => (
         <motion.span
           key={i}
@@ -38,7 +35,6 @@ function SonarIcon() {
           }}
         />
       ))}
-      {/* Floating plane icon */}
       <motion.div
         className="relative z-10"
         animate={{ y: [0, -2.5, 0] }}
@@ -79,6 +75,8 @@ export interface FlightCardHeaderProps {
   originWeather?: WeatherData;
   // sonar icon for next flight
   isNextFlight?: boolean;
+  // hours until departure (for action row highlight)
+  hoursUntilDep?: number | null;
 }
 
 export function FlightCardHeader({
@@ -103,33 +101,90 @@ export function FlightCardHeader({
   displayArrivalTime,
   originWeather,
   isNextFlight,
+  hoursUntilDep,
 }: FlightCardHeaderProps) {
   const status = originStatus?.status ?? "ok";
 
-  // daysUntil: 0 = today, 1 = tomorrow; only fetch live status for those days
+  // only fetch live status for today/tomorrow
   const liveEnabled = daysUntil === 0 || daysUntil === 1;
   const { liveData } = useFlightLiveStatus(flight.flightCode, flight.isoDate, liveEnabled);
 
+  // Action row URLs
+  const flightUrl    = `https://www.flightaware.com/live/flight/${flight.airlineIcao}${flight.flightNumber}`;
+  const checkinUrl   = AIRLINE_CHECKIN_URLS[flight.airlineCode] ?? AIRLINE_APP_URLS[flight.airlineCode];
+  const airlineAppUrl = AIRLINE_APP_URLS[flight.airlineCode];
+
+  // Check-in highlight: ≤24h before departure
+  const showCheckinHighlight =
+    hoursUntilDep !== null &&
+    hoursUntilDep !== undefined &&
+    hoursUntilDep <= 24 &&
+    hoursUntilDep > -1;
+
+  // Contextual "Sale en Xh" chip
+  const departureCountdown = (() => {
+    if (hoursUntilDep === null || hoursUntilDep === undefined) return null;
+    if (hoursUntilDep < -6 || hoursUntilDep > 72) return null;
+    if (hoursUntilDep < 0) {
+      const minAgo = Math.abs(Math.round(hoursUntilDep * 60));
+      return locale === "es" ? `Salió hace ${minAgo}min` : `Departed ${minAgo}min ago`;
+    }
+    const h = Math.floor(hoursUntilDep);
+    const min = Math.round((hoursUntilDep - h) * 60);
+    if (h === 0) return locale === "es" ? `Sale en ${min}min` : `Departs in ${min}min`;
+    return locale === "es" ? `Sale en ${h}h` : `Departs in ${h}h`;
+  })();
+
+  const depCountdownColor =
+    hoursUntilDep !== null && hoursUntilDep !== undefined && hoursUntilDep <= 3
+      ? "text-red-400 font-bold"
+      : hoursUntilDep !== null && hoursUntilDep !== undefined && hoursUntilDep <= 24
+      ? "text-emerald-400 font-semibold"
+      : "text-gray-400";
+
+  // Short airline display name for action button
+  const airlineShort = flight.airlineName
+    ? flight.airlineName.split(" ").slice(0, 1).join(" ")
+    : locale === "es" ? "Aerolínea" : "Airline";
+
   return (
     <>
-      {/* ── Boarding-pass header (always visible) ─────────────────────────── */}
-      <div className={`px-4 pt-3 pb-2 rounded-t-xl ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
-        {/* Row 1: flight code + remove */}
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="flex items-center gap-2">
-            <Plane className="h-3.5 w-3.5 text-gray-500" />
+      {/* ── Glance Layer (always visible) ────────────────────────────────────── */}
+      <div className={`px-4 pt-3 pb-0 rounded-t-xl ${hasIssue ? "bg-orange-950/20" : "bg-white/[0.02]"}`}>
+
+        {/* Row 1: Flight code · status chip · [trash] */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+            <Plane className="h-3.5 w-3.5 text-gray-500 shrink-0" />
             <span className="text-sm font-bold tracking-wide text-white">{flight.flightCode}</span>
-            {flight.airlineName && (
-              <span className="text-[11px] text-gray-500 truncate max-w-[120px]">{flight.airlineName}</span>
-            )}
             {flight.bookingCode && (
               <span className="text-[11px] font-mono font-semibold text-violet-400 bg-violet-950/40 border border-violet-700/30 rounded px-1.5 py-0.5 shrink-0">
                 {flight.bookingCode}
               </span>
             )}
+            {/* Exception-first status chip */}
+            {isNonFAA && !originStatus ? (
+              <span title={L.internationalNote}>
+                <Globe className="h-3.5 w-3.5 text-blue-400/70" />
+              </span>
+            ) : hasIssue ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-orange-400 bg-orange-950/50 border border-orange-700/50 rounded px-1.5 py-0.5">
+                ⚠ {locale === "es" ? "Alerta" : "Alert"}
+              </span>
+            ) : status !== "unknown" ? (
+              <span className="inline-flex items-center gap-1 text-[10px] text-gray-600 font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600/80" />
+                {locale === "es" ? "Normal" : "Normal"}
+              </span>
+            ) : null}
+            {/* Live status pill (today/tomorrow only) */}
+            {liveData && liveEnabled && (
+              <LiveStatusPill liveData={liveData} locale={locale} />
+            )}
           </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            {/* Trash / confirm-delete */}
+
+          {/* Trash / confirm-delete */}
+          <div className="shrink-0">
             {confirmDelete ? (
               <div className="flex items-center gap-1.5 animate-scale-in">
                 <button
@@ -150,72 +205,28 @@ export function FlightCardHeader({
                 onClick={onConfirmDelete}
                 title={L.removeTitle}
                 aria-label={locale === "es" ? "Eliminar vuelo" : "Delete flight"}
-                className="rounded-lg p-1.5 text-red-600 hover:text-red-400 hover:bg-red-950/40 transition-colors flex items-center justify-center"
+                className="rounded-lg p-1.5 text-red-600/60 hover:text-red-400 hover:bg-red-950/40 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-            {/* Upgrade toggle — moved from Row 1b */}
-            {daysUntil > 0 && onToggleUpgrade && (
-              <button
-                onClick={() => onToggleUpgrade(flight.id, !wantsUpgrade)}
-                title={
-                  wantsUpgrade
-                    ? (locale === "es" ? "Upgrade activado" : "Upgrade alert on")
-                    : (locale === "es" ? "Avisarme si hay upgrade disponible" : "Notify me if upgrade is available")
-                }
-                aria-label={
-                  wantsUpgrade
-                    ? (locale === "es" ? "Upgrade activado" : "Upgrade alert on")
-                    : (locale === "es" ? "Avisarme si hay upgrade disponible" : "Notify me if upgrade is available")
-                }
-                aria-pressed={wantsUpgrade}
-                className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors ${
-                  wantsUpgrade
-                    ? "bg-violet-600 text-white"
-                    : "border border-white/15 text-gray-400 hover:text-white hover:border-white/30"
-                }`}
-              >
-                {wantsUpgrade ? (
-                  <>
-                    <Check className="h-3 w-3" />
-                    <span className="hidden sm:inline">Upgrade</span>
-                  </>
-                ) : (
-                  <>
-                    <ArrowUpCircle className="h-3 w-3" />
-                    <span className="hidden sm:inline">Upgrade</span>
-                  </>
-                )}
               </button>
             )}
           </div>
         </div>
 
-        {/* Row 1b: status badge + live status pill */}
-        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-          {isNonFAA && !originStatus ? (
-            <span title={L.internationalNote}><Globe className="h-4 w-4 text-blue-400/70" /></span>
-          ) : (
-            <StatusBadge status={status} className="text-sm px-3 py-1" />
-          )}
-          {liveData && liveEnabled && (
-            <LiveStatusPill liveData={liveData} locale={locale} />
-          )}
-        </div>
-
-        {/* Row 2: EZE → MIA with times */}
+        {/* Row 2: Route hero — EZE ──✈── MIA */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-2">
           {/* Origin */}
           <div>
             <p className="text-2xl font-bold font-mono text-white leading-none">{flight.originCode}</p>
             {(displayDepartureTime ?? flight.departureTime) && (
-              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">{displayDepartureTime ?? flight.departureTime}</p>
+              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">
+                {displayDepartureTime ?? flight.departureTime}
+              </p>
             )}
             <p className="text-xs text-gray-400 mt-0.5 truncate">{originName}</p>
           </div>
 
-          {/* Arrow */}
+          {/* Arrow / sonar */}
           <div className="flex flex-col items-center gap-0.5 px-1">
             {isNextFlight ? <SonarIcon /> : <Plane className="w-4 h-4 text-gray-500 rotate-90" />}
           </div>
@@ -235,21 +246,28 @@ export function FlightCardHeader({
           </div>
         </div>
 
-        {/* Row 3: bottom strip */}
-        <div className="border-t border-white/5 pt-2 flex items-center gap-2 flex-wrap text-[11px] text-gray-500">
+        {/* Row 3: Contextual strip — date · countdown · airline · weather */}
+        <div className="border-t border-white/5 pt-2 pb-2 flex items-center gap-2 flex-wrap text-[11px] text-gray-500">
           <DaysCountdown days={daysUntil} L={L} />
-          {(displayDepartureTime ?? flight.departureTime) && (
+          {flight.departureTime && (
             <span className="tabular-nums">
               {daysUntil === 0
-                ? (locale === "es" ? "Hoy" : "Today")
+                ? locale === "es" ? "Hoy" : "Today"
                 : daysUntil === 1
-                ? (locale === "es" ? "Mañana" : "Tomorrow")
+                ? locale === "es" ? "Mañana" : "Tomorrow"
                 : new Date(flight.isoDate + "T00:00:00").toLocaleDateString(
                     locale === "en" ? "en-US" : "es-AR",
                     { day: "2-digit", month: locale === "en" ? "short" : "2-digit" },
-                  )}{" "}
+                  )}
+              {" · "}
               {displayDepartureTime ?? flight.departureTime}
             </span>
+          )}
+          {departureCountdown && (
+            <>
+              <span className="text-gray-700">·</span>
+              <span className={`tabular-nums ${depCountdownColor}`}>{departureCountdown}</span>
+            </>
           )}
           {flight.airlineName && (
             <>
@@ -275,13 +293,80 @@ export function FlightCardHeader({
         </div>
       </div>
 
-      {/* ── Chevron toggle ─────────────────────────────────────────────────── */}
+      {/* ── Action Layer (always visible CTAs) ───────────────────────────────── */}
+      <div className={`px-4 py-2.5 border-b border-white/5 flex items-center gap-2 flex-wrap ${hasIssue ? "bg-orange-950/10" : "bg-white/[0.01]"}`}>
+        {checkinUrl && (
+          <a
+            href={checkinUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-1.5 transition-all border ${
+              showCheckinHighlight
+                ? "text-white bg-emerald-600 border-emerald-500 hover:bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+                : "text-gray-400 border-white/10 bg-white/[0.03] hover:text-white hover:border-white/20"
+            }`}
+          >
+            {locale === "es" ? "Check-in" : "Check in"}
+            {showCheckinHighlight && <ExternalLink className="h-3 w-3" />}
+          </a>
+        )}
+        {airlineAppUrl && (
+          <a
+            href={airlineAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 py-1.5 text-gray-400 border border-white/10 bg-white/[0.03] hover:text-white hover:border-white/20 transition-colors"
+          >
+            {airlineShort}
+          </a>
+        )}
+        <a
+          href={flightUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 py-1.5 text-gray-400 border border-white/10 bg-white/[0.03] hover:text-blue-300 hover:border-blue-700/40 transition-colors"
+        >
+          Tracking ↗
+        </a>
+        {/* Upgrade toggle */}
+        {daysUntil > 0 && onToggleUpgrade && (
+          <button
+            onClick={() => onToggleUpgrade(flight.id, !wantsUpgrade)}
+            aria-pressed={wantsUpgrade}
+            title={
+              wantsUpgrade
+                ? locale === "es" ? "Upgrade activado" : "Upgrade alert on"
+                : locale === "es" ? "Avisarme si hay upgrade" : "Notify me of upgrades"
+            }
+            className={`ml-auto inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+              wantsUpgrade
+                ? "bg-violet-600 text-white"
+                : "border border-white/15 text-gray-500 hover:text-white hover:border-white/30"
+            }`}
+          >
+            {wantsUpgrade ? "✓ Upgrade" : "↑ Upgrade"}
+          </button>
+        )}
+      </div>
+
+      {/* ── Expand / collapse affordance ─────────────────────────────────────── */}
       <button
         onClick={onToggleExpanded}
-        className="w-full flex justify-center items-center py-1.5 text-gray-600 hover:text-gray-400 transition-colors border-t border-white/5 mt-0"
-        aria-label={expanded ? (locale === "es" ? "Colapsar detalles" : "Collapse details") : (locale === "es" ? "Ver detalles" : "View details")}
+        className="w-full flex justify-center items-center gap-1 py-2 text-gray-600 hover:text-gray-400 transition-colors"
+        aria-label={
+          expanded
+            ? locale === "es" ? "Ocultar detalles" : "Hide details"
+            : locale === "es" ? "Ver detalles" : "View details"
+        }
       >
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+        <span className="text-[11px]">
+          {expanded
+            ? locale === "es" ? "ocultar detalles" : "hide details"
+            : locale === "es" ? "ver detalles" : "view details"}
+        </span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+        />
       </button>
     </>
   );
