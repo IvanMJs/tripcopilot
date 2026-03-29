@@ -75,7 +75,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const preapproval = await new PreApproval(getMP()).get({ id: preapprovalId });
 
-  const userId = preapproval.external_reference;
+  const rawRef = preapproval.external_reference ?? "";
+  const colonIdx = rawRef.indexOf(":");
+  const userId = colonIdx !== -1 ? rawRef.slice(0, colonIdx) : rawRef;
+  const purchasedPlanId = colonIdx !== -1 ? rawRef.slice(colonIdx + 1) : "pilot";
   const status = preapproval.status;
 
   if (!userId) {
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
-  const plan = status === "authorized" ? "premium" : "free";
+  const plan = status === "authorized" ? purchasedPlanId : "free";
 
   const { error } = await supabase
     .from("user_profiles")

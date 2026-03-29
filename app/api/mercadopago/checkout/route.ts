@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 const BodySchema = z.object({
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),
+  planId: z.enum(["explorer", "pilot"]).default("pilot"),
 });
 
 // POST /api/mercadopago/checkout
@@ -35,16 +36,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { successUrl, cancelUrl } = parsed.data;
-  const plan = PLANS.premium;
+  const { successUrl, cancelUrl, planId } = parsed.data;
+  const plan = PLANS[planId];
 
   let preapproval;
   try {
     preapproval = await new PreApproval(getMP()).create({
       body: {
-        reason: "TripCopilot Premium",
+        reason: `TripCopilot ${PLANS[planId].name}`,
         payer_email: user.email ?? "",
-        external_reference: user.id,
+        external_reference: `${user.id}:${planId}`,
         back_url: cancelUrl,
         auto_recurring: {
           frequency: 1,
