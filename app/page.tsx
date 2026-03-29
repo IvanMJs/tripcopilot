@@ -6,15 +6,20 @@ import {
   Shield, Brain, Bell, Calendar, Search,
   ArrowRight, Mail, Loader2, MapPin,
   Zap, CheckCircle, ChevronDown, LogIn,
-  Building2, Smartphone, ArrowUpCircle, DoorOpen
+  Building2, Smartphone, ArrowUpCircle, DoorOpen,
+  Globe2,
 } from "lucide-react";
 import { NotifCarousel } from "@/components/NotifCarousel";
 import { AppScreenshotCarousel } from "@/components/AppScreenshotCarousel";
 
-const FAQ_ITEMS = [
+const FAQ_ITEMS_ES = [
   {
-    q: "¿Es gratis?",
-    a: "Sí, completamente gratis durante el beta.",
+    q: "¿Cuánto cuesta?",
+    a: "El plan Free es gratuito para siempre: 2 viajes y 3 vuelos por viaje. Explorer (~$5.000 ARS/mes) desbloquea 10 viajes, todas las alertas push y todas las funciones IA. Pilot (~$10.000 ARS/mes) es ilimitado y agrega AI Health Check, Morning Briefing y próximamente viajes compartidos.",
+  },
+  {
+    q: "¿Cuál es la diferencia entre Explorer y Pilot?",
+    a: "Explorer es ideal para viajeros frecuentes: 10 viajes, 15 vuelos c/u, todas las notificaciones y AI TripAdvisor. Pilot es para quienes no quieren límites: viajes y vuelos ilimitados, AI Health Check 48h antes, Morning Briefing semanal y soporte prioritario.",
   },
   {
     q: "¿Qué aeropuertos cubre?",
@@ -34,8 +39,36 @@ const FAQ_ITEMS = [
   },
 ];
 
-function FaqSection() {
+const FAQ_ITEMS_EN = [
+  {
+    q: "How much does it cost?",
+    a: "The Free plan is free forever: 2 trips and 3 flights per trip. Explorer (~$5 USD/month) unlocks 10 trips, all push alerts and all AI features. Pilot (~$10 USD/month) is unlimited and adds AI Health Check, Morning Briefing and soon shared trips.",
+  },
+  {
+    q: "What's the difference between Explorer and Pilot?",
+    a: "Explorer is perfect for frequent travellers: 10 trips, 15 flights each, all notifications and AI TripAdvisor. Pilot is for those who want no limits: unlimited trips and flights, AI Health Check 48h before departure, weekly Morning Briefing and priority support.",
+  },
+  {
+    q: "Which airports are covered?",
+    a: "All US airports via FAA + international airports via AeroDataBox. Constantly expanding.",
+  },
+  {
+    q: "Does it work offline?",
+    a: "Yes. TripCopilot is an installable PWA. Your trips and flights are available without a connection.",
+  },
+  {
+    q: "Is uploading my boarding pass safe?",
+    a: "Yes. Images are analysed by AI and are not stored on our servers.",
+  },
+  {
+    q: "How are delays detected?",
+    a: "We query FAA data every 5 minutes and AeroDataBox for international flights.",
+  },
+];
+
+function FaqSection({ lang }: { lang: "es" | "en" }) {
   const [open, setOpen] = useState<number | null>(null);
+  const items = lang === "en" ? FAQ_ITEMS_EN : FAQ_ITEMS_ES;
 
   function toggle(i: number) {
     setOpen((prev) => (prev === i ? null : i));
@@ -46,10 +79,12 @@ function FaqSection() {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">FAQ</p>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Preguntas frecuentes</h2>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+            {lang === "en" ? "Frequently asked questions" : "Preguntas frecuentes"}
+          </h2>
         </div>
         <div className="space-y-2">
-          {FAQ_ITEMS.map((item, i) => (
+          {items.map((item, i) => (
             <div
               key={i}
               className="rounded-2xl border border-white/[0.06] overflow-hidden"
@@ -91,6 +126,8 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [priceUSD, setPriceUSD] = useState<number | null>(null);
+  const [lang, setLang] = useState<"es" | "en">("es");
+  const [subscribeLoading, setSubscribeLoading] = useState<"explorer" | "pilot" | null>(null);
   const loginRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,6 +148,27 @@ export default function LandingPage() {
       provider: "google",
       options: { redirectTo: `${location.origin}/auth/callback?next=/app` },
     });
+  }
+
+  async function handleSubscribe(planId: "explorer" | "pilot") {
+    setSubscribeLoading(planId);
+    try {
+      const res = await fetch("/api/mercadopago/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId,
+          successUrl: `${location.origin}/app?plan=success`,
+          cancelUrl: `${location.origin}/#planes`,
+        }),
+      });
+      const data = await res.json() as { url?: string };
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // silent fail
+    } finally {
+      setSubscribeLoading(null);
+    }
   }
 
   async function handleMagicLink(e: React.FormEvent) {
@@ -223,8 +281,40 @@ export default function LandingPage() {
       color: "text-amber-400",
       bg: "bg-amber-950/40",
       border: "border-amber-800/30",
-      title: "Cambio de puerta en tiempo real",
-      desc: "Notificación push instantánea si tu vuelo cambia de puerta de embarque antes de que salgas al aeropuerto.",
+      title: lang === "en" ? "Real-time gate changes" : "Cambio de puerta en tiempo real",
+      desc: lang === "en"
+        ? "Instant push notification if your flight changes gate before you leave for the airport."
+        : "Notificación push instantánea si tu vuelo cambia de puerta de embarque antes de que salgas al aeropuerto.",
+    },
+    {
+      icon: Globe2,
+      color: "text-teal-400",
+      bg: "bg-teal-950/40",
+      border: "border-teal-800/30",
+      title: lang === "en" ? "World travel map" : "Mapa mundial de viajes",
+      desc: lang === "en"
+        ? "See every airport you've visited on an interactive world map. Track countries, airports and % of the world explored."
+        : "Visualizá todos los aeropuertos que visitaste en un mapa interactivo. Países, aeropuertos y % del mundo explorado.",
+    },
+    {
+      icon: Zap,
+      color: "text-violet-400",
+      bg: "bg-violet-950/40",
+      border: "border-violet-800/30",
+      title: lang === "en" ? "AI Health Check 48h before" : "AI Health Check 48h antes",
+      desc: lang === "en"
+        ? "A smart pre-trip briefing: weather, docs, local currency, tips and a trip score — generated by AI."
+        : "Resumen inteligente antes de cada viaje: clima, documentos, moneda local, tips y puntaje del viaje, generado por IA.",
+    },
+    {
+      icon: Search,
+      color: "text-pink-400",
+      bg: "bg-pink-950/40",
+      border: "border-pink-800/30",
+      title: lang === "en" ? "Travel Wrapped" : "Travel Wrapped compartible",
+      desc: lang === "en"
+        ? "Your annual summary of flights, km and countries in a shareable card. Show the world how much you fly."
+        : "Tu resumen anual de vuelos, km y países en una tarjeta compartible. Mostrá al mundo cuánto viajás.",
     },
   ];
 
@@ -277,20 +367,32 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <a href="#funciones" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
-              Funciones
+              {lang === "en" ? "Features" : "Funciones"}
             </a>
-            <a href="#como-funciona" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
-              Cómo funciona
+            <a href="#planes" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              {lang === "en" ? "Plans" : "Planes"}
             </a>
             <a href="#faq" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
               FAQ
             </a>
+            {/* Language toggle */}
+            <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
+              {(["es", "en"] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  className={`px-2.5 py-1.5 transition-colors ${lang === l ? "bg-blue-600 text-white" : "bg-transparent text-gray-400 hover:text-gray-200"}`}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <button
               onClick={scrollToLogin}
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-semibold text-white transition-colors"
             >
               <LogIn className="h-3.5 w-3.5" />
-              Empezar gratis
+              {lang === "en" ? "Start free" : "Empezar gratis"}
             </button>
           </div>
         </div>
@@ -319,26 +421,30 @@ export default function LandingPage() {
               {/* AI import badge — the hook */}
               <div className="inline-flex items-center gap-2 rounded-full border border-violet-700/50 bg-violet-950/40 px-4 py-1.5 text-xs text-violet-300 font-semibold mb-5">
                 <Brain className="h-3.5 w-3.5 text-violet-400" />
-                Sacás foto · La IA carga todo sola
+                {lang === "en" ? "Take a photo · AI loads everything" : "Sacás foto · La IA carga todo sola"}
               </div>
 
               {/* Headline */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.06] mb-5">
-                Tu copiloto para<br />
+                {lang === "en" ? "Your co-pilot for" : "Tu copiloto para"}<br />
                 <span className="text-transparent bg-clip-text"
                   style={{ backgroundImage: "linear-gradient(135deg, #60a5fa, #a78bfa)" }}>
-                  cada vuelo
+                  {lang === "en" ? "every flight" : "cada vuelo"}
                 </span>
               </h1>
 
-              {/* Subheadline — specific to AI import */}
+              {/* Subheadline */}
               <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-3 max-w-lg">
-                Pegá el screenshot de tu confirmación de vuelo.{" "}
-                <span className="text-white font-semibold">TripCopilot lee tu itinerario y carga todos los vuelos en segundos</span>
-                {" "}— sin tipear nada.
+                {lang === "en" ? (
+                  <>Paste your flight confirmation screenshot. <span className="text-white font-semibold">TripCopilot reads your itinerary and loads all flights in seconds</span> — no typing needed.</>
+                ) : (
+                  <>Pegá el screenshot de tu confirmación de vuelo.{" "}<span className="text-white font-semibold">TripCopilot lee tu itinerario y carga todos los vuelos en segundos</span>{" "}— sin tipear nada.</>
+                )}
               </p>
               <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-lg">
-                Después monitorea la FAA en tiempo real, calcula el riesgo de conexión, detecta cambios de timezone al aterrizar y te avisa de cambios de puerta, demoras y más.
+                {lang === "en"
+                  ? "Then it monitors FAA in real time, calculates connection risk, detects timezone changes on landing and alerts you about gate changes, delays and more."
+                  : "Después monitorea la FAA en tiempo real, calcula el riesgo de conexión, detecta cambios de timezone al aterrizar y te avisa de cambios de puerta, demoras y más."}
               </p>
 
               {/* CTAs */}
@@ -347,38 +453,38 @@ export default function LandingPage() {
                   onClick={scrollToLogin}
                   className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-8 py-3.5 text-sm font-bold text-white transition-all shadow-lg shadow-blue-900/30 tap-scale"
                 >
-                  Empezar gratis
+                  {lang === "en" ? "Start free" : "Empezar gratis"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" })}
                   className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-8 py-3.5 text-sm font-semibold text-gray-300 hover:bg-white/[0.08] transition-all"
                 >
-                  Ver demo
+                  {lang === "en" ? "See demo" : "Ver demo"}
                   <ChevronDown className="h-4 w-4" />
                 </button>
               </div>
 
               {/* Social proof */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-600">
-                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Sin contraseña</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> {lang === "en" ? "No password" : "Sin contraseña"}</span>
                 <span className="hidden sm:block h-3 w-px bg-gray-800" />
-                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Gratis para empezar</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> {lang === "en" ? "Free to start" : "Gratis para empezar"}</span>
                 <span className="hidden sm:block h-3 w-px bg-gray-800" />
-                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> Datos 100% seguros</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-700" /> {lang === "en" ? "100% secure data" : "Datos 100% seguros"}</span>
               </div>
 
               {/* Social proof counter */}
               <div className="mt-6 inline-flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-2.5">
-                <div className="flex items-center gap-1 text-base" aria-label="Viajeros de USA, Argentina, México y España">
+                <div className="flex items-center gap-1 text-base" aria-label="Travellers from USA, Argentina, Mexico and Spain">
                   <span title="USA">🇺🇸</span>
                   <span title="Argentina">🇦🇷</span>
                   <span title="México">🇲🇽</span>
                   <span title="España">🇪🇸</span>
                 </div>
                 <p className="text-xs text-gray-400 leading-snug">
-                  <span className="font-bold text-white">Más de 1.200 viajeros</span>{" "}
-                  confían en TripCopilot
+                  <span className="font-bold text-white">{lang === "en" ? "1,200+ travellers" : "Más de 1.200 viajeros"}</span>{" "}
+                  {lang === "en" ? "trust TripCopilot" : "confían en TripCopilot"}
                 </p>
               </div>
             </div>
@@ -794,6 +900,122 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── PRICING ──────────────────────────────────────────────────────── */}
+      <section id="planes" className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">
+              {lang === "en" ? "Plans" : "Planes"}
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+              {lang === "en" ? "Choose your plan" : "Elegí tu plan"}
+            </h2>
+            <p className="text-sm text-gray-500 mt-3">
+              {lang === "en" ? "Start free. Upgrade when you need more." : "Empezá gratis. Mejorá cuando lo necesites."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {/* FREE */}
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 flex flex-col">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Free</p>
+              <p className="text-4xl font-black text-white mb-1">$0</p>
+              <p className="text-xs text-gray-600 mb-6">{lang === "en" ? "forever" : "para siempre"}</p>
+              <ul className="space-y-2.5 mb-8 flex-1">
+                {[
+                  lang === "en" ? "2 trips · 3 flights each" : "2 viajes · 3 vuelos c/u",
+                  lang === "en" ? "Basic check-in alerts" : "Alertas básicas de check-in",
+                  lang === "en" ? "Airport status monitoring" : "Monitoreo de aeropuertos",
+                  lang === "en" ? "AI flight import" : "Importación IA de vuelos",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-gray-400">
+                    <CheckCircle className="h-4 w-4 text-gray-600 shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={scrollToLogin}
+                className="w-full rounded-xl border border-white/[0.10] bg-white/[0.04] hover:bg-white/[0.08] py-3 text-sm font-semibold text-gray-300 transition-colors"
+              >
+                {lang === "en" ? "Start free" : "Empezar gratis"}
+              </button>
+            </div>
+
+            {/* EXPLORER — POPULAR */}
+            <div className="relative rounded-2xl border border-violet-500/50 bg-violet-950/20 p-6 flex flex-col shadow-lg shadow-violet-900/20">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold text-white uppercase tracking-wider whitespace-nowrap">
+                {lang === "en" ? "Most popular" : "Más popular"}
+              </div>
+              <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-2">Explorer</p>
+              <p className="text-4xl font-black text-white mb-1">
+                {priceUSD !== null ? `≈$${Math.round(priceUSD / 2)}` : "$5.000 ARS"}
+              </p>
+              <p className="text-xs text-gray-500 mb-1">{lang === "en" ? "/month" : "/mes"}</p>
+              {priceUSD !== null && <p className="text-[10px] text-gray-600 mb-5">$5.000 ARS · {lang === "en" ? "today's rate" : "cotización del día"}</p>}
+              {priceUSD === null && <div className="mb-5" />}
+              <ul className="space-y-2.5 mb-8 flex-1">
+                {[
+                  lang === "en" ? "10 trips · 15 flights each" : "10 viajes · 15 vuelos c/u",
+                  lang === "en" ? "All push notifications" : "Todas las notificaciones push",
+                  lang === "en" ? "AI TripAdvisor" : "AI TripAdvisor",
+                  lang === "en" ? "World travel map" : "Mapa mundial de viajes",
+                  lang === "en" ? "Travel Wrapped shareable" : "Travel Wrapped compartible",
+                  lang === "en" ? "Trip Debrief · Export .ics" : "Trip Debrief · Export .ics",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-gray-300">
+                    <CheckCircle className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => handleSubscribe("explorer")}
+                disabled={subscribeLoading !== null}
+                className="w-full rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-60 active:scale-95 py-3 text-sm font-bold text-white transition-all flex items-center justify-center gap-2"
+              >
+                {subscribeLoading === "explorer" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {lang === "en" ? "Subscribe Explorer" : "Suscribirse a Explorer"}
+              </button>
+            </div>
+
+            {/* PILOT */}
+            <div className="rounded-2xl border border-blue-700/40 bg-blue-950/10 p-6 flex flex-col">
+              <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-2">Pilot 🚀</p>
+              <p className="text-4xl font-black text-white mb-1">
+                {priceUSD !== null ? `≈$${priceUSD}` : "$10.000 ARS"}
+              </p>
+              <p className="text-xs text-gray-500 mb-1">{lang === "en" ? "/month" : "/mes"}</p>
+              {priceUSD !== null && <p className="text-[10px] text-gray-600 mb-5">$10.000 ARS · {lang === "en" ? "today's rate" : "cotización del día"}</p>}
+              {priceUSD === null && <div className="mb-5" />}
+              <ul className="space-y-2.5 mb-8 flex-1">
+                {[
+                  lang === "en" ? "Unlimited trips & flights" : "Viajes y vuelos ilimitados",
+                  lang === "en" ? "Everything in Explorer" : "Todo lo de Explorer",
+                  lang === "en" ? "AI Health Check 48h before" : "AI Health Check 48h antes",
+                  lang === "en" ? "Weekly Morning Briefing" : "Morning Briefing semanal",
+                  lang === "en" ? "Shared trips (coming soon)" : "Viajes compartidos (próximamente)",
+                  lang === "en" ? "Priority support" : "Soporte prioritario",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-gray-300">
+                    <CheckCircle className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => handleSubscribe("pilot")}
+                disabled={subscribeLoading !== null}
+                className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 disabled:opacity-60 active:scale-95 py-3 text-sm font-bold text-white transition-all flex items-center justify-center gap-2"
+              >
+                {subscribeLoading === "pilot" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {lang === "en" ? "Subscribe Pilot" : "Suscribirse a Pilot"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── ROI ARGUMENT ─────────────────────────────────────────────────── */}
       <section className="py-12 px-4">
         <div className="max-w-4xl mx-auto">
@@ -843,17 +1065,22 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      <FaqSection />
+      <FaqSection lang={lang} />
 
       {/* ── LOGIN / CTA ──────────────────────────────────────────────────── */}
       <section ref={loginRef} id="empezar" className="py-20 px-4">
         <div className="max-w-sm mx-auto">
           <div className="text-center mb-8">
             <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-16 w-auto mx-auto mb-4" />
-            <h2 className="text-2xl font-black tracking-tight mb-2">¿Listo para volar tranquilo?</h2>
+            <h2 className="text-2xl font-black tracking-tight mb-2">
+              {lang === "en" ? "Ready to fly stress-free?" : "¿Listo para volar tranquilo?"}
+            </h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Verificá con tu email y entrás en segundos —<br />
-              <span className="text-gray-400">sin contraseña, sin complicaciones.</span>
+              {lang === "en" ? (
+                <>Verify with your email and you're in seconds —<br /><span className="text-gray-400">no password, no hassle.</span></>
+              ) : (
+                <>Verificá con tu email y entrás en segundos —<br /><span className="text-gray-400">sin contraseña, sin complicaciones.</span></>
+              )}
             </p>
           </div>
 
@@ -864,9 +1091,9 @@ export default function LandingPage() {
             {sent ? (
               <div className="rounded-xl border border-emerald-700/40 bg-emerald-950/20 px-4 py-5 text-center space-y-2">
                 <p className="text-2xl">📬</p>
-                <p className="text-sm font-bold text-emerald-300">Revisá tu email</p>
+                <p className="text-sm font-bold text-emerald-300">{lang === "en" ? "Check your email" : "Revisá tu email"}</p>
                 <p className="text-xs text-emerald-400/70 leading-relaxed">
-                  Mandamos un link a <span className="font-semibold">{email}</span>. Tocá el link para entrar.
+                  {lang === "en" ? <>We sent a link to <span className="font-semibold">{email}</span>. Tap the link to sign in.</> : <>Mandamos un link a <span className="font-semibold">{email}</span>. Tocá el link para entrar.</>}
                 </p>
               </div>
             ) : (
@@ -883,12 +1110,12 @@ export default function LandingPage() {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  Continuar con Google
+                  {lang === "en" ? "Continue with Google" : "Continuar con Google"}
                 </button>
 
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-white/[0.06]" />
-                  <span className="text-xs text-gray-600 uppercase tracking-wider">o con email</span>
+                  <span className="text-xs text-gray-600 uppercase tracking-wider">{lang === "en" ? "or with email" : "o con email"}</span>
                   <div className="flex-1 h-px bg-white/[0.06]" />
                 </div>
 
@@ -912,14 +1139,14 @@ export default function LandingPage() {
                     disabled={loading || !email}
                     className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 py-3 text-sm font-semibold text-white transition-colors"
                   >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar link de acceso"}
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (lang === "en" ? "Send access link" : "Enviar link de acceso")}
                   </button>
                 </form>
               </>
             )}
 
             <p className="text-center text-xs text-gray-700 leading-relaxed">
-              Sin contraseña · Datos seguros · Gratis para empezar
+              {lang === "en" ? "No password · Secure data · Free to start" : "Sin contraseña · Datos seguros · Gratis para empezar"}
             </p>
           </div>
         </div>
