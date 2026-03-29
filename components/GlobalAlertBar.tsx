@@ -48,7 +48,7 @@ export function GlobalAlertBar({ trips, locale, onSelectTrip }: GlobalAlertBarPr
   const moreCount = alerts.length - 1;
 
   return (
-    <div className="fixed bottom-[60px] left-0 right-0 z-40 px-3 pb-1.5 pointer-events-none">
+    <div className="fixed left-0 right-0 z-40 px-3 pb-1.5 pointer-events-none" style={{ bottom: "calc(60px + env(safe-area-inset-bottom))" }}>
       <div className="pointer-events-auto flex items-center gap-2 rounded-xl border border-amber-700/40 bg-amber-950/90 backdrop-blur-sm px-3 py-2.5 shadow-lg">
         <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
         <button
