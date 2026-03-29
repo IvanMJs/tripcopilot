@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type State =
@@ -9,7 +9,7 @@ type State =
   | { phase: "needsLogin" }
   | { phase: "error"; message: string };
 
-export default function InvitePage() {
+function InviteContent() {
   const params    = useSearchParams();
   const router    = useRouter();
   const token     = params.get("token");
@@ -121,5 +121,18 @@ export default function InvitePage() {
 
       </div>
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center"
+        style={{ background: "linear-gradient(160deg,#0a0a14 0%,#0d0d1f 100%)" }}>
+        <div className="h-10 w-10 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+      </div>
+    }>
+      <InviteContent />
+    </Suspense>
   );
 }
