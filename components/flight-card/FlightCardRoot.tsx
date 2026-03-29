@@ -285,6 +285,7 @@ export function FlightCard({
           tafData={tafData}
           activeSigmets={activeSigmets}
           connectionToNext={connectionToNext}
+          hoursUntilDep={hoursUntilDep}
           showDeviceTz={shouldShowDeviceTz}
           onToggleDeviceTz={deviceTz && deviceTz !== originTz ? onToggleDeviceTz : undefined}
         />

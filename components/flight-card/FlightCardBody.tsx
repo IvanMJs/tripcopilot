@@ -56,6 +56,7 @@ export interface FlightCardBodyProps {
   activeSigmets: SigmetFeature[] | undefined;
   tsaData?: TsaAirportData;
   connectionToNext: ConnectionAnalysis | undefined;
+  hoursUntilDep?: number | null;
   // device timezone
   displayDepartureTime?: string;
   showDeviceTz?: boolean;
@@ -89,6 +90,7 @@ export function FlightCardBody({
   tafData,
   activeSigmets,
   tsaData,
+  hoursUntilDep,
   displayDepartureTime,
   showDeviceTz,
   onToggleDeviceTz,
@@ -118,24 +120,24 @@ export function FlightCardBody({
       style={{ overflow: "hidden" }}
     >
 
-      {(daysUntil === 0 || daysUntil === 1) && (
+      {hoursUntilDep !== null && hoursUntilDep !== undefined && hoursUntilDep <= 24 && hoursUntilDep > -1 && (
         <div className={`px-4 py-2.5 border-b flex items-center justify-between gap-3 flex-wrap ${
-          daysUntil === 0
+          hoursUntilDep <= 3
             ? "bg-blue-950/40 border-blue-700/40"
             : "bg-emerald-950/30 border-emerald-800/40"
         }`}>
           <div className="flex items-center gap-2">
             <span className="text-sm">🛂</span>
             <div>
-              <p className={`text-xs font-bold ${daysUntil === 0 ? "text-blue-300" : "text-emerald-300"}`}>
-                {daysUntil === 0
-                  ? (locale === "en" ? "Check-in open — fly today!" : "¡Check-in abierto — volás hoy!")
+              <p className={`text-xs font-bold ${hoursUntilDep <= 3 ? "text-blue-300" : "text-emerald-300"}`}>
+                {hoursUntilDep <= 3
+                  ? (locale === "en" ? "Boarding soon!" : "¡Embarque próximo!")
                   : (locale === "en" ? "Check-in is open!" : "¡Check-in disponible!")}
               </p>
-              <p className={`text-[11px] ${daysUntil === 0 ? "text-blue-400/70" : "text-emerald-400/70"}`}>
-                {daysUntil === 0
-                  ? (locale === "en" ? `${flight.flightCode} departs today at ${flight.departureTime}` : `${flight.flightCode} sale hoy a las ${flight.departureTime}`)
-                  : (locale === "en" ? `${flight.flightCode} departs tomorrow at ${flight.departureTime}` : `${flight.flightCode} sale mañana a las ${flight.departureTime}`)}
+              <p className={`text-[11px] ${hoursUntilDep <= 3 ? "text-blue-400/70" : "text-emerald-400/70"}`}>
+                {locale === "en"
+                  ? `${flight.flightCode} departs in ${Math.round(hoursUntilDep)}h`
+                  : `${flight.flightCode} sale en ${Math.round(hoursUntilDep)}h`}
               </p>
             </div>
           </div>
@@ -145,7 +147,7 @@ export function FlightCardBody({
               target="_blank"
               rel="noopener noreferrer"
               className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-1.5 transition-colors border ${
-                daysUntil === 0
+                hoursUntilDep <= 3
                   ? "text-blue-300 border-blue-700/50 bg-blue-900/20 hover:bg-blue-900/40"
                   : "text-emerald-300 border-emerald-700/50 bg-emerald-900/20 hover:bg-emerald-900/40"
               }`}
