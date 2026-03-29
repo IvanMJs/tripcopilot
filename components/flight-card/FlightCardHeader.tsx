@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, ExternalLink } from "lucide-react";
+import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, ExternalLink, Copy, Check } from "lucide-react";
 import { TripFlight, AirportStatus } from "@/lib/types";
 import { WeatherData } from "@/hooks/useWeather";
 import { TripPanelLabels, AIRLINE_CHECKIN_URLS, AIRLINE_APP_URLS } from "@/components/TripPanelLabels";
@@ -104,6 +105,15 @@ export function FlightCardHeader({
   hoursUntilDep,
 }: FlightCardHeaderProps) {
   const status = originStatus?.status ?? "ok";
+  const [copiedBooking, setCopiedBooking] = useState(false);
+
+  function copyBookingCode() {
+    if (!flight.bookingCode) return;
+    navigator.clipboard.writeText(flight.bookingCode).then(() => {
+      setCopiedBooking(true);
+      setTimeout(() => setCopiedBooking(false), 2000);
+    });
+  }
 
   // only fetch live status for today/tomorrow
   const liveEnabled = daysUntil === 0 || daysUntil === 1;
@@ -158,9 +168,16 @@ export function FlightCardHeader({
             <Plane className="h-3.5 w-3.5 text-gray-500 shrink-0" />
             <span className="text-sm font-bold tracking-wide text-white">{flight.flightCode}</span>
             {flight.bookingCode && (
-              <span className="text-[11px] font-mono font-semibold text-violet-400 bg-violet-950/40 border border-violet-700/30 rounded px-1.5 py-0.5 shrink-0">
+              <button
+                onClick={copyBookingCode}
+                title={copiedBooking ? (locale === "es" ? "¡Copiado!" : "Copied!") : (locale === "es" ? "Copiar código de reserva" : "Copy booking code")}
+                className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-violet-400 bg-violet-950/40 border border-violet-700/30 rounded px-1.5 py-0.5 shrink-0 hover:bg-violet-900/50 hover:border-violet-600/50 transition-colors"
+              >
                 {flight.bookingCode}
-              </span>
+                {copiedBooking
+                  ? <Check className="h-2.5 w-2.5 text-emerald-400" />
+                  : <Copy className="h-2.5 w-2.5 opacity-50" />}
+              </button>
             )}
             {/* Exception-first status chip */}
             {isNonFAA && !originStatus ? (
