@@ -145,6 +145,7 @@ function DestinationCard({
 }) {
   const [open, setOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<"packing" | "activities" | "tips">("packing");
+  const [tipsCopied, setTipsCopied] = useState(false);
 
   const profile = getDestinationProfile(stay.code, stay.arrivalIso);
   const city = locale === "es" ? stay.city : stay.cityEn;
@@ -283,14 +284,32 @@ function DestinationCard({
                   </ul>
                 )}
                 {activeTab === "tips" && (
-                  <ul className="space-y-1">
-                    {tips.map((t, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-gray-400">
-                        <span className="text-violet-500 mt-0.5">✦</span>
-                        <span>{locale === "es" ? t.es : t.en}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div>
+                    <ul className="space-y-1 mb-2">
+                      {tips.map((t, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs text-gray-400">
+                          <span className="text-violet-500 mt-0.5">✦</span>
+                          <span>{locale === "es" ? t.es : t.en}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {tips.length > 0 && (
+                      <button
+                        onClick={() => {
+                          const text = tips.map((t) => `• ${locale === "es" ? t.es : t.en}`).join("\n");
+                          navigator.clipboard.writeText(text).catch(() => {});
+                          setTipsCopied(true);
+                          setTimeout(() => setTipsCopied(false), 1500);
+                        }}
+                        className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-300 transition-colors mt-1"
+                      >
+                        {tipsCopied
+                          ? <><Check className="w-3 h-3 text-green-400" /><span className="text-green-400">{locale === "es" ? "Copiado" : "Copied"}</span></>
+                          : <><Copy className="w-3 h-3" /><span>{locale === "es" ? "Copiar tips" : "Copy tips"}</span></>
+                        }
+                      </button>
+                    )}
+                  </div>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -553,7 +572,8 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
   const [aiStatus, setAiStatus] = useState<"idle" | "loading" | "done" | "failed">("idle");
   const [aiData, setAiData] = useState<TripAdviceResult | null>(null);
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
-  const [activitiesConfirmed, setActivitiesConfirmed] = useState(false);
+  const [showRefine, setShowRefine] = useState(false);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
   const fetchedKey = useRef<string>("");
 
   const stays = computeStays(flights);
@@ -565,16 +585,18 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
     );
   }
 
-  function handleGenerateAdvice() {
-    setActivitiesConfirmed(true);
+  function handleRefine() {
+    fetchedKey.current = "";
+    setShowRefine(false);
+    setFetchTrigger((v) => v + 1);
   }
 
   useEffect(() => {
-    if (!activitiesConfirmed) return;
-    if (stays.length === 0 || fetchedKey.current === key) return;
-    fetchedKey.current = key;
+    if (stays.length === 0) return;
+    const triggerKey = `${key}:${fetchTrigger}`;
+    if (fetchedKey.current === triggerKey) return;
+    fetchedKey.current = triggerKey;
 
-    // Check localStorage cache first (activities change the cache key)
     const activitySuffix = selectedActivities.sort().join(",");
     const cacheKey = activitySuffix ? `${key}|${activitySuffix}` : key;
     const cached = readCache(cacheKey);
@@ -613,7 +635,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
         }
       })
       .catch(() => setAiStatus("failed"));
-  }, [activitiesConfirmed, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, fetchTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (stays.length === 0) return null;
 
@@ -670,76 +692,37 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
       {/* Content */}
       {expanded && (
         <div className="border-t border-white/[0.05]">
-          {/* Activity chip selector — only before first fetch */}
-          {!activitiesConfirmed && (
-            <div className="px-4 py-3 border-b border-white/[0.04]">
-              {/* Empty state description */}
-              <div className="mb-4 space-y-1">
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  {locale === "es"
-                    ? "La IA puede prepararte consejos de:"
-                    : "The AI can prepare tips about:"}
+
+          {/* Loading state */}
+          {aiStatus === "loading" && (
+            <div className="px-4 py-4 flex items-center gap-3 border-b border-white/[0.04]">
+              <TripCopilotIcon spinning size={36} />
+              <div>
+                <p className="text-xs font-semibold text-violet-300 animate-pulse">
+                  {locale === "es" ? "Preparando tus consejos…" : "Preparing your tips…"}
                 </p>
-                <ul className="space-y-0.5 text-xs text-gray-500">
-                  <li>🌡 {locale === "es" ? "Clima y qué llevar" : "Weather and what to pack"}</li>
-                  <li>🎯 {locale === "es" ? "Qué hacer en cada ciudad" : "Things to do in each city"}</li>
-                  <li>💡 {locale === "es" ? "Tips locales" : "Local tips"}</li>
-                </ul>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  {locale === "es" ? "Clima, equipaje y actividades" : "Weather, packing and activities"}
+                </p>
               </div>
-              {/* Destination preview strip */}
-              {stays.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
-                  {stays.map((stay) => (
-                    <div key={stay.code + stay.arrivalIso} className="shrink-0 flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
-                      <span className="text-lg">{stay.flag}</span>
-                      <div>
-                        <p className="text-xs font-medium text-gray-300">{locale === "es" ? stay.city : stay.cityEn}</p>
-                        <p className="text-[10px] text-gray-500">{stay.nights} {locale === "es" ? "noches" : "nights"}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                {locale === "es" ? "¿Qué vas a hacer en este viaje?" : "What are you doing on this trip?"}
-              </p>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {ACTIVITY_CHIPS.map((chip) => {
-                  const selected = selectedActivities.includes(chip.id);
-                  return (
-                    <motion.button
-                      key={chip.id}
-                      onClick={() => toggleActivity(chip.id)}
-                      whileTap={{ scale: 0.91 }}
-                      animate={selected ? { scale: 1.04 } : { scale: 1 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                      className={`inline-flex items-center gap-1 text-xs font-medium px-4 py-2 rounded-xl border transition-colors ${
-                        selected
-                          ? "bg-violet-600/20 text-violet-200 border-violet-500/50"
-                          : "bg-white/[0.04] text-gray-300 border-white/[0.08] hover:border-white/20"
-                      }`}
-                    >
-                      {selected && <span className="text-violet-400 text-[10px]">✓ </span>}
-                      <span>{chip.emoji}</span>
-                      <span>{locale === "es" ? chip.label : chip.labelEn}</span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={handleGenerateAdvice}
-                className="shimmer-btn w-full py-2 rounded-xl bg-violet-700/40 border border-violet-500/40 text-sm font-semibold text-violet-100 hover:bg-violet-700/60 transition-colors"
-              >
-                {locale === "es" ? "Pedirle consejos a la IA →" : "Ask the AI for tips →"}
-              </button>
             </div>
           )}
 
-          {/* AI summary banner */}
+          {/* AI summary — prominent card */}
           {aiData?.summary && (
-            <div className="px-4 py-3 border-b border-white/[0.04] flex items-start gap-2">
-              <TripCopilotIcon size={32} />
-              <p className="text-xs text-gray-300 leading-relaxed">{aiData.summary}</p>
+            <div
+              className="mx-3 my-3 rounded-xl border border-violet-700/30 overflow-hidden"
+              style={{ background: "linear-gradient(135deg, rgba(76,29,149,0.18) 0%, rgba(30,10,60,0.25) 100%)" }}
+            >
+              <div className="flex items-start gap-3 px-4 py-3">
+                <TripCopilotIcon size={40} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-violet-400 mb-1">
+                    {locale === "es" ? "Resumen IA" : "AI Summary"}
+                  </p>
+                  <p className="text-sm text-gray-200 leading-relaxed">{aiData.summary}</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -789,6 +772,84 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
                   <p className="text-xs text-gray-400 leading-snug">{leg.note}</p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Personalizar / Refine section */}
+          {aiStatus === "done" && (
+            <div className="border-t border-white/[0.04]">
+              <button
+                onClick={() => setShowRefine((v) => !v)}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-left tap-scale"
+              >
+                <span className="text-xs text-gray-500 flex-1">
+                  {locale === "es" ? "✦ Personalizar consejos" : "✦ Customize tips"}
+                </span>
+                <ChevronDown
+                  className={`h-3 w-3 text-gray-600 transition-transform duration-200 ${showRefine ? "rotate-180" : ""}`}
+                />
+              </button>
+              <AnimatePresence>
+                {showRefine && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22 }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <div className="px-4 pb-4">
+                      <p className="text-[11px] text-gray-500 mb-2.5">
+                        {locale === "es" ? "¿Qué tipo de viaje es?" : "What kind of trip is it?"}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {ACTIVITY_CHIPS.map((chip) => {
+                          const selected = selectedActivities.includes(chip.id);
+                          return (
+                            <motion.button
+                              key={chip.id}
+                              onClick={() => toggleActivity(chip.id)}
+                              whileTap={{ scale: 0.91 }}
+                              animate={selected ? { scale: 1.04 } : { scale: 1 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                              className={`inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-xl border transition-colors ${
+                                selected
+                                  ? "bg-violet-600/20 text-violet-200 border-violet-500/50"
+                                  : "bg-white/[0.04] text-gray-300 border-white/[0.08] hover:border-white/20"
+                              }`}
+                            >
+                              {selected && <span className="text-violet-400 text-[10px]">✓ </span>}
+                              <span>{chip.emoji}</span>
+                              <span>{locale === "es" ? chip.label : chip.labelEn}</span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                      <button
+                        onClick={handleRefine}
+                        className="w-full py-2 rounded-xl bg-violet-700/40 border border-violet-500/40 text-xs font-semibold text-violet-100 hover:bg-violet-700/60 transition-colors"
+                      >
+                        {locale === "es" ? "Regenerar consejos →" : "Regenerate tips →"}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Failed state */}
+          {aiStatus === "failed" && (
+            <div className="px-4 py-3 border-t border-white/[0.04] flex items-center justify-between gap-3">
+              <p className="text-xs text-gray-500">
+                {locale === "es" ? "No se pudieron cargar los consejos." : "Could not load tips."}
+              </p>
+              <button
+                onClick={() => { fetchedKey.current = ""; setFetchTrigger((v) => v + 1); }}
+                className="text-xs text-violet-400 hover:text-violet-300 transition-colors shrink-0"
+              >
+                {locale === "es" ? "Reintentar" : "Retry"}
+              </button>
             </div>
           )}
         </div>
