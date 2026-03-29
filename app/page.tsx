@@ -1077,7 +1077,7 @@ export default function LandingPage() {
             </h2>
             <p className="text-sm text-gray-500 leading-relaxed">
               {lang === "en" ? (
-                <>Verify with your email and you're in seconds —<br /><span className="text-gray-400">no password, no hassle.</span></>
+                <>Verify with your email and you&apos;re in seconds —<br /><span className="text-gray-400">no password, no hassle.</span></>
               ) : (
                 <>Verificá con tu email y entrás en segundos —<br /><span className="text-gray-400">sin contraseña, sin complicaciones.</span></>
               )}

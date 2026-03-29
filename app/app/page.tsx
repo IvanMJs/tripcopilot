@@ -222,6 +222,7 @@ export default function HomePage() {
       showSwNotification(notifTitle, { body: notifBody, tag: key });
       localStorage.setItem(key, "1");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, locale, userTrips]);
 
   // Trip debrief: check once when trips load
