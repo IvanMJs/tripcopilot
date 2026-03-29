@@ -216,3 +216,21 @@ export const AIRLINE_APP_URLS: Record<string, string> = {
   AV: "https://www.avianca.com/us/en/manage-your-trip/flight-status/",
   AC: "https://www.aircanada.com/us/en/aco/home/fly/onboard/flight-status.html",
 };
+
+export const AIRLINE_CHECKIN_URLS: Record<string, string> = {
+  AA: "https://www.aa.com/reservation/retrieveReservationSummaryPage.do",
+  UA: "https://www.united.com/ual/en/us/checkin",
+  DL: "https://www.delta.com/us/en/check-in/overview",
+  B6: "https://www.jetblue.com/manage-trips/check-in",
+  WN: "https://www.southwest.com/air/check-in/",
+  AS: "https://www.alaskaair.com/check-in",
+  LA: "https://www.latamairlines.com/us/en/manage-your-trip/online-check-in",
+  AR: "https://www.aerolineas.com.ar/es-ar/online-check-in",
+  NK: "https://www.spirit.com/booking/check-in",
+  F9: "https://www.flyfrontier.com/travel/my-trips/check-in/",
+  G4: "https://www.allegiantair.com/manage-travel",
+  AM: "https://www.aeromexico.com/en-us/check-in",
+  CM: "https://www.copaair.com/en/web/us/check-in",
+  AV: "https://www.avianca.com/us/en/manage-your-trip/check-in/",
+  AC: "https://www.aircanada.com/us/en/aco/home/fly/before-you-fly/check-in.html",
+};

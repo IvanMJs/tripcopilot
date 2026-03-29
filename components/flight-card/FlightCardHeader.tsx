@@ -122,6 +122,11 @@ export function FlightCardHeader({
             {flight.airlineName && (
               <span className="text-[11px] text-gray-500 truncate max-w-[120px]">{flight.airlineName}</span>
             )}
+            {flight.bookingCode && (
+              <span className="text-[11px] font-mono font-semibold text-violet-400 bg-violet-950/40 border border-violet-700/30 rounded px-1.5 py-0.5 shrink-0">
+                {flight.bookingCode}
+              </span>
+            )}
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
             {/* Trash / confirm-delete */}

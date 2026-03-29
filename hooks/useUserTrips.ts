@@ -54,6 +54,7 @@ interface DbFlight {
   boarding_pass_url: string | null;
   wants_upgrade: boolean | null;
   cabin_class: string | null;
+  booking_code: string | null;
 }
 
 function toTripFlight(f: DbFlight): TripFlight {
@@ -73,6 +74,7 @@ function toTripFlight(f: DbFlight): TripFlight {
     arrivalBuffer:    f.arrival_buffer,
     boardingPassUrl:  f.boarding_pass_url ?? undefined,
     wantsUpgrade:    f.wants_upgrade ?? false,
+    bookingCode:     f.booking_code ?? undefined,
     cabinClass: (
       f.cabin_class === "economy" ||
       f.cabin_class === "premium_economy" ||
@@ -356,6 +358,7 @@ export function useUserTrips() {
         arrival_buffer:   flight.arrivalBuffer,
         sort_order,
         cabin_class:      flight.cabinClass ?? "economy",
+        booking_code:     flight.bookingCode ?? null,
       })
       .select("id")
       .single();
@@ -609,6 +612,7 @@ export function useUserTrips() {
         arrival_time: flight.arrivalTime ?? null,
         arrival_buffer: flight.arrivalBuffer,
         sort_order,
+        booking_code: flight.bookingCode ?? null,
       }).select("id").single();
       if (fErr || !f) { await rollbackTrip(); return null; }
       flightIdMap[flight.id] = f.id;
@@ -688,6 +692,7 @@ export function useUserTrips() {
         arrival_time: flight.arrivalTime ?? null,
         arrival_buffer: flight.arrivalBuffer,
         sort_order,
+        booking_code: flight.bookingCode ?? null,
       }).select("id").single();
       if (fErr || !f) { await rollbackTrip(); return null; }
       flightIdMap[flight.id] = f.id;

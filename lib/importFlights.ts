@@ -14,6 +14,7 @@ export interface ParsedFlight {
   arrivalDate?:  string;
   arrivalTime?:  string;
   arrivalBuffer: number;
+  bookingCode?:  string;
   confidence:    "high" | "medium" | "low";
 }
 
