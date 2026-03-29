@@ -60,6 +60,7 @@ export interface TripFlight {
   boardingPassUrl?: string; // Supabase Storage path, e.g. "{userId}/{flightId}.jpg"
   wantsUpgrade?: boolean;   // user opted in for upgrade reminder notification
   cabinClass?: "economy" | "premium_economy" | "business" | "first";
+  bookingCode?: string;    // PNR / confirmation code, e.g. "QDLHPV"
 }
 
 export interface Accommodation {

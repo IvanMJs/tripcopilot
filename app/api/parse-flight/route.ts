@@ -30,6 +30,7 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
       "departureTime": "20:30",
       "arrivalDate": "2026-03-30",
       "arrivalTime": "06:45",
+      "bookingCode": "QDLHPV",
       "missing": []
     }
   ]
@@ -46,6 +47,7 @@ Rules:
 - departureTime: 24h format "HH:MM", or "" if not found. Convert 12h to 24h (e.g. "8:30 PM" → "20:30").
 - arrivalDate: arrival date, format "YYYY-MM-DD". May differ from isoDate for overnight flights. Leave "" if not found.
 - arrivalTime: arrival time in local time at destination, 24h format "HH:MM". Leave "" if not found. Convert 12h to 24h.
+- bookingCode: booking/confirmation/reservation code (PNR), usually 5-8 alphanumeric characters (e.g. "QDLHPV", "ABC123"). Leave "" if not found. This is shared across all flights in the same booking.
 - missing: array of field names you could not find, e.g. ["departureTime"] or []
 
 If a field is missing or uncertain, leave it as empty string "" and add the field name to "missing".
@@ -174,6 +176,7 @@ export async function POST(req: NextRequest) {
       departureTime:   z.string().regex(/^\d{2}:\d{2}$/).or(z.literal("")).catch(""),
       arrivalDate:     z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/).or(z.literal("")).catch(""),
       arrivalTime:     z.string().regex(/^\d{2}:\d{2}$/).or(z.literal("")).catch(""),
+      bookingCode:     z.string().max(20).catch(""),
       missing:         z.array(z.string()).catch([]),
     });
 

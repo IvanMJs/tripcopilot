@@ -99,6 +99,7 @@ function buildParsedFlight(raw: {
   departureTime: string;
   arrivalDate?: string;
   arrivalTime?: string;
+  bookingCode?: string;
   missing: string[];
 }): EditableFlight {
   const airline = AIRLINES[raw.airlineCode.toUpperCase()];
@@ -115,6 +116,7 @@ function buildParsedFlight(raw: {
     arrivalDate:     raw.arrivalDate || undefined,
     arrivalTime:     raw.arrivalTime || undefined,
     arrivalBuffer:   2,
+    bookingCode:     raw.bookingCode || undefined,
     confidence:      raw.missing.length === 0 ? "high"
                    : raw.missing.length <= 1   ? "medium"
                    : "low",

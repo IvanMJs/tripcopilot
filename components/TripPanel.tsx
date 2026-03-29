@@ -306,6 +306,7 @@ export function TripPanel({
         arrivalDate:     pf.arrivalDate   || undefined,
         arrivalTime:     pf.arrivalTime   || undefined,
         arrivalBuffer:   pf.arrivalBuffer,
+        bookingCode:     pf.bookingCode || undefined,
       };
       onAddFlight(trip.id, newFlight);
     }
