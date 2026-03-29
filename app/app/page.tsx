@@ -48,6 +48,7 @@ import { TimezoneBanner } from "@/components/TimezoneBanner";
 import { TripAssistant } from "@/components/TripAssistant";
 import { DepartureBoard } from "@/components/DepartureBoard";
 import { DiscoverView } from "@/components/DiscoverView";
+import { MyProfileView } from "@/components/MyProfileView";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { PLANS } from "@/lib/mercadopago";
@@ -99,7 +100,7 @@ export default function HomePage() {
   } = useUserTrips();
 
   // All navigable tab IDs in display order for directional slide
-  const allTabIds = ["airports", "today", "flights", "search", "discover", "trips", ...userTrips.map((t) => t.id), DRAFT_ID, EXAMPLE_ID, "help"];
+  const allTabIds = ["airports", "today", "flights", "profile", "discover", "trips", ...userTrips.map((t) => t.id), DRAFT_ID, EXAMPLE_ID, "help"];
 
   function setActiveTab(newTab: string) {
     const prevIdx = allTabIds.indexOf(prevTabRef.current);
@@ -781,8 +782,13 @@ export default function HomePage() {
               <MyFlightsPanel statusMap={statusMap} weatherMap={weatherMap} />
             )}
 
-            {activeTab === "search" && (
-              <FlightSearch statusMap={statusMap} />
+            {activeTab === "profile" && (
+              <MyProfileView
+                trips={userTrips}
+                locale={locale}
+                userPlan={userPlan}
+                onUpgrade={() => setShowUpgradeModal(true)}
+              />
             )}
 
             {activeTab === "discover" && (
@@ -967,7 +973,7 @@ export default function HomePage() {
           userTrips={userTrips}
           draftTrip={draftTrip}
           draftId={DRAFT_ID}
-          tabLabels={{ airports: t.tabAirports, search: t.tabSearch }}
+          tabLabels={{ airports: t.tabAirports, profile: locale === "es" ? "Mis stats" : "My stats" }}
           onNavigate={navigateAway}
           onNewTrip={openCreateTripModal}
           onDiscardDraft={discardDraft}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plane, Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass } from "lucide-react";
+import { Plane, Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass, BarChart2 } from "lucide-react";
 import { TripTab } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 
@@ -12,7 +12,7 @@ interface Props {
   userTrips: TripTab[];
   draftTrip: { name: string; flights: { id: string }[] } | null;
   draftId: string;
-  tabLabels: { airports: string; search: string };
+  tabLabels: { airports: string; profile: string };
   onNavigate: (tab: string) => void;
   onNewTrip: () => void;
   onDiscardDraft: () => void;
@@ -215,6 +215,17 @@ export function BottomNav({
 
         <div className="flex h-[60px]">
 
+          {/* Perfil/Stats */}
+          <button
+            onClick={() => onNavigate("profile")}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`}
+          >
+            <motion.div whileTap={{ scale: 0.82 }} className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "profile" ? "bg-violet-500/20" : ""}`}>
+              <BarChart2 className={`w-[22px] h-[22px] transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "profile" ? 2.5 : 1.5} />
+            </motion.div>
+            <span className={`text-xs leading-none ${activeTab === "profile" ? "font-bold" : "font-semibold"}`}>{tabLabels.profile}</span>
+          </button>
+
           {/* Mi viaje / Mis viajes */}
           <button
             onClick={handleTripNavTap}
@@ -258,17 +269,6 @@ export function BottomNav({
               <CalendarDays className={`w-[22px] h-[22px] transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "today" ? 2.5 : 1.5} />
             </motion.div>
             <span className={`text-xs leading-none ${activeTab === "today" ? "font-bold" : "font-semibold"}`}>{locale === "es" ? "Hoy" : "Today"}</span>
-          </button>
-
-          {/* Vuelos */}
-          <button
-            onClick={() => onNavigate("search")}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "search" ? "text-violet-400" : "text-gray-500"}`}
-          >
-            <motion.div whileTap={{ scale: 0.82 }} className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-200 ${activeTab === "search" ? "bg-violet-500/20" : ""}`}>
-              <Plane className={`w-[22px] h-[22px] transition-colors ${activeTab === "search" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "search" ? 2.5 : 1.5} />
-            </motion.div>
-            <span className={`text-xs leading-none ${activeTab === "search" ? "font-bold" : "font-semibold"}`}>{tabLabels.search}</span>
           </button>
 
           {/* Explorar */}
