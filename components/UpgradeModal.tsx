@@ -46,11 +46,11 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#0a0a14] shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#0a0a14] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
           <h2 className="text-lg font-black text-white">Elige tu plan</h2>
           <button
             onClick={onClose}
@@ -64,8 +64,9 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           </button>
         </div>
 
-        {/* Cards */}
-        <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Scrollable content */}
+        <div className="overflow-y-auto px-6 pb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
           {/* Free card */}
           <div className="rounded-xl border border-white/[0.12] bg-white/[0.03] p-5 flex flex-col gap-4">
@@ -153,12 +154,13 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
             </button>
           </div>
 
-        </div>
+          </div>
 
-        {/* Footer note */}
-        <p className="text-center text-xs text-gray-600 pb-5">
-          Pago seguro por MercadoPago \u00b7 Cancel\u00e1 cuando quieras
-        </p>
+          {/* Footer note */}
+          <p className="text-center text-xs text-gray-600 pt-2 pb-2">
+            Pago seguro por MercadoPago · Cancelá cuando quieras
+          </p>
+        </div>
       </div>
     </div>
   );

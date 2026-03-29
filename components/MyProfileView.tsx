@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion, type Easing } from "framer-motion";
 import { TrendingUp, Globe, Plane, MapPin, Zap, Award, Share2, Check } from "lucide-react";
+import { WorldMapView } from "@/components/WorldMapView";
 import { TripTab } from "@/lib/types";
 import { computeTripStats } from "@/lib/tripStats";
 import { PLANS } from "@/lib/mercadopago";
@@ -217,6 +218,13 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
               </div>
             </div>
           </div>
+        </motion.div>
+      )}
+
+      {/* Section 3b — World Map */}
+      {stats.totalFlights >= 1 && (
+        <motion.div {...fadeUp(0.12)} className="px-4 pb-4">
+          <WorldMapView trips={trips} locale={locale} />
         </motion.div>
       )}
 
