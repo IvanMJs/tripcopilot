@@ -124,31 +124,48 @@ export function FlightCardHeader({
   const checkinUrl   = AIRLINE_CHECKIN_URLS[flight.airlineCode] ?? AIRLINE_APP_URLS[flight.airlineCode];
   const airlineAppUrl = AIRLINE_APP_URLS[flight.airlineCode];
 
-  // Check-in highlight: ≤24h before departure
+  // Actual departure time when delayed: add delayMinutes to the scheduled local time
+  const delayMinutes = liveData?.delayMinutes ?? 0;
+  const actualDepTime = (() => {
+    if (delayMinutes <= 0 || !flight.departureTime) return null;
+    const [h, m] = flight.departureTime.split(":").map(Number);
+    const totalMin = h * 60 + m + delayMinutes;
+    const ah = Math.floor(totalMin / 60) % 24;
+    const am = totalMin % 60;
+    return `${String(ah).padStart(2, "0")}:${String(am).padStart(2, "0")}`;
+  })();
+
+  // Countdown uses actual departure time when delayed
+  const effectiveHoursUntilDep =
+    hoursUntilDep !== null && hoursUntilDep !== undefined && delayMinutes > 0
+      ? hoursUntilDep + delayMinutes / 60
+      : hoursUntilDep;
+
+  // Check-in highlight: ≤24h before actual departure (accounts for delay)
   const showCheckinHighlight =
-    hoursUntilDep !== null &&
-    hoursUntilDep !== undefined &&
-    hoursUntilDep <= 24 &&
-    hoursUntilDep > -1;
+    effectiveHoursUntilDep !== null &&
+    effectiveHoursUntilDep !== undefined &&
+    effectiveHoursUntilDep <= 24 &&
+    effectiveHoursUntilDep > -1;
 
   // Contextual "Sale en Xh" chip
   const departureCountdown = (() => {
-    if (hoursUntilDep === null || hoursUntilDep === undefined) return null;
-    if (hoursUntilDep < -6 || hoursUntilDep > 72) return null;
-    if (hoursUntilDep < 0) {
-      const minAgo = Math.abs(Math.round(hoursUntilDep * 60));
+    if (effectiveHoursUntilDep === null || effectiveHoursUntilDep === undefined) return null;
+    if (effectiveHoursUntilDep < -6 || effectiveHoursUntilDep > 72) return null;
+    if (effectiveHoursUntilDep < 0) {
+      const minAgo = Math.abs(Math.round(effectiveHoursUntilDep * 60));
       return locale === "es" ? `Salió hace ${minAgo}min` : `Departed ${minAgo}min ago`;
     }
-    const h = Math.floor(hoursUntilDep);
-    const min = Math.round((hoursUntilDep - h) * 60);
+    const h = Math.floor(effectiveHoursUntilDep);
+    const min = Math.round((effectiveHoursUntilDep - h) * 60);
     if (h === 0) return locale === "es" ? `Sale en ${min}min` : `Departs in ${min}min`;
     return locale === "es" ? `Sale en ${h}h` : `Departs in ${h}h`;
   })();
 
   const depCountdownColor =
-    hoursUntilDep !== null && hoursUntilDep !== undefined && hoursUntilDep <= 3
+    effectiveHoursUntilDep !== null && effectiveHoursUntilDep !== undefined && effectiveHoursUntilDep <= 3
       ? "text-red-400 font-bold"
-      : hoursUntilDep !== null && hoursUntilDep !== undefined && hoursUntilDep <= 24
+      : effectiveHoursUntilDep !== null && effectiveHoursUntilDep !== undefined && effectiveHoursUntilDep <= 24
       ? "text-emerald-400 font-semibold"
       : "text-gray-400";
 
@@ -236,9 +253,25 @@ export function FlightCardHeader({
           <div>
             <p className="text-2xl font-bold font-mono text-white leading-none">{flight.originCode}</p>
             {(displayDepartureTime ?? flight.departureTime) && (
-              <p className="text-lg font-semibold tabular-nums text-white mt-0.5">
-                {displayDepartureTime ?? flight.departureTime}
-              </p>
+              actualDepTime ? (
+                <div className="mt-0.5">
+                  <p className="text-sm tabular-nums text-gray-500 line-through leading-none">
+                    {displayDepartureTime ?? flight.departureTime}
+                  </p>
+                  <p className="text-lg font-bold tabular-nums text-amber-400 leading-tight">
+                    {actualDepTime}
+                    <span className="text-xs font-semibold text-amber-500 ml-1">
+                      +{delayMinutes >= 60
+                        ? `${Math.floor(delayMinutes / 60)}h${delayMinutes % 60 > 0 ? `${delayMinutes % 60}m` : ""}`
+                        : `${delayMinutes}m`}
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-lg font-semibold tabular-nums text-white mt-0.5">
+                  {displayDepartureTime ?? flight.departureTime}
+                </p>
+              )
             )}
             <p className="text-xs text-gray-400 mt-0.5 truncate">{originName}</p>
           </div>

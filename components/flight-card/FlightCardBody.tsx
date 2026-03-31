@@ -652,7 +652,9 @@ export function FlightCardBody({
                       {notifLogs.map((entry, i) => {
                         const typeLabel =
                           L.notifTypes[entry.type] ??
-                          (entry.type.startsWith("delay_")
+                          (entry.type.startsWith("flight_delay_real_")
+                            ? locale === "es" ? "Demora en tiempo real" : "Real-time delay"
+                            : entry.type.startsWith("delay_")
                             ? locale === "es" ? "Alerta de estado" : "Status alert"
                             : entry.type);
                         const sentDate = new Date(entry.sent_at);

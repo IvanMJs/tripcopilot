@@ -323,11 +323,14 @@ export async function GET(request: Request) {
       }
     }
 
-    // D: Real-time flight status (2–4h before) — 1 API call per flight, ever
-    if (hoursUntil !== null && hoursUntil >= 2 && hoursUntil <= 4 && rapidApiKey) {
-      const alreadyFetched = await checkFlightLog(supabase, flight.id, "flight_status_fetched", Infinity);
+    // D: Real-time flight status — re-checks every 90 min within 1–8h of scheduled departure.
+    // Window is wide (8h) to catch delays announced hours before departure.
+    // Uses bracket-based dedup so users get notified again when delay worsens significantly.
+    if (hoursUntil !== null && hoursUntil >= 1 && hoursUntil <= 8 && rapidApiKey) {
+      // Re-check every 90 minutes (not one-shot) so delays discovered after the first check are caught
+      const alreadyFetched = await checkFlightLog(supabase, flight.id, "flight_status_fetched", 1.5);
       if (!alreadyFetched) {
-        // Log immediately so parallel cron runs don't double-fetch
+        // Log immediately so parallel cron runs don't double-fetch within the same 90-min window
         await supabase.from("notification_log").insert({
           flight_id: flight.id,
           user_id: userId,
@@ -346,9 +349,15 @@ export async function GET(request: Request) {
               ? `${Math.floor(flightStatus.delayMinutes / 60)}h ${flightStatus.delayMinutes % 60}min`
               : `${flightStatus.delayMinutes} min`;
             const gateText = flightStatus.gate ? ` · ${locale === "es" ? "Puerta" : "Gate"} ${flightStatus.gate}` : "";
-            const { title, body } = L.flightDelay(flight.flight_code, delayText, flightStatus.estimatedDeparture, departureTime ?? "?", gateText, originCode, destCode, flightStatus.delayMinutes);
-            notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_delay_real", { title, body, url: "/app" });
-            notificationsSent++;
+            // Bracket-based dedup: notify once per bracket (20–59 min, 60–119 min, 120+ min)
+            // This ensures users are re-notified if the delay increases significantly
+            const delayBracket = flightStatus.delayMinutes >= 120 ? "120" : flightStatus.delayMinutes >= 60 ? "60" : "20";
+            const alreadySentDelay = await checkFlightLog(supabase, flight.id, `flight_delay_real_${delayBracket}`, Infinity);
+            if (!alreadySentDelay) {
+              const { title, body } = L.flightDelay(flight.flight_code, delayText, flightStatus.estimatedDeparture, departureTime ?? "?", gateText, originCode, destCode, flightStatus.delayMinutes);
+              notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, `flight_delay_real_${delayBracket}`, { title, body, url: "/app" });
+              notificationsSent++;
+            }
 
             // A6: Connection rescue — check if this delay impacts the next flight in the trip
             {
