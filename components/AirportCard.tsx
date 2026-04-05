@@ -12,6 +12,14 @@ import { MetarData, FlightCategory } from "@/hooks/useMetar";
 import { getAirportTime, getAirportTzLabel } from "@/lib/airportTimezone";
 import { getCachedFaaExplanation, setCachedFaaExplanation } from "@/lib/faaExplainCache";
 
+function formatMinutes(min: number | undefined): string {
+  if (min == null) return "?";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}min`;
+}
+
 function AirportClock({ iata }: { iata: string }) {
   const [time, setTime] = useState(() => getAirportTime(iata));
 
@@ -412,7 +420,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
           <p>
             <span className="text-gray-500">{t.delay}:</span>{" "}
             <span className="font-medium">
-              {status.delays.minMinutes ?? "?"}–{status.delays.maxMinutes ?? "?"} min
+              {formatMinutes(status.delays.minMinutes)}–{formatMinutes(status.delays.maxMinutes)}
             </span>{" "}
             <TrendIcon trend={status.delays.trend} />
           </p>
@@ -445,7 +453,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
         <div className="mt-2 space-y-1 text-sm text-red-300">
           <p className="font-bold">{t.groundDelayProgram}</p>
           <p>
-            {t.average}: <span className="font-medium">{status.groundDelay.avgMinutes} min</span>
+            {t.average}: <span className="font-medium">{formatMinutes(status.groundDelay.avgMinutes)}</span>
             {" · "}{t.max}: {status.groundDelay.maxTime}
           </p>
           <p><span className="text-red-400/70">{t.cause}:</span> {status.groundDelay.reason}</p>

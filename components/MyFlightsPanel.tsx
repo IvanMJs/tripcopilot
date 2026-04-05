@@ -21,6 +21,14 @@ import { TripClocks } from "@/components/TripClocks";
 import { TripEmptyState } from "@/components/TripEmptyState";
 import { getAirportTime, getAirportTzLabel } from "@/lib/airportTimezone";
 
+function formatMinutes(min: number | undefined): string {
+  if (min == null) return "?";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}min`;
+}
+
 function getDaysUntil(isoDate: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -335,7 +343,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, index, isNext =
             {originStatus?.delays && (
               <p className="text-orange-200">
                 <span className="font-bold">⚠️ {locale === "en" ? "Delay" : "Demora"}:</span>{" "}
-                {originStatus.delays.minMinutes}–{originStatus.delays.maxMinutes} min
+                {formatMinutes(originStatus.delays.minMinutes)}–{formatMinutes(originStatus.delays.maxMinutes)}
                 {originStatus.delays.trend && ` · ${locale === "en" ? "Trend" : "Tendencia"}: ${originStatus.delays.trend}`}
                 <br />
                 <span className="text-orange-400">{locale === "en" ? "Cause" : "Causa"}: {originStatus.delays.reason}</span>
@@ -344,7 +352,7 @@ function FlightCardItem({ flight, statusMap, weatherMap, locale, index, isNext =
             {originStatus?.groundDelay && (
               <p className="text-red-200">
                 <span className="font-bold">🔴 {locale === "en" ? "Ground Delay Program" : "Programa de Demora en Tierra"}:</span>{" "}
-                {locale === "en" ? "Average" : "Promedio"} {originStatus.groundDelay.avgMinutes} min · {locale === "en" ? "Max" : "Máx"} {originStatus.groundDelay.maxTime}
+                {locale === "en" ? "Average" : "Promedio"} {formatMinutes(originStatus.groundDelay.avgMinutes)} · {locale === "en" ? "Max" : "Máx"} {originStatus.groundDelay.maxTime}
                 <br />
                 <span className="text-red-400">{locale === "en" ? "Cause" : "Causa"}: {originStatus.groundDelay.reason}</span>
               </p>

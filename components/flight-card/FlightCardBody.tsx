@@ -95,6 +95,14 @@ function SectionHeader({
   );
 }
 
+function formatMinutes(min: number | undefined): string {
+  if (min == null) return "?";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}min`;
+}
+
 function parseTzOffset(tzAbbr: string): number | null {
   if (!tzAbbr || tzAbbr === "UTC") return 0;
   const match = tzAbbr.match(/UTC([+-])(\d+)(?::(\d+))?/);
@@ -217,13 +225,13 @@ export function FlightCardBody({
                   </div>
                   {originStatus?.delays && (
                     <p className="text-orange-200">
-                      ⚠️ {originStatus.delays.minMinutes}–{originStatus.delays.maxMinutes} min
+                      ⚠️ {formatMinutes(originStatus.delays.minMinutes)}–{formatMinutes(originStatus.delays.maxMinutes)}
                       {" · "}{originStatus.delays.reason}
                     </p>
                   )}
                   {originStatus?.groundDelay && (
                     <p className="text-red-200">
-                      🔴 avg {originStatus.groundDelay.avgMinutes} min · {originStatus.groundDelay.reason}
+                      🔴 avg {formatMinutes(originStatus.groundDelay.avgMinutes)} · {originStatus.groundDelay.reason}
                     </p>
                   )}
                   {originStatus?.groundStop && (

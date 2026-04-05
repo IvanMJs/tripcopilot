@@ -9,6 +9,14 @@ import { AIRPORTS } from "@/lib/airports";
 import { parseFlightCode } from "@/lib/flightUtils";
 import { useTrackedFlights } from "@/hooks/useTrackedFlights";
 
+function formatMinutes(min: number | undefined): string {
+  if (min == null) return "?";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}min`;
+}
+
 interface FlightSearchProps {
   statusMap: AirportStatusMap;
 }
@@ -201,14 +209,14 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
 
                     {airportStatus?.delays && (
                       <p className="text-xs text-orange-300">
-                        ⚠️ {airportStatus.delays.minMinutes}–{airportStatus.delays.maxMinutes} min
+                        ⚠️ {formatMinutes(airportStatus.delays.minMinutes)}–{formatMinutes(airportStatus.delays.maxMinutes)}
                         {" · "}{airportStatus.delays.reason}
                       </p>
                     )}
                     {airportStatus?.groundDelay && (
                       <p className="text-xs text-red-300">
                         🔴 {locale === "en" ? "Ground Delay" : "Demora en Tierra"}{" "}
-                        avg {airportStatus.groundDelay.avgMinutes} min
+                        avg {formatMinutes(airportStatus.groundDelay.avgMinutes)}
                         {" · "}{airportStatus.groundDelay.reason}
                       </p>
                     )}
