@@ -18,10 +18,11 @@ const TripFlightSchema = z.object({
 const BodySchema = z.object({
   question:    z.string().min(1).max(500),
   tripContext: z.object({
-    flights:       z.array(TripFlightSchema).max(50),
-    tripName:      z.string().max(200),
-    userLocalTime: z.string().max(50).optional(),
-    userTimezone:  z.string().max(100).optional(),
+    flights:        z.array(TripFlightSchema).max(50),
+    tripName:       z.string().max(200),
+    userLocalTime:  z.string().max(50).optional(),
+    userTimezone:   z.string().max(100).optional(),
+    airportContext: z.string().max(2000).optional(),
   }),
 });
 
@@ -73,12 +74,17 @@ export async function POST(req: NextRequest) {
 
   const tripSummary = `Viaje: "${tripContext.tripName}"\nVuelos:\n${flightsText}`;
 
+  const airportSection = tripContext.airportContext
+    ? `\nESTADO ACTUAL DE AEROPUERTOS (datos en tiempo real):\n${tripContext.airportContext}`
+    : "";
+
   const systemPrompt = `Sos un asistente de viaje conciso y práctico.
 
 HORA ACTUAL DEL USUARIO: ${userLocalTime} (zona horaria: ${userTimezone})
 Usá SIEMPRE esta hora como referencia para determinar qué vuelos son pasados, presentes o futuros. Nunca asumas que la hora UTC del servidor es la hora del usuario.
 
 ${nextFlightNote}
+${airportSection}
 
 El usuario tiene el siguiente itinerario:
 ${tripSummary}

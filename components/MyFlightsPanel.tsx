@@ -629,7 +629,6 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
       departureTime:   f.departureTime,
       arrivalRec:      f.arrivalRecommendation,
     }));
-    const tripName = locale === "en" ? "My Flights 2026" : "Mis Vuelos 2026";
     const msg = buildWhatsAppMessage(tripName, waFlights, locale);
     try {
       await navigator.clipboard.writeText(msg);
@@ -639,6 +638,8 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
       window.open(buildWhatsAppURL(msg), "_blank", "noopener,noreferrer");
     }
   }
+
+  const tripName = locale === "en" ? "My Flights 2026" : "Mis Vuelos 2026";
 
   // Determine if any "today" flight exists
   const todayFlight = MY_FLIGHTS.find((f) => getDaysUntil(f.isoDate) === 0);
@@ -761,7 +762,7 @@ export function MyFlightsPanel({ statusMap, weatherMap }: MyFlightsPanelProps) {
       </div>
 
       {/* 6. TripCopilot — AI travel guide, collapsed by default */}
-      <TripCopilot flights={MY_FLIGHTS} locale={locale} />
+      <TripCopilot flights={MY_FLIGHTS} locale={locale} tripName={tripName} statusMap={statusMap} weatherMap={weatherMap} />
 
       {/* 7. Trip clocks — secondary detail */}
       <TripClocks locale={locale} />

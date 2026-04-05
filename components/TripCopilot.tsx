@@ -23,6 +23,8 @@ function TripCopilotLogo({ className }: { className?: string }) {
 import { getDestinationProfile, getDestinationConfig } from "@/lib/destinationConfig";
 import { useTripAdvice, AdviceStatus } from "@/hooks/useTripAdvice";
 import { TripAdviceResult, PackingItem } from "@/lib/types/tripAdvice";
+import { AirportStatusMap } from "@/lib/types";
+import { WeatherData } from "@/hooks/useWeather";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,8 @@ interface TripCopilotProps {
   flights: FlightItem[];
   locale: "es" | "en";
   tripName?: string;
+  statusMap?: AirportStatusMap;
+  weatherMap?: Record<string, WeatherData>;
 }
 
 // ── Chat types ─────────────────────────────────────────────────────────────────
@@ -439,16 +443,48 @@ function LegNotes({
   );
 }
 
+// ── Airport context builder ───────────────────────────────────────────────────
+
+function buildAirportContext(
+  flights: FlightItem[],
+  statusMap?: AirportStatusMap,
+  weatherMap?: Record<string, WeatherData>,
+): string {
+  const allCodes = flights.flatMap((f) => [f.originCode, f.destinationCode]);
+  const codes = allCodes.filter((code, idx) => allCodes.indexOf(code) === idx);
+  return codes.map((code) => {
+    const lines: string[] = [`${code}:`];
+    const weather = weatherMap?.[code];
+    if (weather) lines.push(`  clima: ${weather.temperature}°C, ${weather.description}`);
+    const faa = statusMap?.[code];
+    if (faa) {
+      if (faa.status !== "ok") lines.push(`  FAA: ${faa.status}`);
+      if (faa.delays) {
+        const min = faa.delays.minMinutes ?? "?";
+        const max = faa.delays.maxMinutes ?? "?";
+        lines.push(`  demoras: ${min}–${max} min (${faa.delays.reason})`);
+      }
+      if (faa.groundDelay) lines.push(`  ground delay: avg ${faa.groundDelay.avgMinutes} min (${faa.groundDelay.reason})`);
+      if (faa.groundStop) lines.push(`  ground stop hasta: ${faa.groundStop.endTime ?? "indefinido"}`);
+    }
+    return lines.join("\n");
+  }).join("\n\n");
+}
+
 // ── Chat section ──────────────────────────────────────────────────────────────
 
 function ChatSection({
   flights,
   tripName,
   locale,
+  statusMap,
+  weatherMap,
 }: {
   flights: FlightItem[];
   tripName: string;
   locale: "es" | "en";
+  statusMap?: AirportStatusMap;
+  weatherMap?: Record<string, WeatherData>;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -486,6 +522,7 @@ function ChatSection({
             tripName,
             userLocalTime: new Date().toLocaleString("sv-SE", { timeZoneName: "short" }),
             userTimezone:  Intl.DateTimeFormat().resolvedOptions().timeZone,
+            airportContext: buildAirportContext(flights, statusMap, weatherMap),
           },
         }),
       });
@@ -618,7 +655,7 @@ function ChatSection({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function TripCopilot({ flights, locale, tripName = "Mi viaje" }: TripCopilotProps) {
+export function TripCopilot({ flights, locale, tripName = "Mi viaje", statusMap, weatherMap }: TripCopilotProps) {
   const [expanded, setExpanded] = useState(false);
   const { data, status, error, refresh } = useTripAdvice(flights, locale);
 
@@ -779,7 +816,7 @@ export function TripCopilot({ flights, locale, tripName = "Mi viaje" }: TripCopi
           <LegNotes data={data} locale={locale} />
 
           {/* Chat */}
-          <ChatSection flights={flights} tripName={tripName} locale={locale} />
+          <ChatSection flights={flights} tripName={tripName} locale={locale} statusMap={statusMap} weatherMap={weatherMap} />
         </div>
       )}
     </div>
