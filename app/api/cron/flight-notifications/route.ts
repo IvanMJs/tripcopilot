@@ -3,7 +3,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { AIRPORTS } from "@/lib/airports";
 import { parseAeroDataBox } from "@/lib/aerodatabox";
 import { parseXML } from "@/lib/faa";
-import { localToUTC, localHourInTimezone, CRON_LABELS, CronLocale } from "@/lib/cronUtils";
+import { localToUTC, localHourInTimezone, dateInTimezone, CRON_LABELS, CronLocale } from "@/lib/cronUtils";
 import { analyzeConnection } from "@/lib/connectionRisk";
 import { TripFlight } from "@/lib/types";
 import { sendInBatches } from "@/lib/retry";
@@ -87,8 +87,13 @@ export async function GET(request: Request) {
   );
 
   const now = new Date();
-  const todayISO = now.toISOString().slice(0, 10);
-  const threeDaysISO = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+  // UTC-based strings used only for the DB query window.
+  // We widen by 12 h on each side so we never miss flights for users
+  // whose local date differs from the UTC date (e.g. UTC-5 at 23:00 local
+  // is UTC+1 the next day — a 12 h buffer covers UTC±12 completely).
+  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+  const todayISO = new Date(now.getTime() - TWELVE_HOURS_MS).toISOString().slice(0, 10);
+  const threeDaysISO = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000 + TWELVE_HOURS_MS)
     .toISOString()
     .slice(0, 10);
 
@@ -289,8 +294,11 @@ export async function GET(request: Request) {
       }
     }
 
-    // A2: Morning briefing — fires when it's 6–10 AM at the origin airport
-    if (isoDate === todayISO && hoursUntil !== null && hoursUntil > 3) {
+    // A2: Morning briefing — fires when it's 6–10 AM at the origin airport.
+    // Use the airport's local date (not UTC date) to decide "today".
+    const todayInAirportTz    = dateInTimezone(now, airportTz);
+    const tomorrowInAirportTz = dateInTimezone(new Date(now.getTime() + 24 * 60 * 60 * 1000), airportTz);
+    if (isoDate === todayInAirportTz && hoursUntil !== null && hoursUntil > 3) {
       const localHour = localHourInTimezone(now, airportTz);
       if (localHour >= 6 && localHour <= 10) {
         const alreadySent = await checkFlightLog(supabase, flight.id, "morning_briefing", Infinity);
@@ -302,9 +310,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // B: Check-in reminder — flight is tomorrow (any departure time)
-    const tomorrowISOLocal = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    if (isoDate === tomorrowISOLocal) {
+    // B: Check-in reminder — flight is tomorrow in the airport's local timezone
+    if (isoDate === tomorrowInAirportTz) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "checkin_24h", Infinity);
       if (!alreadySent) {
         const { title, body } = L.checkin24h(flight.flight_code, originCode, destCode, departureTime ?? "?");
@@ -369,6 +376,11 @@ export async function GET(request: Request) {
                   .from("flights")
                   .update({ departure_time: actualDepTime })
                   .eq("id", flight.id);
+                // Also update the in-memory object so processCountdown (which
+                // runs after processFlightRow on the same FlightRow reference)
+                // computes the countdown against the actual delayed time, not
+                // the stale scheduled time.
+                flight.departure_time = actualDepTime;
               }
             }
 

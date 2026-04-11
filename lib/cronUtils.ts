@@ -1,4 +1,21 @@
 /**
+ * Returns the local date string (YYYY-MM-DD) for a given UTC moment
+ * in a specific IANA timezone. Use this instead of .toISOString().slice(0,10)
+ * whenever you need the date as seen by a user in a given timezone.
+ *
+ * Example: dateInTimezone(now, "America/New_York") → "2026-04-05" at 23:00 UTC
+ *   while  now.toISOString().slice(0,10)           → "2026-04-06"
+ */
+export function dateInTimezone(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year:  "numeric",
+    month: "2-digit",
+    day:   "2-digit",
+  }).format(date);
+}
+
+/**
  * Given a local date string + local time string + IANA timezone,
  * returns the equivalent UTC Date. Handles DST correctly via Intl.
  *
