@@ -268,7 +268,7 @@ export async function GET(request: Request) {
     const L = CRON_LABELS[locale];
 
     // A1: Landing notification — flight departed in the past, check if it has arrived
-    if (isRecentlyDeparted && rapidApiKey) {
+    if (isRecentlyDeparted) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "flight_landed", Infinity);
       if (!alreadySent) {
         const landingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
@@ -333,7 +333,7 @@ export async function GET(request: Request) {
     // D: Real-time flight status — re-checks every 90 min within 1–8h of scheduled departure.
     // Window is wide (8h) to catch delays announced hours before departure.
     // Uses bracket-based dedup so users get notified again when delay worsens significantly.
-    if (hoursUntil !== null && hoursUntil >= 1 && hoursUntil <= 8 && rapidApiKey) {
+    if (hoursUntil !== null && hoursUntil >= 1 && hoursUntil <= 8) {
       // Re-check every 90 minutes (not one-shot) so delays discovered after the first check are caught
       const alreadyFetched = await checkFlightLog(supabase, flight.id, "flight_status_fetched", 1.5);
       if (!alreadyFetched) {
@@ -467,7 +467,7 @@ export async function GET(request: Request) {
     }
 
     // E: Boarding open — roughly 24–36 minutes before departure
-    if (hoursUntil !== null && hoursUntil >= 0.4 && hoursUntil <= 0.6 && rapidApiKey) {
+    if (hoursUntil !== null && hoursUntil >= 0.4 && hoursUntil <= 0.6) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "boarding_open", Infinity);
       if (!alreadySent) {
         const boardingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
@@ -1033,12 +1033,12 @@ async function fetchFlightStatusFromOpenSky(
 async function fetchFlightStatus(
   flightCode: string,
   isoDate: string,
-  rapidApiKey: string,
+  rapidApiKey: string | undefined,
   scheduledUnix: number,
   originIcao: string | null,
 ): Promise<FlightStatusResult | null> {
   // Try AeroDataBox first (better delay data); fall back to AviationStack
-  const adb = await fetchFlightStatusFromAeroDataBox(flightCode, isoDate, rapidApiKey);
+  const adb = rapidApiKey ? await fetchFlightStatusFromAeroDataBox(flightCode, isoDate, rapidApiKey) : null;
   if (adb !== null) return adb;
 
   console.warn(`[cron] AeroDataBox failed for ${flightCode}, trying AviationStack…`);
