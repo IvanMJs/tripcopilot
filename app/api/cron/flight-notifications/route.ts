@@ -5,7 +5,7 @@ import { parseAeroDataBox } from "@/lib/aerodatabox";
 import { parseXML } from "@/lib/faa";
 import { localToUTC, localHourInTimezone, dateInTimezone, CRON_LABELS, CronLocale } from "@/lib/cronUtils";
 import { analyzeConnection } from "@/lib/connectionRisk";
-import { TripFlight } from "@/lib/types";
+import { TripFlight, AirportStatusMap, DelayStatus } from "@/lib/types";
 import { sendInBatches } from "@/lib/retry";
 
 type FlightRow = {
@@ -87,6 +87,19 @@ export async function GET(request: Request) {
   );
 
   const now = new Date();
+
+  // ── Cron timing constants (cron-job.org fires every 30 min) ─────────────
+  const STATUS_DEDUP_MIN       = 35;   // slightly wider than the 30-min cron interval
+  const DELAY_THRESHOLD_MIN    = 20;   // minimum delay (minutes) to notify
+  const DELAY_BRACKET_MODERATE = 60;   // moderate delay bracket (minutes)
+  const DELAY_BRACKET_SEVERE   = 120;  // severe delay bracket (minutes)
+  const PREFLIGHT_HOURS_MIN    = 2.5;
+  const PREFLIGHT_HOURS_MAX    = 3.5;
+  const BOARDING_HOURS_MIN     = 0.35; // 21 min before departure (wider than 0.4 for 30-min cron)
+  const BOARDING_HOURS_MAX     = 0.70; // 42 min before departure
+  const REALTIME_WINDOW_MIN    = 1;    // hours before departure to start real-time checks
+  const REALTIME_WINDOW_MAX    = 8;    // hours before departure to stop real-time checks
+
   // UTC-based strings used only for the DB query window.
   // We widen by 12 h on each side so we never miss flights for users
   // whose local date differs from the UTC date (e.g. UTC-5 at 23:00 local
@@ -173,7 +186,9 @@ export async function GET(request: Request) {
       const fromStr = new Date(now.getTime() - 60 * 60 * 1000).toISOString().slice(0, 16);
       const toStr   = new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString().slice(0, 16);
 
+      let adbQuotaExceeded = false;
       for (const iata of toFetch) {
+        if (adbQuotaExceeded) break; // stop immediately once quota is exhausted
         try {
           const url =
             `https://aerodatabox.p.rapidapi.com/flights/airports/iata/${iata}/${fromStr}/${toStr}` +
@@ -186,7 +201,8 @@ export async function GET(request: Request) {
             signal: AbortSignal.timeout(8000),
           });
           if (res.status === 429 || res.status === 402) {
-            cronErrors.push(`AeroDataBox quota exceeded for ${iata}`);
+            cronErrors.push("AeroDataBox quota exceeded — skipping remaining international airports");
+            adbQuotaExceeded = true;
             break;
           }
           if (!res.ok) continue;
@@ -204,6 +220,30 @@ export async function GET(request: Request) {
       }
     }
   }
+
+  // Build a typed AirportStatusMap from the string labels collected above.
+  // statusMap values are DelayStatus strings ("ok", "delay_minor", etc.).
+  // analyzeConnection needs full AirportStatus objects to compute delay impact.
+  const airportStatusMap: AirportStatusMap = Object.fromEntries(
+    Object.entries(statusMap).map(([iata, status]) => {
+      const s = status as DelayStatus;
+      return [iata, {
+        iata,
+        name: iata,
+        city: iata,
+        state: "",
+        status: s,
+        lastChecked: now,
+        groundStop:  s === "ground_stop"  ? { reason: "Ground stop"  } : undefined,
+        groundDelay: s === "ground_delay" ? { reason: "Ground delay", avgMinutes: 45, maxTime: "" } : undefined,
+        delays:
+          s === "delay_severe"   ? { reason: "Severe delay",   maxMinutes: 60,  type: "both" as const } :
+          s === "delay_moderate" ? { reason: "Moderate delay", maxMinutes: 45,  type: "both" as const } :
+          s === "delay_minor"    ? { reason: "Minor delay",    maxMinutes: 15,  type: "both" as const } :
+          undefined,
+      }];
+    }),
+  );
 
   // Cache user locales to avoid repeated auth admin calls
   const userLocaleCache = new Map<string, CronLocale>();
@@ -226,6 +266,7 @@ export async function GET(request: Request) {
   let notificationsFailed = 0;
 
   async function processFlightRow(flight: FlightRow): Promise<void> {
+    try {
     const userId: string = flight.trips.user_id;
     const departureTime: string | null = flight.departure_time;
     const isoDate: string = flight.iso_date;
@@ -271,15 +312,19 @@ export async function GET(request: Request) {
     if (isRecentlyDeparted) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "flight_landed", Infinity);
       if (!alreadySent) {
-        // Dedup API calls: re-check every 35 min (not every cron run for up to 18h)
-        const alreadyFetchedLanding = await checkFlightLog(supabase, flight.id, "landing_status_fetched", 35 / 60);
+        // Dedup API calls: re-check every STATUS_DEDUP_MIN (not every cron run for up to 18h)
+        const alreadyFetchedLanding = await checkFlightLog(supabase, flight.id, "landing_status_fetched", STATUS_DEDUP_MIN / 60);
         if (!alreadyFetchedLanding) {
-          await supabase.from("notification_log").insert({
+          // Log immediately to block parallel runs; deleted below if fetch fails
+          const { data: landingLogRow } = await supabase.from("notification_log").insert({
             flight_id: flight.id, user_id: userId,
             type: "landing_status_fetched", sent_at: new Date().toISOString(),
-          });
+          }).select("id").single();
           const landingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
-          if (landingStatus?.landed) {
+          if (!landingStatus) {
+            // API returned nothing — remove the lock so next cron run retries
+            if (landingLogRow?.id) await supabase.from("notification_log").delete().eq("id", landingLogRow.id);
+          } else if (landingStatus.landed) {
             const { title, body } = L.flightLanded(flight.flight_code, originCode, destCode);
             notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_landed", { title, body, url: "/app" });
             notificationsSent++;
@@ -329,7 +374,7 @@ export async function GET(request: Request) {
     }
 
     // C: Pre-flight alert 3h before (with airport status)
-    if (hoursUntil !== null && hoursUntil >= 2.5 && hoursUntil <= 3.5) {
+    if (hoursUntil !== null && hoursUntil >= PREFLIGHT_HOURS_MIN && hoursUntil <= PREFLIGHT_HOURS_MAX) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "preflight_3h", Infinity);
       if (!alreadySent) {
         const { title, body } = L.preflight3h(flight.flight_code, originCode, destCode, departureTime ?? "?", statusLabel);
@@ -338,29 +383,50 @@ export async function GET(request: Request) {
       }
     }
 
+    // ── Gate change helper (closure over outer-scope counters and flight row) ─
+    const handleGateChange = async (newGate: string | null | undefined): Promise<void> => {
+      if (!newGate || newGate === flight.gate) return;
+      const alreadyAlerted = await checkFlightLog(supabase, flight.id, `gate_change_to_${newGate}`, 4);
+      if (alreadyAlerted) return;
+      const { title, body } = L.gateChange(
+        flight.flight_code,
+        newGate,
+        flight.gate,
+        flight.origin_code,
+        flight.destination_code,
+      );
+      notificationsFailed += await sendAndLogFlight(supabase, subs!, flight.id, userId, `gate_change_to_${newGate}`, { title, body, url: `/trips/${flight.trip_id}` });
+      notificationsSent++;
+      await supabase.from("flights").update({ gate: newGate }).eq("id", flight.id);
+      flight.gate = newGate;
+    }
+
     // D: Real-time flight status — re-checks every 35 min within 1–8h of scheduled departure.
     // Window is wide (8h) to catch delays announced hours before departure.
     // Uses bracket-based dedup so users get notified again when delay worsens significantly.
-    if (hoursUntil !== null && hoursUntil >= 1 && hoursUntil <= 8) {
-      // Re-check every 35 minutes — matches the 30-min cron interval with 5-min buffer
+    if (hoursUntil !== null && hoursUntil >= REALTIME_WINDOW_MIN && hoursUntil <= REALTIME_WINDOW_MAX) {
+      // Re-check every STATUS_DEDUP_MIN minutes — matches the 30-min cron interval with 5-min buffer
       // to avoid missing a delay window if the cron fires at 30:00 and dedup was 30:00 exactly
-      const alreadyFetched = await checkFlightLog(supabase, flight.id, "flight_status_fetched", 35 / 60);
+      const alreadyFetched = await checkFlightLog(supabase, flight.id, "flight_status_fetched", STATUS_DEDUP_MIN / 60);
       if (!alreadyFetched) {
-        // Log immediately so parallel cron runs don't double-fetch within the same 35-min window
-        await supabase.from("notification_log").insert({
+        // Log immediately to block parallel runs; deleted below if fetch fails
+        const { data: statusLogRow } = await supabase.from("notification_log").insert({
           flight_id: flight.id,
           user_id: userId,
           type: "flight_status_fetched",
           sent_at: new Date().toISOString(),
-        });
+        }).select("id").single();
 
         const flightStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
-        if (flightStatus) {
+        if (!flightStatus) {
+          // API returned nothing — remove the lock so next cron run retries
+          if (statusLogRow?.id) await supabase.from("notification_log").delete().eq("id", statusLogRow.id);
+        } else {
           if (flightStatus.cancelled) {
             const { title, body } = L.flightCancelled(flight.flight_code, originCode, destCode);
             notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_cancelled", { title, body, url: "/app" });
             notificationsSent++;
-          } else if (flightStatus.delayMinutes >= 20) {
+          } else if (flightStatus.delayMinutes >= DELAY_THRESHOLD_MIN) {
             const delayText = flightStatus.delayMinutes >= 60
               ? `${Math.floor(flightStatus.delayMinutes / 60)}h ${flightStatus.delayMinutes % 60}min`
               : `${flightStatus.delayMinutes} min`;
@@ -387,7 +453,7 @@ export async function GET(request: Request) {
 
             // Bracket-based dedup: notify once per bracket (20–59 min, 60–119 min, 120+ min)
             // This ensures users are re-notified if the delay increases significantly
-            const delayBracket = flightStatus.delayMinutes >= 120 ? "120" : flightStatus.delayMinutes >= 60 ? "60" : "20";
+            const delayBracket = flightStatus.delayMinutes >= DELAY_BRACKET_SEVERE ? "120" : flightStatus.delayMinutes >= DELAY_BRACKET_MODERATE ? "60" : "20";
             const alreadySentDelay = await checkFlightLog(supabase, flight.id, `flight_delay_real_${delayBracket}`, Infinity);
             if (!alreadySentDelay) {
               const { title, body } = L.flightDelay(flight.flight_code, delayText, flightStatus.estimatedDeparture, departureTime ?? "?", gateText, originCode, destCode, flightStatus.delayMinutes);
@@ -435,7 +501,7 @@ export async function GET(request: Request) {
                   arrivalBuffer:   nextFlight.arrival_buffer ?? 2,
                 };
 
-                const connAnalysis = analyzeConnection(delayedTripFlight, nextTripFlight, {});
+                const connAnalysis = analyzeConnection(delayedTripFlight, nextTripFlight, airportStatusMap);
                 if (connAnalysis && (connAnalysis.risk === "at_risk" || connAnalysis.risk === "missed")) {
                   const alreadySentConn = await checkFlightLog(supabase, flight.id, "connection_rescue", 20);
                   if (!alreadySentConn) {
@@ -454,31 +520,13 @@ export async function GET(request: Request) {
           }
 
           // Gate change detection (piggybacks on already-fetched flightStatus)
-          if (flightStatus.gate && flightStatus.gate !== flight.gate) {
-            const alreadyAlerted = await checkFlightLog(supabase, flight.id, "gate_change", 4);
-            if (!alreadyAlerted) {
-              const { title, body } = L.gateChange(
-                flight.flight_code,
-                flightStatus.gate,
-                flight.gate,
-                flight.origin_code,
-                flight.destination_code,
-              );
-              const url = `/trips/${flight.trip_id}`;
-              notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "gate_change", { title, body, url });
-              notificationsSent++;
-            }
-          }
-          // Always persist the latest gate (regardless of change or notification)
-          if (flightStatus.gate) {
-            await supabase.from("flights").update({ gate: flightStatus.gate }).eq("id", flight.id);
-          }
+          await handleGateChange(flightStatus.gate);
         }
       }
     }
 
-    // E: Boarding open — roughly 24–36 minutes before departure
-    if (hoursUntil !== null && hoursUntil >= 0.4 && hoursUntil <= 0.6) {
+    // E: Boarding open — roughly 21–42 minutes before departure
+    if (hoursUntil !== null && hoursUntil >= BOARDING_HOURS_MIN && hoursUntil <= BOARDING_HOURS_MAX) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "boarding_open", Infinity);
       if (!alreadySent) {
         const boardingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
@@ -489,46 +537,12 @@ export async function GET(request: Request) {
           notificationsSent++;
 
           // Gate change check (piggyback on already-fetched boardingStatus)
-          if (boardingStatus.gate && boardingStatus.gate !== flight.gate) {
-            const alreadyAlerted = await checkFlightLog(supabase, flight.id, "gate_change", 4);
-            if (!alreadyAlerted) {
-              const { title: gTitle, body: gBody } = L.gateChange(
-                flight.flight_code,
-                boardingStatus.gate,
-                flight.gate,
-                flight.origin_code,
-                flight.destination_code,
-              );
-              const url = `/trips/${flight.trip_id}`;
-              notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "gate_change", { title: gTitle, body: gBody, url });
-              notificationsSent++;
-            }
-          }
-          if (boardingStatus.gate) {
-            await supabase.from("flights").update({ gate: boardingStatus.gate }).eq("id", flight.id);
-          }
+          await handleGateChange(boardingStatus.gate);
         }
       } else {
         // boarding_open already sent — only fetch if gate_change alert hasn't been sent recently
-        const gateChangeAlreadyAlerted = await checkFlightLog(supabase, flight.id, "gate_change", 4);
-        if (!gateChangeAlreadyAlerted) {
-          const boardingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
-          if (boardingStatus?.gate && boardingStatus.gate !== flight.gate) {
-            const { title, body } = L.gateChange(
-              flight.flight_code,
-              boardingStatus.gate,
-              flight.gate,
-              flight.origin_code,
-              flight.destination_code,
-            );
-            const url = `/trips/${flight.trip_id}`;
-            notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "gate_change", { title, body, url });
-            notificationsSent++;
-          }
-          if (boardingStatus?.gate) {
-            await supabase.from("flights").update({ gate: boardingStatus.gate }).eq("id", flight.id);
-          }
-        }
+        const boardingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
+        await handleGateChange(boardingStatus?.gate);
       }
     }
     // A7: Seat upgrade reminder — fires when wants_upgrade is true and flight departs in 2–5h today
@@ -551,19 +565,25 @@ export async function GET(request: Request) {
         notificationsSent++;
       }
     }
+    } catch (err) {
+      cronErrors.push(`processFlightRow ${flight.flight_code} (${flight.iso_date}): ${String(err)}`);
+    }
   }
 
   await sendInBatches(flightRows, processFlightRow, 10);
 
   // ── A5: Weather alert at destination (1–3 days before arrival) ───────────
   async function processWeatherAlert(flight: FlightRow): Promise<void> {
+    try {
     const userId: string = flight.trips.user_id;
     const isoDate: string = flight.iso_date;
     const destCode: string = flight.destination_code;
 
-    const todayMidnight = new Date(todayISO + "T00:00:00").getTime();
-    const flightMidnight = new Date(isoDate + "T00:00:00").getTime();
-    const daysUntilFlight = Math.ceil((flightMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
+    const destTz = AIRPORTS[destCode]?.timezone ?? "UTC";
+    const todayInDestTz = dateInTimezone(now, destTz);
+    const todayMidnight = new Date(todayInDestTz + "T00:00:00Z").getTime();
+    const flightMidnight = new Date(isoDate + "T00:00:00Z").getTime();
+    const daysUntilFlight = Math.round((flightMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
 
     if (daysUntilFlight < 1 || daysUntilFlight > 3) return;
 
@@ -579,31 +599,30 @@ export async function GET(request: Request) {
     const alreadySent = await checkFlightLog(supabase, flight.id, `weather_alert_destination_${isoDate}`, Infinity);
     if (alreadySent) return;
 
-    try {
-      const weatherUrl =
-        `https://api.open-meteo.com/v1/forecast?latitude=${destInfo.lat}&longitude=${destInfo.lng}` +
-        `&daily=weather_code&timezone=auto&start_date=${isoDate}&end_date=${isoDate}`;
-      const weatherRes = await fetch(weatherUrl, { signal: AbortSignal.timeout(8000) });
-      if (!weatherRes.ok) return;
-      const weatherData = await weatherRes.json() as { daily?: { weather_code?: number[] } };
-      const wmoCode = weatherData?.daily?.weather_code?.[0] ?? 0;
+    const weatherUrl =
+      `https://api.open-meteo.com/v1/forecast?latitude=${destInfo.lat}&longitude=${destInfo.lng}` +
+      `&daily=weather_code&timezone=auto&start_date=${isoDate}&end_date=${isoDate}`;
+    const weatherRes = await fetch(weatherUrl, { signal: AbortSignal.timeout(8000) });
+    if (!weatherRes.ok) return;
+    const weatherData = await weatherRes.json() as { daily?: { weather_code?: number[] } };
+    const wmoCode = weatherData?.daily?.weather_code?.[0] ?? 0;
 
-      if (wmoCode >= 65) {
-        const locale = await getUserLocale(userId);
-        const destCity = destInfo.city ?? destCode;
-        const [, month, day] = isoDate.split("-");
-        const dateStr = `${day}/${month}`;
-        const title = locale === "es"
-          ? `🌧 Mal tiempo en ${destCity} el ${dateStr}`
-          : `🌧 Bad weather in ${destCity} on ${dateStr}`;
-        const body = locale === "es"
-          ? "Llevá paraguas / ropa de abrigo"
-          : "Bring an umbrella / warm clothes";
-        notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, `weather_alert_destination_${isoDate}`, { title, body, url: "/app" });
-        notificationsSent++;
-      }
-    } catch (e) {
-      cronErrors.push(`Weather alert ${destCode}: ${String(e)}`);
+    if (wmoCode >= 65) {
+      const locale = await getUserLocale(userId);
+      const destCity = destInfo.city ?? destCode;
+      const [, month, day] = isoDate.split("-");
+      const dateStr = `${day}/${month}`;
+      const title = locale === "es"
+        ? `🌧 Mal tiempo en ${destCity} el ${dateStr}`
+        : `🌧 Bad weather in ${destCity} on ${dateStr}`;
+      const body = locale === "es"
+        ? "Llevá paraguas / ropa de abrigo"
+        : "Bring an umbrella / warm clothes";
+      notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, `weather_alert_destination_${isoDate}`, { title, body, url: "/app" });
+      notificationsSent++;
+    }
+    } catch (err) {
+      cronErrors.push(`processWeatherAlert ${flight.flight_code} (${flight.iso_date}): ${String(err)}`);
     }
   }
 
@@ -674,6 +693,7 @@ export async function GET(request: Request) {
     .or(`check_in_date.eq.${todayStr},check_in_date.eq.${tomorrowISO},check_out_date.eq.${todayStr},check_out_date.eq.${tomorrowISO}`);
 
   async function processAccommodation(acc: AccommodationRow): Promise<void> {
+    try {
     const userId: string = acc.trips.user_id;
     const { data: subs } = await supabase
       .from("push_subscriptions")
@@ -726,6 +746,9 @@ export async function GET(request: Request) {
           notificationsSent++;
         }
       }
+    }
+    } catch (err) {
+      cronErrors.push(`processAccommodation ${acc.name} (${acc.check_in_date}): ${String(err)}`);
     }
   }
 
@@ -1052,13 +1075,11 @@ async function fetchFlightStatus(
   const adb = rapidApiKey ? await fetchFlightStatusFromAeroDataBox(flightCode, isoDate, rapidApiKey) : null;
   if (adb !== null) return adb;
 
-  console.warn(`[cron] AeroDataBox failed for ${flightCode}, trying AviationStack…`);
   const avs = await fetchFlightStatusFromAviationStack(flightCode, isoDate);
   if (avs !== null) return avs;
 
   // Fallback 3: OpenSky Network
   if (originIcao) {
-    console.warn(`[cron] AviationStack failed for ${flightCode}, trying OpenSky…`);
     return fetchFlightStatusFromOpenSky(flightCode, isoDate, originIcao, scheduledUnix);
   }
   return null;
