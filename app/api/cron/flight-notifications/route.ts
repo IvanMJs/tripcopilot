@@ -271,11 +271,19 @@ export async function GET(request: Request) {
     if (isRecentlyDeparted) {
       const alreadySent = await checkFlightLog(supabase, flight.id, "flight_landed", Infinity);
       if (!alreadySent) {
-        const landingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
-        if (landingStatus?.landed) {
-          const { title, body } = L.flightLanded(flight.flight_code, originCode, destCode);
-          notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_landed", { title, body, url: "/app" });
-          notificationsSent++;
+        // Dedup API calls: re-check every 35 min (not every cron run for up to 18h)
+        const alreadyFetchedLanding = await checkFlightLog(supabase, flight.id, "landing_status_fetched", 35 / 60);
+        if (!alreadyFetchedLanding) {
+          await supabase.from("notification_log").insert({
+            flight_id: flight.id, user_id: userId,
+            type: "landing_status_fetched", sent_at: new Date().toISOString(),
+          });
+          const landingStatus = await fetchFlightStatus(flight.flight_code, isoDate, rapidApiKey, Math.floor((departureDateTime?.getTime() ?? 0) / 1000), AIRPORTS[flight.origin_code]?.icao ?? null);
+          if (landingStatus?.landed) {
+            const { title, body } = L.flightLanded(flight.flight_code, originCode, destCode);
+            notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "flight_landed", { title, body, url: "/app" });
+            notificationsSent++;
+          }
         }
       }
       return;
@@ -330,14 +338,15 @@ export async function GET(request: Request) {
       }
     }
 
-    // D: Real-time flight status — re-checks every 90 min within 1–8h of scheduled departure.
+    // D: Real-time flight status — re-checks every 35 min within 1–8h of scheduled departure.
     // Window is wide (8h) to catch delays announced hours before departure.
     // Uses bracket-based dedup so users get notified again when delay worsens significantly.
     if (hoursUntil !== null && hoursUntil >= 1 && hoursUntil <= 8) {
-      // Re-check every 90 minutes (not one-shot) so delays discovered after the first check are caught
-      const alreadyFetched = await checkFlightLog(supabase, flight.id, "flight_status_fetched", 1.5);
+      // Re-check every 35 minutes — matches the 30-min cron interval with 5-min buffer
+      // to avoid missing a delay window if the cron fires at 30:00 and dedup was 30:00 exactly
+      const alreadyFetched = await checkFlightLog(supabase, flight.id, "flight_status_fetched", 35 / 60);
       if (!alreadyFetched) {
-        // Log immediately so parallel cron runs don't double-fetch within the same 90-min window
+        // Log immediately so parallel cron runs don't double-fetch within the same 35-min window
         await supabase.from("notification_log").insert({
           flight_id: flight.id,
           user_id: userId,
@@ -356,6 +365,26 @@ export async function GET(request: Request) {
               ? `${Math.floor(flightStatus.delayMinutes / 60)}h ${flightStatus.delayMinutes % 60}min`
               : `${flightStatus.delayMinutes} min`;
             const gateText = flightStatus.gate ? ` · ${locale === "es" ? "Puerta" : "Gate"} ${flightStatus.gate}` : "";
+
+            // Always persist the latest estimated departure time from the API.
+            // Uses estimatedDeparture (absolute time from API) when available so the
+            // value is always relative to the original scheduled time — not accumulated
+            // across multiple cron runs (which would double-count the delay).
+            if (flightStatus.estimatedDeparture) {
+              await supabase.from("flights").update({ departure_time: flightStatus.estimatedDeparture }).eq("id", flight.id);
+              flight.departure_time = flightStatus.estimatedDeparture;
+            } else if (flightStatus.delayMinutes > 0 && departureTime) {
+              // Fallback: compute from ORIGINAL scheduled time (departureTime var, captured
+              // before any in-run mutation) so we never accumulate delay on top of delay.
+              const [dh, dm] = departureTime.split(":").map(Number);
+              const totalMin = dh * 60 + dm + flightStatus.delayMinutes;
+              const ah = Math.floor(totalMin / 60) % 24;
+              const am = totalMin % 60;
+              const actualDepTime = `${String(ah).padStart(2, "0")}:${String(am).padStart(2, "0")}`;
+              await supabase.from("flights").update({ departure_time: actualDepTime }).eq("id", flight.id);
+              flight.departure_time = actualDepTime;
+            }
+
             // Bracket-based dedup: notify once per bracket (20–59 min, 60–119 min, 120+ min)
             // This ensures users are re-notified if the delay increases significantly
             const delayBracket = flightStatus.delayMinutes >= 120 ? "120" : flightStatus.delayMinutes >= 60 ? "60" : "20";
@@ -364,24 +393,6 @@ export async function GET(request: Request) {
               const { title, body } = L.flightDelay(flight.flight_code, delayText, flightStatus.estimatedDeparture, departureTime ?? "?", gateText, originCode, destCode, flightStatus.delayMinutes);
               notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, `flight_delay_real_${delayBracket}`, { title, body, url: "/app" });
               notificationsSent++;
-
-              // Persist actual delayed departure time to DB so UI shows correct time without live data
-              if (flight.departure_time) {
-                const [dh, dm] = flight.departure_time.split(":").map(Number);
-                const totalMin = dh * 60 + dm + flightStatus.delayMinutes;
-                const ah = Math.floor(totalMin / 60) % 24;
-                const am = totalMin % 60;
-                const actualDepTime = `${String(ah).padStart(2, "0")}:${String(am).padStart(2, "0")}`;
-                await supabase
-                  .from("flights")
-                  .update({ departure_time: actualDepTime })
-                  .eq("id", flight.id);
-                // Also update the in-memory object so processCountdown (which
-                // runs after processFlightRow on the same FlightRow reference)
-                // computes the countdown against the actual delayed time, not
-                // the stale scheduled time.
-                flight.departure_time = actualDepTime;
-              }
             }
 
             // A6: Connection rescue — check if this delay impacts the next flight in the trip
@@ -523,7 +534,7 @@ export async function GET(request: Request) {
     // A7: Seat upgrade reminder — fires when wants_upgrade is true and flight departs in 2–5h today
     if (
       flight.wants_upgrade === true &&
-      isoDate === todayISO &&
+      isoDate === todayInAirportTz &&
       hoursUntil !== null &&
       hoursUntil >= 2 &&
       hoursUntil <= 5
