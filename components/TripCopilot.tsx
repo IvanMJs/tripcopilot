@@ -34,6 +34,10 @@ interface FlightItem {
   destinationCode: string;
   destinationName: string;
   destinationNameEn: string;
+  // Optional — present when passed from MyFlightsPanel via FlightData
+  flightNum?: string;
+  departureTime?: string;
+  arrivalTime?: string;
 }
 
 interface StayInfo {
@@ -514,10 +518,13 @@ function ChatSection({
           question: q.trim(),
           tripContext: {
             flights: flights.map((f) => ({
-              flightCode:      "",
+              // flightNum is "DL 1514" — strip space to get "DL1514"
+              flightCode:      (f.flightNum ?? "").replace(/\s+/g, ""),
               originCode:      f.originCode,
               destinationCode: f.destinationCode,
               isoDate:         f.isoDate,
+              departureTime:   f.departureTime ?? undefined,
+              arrivalTime:     f.arrivalTime   ?? undefined,
             })),
             tripName,
             userLocalTime: new Date().toLocaleString("sv-SE", { timeZoneName: "short" }),

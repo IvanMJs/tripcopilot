@@ -89,6 +89,12 @@ ${airportSection}
 El usuario tiene el siguiente itinerario:
 ${tripSummary}
 
+IMPORTANTE sobre demoras:
+- El estado FAA de un aeropuerto (arriba) refleja demoras generales de tráfico, NO demoras específicas de una aerolínea.
+- Un vuelo puede estar demorado por la aerolínea aunque el aeropuerto esté "Normal".
+- Si el usuario pregunta por demoras de un vuelo específico, decile que la hora en la app puede no reflejar la demora en tiempo real si las APIs externas están agotadas, y sugerile que revise directamente la app de la aerolínea o el tracking del vuelo.
+- Nunca afirmes que "no hay delays" basándote solo en el estado FAA del aeropuerto.
+
 Respondé de forma concisa (máximo 3-4 oraciones). Si la pregunta no tiene que ver con viajes, redirigí amablemente al tema.`;
 
   const anthropic = new Anthropic({ apiKey });
