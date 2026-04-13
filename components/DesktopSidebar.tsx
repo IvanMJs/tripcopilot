@@ -49,12 +49,12 @@ export function DesktopSidebar({
     return `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
       isActive
         ? "bg-violet-500/15 text-violet-400"
-        : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
+        : "text-text-muted hover:text-white hover:bg-white/[0.04]"
     }`;
   }
 
   return (
-    <aside className="hidden md:flex flex-col w-64 min-h-screen fixed left-0 top-0 border-r border-white/[0.08] bg-gray-950/90 backdrop-blur-xl z-40 py-6 px-3">
+    <aside className="hidden md:flex flex-col w-64 min-h-screen fixed left-0 top-0 border-r border-border-default bg-gray-950/90 backdrop-blur-xl z-40 py-6 px-3">
 
       {/* Logo */}
       <div className="px-3 mb-8 flex items-center gap-2.5">

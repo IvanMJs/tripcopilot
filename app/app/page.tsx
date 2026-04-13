@@ -32,7 +32,6 @@ import { Locale } from "@/lib/i18n";
 import { useWeather } from "@/hooks/useWeather";
 import { useMetar } from "@/hooks/useMetar";
 import { useServiceWorker } from "@/hooks/useServiceWorker";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useWatchedAirports } from "@/hooks/useWatchedAirports";
 import { useUserTrips } from "@/hooks/useUserTrips";
 import { NotificationSetupSheet } from "@/components/NotificationSetupSheet";
@@ -43,6 +42,8 @@ import { RatingNudge } from "@/components/RatingNudge";
 import { makeExampleTrip } from "@/lib/exampleTrip";
 import { analytics } from "@/lib/analytics";
 import { createClient } from "@/utils/supabase/client";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { GlobalAlertBar } from "@/components/GlobalAlertBar";
 import { useDeviceTimezone } from "@/hooks/useDeviceTimezone";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -76,7 +77,6 @@ const EXAMPLE_ID = "__example__";
 export default function HomePage() {
   const { t, locale, setLocale } = useLanguage();
   const { showSwNotification, subscribeToPush, unsubscribeFromPush } = useServiceWorker();
-  const isOnline = useOnlineStatus();
   const router = useRouter();
   const [showNotifSheet, setShowNotifSheet] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
@@ -86,6 +86,7 @@ export default function HomePage() {
   const prevTabRef = useRef<string>("airports");
   const [mounted, setMounted] = useState(false);
   const [userPlan, setUserPlan] = useState<"free" | "premium" | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // DB-backed state
   const { airports: watchedAirports, add: addAirportDB, remove: removeAirportDB } = useWatchedAirports();
@@ -177,6 +178,7 @@ export default function HomePage() {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
+      setUserId(user.id);
       supabase.from("user_profiles").select("plan").eq("id", user.id).single()
         .then(({ data }) => {
           setUserPlan((data as { plan?: string } | null)?.plan === "premium" ? "premium" : "free");
@@ -311,6 +313,9 @@ export default function HomePage() {
   }, [userTrips, watchedAirports, locale, lastUpdated]);
 
   const statusMap: AirportStatusMap = { ...intlStatusMap, ...faaStatusMap };
+
+  // ── Offline sync ──────────────────────────────────────────────────────────
+  const { isOnline: offlineIsOnline, lastSync } = useOfflineSync(userId, userTrips, statusMap);
 
   const allAirportsForWeather = Array.from(
     new Set([...watchedAirports, ...FLIGHT_AIRPORTS, ...tripAirports])
@@ -585,25 +590,13 @@ export default function HomePage() {
       )}
 
       {/* Offline banner */}
-      {mounted && !isOnline && (
-        <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-2 bg-yellow-900/95 border-b border-yellow-700/60 px-4 py-2.5 backdrop-blur-sm"
-          style={{ paddingTop: "10px" }}
-        >
-          <span className="text-sm">📡</span>
-          <p className="text-xs font-semibold text-yellow-200">
-            {locale === "es"
-              ? "Sin conexión — mostrando último estado conocido"
-              : "Offline — showing last known status"}
-          </p>
-          {lastUpdated && (
-            <span className="text-xs text-yellow-400/70">
-              · {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </span>
-          )}
+      {mounted && (
+        <div className="fixed top-0 inset-x-0 z-50">
+          <OfflineBanner isOnline={offlineIsOnline} lastSync={lastSync} locale={locale} />
         </div>
       )}
 
-      <div className="min-h-screen bg-gray-950 px-4 pb-nav pt-4 md:pt-6 md:pb-6 md:pl-72"
+      <div className={`min-h-screen bg-gray-950 px-4 pb-nav md:pb-6 md:pl-72 ${!offlineIsOnline ? "pt-14 md:pt-16" : "pt-4 md:pt-6"}`}
         style={{ '--bg-tint': hasCriticalDelay ? 'rgba(239,68,68,0.008)' : 'transparent' } as React.CSSProperties}
       >
         <div className="mx-auto max-w-6xl space-y-4 md:space-y-6">

@@ -17,6 +17,8 @@ import { FlightCardHeader } from "./FlightCardHeader";
 import { FlightCardBody } from "./FlightCardBody";
 import { FlightCardAccommodation } from "./FlightCardAccommodation";
 import { FlightCardBoardingPass } from "./FlightCardBoardingPass";
+import { useDelayPrediction } from "@/hooks/useDelayPrediction";
+import { DelayPredictionBadge } from "@/components/DelayPredictionBadge";
 
 export interface FlightCardProps {
   flight: TripFlight;
@@ -195,6 +197,24 @@ export function FlightCard({
   const hasIssue     = status !== "ok" && status !== "unknown";
   const isImminent   = daysUntil >= 0 && daysUntil <= 1;
 
+  // Delay prediction — only for future flights with a departure time
+  const flightSignals = {
+    originCode:      flight.originCode,
+    destinationCode: flight.destinationCode,
+    departureTime:   flight.departureTime ?? "",
+    isoDate:         flight.isoDate,
+  };
+  const { prediction } = useDelayPrediction({
+    flight:        flightSignals,
+    airportStatus: statusMap,
+    locale,
+  });
+  const showDelayBadge =
+    daysUntil >= 0 &&
+    !!flight.departureTime &&
+    prediction !== null &&
+    prediction.probability > 10;
+
   const relevantTafPeriod = (() => {
     if (!tafData || !flight.departureTime || !flight.isoDate) return null;
     const depUnix = Math.floor(new Date(`${flight.isoDate}T${flight.departureTime}:00`).getTime() / 1000);
@@ -261,6 +281,12 @@ export function FlightCard({
           onToggleUpgrade={onToggleUpgrade}
           hoursUntilDep={hoursUntilDep}
         />
+
+        {showDelayBadge && prediction && (
+          <div className="px-4 pt-1 pb-2">
+            <DelayPredictionBadge prediction={prediction} locale={locale} compact />
+          </div>
+        )}
 
         <FlightCardBody
           flight={flight}

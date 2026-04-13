@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AirportStatusMap } from "@/lib/types";
 import { parseXML } from "@/lib/faa";
+import { offlineCache } from "@/lib/offlineCache";
 import toast from "react-hot-toast";
 
 const CACHE_KEY = "apt-status-cache";
@@ -98,8 +99,11 @@ export function useAirportStatus(
   }, []);
 
   const cachedData = readCache();
-  const validCachedData =
-    cachedData && Date.now() - cachedData.ts < CACHE_TTL_MS ? cachedData.data : undefined;
+  const validCachedData: AirportStatusMap | undefined =
+    (cachedData && Date.now() - cachedData.ts < CACHE_TTL_MS)
+      ? cachedData.data
+      // Fall back to the longer-lived offline cache when the short-TTL cache is stale
+      : (offlineCache.loadAirportStatus() ?? undefined);
 
   const {
     data: statusMap = {},
@@ -121,6 +125,8 @@ export function useAirportStatus(
         lastXmlRef.current = xml;
         const newMap = parseXML(xml, localeRef.current);
         writeCache(newMap);
+        // Also persist to the offline cache (longer TTL — used when app is fully offline)
+        offlineCache.saveAirportStatus(newMap);
         return newMap;
       } catch (e) {
         clearTimeout(timeout);

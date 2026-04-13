@@ -141,7 +141,7 @@ function ExpandedPanel({
           <span className={`text-xs font-bold ${cfg.text}`}>
             {prediction.probability}%
           </span>
-          <span className="flex items-center gap-1 text-xs text-gray-500">
+          <span className="flex items-center gap-1 text-xs text-text-muted">
             <ConfidenceDot confidence={prediction.confidence} />
             {locale === "es" ? `Confianza ${confidenceLabel}` : `${confidenceLabel} confidence`}
           </span>
@@ -168,7 +168,7 @@ function ExpandedPanel({
       {/* Contributing factors */}
       {prediction.factors.length > 0 && (
         <div className="space-y-1">
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-600">
+          <p className="text-[10px] uppercase tracking-wider font-semibold text-text-muted">
             {locale === "es" ? "Factores" : "Factors"}
           </p>
           {prediction.factors.map((factor, i) => (
@@ -178,7 +178,7 @@ function ExpandedPanel({
               >
                 {FACTOR_TYPE_LABELS[factor.type][locale]}
               </span>
-              <span className="text-gray-400 leading-tight">{factor.signal}</span>
+              <span className="text-text-muted leading-tight">{factor.signal}</span>
             </div>
           ))}
         </div>
@@ -228,7 +228,7 @@ export function DelayPredictionBadge({ prediction, locale, compact = true }: Pro
               ? `${prediction.probability}% riesgo de retraso`
               : `${prediction.probability}% delay risk`}
           </span>
-          <span className="text-xs text-gray-500 hidden sm:inline">
+          <span className="text-xs text-text-muted hidden sm:inline">
             · {cfg.label[locale]}
           </span>
         </div>

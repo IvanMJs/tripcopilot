@@ -26,7 +26,7 @@ import { analyzeAllConnections, ConnectionAnalysis } from "@/lib/connectionRisk"
 import { calculateTripRiskScore } from "@/lib/tripRiskScore";
 import { TripRiskBadge } from "./TripRiskBadge";
 import { TripAdvisor } from "./TripAdvisor";
-import { ImportFlightsModal } from "./ImportFlightsModal";
+import { ItineraryImportModal } from "./ItineraryImportModal";
 import { CarbonFootprint } from "./CarbonFootprint";
 import { TripExpenses } from "./TripExpenses";
 import { TripBudgetCard } from "./TripBudgetCard";
@@ -868,10 +868,12 @@ export function TripPanel({
       )}
 
       {showImport && (
-        <ImportFlightsModal
+        <ItineraryImportModal
+          isOpen={showImport}
           onImport={handleImportFlights}
           onClose={() => setShowImport(false)}
           locale={locale}
+          tripId={trip.id}
         />
       )}
 
