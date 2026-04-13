@@ -13,8 +13,12 @@ export async function GET() {
     const arsPerUsd = data.rates?.ARS;
     if (!arsPerUsd) throw new Error("No ARS rate in response");
     const usd = Math.round((ARS_AMOUNT / arsPerUsd) * 10) / 10;
-    return NextResponse.json({ usd, ars: ARS_AMOUNT });
+    return NextResponse.json({ usd, ars: ARS_AMOUNT }, {
+      headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600" },
+    });
   } catch {
-    return NextResponse.json({ usd: null, ars: ARS_AMOUNT });
+    return NextResponse.json({ usd: null, ars: ARS_AMOUNT }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }

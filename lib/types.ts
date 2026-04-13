@@ -116,3 +116,68 @@ export interface TripTab {
   accommodations: Accommodation[];
   passengers?: Passenger[];
 }
+
+// ── FAA XML types ─────────────────────────────────────────────────────
+export interface FAADelayType {
+  Name?: string;
+  Ground_Delay_List?: { Ground_Delay: FAAGroundDelay | FAAGroundDelay[] };
+  Ground_Stop_List?: { Ground_Stop: FAAGroundStop | FAAGroundStop[] };
+  Arrival_Departure_Delay_List?: { Delay: FAADelay | FAADelay[] };
+  Airport_Closure_List?: { Airport: FAAClosureEntry | FAAClosureEntry[] };
+}
+export interface FAAGroundDelay { ARPT?: string; Avg?: string | number; Max?: string; Reason?: string; }
+export interface FAAGroundStop  { ARPT?: string; Reason?: string; Stop_End_Time?: string; EndTime?: string; }
+export interface FAADelay       { ARPT?: string; Reason?: string; Arrival_Departure?: FAAAdEntry | FAAAdEntry[]; }
+export interface FAAAdEntry     { "@_Type"?: string; Min?: string | number; Max?: string | number; Trend?: string; }
+export interface FAAClosureEntry { ARPT?: string; Reason?: string; }
+
+// ── Cron route types ──────────────────────────────────────────────────
+export type FlightRow = {
+  id: string;
+  trip_id: string;
+  flight_code: string;
+  airline_code: string;
+  airline_name: string;
+  airline_icao: string;
+  flight_number: string;
+  origin_code: string;
+  destination_code: string;
+  iso_date: string;
+  departure_time: string | null;
+  arrival_date: string | null;
+  arrival_time: string | null;
+  arrival_buffer: number;
+  gate: string | null;
+  wants_upgrade: boolean | null;
+  trips: { user_id: string };
+};
+
+export type AccommodationRow = {
+  id: string;
+  name: string;
+  check_in_date: string;
+  check_out_date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  trips: { user_id: string };
+};
+
+export type PushSubRow = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
+
+export type AeroDataBoxFlightLeg = {
+  status?: string;
+  departure?: {
+    delay?: number;
+    gate?: string | null;
+    actualTime?: { local?: string };
+    scheduledTime?: { local?: string };
+  };
+  arrival?: {
+    actualTime?: { local?: string };
+    scheduledTime?: { local?: string };
+  };
+};

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
@@ -125,6 +126,7 @@ Respond ONLY with valid JSON in this format (no extra text, no markdown):
   });
 
   if (!response.ok) {
+    Sentry.captureException(new Error(`Anthropic upstream error: ${response.status}`));
     return NextResponse.json<LayoverResponse>({ tips: [], canExitAirport: false });
   }
 
@@ -141,7 +143,8 @@ Respond ONLY with valid JSON in this format (no extra text, no markdown):
   let parsedJson: unknown;
   try {
     parsedJson = JSON.parse(cleaned);
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
     return NextResponse.json<LayoverResponse>({ tips: [], canExitAirport: false });
   }
 

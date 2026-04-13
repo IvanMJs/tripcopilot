@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import * as Sentry from "@sentry/nextjs";
 import { AIRPORTS } from "@/lib/airports";
 import { parseAeroDataBox } from "@/lib/aerodatabox";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
@@ -105,7 +106,8 @@ export async function GET(request: Request) {
           .upsert({ iata, data: status, cached_at: now.toISOString() })
           .then(() => {});
       }
-    } catch {
+    } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { iata } });
       // Individual airport failure doesn't break others
     }
   }

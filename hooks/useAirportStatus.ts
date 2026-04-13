@@ -48,9 +48,7 @@ export function useAirportStatus(
 ) {
   const [statusMap, setStatusMap] = useState<AirportStatusMap>(() => {
     const cached = readCache();
-    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-      return cached.data;
-    }
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.data;
     return {};
   });
   const [loading, setLoading] = useState(false);
@@ -63,9 +61,19 @@ export function useAirportStatus(
   const [consecutiveErrors, setConsecutiveErrors] = useState(0);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  const prevStatusRef = useRef<AirportStatusMap>({});
+  // Seed prevStatusRef and initialLoadDone from cache so the first live fetch
+  // compares against cached data rather than an empty object, preventing false
+  // change-detection toasts on cache hits.
+  const prevStatusRef = useRef<AirportStatusMap>((() => {
+    const cached = readCache();
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.data;
+    return {};
+  })());
   const lastXmlRef = useRef<string>("");
-  const initialLoadDone = useRef(false);
+  const initialLoadDone = useRef((() => {
+    const cached = readCache();
+    return cached !== null && Date.now() - cached.ts < CACHE_TTL_MS;
+  })());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // On mount, check if notifications are already granted

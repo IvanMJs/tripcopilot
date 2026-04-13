@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/utils/supabase/server";
@@ -100,7 +101,8 @@ Keep each body under 60 characters. Use ${locale === "es" ? "Spanish" : "English
     let parsedJson: unknown;
     try {
       parsedJson = JSON.parse(cleaned);
-    } catch {
+    } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
       return NextResponse.json({ error: "AI unavailable" }, { status: 500 });
     }
 
@@ -110,7 +112,8 @@ Keep each body under 60 characters. Use ${locale === "es" ? "Spanish" : "English
     }
 
     return NextResponse.json({ data: validation.data });
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
     return NextResponse.json({ error: "AI unavailable" }, { status: 500 });
   }
 }

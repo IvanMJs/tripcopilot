@@ -1,5 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
-import { AirportStatus, AirportStatusMap, DelayStatus } from "./types";
+import { AirportStatus, AirportStatusMap, DelayStatus, FAADelayType, FAAGroundDelay, FAAGroundStop, FAADelay, FAAAdEntry, FAAClosureEntry } from "./types";
 import { AIRPORTS } from "./airports";
 import { translateReason, translateTrend } from "./faaTranslations";
 
@@ -38,7 +38,7 @@ export function parseXML(xml: string, locale: "es" | "en" = "es"): AirportStatus
     const data = parsed?.AIRPORT_STATUS_INFORMATION;
     if (!data) return result;
 
-    const delayTypes: any[] = data.Delay_type || [];
+    const delayTypes: FAADelayType[] = data.Delay_type || [];
 
     for (const dt of delayTypes) {
       const name: string = dt.Name || "";
@@ -49,7 +49,7 @@ export function parseXML(xml: string, locale: "es" | "en" = "es"): AirportStatus
           ? dt.Ground_Delay_List.Ground_Delay
           : [dt.Ground_Delay_List.Ground_Delay];
 
-        list.forEach((gd: any) => {
+        list.forEach((gd: FAAGroundDelay) => {
           const iata = gd.ARPT;
           if (!iata) return;
           const avgMin = parseTimeToMinutes(gd.Avg);
@@ -76,7 +76,7 @@ export function parseXML(xml: string, locale: "es" | "en" = "es"): AirportStatus
           ? dt.Ground_Stop_List.Ground_Stop
           : [dt.Ground_Stop_List.Ground_Stop];
 
-        list.forEach((gs: any) => {
+        list.forEach((gs: FAAGroundStop) => {
           const iata = gs.ARPT;
           if (!iata) return;
           result[iata] = {
@@ -100,7 +100,7 @@ export function parseXML(xml: string, locale: "es" | "en" = "es"): AirportStatus
           ? dt.Arrival_Departure_Delay_List.Delay
           : [dt.Arrival_Departure_Delay_List.Delay];
 
-        list.forEach((d: any) => {
+        list.forEach((d: FAADelay) => {
           const iata = d.ARPT;
           if (!iata) return;
 
@@ -115,7 +115,7 @@ export function parseXML(xml: string, locale: "es" | "en" = "es"): AirportStatus
           let type: "departure" | "arrival" | "both" = "both";
           const types: string[] = [];
 
-          adList.forEach((ad: any) => {
+          adList.forEach((ad: FAAAdEntry) => {
             const adMin = parseTimeToMinutes(ad.Min);
             const adMax = parseTimeToMinutes(ad.Max);
             if (adMin < minMin) minMin = adMin;
@@ -156,7 +156,7 @@ export function parseXML(xml: string, locale: "es" | "en" = "es"): AirportStatus
           ? dt.Airport_Closure_List.Airport
           : [dt.Airport_Closure_List.Airport];
 
-        list.forEach((cl: any) => {
+        list.forEach((cl: FAAClosureEntry) => {
           const iata = cl.ARPT;
           if (!iata) return;
           result[iata] = {

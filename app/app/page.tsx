@@ -45,14 +45,16 @@ import { GlobalAlertBar } from "@/components/GlobalAlertBar";
 import { useDeviceTimezone } from "@/hooks/useDeviceTimezone";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { TimezoneBanner } from "@/components/TimezoneBanner";
-import { TripAssistant } from "@/components/TripAssistant";
+import dynamic from "next/dynamic";
 import { DepartureBoard } from "@/components/DepartureBoard";
 import { DiscoverView } from "@/components/DiscoverView";
 import { MyProfileView } from "@/components/MyProfileView";
-import { TripDebriefModal } from "@/components/TripDebriefModal";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { PLANS } from "@/lib/mercadopago";
+
+const TripAssistant = dynamic(() => import("@/components/TripAssistant").then((m) => ({ default: m.TripAssistant })), { ssr: false });
+const TripDebriefModal = dynamic(() => import("@/components/TripDebriefModal").then((m) => ({ default: m.TripDebriefModal })), { ssr: false });
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,

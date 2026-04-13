@@ -77,7 +77,13 @@
       "Bash(sed -i 's/^model: sonnet$/model: sonnet\\\\npermissionMode: bypassPermissions/' /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/.claude/agents/coder.md)",
       "Bash(sed -i 's/^model: sonnet$/model: sonnet\\\\npermissionMode: bypassPermissions/' /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/.claude/agents/reviewer.md)",
       "Bash(sed -i 's/^model: sonnet$/model: sonnet\\\\npermissionMode: bypassPermissions/' /c/Users/ivanm/OneDrive/Escritorio/Development/notification-airport/.claude/agents/debugger.md)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(wc -l /c/Users/ivanm/AppData/Local/Temp/claude/C--Users-ivanm-OneDrive-Escritorio-Development-notification-airport--claude-worktrees-intelligent-keller/0b9885b4-d24a-4694-a6ce-be3fc0af3a52/tasks/*.output)",
+      "Bash(npm ls:*)",
+      "Bash(gh pr:*)",
+      "Bash(git fetch:*)",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
@@ -64,6 +65,7 @@ Explain in 1-2 simple sentences what this means for my flight and what I should 
   });
 
   if (!response.ok) {
+    Sentry.captureException(new Error(`Anthropic upstream error: ${response.status}`));
     return NextResponse.json({ error: "No se pudo generar la explicación" }, { status: 500 });
   }
 

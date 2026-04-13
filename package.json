@@ -33,7 +33,6 @@
     "react-dom": "^18",
     "react-hot-toast": "^2.4.1",
     "resend": "^6.9.4",
-    "swiper": "^12.1.2",
     "tailwind-merge": "^2.4.0",
     "web-push": "^3.6.7",
     "zod": "^4.3.6"

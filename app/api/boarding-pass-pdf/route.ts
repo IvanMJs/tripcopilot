@@ -1,7 +1,24 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
-import { TripFlight } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
+
+const FlightSchema = z.object({
+  flightCode: z.string().min(1),
+  airlineCode: z.string().optional(),
+  airlineName: z.string().optional(),
+  originCode: z.string().min(1),
+  destinationCode: z.string().min(1),
+  isoDate: z.string().optional(),
+  departureTime: z.string().optional(),
+  arrivalTime: z.string().optional(),
+  cabinClass: z.enum(["economy", "premium_economy", "business", "first"]).optional(),
+});
+
+const BodySchema = z.object({
+  flight: FlightSchema,
+  passengerName: z.string().optional(),
+});
 
 function esc(s: string): string {
   return String(s)
@@ -19,18 +36,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { flight?: TripFlight; passengerName?: string };
-  try {
-    body = await request.json() as { flight?: TripFlight; passengerName?: string };
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
+  let rawBody: unknown;
+  try { rawBody = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  const parsed = BodySchema.safeParse(rawBody);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid request", details: parsed.error.flatten() }, { status: 400 });
 
-  const { flight, passengerName } = body;
-
-  if (!flight || !flight.flightCode || !flight.originCode || !flight.destinationCode) {
-    return NextResponse.json({ error: "Missing required flight fields" }, { status: 400 });
-  }
+  const { flight, passengerName } = parsed.data;
 
   const originInfo = AIRPORTS[flight.originCode];
   const destInfo   = AIRPORTS[flight.destinationCode];

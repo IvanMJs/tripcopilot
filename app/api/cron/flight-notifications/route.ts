@@ -5,58 +5,8 @@ import { parseAeroDataBox } from "@/lib/aerodatabox";
 import { parseXML } from "@/lib/faa";
 import { localToUTC, localHourInTimezone, dateInTimezone, CRON_LABELS, CronLocale } from "@/lib/cronUtils";
 import { analyzeConnection } from "@/lib/connectionRisk";
-import { TripFlight, AirportStatusMap, DelayStatus } from "@/lib/types";
+import { TripFlight, AirportStatusMap, DelayStatus, FlightRow, AccommodationRow, PushSubRow, AeroDataBoxFlightLeg } from "@/lib/types";
 import { sendInBatches } from "@/lib/retry";
-
-type FlightRow = {
-  id: string;
-  trip_id: string;
-  flight_code: string;
-  airline_code: string;
-  airline_name: string;
-  airline_icao: string;
-  flight_number: string;
-  origin_code: string;
-  destination_code: string;
-  iso_date: string;
-  departure_time: string | null;
-  arrival_date: string | null;
-  arrival_time: string | null;
-  arrival_buffer: number;
-  gate: string | null;
-  wants_upgrade: boolean | null;
-  trips: { user_id: string };
-};
-
-type AccommodationRow = {
-  id: string;
-  name: string;
-  check_in_date: string;
-  check_out_date: string;
-  check_in_time: string | null;
-  check_out_time: string | null;
-  trips: { user_id: string };
-};
-
-type PushSubRow = {
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-};
-
-type AeroDataBoxFlightLeg = {
-  status?: string;
-  departure?: {
-    delay?: number;
-    gate?: string | null;
-    actualTime?: { local?: string };
-    scheduledTime?: { local?: string };
-  };
-  arrival?: {
-    actualTime?: { local?: string };
-    scheduledTime?: { local?: string };
-  };
-};
 
 webpush.setVapidDetails(
   "mailto:support@tripcopilot.app",

@@ -315,7 +315,7 @@ export function TripPanel({
   }
 
   return (
-    <div className="space-y-4">
+    <section aria-label={locale === "es" ? "Detalles del viaje" : "Trip details"} className="space-y-4">
       {/* Trip header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -371,6 +371,7 @@ export function TripPanel({
               <button
                 onClick={onDuplicateTrip}
                 title={locale === "es" ? "Duplicar viaje" : "Duplicate trip"}
+                aria-label={locale === "es" ? "Duplicar viaje" : "Duplicate trip"}
                 className="shrink-0 flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-semibold text-gray-400 hover:text-white hover:border-white/20 transition-colors"
               >
                 <Copy className="h-3.5 w-3.5" />
@@ -381,6 +382,7 @@ export function TripPanel({
               <button
                 onClick={() => { haptics.delete(); onDeleteTrip(); }}
                 title={locale === "es" ? "Eliminar viaje" : "Delete trip"}
+                aria-label={locale === "es" ? "Eliminar viaje" : "Delete trip"}
                 className="shrink-0 flex items-center gap-1.5 rounded-xl border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-950/40 hover:text-red-400 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -393,6 +395,7 @@ export function TripPanel({
           <button
             onClick={() => { haptics.delete(); onDeleteTrip(); }}
             title={locale === "es" ? "Eliminar viaje" : "Delete trip"}
+            aria-label={locale === "es" ? "Eliminar viaje" : "Delete trip"}
             className="shrink-0 flex items-center gap-1.5 rounded-xl border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-950/40 hover:text-red-400 transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -886,6 +889,6 @@ export function TripPanel({
           onClose={() => setShowShareModal(false)}
         />
       )}
-    </div>
+    </section>
   );
 }

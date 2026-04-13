@@ -1,7 +1,16 @@
 import webpush from "web-push";
+import { z } from "zod";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
 import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+
+const BodySchema = z.object({
+  user_id: z.string().min(1),
+  title: z.string().min(1),
+  body: z.string().optional(),
+  tag: z.string().optional(),
+  url: z.string().optional(),
+});
 
 webpush.setVapidDetails(
   "mailto:support@tripcopilot.app",
@@ -18,11 +27,12 @@ export async function POST(request: Request) {
     cronSecret !== "" &&
     authHeader === `Bearer ${cronSecret}`;
 
-  const { user_id, title, body, tag, url } = await request.json();
+  let rawBody: unknown;
+  try { rawBody = await request.json(); } catch { return Response.json({ error: "Invalid JSON" }, { status: 400 }); }
+  const parsed = BodySchema.safeParse(rawBody);
+  if (!parsed.success) return Response.json({ error: "Invalid request", details: parsed.error.flatten() }, { status: 400 });
 
-  if (!user_id || !title) {
-    return Response.json({ error: "user_id and title required" }, { status: 400 });
-  }
+  const { user_id, title, body, tag, url } = parsed.data;
 
   if (!isCronRequest) {
     // Require an authenticated session whose user matches the requested user_id
