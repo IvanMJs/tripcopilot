@@ -183,6 +183,7 @@ function RequestButton({ locale, onClose }: { locale: "es" | "en"; onClose: () =
     const result = await Notification.requestPermission();
     if (result === "granted") {
       analytics.pushPermissionGranted();
+      analytics.notificationEnabled();
       onClose();
     } else {
       setState("denied");

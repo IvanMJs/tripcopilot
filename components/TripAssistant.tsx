@@ -11,6 +11,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+import { analytics } from "@/lib/analytics";
 import {
   useTripAssistant,
   buildTripContextFromTrip,
@@ -110,6 +111,7 @@ export function TripAssistant({
       if (!trimmed || isLoading) return;
       setInputText("");
       await sendMessage(trimmed, tripContext);
+      analytics.copilotUsed({ type: "assistant" });
     },
     [isLoading, sendMessage, tripContext],
   );

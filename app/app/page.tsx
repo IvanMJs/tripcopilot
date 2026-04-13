@@ -40,6 +40,7 @@ import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { InstallBanner } from "@/components/InstallBanner";
 import { RatingNudge } from "@/components/RatingNudge";
 import { makeExampleTrip } from "@/lib/exampleTrip";
+import { analytics } from "@/lib/analytics";
 import { createClient } from "@/utils/supabase/client";
 import { GlobalAlertBar } from "@/components/GlobalAlertBar";
 import { useDeviceTimezone } from "@/hooks/useDeviceTimezone";
@@ -184,13 +185,18 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true);
-    if (!localStorage.getItem("tripcopilot-onboarded")) {
+  }, []);
+
+  // Show onboarding only for new users: not flagged, 0 trips, and trips have finished loading
+  useEffect(() => {
+    if (tripsLoading) return;
+    if (!localStorage.getItem("tripcopilot-onboarded") && userTrips.length === 0) {
       setShowOnboarding(true);
       setExampleTrip(makeExampleTrip(locale));
     }
   // locale intentionally omitted — locale might not be hydrated yet, example trip handles it statically
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tripsLoading]);
 
   // Check-in push notifications
   useEffect(() => {
@@ -526,6 +532,7 @@ export default function HomePage() {
           if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
             requestNotifications();
             subscribeToPush();
+            analytics.notificationEnabled();
           }
         }}
         locale={locale}
@@ -651,6 +658,7 @@ export default function HomePage() {
                     if (notificationsEnabled) {
                       disableNotifications();
                       unsubscribeFromPush(); // remove from server so cron stops sending
+                      analytics.notificationDisabled();
                     } else {
                       setShowNotifSheet(true);
                     }
@@ -738,8 +746,14 @@ export default function HomePage() {
           )}
 
           {error && (
-            <div className="rounded-lg border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
-              ⚠️ {t.errorFAA} {error}
+            <div className="rounded-lg border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400 flex items-center justify-between gap-3 flex-wrap">
+              <span>⚠️ {t.errorFAA} {error}</span>
+              <button
+                onClick={() => refresh()}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors shrink-0"
+              >
+                {locale === "es" ? "Reintentar" : "Retry"}
+              </button>
             </div>
           )}
 
@@ -789,20 +803,28 @@ export default function HomePage() {
                     <span key={item}>{item}</span>
                   ))}
                 </div>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {sortedAirports.map((iata) => (
-                    <AirportCard
-                      key={iata}
-                      iata={iata}
-                      status={statusMap[iata]}
-                      onRemove={() => removeAirportDB(iata)}
-                      weather={weatherMap[iata]}
-                      metar={metarMap[iata]}
-                      highlight={changedAirports.has(iata)}
-                    />
-                  ))}
-                  <AirportSearch watchedAirports={watchedAirports} onAdd={(iata) => addAirportDB(iata)} />
-                </div>
+                {loading && Object.keys(statusMap).length === 0 ? (
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="rounded-2xl border border-white/[0.07] h-36 animate-pulse bg-white/[0.03]" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {sortedAirports.map((iata) => (
+                      <AirportCard
+                        key={iata}
+                        iata={iata}
+                        status={statusMap[iata]}
+                        onRemove={() => removeAirportDB(iata)}
+                        weather={weatherMap[iata]}
+                        metar={metarMap[iata]}
+                        highlight={changedAirports.has(iata)}
+                      />
+                    ))}
+                    <AirportSearch watchedAirports={watchedAirports} onAdd={(iata) => addAirportDB(iata)} />
+                  </div>
+                )}
               </div>
             )}
 
