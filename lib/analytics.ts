@@ -38,4 +38,19 @@ export const analytics = {
   pushPermissionGranted() {
     track("push_permission_granted");
   },
+  copilotUsed(props?: { type?: "copilot" | "assistant" }) {
+    track("copilot_used", props ?? {});
+  },
+  notificationEnabled() {
+    track("notification_enabled");
+  },
+  notificationDisabled() {
+    track("notification_disabled");
+  },
+  shareTrip(props?: { method?: "link" | "whatsapp" | "pdf" }) {
+    track("share_trip", props ?? {});
+  },
+  paymentCompleted(props?: { plan?: string }) {
+    track("payment_completed", props ?? {});
+  },
 };

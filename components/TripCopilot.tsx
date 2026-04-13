@@ -20,6 +20,7 @@ function TripCopilotLogo({ className }: { className?: string }) {
     />
   );
 }
+import { analytics } from "@/lib/analytics";
 import { getDestinationProfile, getDestinationConfig } from "@/lib/destinationConfig";
 import { useTripAdvice, AdviceStatus } from "@/hooks/useTripAdvice";
 import { TripAdviceResult, PackingItem } from "@/lib/types/tripAdvice";
@@ -556,6 +557,7 @@ function ChatSection({
           return updated.slice(-10);
         });
       }
+      analytics.copilotUsed({ type: "copilot" });
     } catch {
       setMessages((prev) => [
         ...prev,

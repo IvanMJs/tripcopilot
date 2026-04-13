@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   Plus, X, Calendar, Share2,
-  Plane, Trash2, Pencil, Copy, Check,
+  Plane, Bell, Trash2, Pencil, Copy, Check,
   Save, ChevronRight,
   Sparkles, Loader2, List, GitBranch,
 } from "lucide-react";
@@ -47,6 +47,7 @@ import { LoungeInfo } from "./LoungeInfo";
 import { VisaInfo } from "./VisaInfo";
 import { airportToCountry } from "@/lib/visaRequirements";
 import { LayoverGuide } from "./LayoverGuide";
+import { EmptyState } from "./EmptyState";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -232,6 +233,7 @@ export function TripPanel({
 
   async function handleShareWhatsApp() {
     analytics.sharedWhatsApp();
+    analytics.shareTrip({ method: "whatsapp" });
     const waFlights: WhatsAppFlight[] = sorted.map((f) => ({
       flightCode:      f.flightCode,
       airlineName:     f.airlineName,
@@ -259,7 +261,7 @@ export function TripPanel({
   async function handleShareLink() {
     const url = buildShareURL(trip.name, trip.flights);
     const ok = await copyToClipboard(url);
-    if (ok) analytics.sharedLink();
+    if (ok) { analytics.sharedLink(); analytics.shareTrip({ method: "link" }); }
     setCopied(ok);
     setTimeout(() => setCopied(false), 1500);
   }
@@ -498,9 +500,29 @@ export function TripPanel({
       )}
 
       {/* Alerts tab */}
-      {panelTab === "alerts" && !isDraft && (
-        <PriceAlerts locale={locale} />
-      )}
+      {panelTab === "alerts" && !isDraft && (() => {
+        const flightAirports = sorted.flatMap((f) => [f.originCode, f.destinationCode]);
+        const hasDelayedAirport = flightAirports.some((code) => {
+          const s = statusMap[code];
+          return s && s.status !== "ok" && s.status !== "unknown";
+        });
+        const hasConnectionRisk = Array.from(connectionMap.values()).some(
+          (a) => a.risk === "tight" || a.risk === "at_risk" || a.risk === "missed",
+        );
+        const hasActiveAlerts = hasDelayedAirport || hasConnectionRisk;
+        return (
+          <>
+            {!hasActiveAlerts && (
+              <EmptyState
+                icon={<Bell className="w-8 h-8" />}
+                title={locale === "es" ? "Todo en orden" : "All clear"}
+                description={locale === "es" ? "No hay alertas activas para este viaje" : "No active alerts for this trip"}
+              />
+            )}
+            <PriceAlerts locale={locale} />
+          </>
+        );
+      })()}
 
       {/* Passengers tab */}
       {panelTab === "passengers" && !isDraft && (
@@ -509,56 +531,13 @@ export function TripPanel({
 
       {/* Flight cards */}
       {(panelTab === "flights" || isDraft) && (sorted.length === 0 ? (
-        <div className="flex flex-col items-center gap-5 py-12 px-6 text-center">
-          <svg viewBox="0 0 120 80" className="w-32 h-20 opacity-50" fill="none">
-            <ellipse cx="30" cy="62" rx="26" ry="12" fill="rgba(139,92,246,0.15)" />
-            <ellipse cx="75" cy="57" rx="36" ry="16" fill="rgba(139,92,246,0.12)" />
-            <ellipse cx="95" cy="63" rx="20" ry="10" fill="rgba(139,92,246,0.15)" />
-            <path d="M18 38 L54 26 L92 31 L76 40 L54 38 Z" fill="rgba(139,92,246,0.55)" />
-            <path d="M54 38 L57 56 L48 52 Z" fill="rgba(139,92,246,0.45)" />
-            <path d="M26 35 L38 28 L42 33 Z" fill="rgba(139,92,246,0.35)" />
-          </svg>
-          <div>
-            <p className="text-base font-semibold text-gray-200 mb-1.5">
-              {locale === "es" ? "Tu viaje te espera" : "Your journey awaits"}
-            </p>
-            <p className="text-sm text-gray-500 max-w-xs mx-auto leading-relaxed">
-              {locale === "es"
-                ? "Importá el texto de tu reserva y la IA extrae todos los vuelos"
-                : "Paste your booking text and AI extracts all flights instantly"}
-            </p>
-          </div>
-
-          {/* 3 micro-steps */}
-          <div className="flex items-center gap-2 text-[11px] text-gray-600">
-            {[
-              locale === "es" ? "Agregá un vuelo" : "Add a flight",
-              locale === "es" ? "Monitoreá el aeropuerto" : "Monitor airport",
-              locale === "es" ? "Recibí alertas" : "Get alerts",
-            ].map((step, i) => (
-              <Fragment key={i}>
-                {i > 0 && <ChevronRight className="h-3 w-3 text-gray-700 shrink-0" />}
-                <span className={i === 0 ? "text-blue-400 font-medium" : ""}>{step}</span>
-              </Fragment>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            {locale === "es" ? "Agregar primer vuelo" : "Add first flight"}
-          </button>
-
-          <button
-            onClick={() => setShowImport(true)}
-            className="btn-primary w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
-          >
-            <Sparkles className="w-4 h-4" />
-            {locale === "es" ? "Importar vuelos con IA" : "Import flights with AI"}
-          </button>
-        </div>
+        <EmptyState
+          icon={<Plane className="w-8 h-8" />}
+          title={locale === "es" ? "Agrega vuelos a tu viaje" : "Add flights to your trip"}
+          description={locale === "es" ? "Importa con IA o agrega manualmente" : "Import with AI or add manually"}
+          cta={{ label: locale === "es" ? "Importar con IA" : "Import with AI", onClick: () => setShowImport(true) }}
+          secondaryCta={{ label: locale === "es" ? "Agregar manualmente" : "Add manually", onClick: () => setShowAddForm(true) }}
+        />
       ) : loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => <FlightCardSkeleton key={i} />)}

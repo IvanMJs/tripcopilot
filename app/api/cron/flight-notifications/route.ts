@@ -8,6 +8,14 @@ import { analyzeConnection } from "@/lib/connectionRisk";
 import { TripFlight, AirportStatusMap, DelayStatus, FlightRow, AccommodationRow, PushSubRow, AeroDataBoxFlightLeg } from "@/lib/types";
 import { sendInBatches } from "@/lib/retry";
 
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
 webpush.setVapidDetails(
   "mailto:support@tripcopilot.app",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
@@ -137,35 +145,51 @@ export async function GET(request: Request) {
       const toStr   = new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString().slice(0, 16);
 
       let adbQuotaExceeded = false;
-      for (const iata of toFetch) {
-        if (adbQuotaExceeded) break; // stop immediately once quota is exhausted
-        try {
-          const url =
-            `https://aerodatabox.p.rapidapi.com/flights/airports/iata/${iata}/${fromStr}/${toStr}` +
-            `?direction=Departure&withLeg=false&withCancelled=true&withCodeshared=true&withCargo=false&withPrivate=false&withLocation=false`;
-          const res = await fetch(url, {
-            headers: {
-              "X-RapidAPI-Key": rapidApiKey,
-              "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com",
-            },
-            signal: AbortSignal.timeout(8000),
-          });
-          if (res.status === 429 || res.status === 402) {
-            cronErrors.push("AeroDataBox quota exceeded — skipping remaining international airports");
-            adbQuotaExceeded = true;
-            break;
+
+      const fetchAeroDataBox = async (iata: string): Promise<{ iata: string; res: Response }> => {
+        const url =
+          `https://aerodatabox.p.rapidapi.com/flights/airports/iata/${iata}/${fromStr}/${toStr}` +
+          `?direction=Departure&withLeg=false&withCancelled=true&withCodeshared=true&withCargo=false&withPrivate=false&withLocation=false`;
+        const res = await fetch(url, {
+          headers: {
+            "X-RapidAPI-Key": rapidApiKey as string,
+            "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com",
+          },
+          signal: AbortSignal.timeout(8000),
+        });
+        return { iata, res };
+      };
+
+      const chunks = chunkArray(toFetch, 3);
+      for (const chunk of chunks) {
+        if (adbQuotaExceeded) break;
+        const results = await Promise.allSettled(
+          chunk.map((iata) => fetchAeroDataBox(iata)),
+        );
+        for (const result of results) {
+          if (result.status === "rejected") {
+            cronErrors.push(`AeroDataBox fetch error: ${String(result.reason)}`);
+            continue;
           }
-          if (!res.ok) continue;
-          const data = await res.json();
-          const status = parseAeroDataBox(iata, data, "es");
-          if (status) {
-            statusMap[iata] = status.status;
-            await supabase
-              .from("airport_status_cache")
-              .upsert({ iata, data: status, cached_at: now.toISOString() });
+          const { iata, res } = result.value;
+          try {
+            if (res.status === 429 || res.status === 402) {
+              cronErrors.push("AeroDataBox quota exceeded — skipping remaining international airports");
+              adbQuotaExceeded = true;
+              break;
+            }
+            if (!res.ok) continue;
+            const data = await res.json();
+            const status = parseAeroDataBox(iata, data, "es");
+            if (status) {
+              statusMap[iata] = status.status;
+              await supabase
+                .from("airport_status_cache")
+                .upsert({ iata, data: status, cached_at: now.toISOString() });
+            }
+          } catch (e) {
+            cronErrors.push(`AeroDataBox ${iata}: ${String(e)}`);
           }
-        } catch (e) {
-          cronErrors.push(`AeroDataBox ${iata}: ${String(e)}`);
         }
       }
     }
