@@ -6,6 +6,7 @@ import { Plane, ChevronRight, Trash2, Plus, MapPin, X, History, ChevronDown, Che
 import { TripArchiveCard } from "./TripArchiveCard";
 import { TripTab } from "@/lib/types";
 import { AirportStatusMap } from "@/lib/types";
+import { isTripCompleted } from "@/lib/tripArchive";
 import { calculateTripRiskScore } from "@/lib/tripRiskScore";
 import { TripListSkeleton } from "./TripListSkeleton";
 import { formatRelativeDate } from "@/lib/formatDate";
@@ -54,6 +55,8 @@ interface TripListViewProps {
   onSelectTemplate?: (template: SelectedTemplate) => void;
   onSwitchTab?: (tab: string) => void;
   onAIImport?: () => void;
+  onCreateSimilar?: (trip: TripTab) => void;
+  onViewArchivedTrip?: () => void;
 }
 
 function isTripPast(trip: TripTab): boolean {
@@ -160,6 +163,8 @@ export function TripListView({
   onSelectTemplate,
   onSwitchTab,
   onAIImport,
+  onCreateSimilar,
+  onViewArchivedTrip,
 }: TripListViewProps) {
   const [historyOpen, setHistoryOpen]   = useState(false);
   const [showAllPast, setShowAllPast]   = useState(false);
@@ -591,6 +596,21 @@ export function TripListView({
         <TripTemplates locale={locale} onSelectTemplate={onSelectTemplate} />
       )}
 
+      {/* View history link — shown when there are past trips and an onViewArchivedTrip handler */}
+      {pastTrips.length > 0 && onViewArchivedTrip && (
+        <div className="flex justify-center pt-1">
+          <button
+            onClick={() => onViewArchivedTrip()}
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-violet-400 transition-colors"
+          >
+            <History className="h-3.5 w-3.5" />
+            {locale === "es"
+              ? `Ver historial completo (${pastTrips.length})`
+              : `View full history (${pastTrips.length})`}
+          </button>
+        </div>
+      )}
+
       {/* Past trips — collapsible history section */}
       {pastTrips.length > 0 && (
         <div className="pt-1">
@@ -616,13 +636,24 @@ export function TripListView({
           {historyOpen && (
             <div className="space-y-2 mt-1">
               {(showAllPast ? pastTrips : pastTrips.slice(0, 3)).map((trip) => (
-                <TripArchiveCard
-                  key={trip.id}
-                  trip={trip}
-                  locale={locale}
-                  onSelect={onSelect}
-                  onDelete={onDeleteTrip}
-                />
+                <div key={trip.id} className="space-y-1">
+                  <TripArchiveCard
+                    trip={trip}
+                    locale={locale}
+                    onSelect={onSelect}
+                    onDelete={onDeleteTrip}
+                  />
+                  {onCreateSimilar && isTripCompleted(trip) && (
+                    <div className="flex justify-end px-1">
+                      <button
+                        onClick={() => onCreateSimilar(trip)}
+                        className="text-xs font-medium text-gray-500 hover:text-violet-400 border border-white/[0.06] hover:border-violet-500/40 rounded-lg px-3 py-1 transition-colors"
+                      >
+                        {locale === "es" ? "+ Crear similar" : "+ Create similar"}
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
               {pastTrips.length > 3 && (
                 <button

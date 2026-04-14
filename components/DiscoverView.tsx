@@ -5,6 +5,7 @@ import { Search, Compass, MapPin } from "lucide-react";
 import { AIRPORTS } from "@/lib/airports";
 import { TripTab } from "@/lib/types";
 import { ExploreMap } from "@/components/ExploreMap";
+import { SmartTripSuggestions } from "@/components/SmartTripSuggestions";
 
 // Gradient + emoji visuals keyed by IATA code
 const DESTINATION_VISUALS: Record<string, { gradient: string; emoji: string }> = {
@@ -301,9 +302,11 @@ interface Props {
   trips: TripTab[];
   locale: "es" | "en";
   onCreateTrip?: (destIata: string, destName: string) => void;
+  userPlan?: string | null;
+  onUpgrade?: () => void;
 }
 
-export function DiscoverView({ trips, locale, onCreateTrip }: Props) {
+export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade }: Props) {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [date, setDate] = useState("");
@@ -349,6 +352,18 @@ export function DiscoverView({ trips, locale, onCreateTrip }: Props) {
 
   return (
     <div className="space-y-8 pb-6">
+
+      {/* "Para vos" / "For you" section — AI-powered suggestions */}
+      {trips.length > 0 && (
+        <SmartTripSuggestions
+          trips={trips}
+          locale={locale}
+          userPlan={userPlan ?? undefined}
+          onUpgrade={onUpgrade}
+          onCreateTrip={onCreateTrip}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-500/20">
