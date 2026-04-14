@@ -25,7 +25,10 @@ export const PLANS = {
   explorer: {
     name: "Explorer",
     mpAmount: Number(process.env.MP_EXPLORER_AMOUNT ?? "500000"),
+    // Annual: 10 months price (2 months free = 17% off)
+    mpAnnualAmount: Number(process.env.MP_EXPLORER_ANNUAL_AMOUNT ?? "5000000"),
     mpCurrencyId: process.env.MP_CURRENCY_ID ?? "ARS",
+    annualPriceARS: 5_000_000,
     maxTrips: 10,
     maxFlightsPerTrip: 15,
     features: [
@@ -41,7 +44,10 @@ export const PLANS = {
   pilot: {
     name: "Pilot",
     mpAmount: Number(process.env.MP_PILOT_AMOUNT ?? "1000000"),
+    // Annual: 10 months price (2 months free = 17% off)
+    mpAnnualAmount: Number(process.env.MP_PILOT_ANNUAL_AMOUNT ?? "10000000"),
     mpCurrencyId: process.env.MP_CURRENCY_ID ?? "ARS",
+    annualPriceARS: 10_000_000,
     maxTrips: Infinity,
     maxFlightsPerTrip: Infinity,
     features: [

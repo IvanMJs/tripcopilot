@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import {
   Shield, Brain, Bell, Calendar, Search,
   ArrowRight, Mail, Loader2, MapPin,
   Zap, CheckCircle, ChevronDown, LogIn,
   Building2, Smartphone, ArrowUpCircle, DoorOpen,
-  Globe2,
+  Globe2, MonitorPlay,
 } from "lucide-react";
 import { NotifCarousel } from "@/components/NotifCarousel";
 import { AppScreenshotCarousel } from "@/components/AppScreenshotCarousel";
@@ -130,6 +131,9 @@ export default function LandingPage() {
   const [priceUSD, setPriceUSD] = useState<number | null>(null);
   const [lang, setLang] = useState<"es" | "en">("es");
   const [subscribeLoading, setSubscribeLoading] = useState<"explorer" | "pilot" | null>(null);
+  const [showStickyCta, setShowStickyCta] = useState(false);
+  const [featuresExpanded, setFeaturesExpanded] = useState(false);
+  const [pricingPeriod, setPricingPeriod] = useState<"annual" | "monthly">("annual");
   const loginRef = useRef<HTMLDivElement>(null);
 
   // Read invite token from URL — present when redirected from /invite?token=X
@@ -142,6 +146,31 @@ export default function LandingPage() {
       .then((r) => r.json())
       .then((d: { usd: number | null }) => { if (d.usd !== null) setPriceUSD(d.usd); })
       .catch(() => {});
+  }, []);
+
+  // Sticky CTA: show after 500px scroll, hide when login section is visible
+  useEffect(() => {
+    function onScroll() {
+      setShowStickyCta(window.scrollY > 500);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const el = loginRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setShowStickyCta(false);
+        else if (window.scrollY > 500) setShowStickyCta(true);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  // loginRef.current is set after mount; this effect runs once after mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function scrollToLogin() {
@@ -334,18 +363,18 @@ export default function LandingPage() {
   const painPoints = [
     {
       emoji: "😰",
-      problem: "Te enterás tarde de las demoras",
-      solution: "TripCopilot monitorea la FAA las 24hs y te notifica al instante",
+      problem: lang === "en" ? "You find out about delays too late" : "Te enterás tarde de las demoras",
+      solution: lang === "en" ? "TripCopilot monitors the FAA 24/7 and notifies you instantly" : "TripCopilot monitorea la FAA las 24hs y te notifica al instante",
     },
     {
       emoji: "😓",
-      problem: "No sabés si vas a perder la conexión",
-      solution: "Análisis automático de riesgo de conexión en cada escala",
+      problem: lang === "en" ? "You don't know if you'll miss your connection" : "No sabés si vas a perder la conexión",
+      solution: lang === "en" ? "Automatic connection risk analysis at every layover" : "Análisis automático de riesgo de conexión en cada escala",
     },
     {
       emoji: "🤯",
-      problem: "Viajar a múltiples destinos es un caos",
-      solution: "IA que entiende todo tu itinerario y te da un plan claro",
+      problem: lang === "en" ? "Multi-destination travel is chaos" : "Viajar a múltiples destinos es un caos",
+      solution: lang === "en" ? "AI that understands your full itinerary and gives you a clear plan" : "IA que entiende todo tu itinerario y te da un plan claro",
     },
   ];
 
@@ -550,6 +579,57 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── INLINE SIGN-UP CTA (after hero) ──────────────────────────────── */}
+      <div className="py-6 px-4" style={{ background: "linear-gradient(90deg, rgba(109,40,217,0.18) 0%, rgba(59,130,246,0.12) 100%)" }}>
+        <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div>
+            <p className="text-sm font-bold text-white">
+              {lang === "en" ? "Start free — no credit card required" : "Empezá gratis — sin tarjeta de crédito"}
+            </p>
+            <p className="text-xs text-violet-300 mt-0.5">
+              {lang === "en" ? "2 trips free forever" : "2 viajes gratis para siempre"}
+            </p>
+          </div>
+          <button
+            onClick={scrollToLogin}
+            className="shrink-0 flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-6 py-2.5 text-sm font-bold text-white transition-all shadow-lg shadow-violet-900/40"
+          >
+            {lang === "en" ? "Get started free" : "Empezar gratis"}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── STICKY CTA BAR ────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showStickyCta && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed bottom-0 inset-x-0 z-50 border-t border-white/[0.08] backdrop-blur-xl"
+            style={{ background: "rgba(4,4,12,0.92)" }}
+          >
+            <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-white truncate">TripCopilot</p>
+                <p className="text-[11px] text-gray-400 truncate">
+                  {lang === "en" ? "2 trips free forever · no card needed" : "2 viajes gratis para siempre · sin tarjeta"}
+                </p>
+              </div>
+              <button
+                onClick={scrollToLogin}
+                className="shrink-0 flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-sm font-bold text-white transition-all"
+              >
+                {lang === "en" ? "Start free" : "Empezar gratis"}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── ALOJAMIENTO IA ──────────────────────────────────────────────────── */}
       <section className="py-16 px-4">
         <div className="max-w-5xl mx-auto">
@@ -607,7 +687,7 @@ export default function LandingPage() {
       <section className="py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-10">
-            ¿Te pasó alguna vez?
+            {lang === "en" ? "Has this ever happened to you?" : "¿Te pasó alguna vez?"}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {painPoints.map((p, i) => (
@@ -690,11 +770,39 @@ export default function LandingPage() {
       <section id="funciones" className="py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">Funciones</p>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Todo lo que un viajero necesita</h2>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">
+              {lang === "en" ? "Features" : "Funciones"}
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+              {lang === "en" ? "Everything a traveller needs" : "Todo lo que un viajero necesita"}
+            </h2>
           </div>
+
+          {/* War Room featured highlight */}
+          <div className="mb-6 rounded-2xl border border-violet-600/40 overflow-hidden"
+            style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.18) 0%, rgba(14,14,28,0.97) 60%, rgba(59,130,246,0.10) 100%)" }}>
+            <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6">
+              <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-2xl bg-violet-950/60 border border-violet-700/40">
+                <MonitorPlay className="h-8 w-8 text-violet-400" />
+              </div>
+              <div className="text-center sm:text-left">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-600/20 border border-violet-600/30 px-3 py-0.5 text-[11px] font-bold text-violet-300 uppercase tracking-wider mb-2">
+                  {lang === "en" ? "Featured" : "Destacado"}
+                </div>
+                <h3 className="text-lg font-black text-white mb-1">
+                  {lang === "en" ? "War Room mode" : "Modo War Room"}
+                </h3>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xl">
+                  {lang === "en"
+                    ? "Everything you need on flight day in one screen — departure time, airport status, connection risk, checklist and alerts. No more switching between apps."
+                    : "Todo lo que necesitás el día del vuelo en una sola pantalla — horario de salida, estado del aeropuerto, riesgo de conexión, checklist y alertas. Sin cambiar de app."}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((f) => {
+            {(featuresExpanded ? features : features.slice(0, 6)).map((f) => {
               const Icon = f.icon;
               return (
                 <div key={f.title}
@@ -708,6 +816,26 @@ export default function LandingPage() {
               );
             })}
           </div>
+
+          {features.length > 6 && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setFeaturesExpanded((v) => !v)}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] hover:bg-white/[0.08] px-6 py-2.5 text-sm font-semibold text-gray-300 transition-all"
+              >
+                {featuresExpanded
+                  ? (lang === "en" ? "Show less" : "Ver menos")
+                  : (lang === "en" ? `See all features (+${features.length - 6} more)` : `Ver todas las funciones (+${features.length - 6} más)`)}
+                <motion.span
+                  animate={{ rotate: featuresExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="inline-block"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </motion.span>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -918,7 +1046,7 @@ export default function LandingPage() {
       {/* ── PRICING ──────────────────────────────────────────────────────── */}
       <section id="planes" className="py-16 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">
               {lang === "en" ? "Plans" : "Planes"}
             </p>
@@ -928,6 +1056,35 @@ export default function LandingPage() {
             <p className="text-sm text-gray-500 mt-3">
               {lang === "en" ? "Start free. Upgrade when you need more." : "Empezá gratis. Mejorá cuando lo necesites."}
             </p>
+
+            {/* Monthly / Annual toggle */}
+            <div className="inline-flex items-center mt-6 rounded-full border border-white/[0.10] bg-white/[0.03] p-1 gap-1">
+              <button
+                onClick={() => setPricingPeriod("monthly")}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+                  pricingPeriod === "monthly"
+                    ? "bg-white/[0.10] text-white"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                {lang === "en" ? "Monthly" : "Mensual"}
+              </button>
+              <button
+                onClick={() => setPricingPeriod("annual")}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+                  pricingPeriod === "annual"
+                    ? "bg-violet-600 text-white"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                {lang === "en" ? "Annual (save 17%)" : "Anual (ahorrá 17%)"}
+                {pricingPeriod === "annual" && (
+                  <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold leading-none">
+                    {lang === "en" ? "2 months free" : "2 meses gratis"}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -962,13 +1119,31 @@ export default function LandingPage() {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold text-white uppercase tracking-wider whitespace-nowrap">
                 {lang === "en" ? "Most popular" : "Más popular"}
               </div>
+              {pricingPeriod === "annual" && (
+                <div className="absolute top-4 right-4 rounded-full bg-emerald-600/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400 whitespace-nowrap">
+                  {lang === "en" ? "2 months free" : "2 meses gratis"}
+                </div>
+              )}
               <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-2">Explorer</p>
-              <p className="text-4xl font-black text-white mb-1">
-                {priceUSD !== null ? `≈$${Math.round(priceUSD / 2)}` : "$5.000 ARS"}
-              </p>
-              <p className="text-xs text-gray-500 mb-1">{lang === "en" ? "/month" : "/mes"}</p>
-              {priceUSD !== null && <p className="text-[10px] text-gray-600 mb-5">$5.000 ARS · {lang === "en" ? "today's rate" : "cotización del día"}</p>}
-              {priceUSD === null && <div className="mb-5" />}
+              {pricingPeriod === "annual" ? (
+                <>
+                  <p className="text-4xl font-black text-white mb-1">$4.166 ARS</p>
+                  <p className="text-xs text-gray-500 mb-1">{lang === "en" ? "/month · billed annually" : "/mes · facturado anual"}</p>
+                  <p className="text-[10px] text-gray-600 mb-5">
+                    $50.000 ARS {lang === "en" ? "per year" : "por año"}
+                    {priceUSD !== null ? ` · ≈$${Math.round(priceUSD / 2 * 10)} USD` : ""}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-4xl font-black text-white mb-1">
+                    {priceUSD !== null ? `≈$${Math.round(priceUSD / 2)}` : "$5.000 ARS"}
+                  </p>
+                  <p className="text-xs text-gray-500 mb-1">{lang === "en" ? "/month" : "/mes"}</p>
+                  {priceUSD !== null && <p className="text-[10px] text-gray-600 mb-5">$5.000 ARS · {lang === "en" ? "today's rate" : "cotización del día"}</p>}
+                  {priceUSD === null && <div className="mb-5" />}
+                </>
+              )}
               <ul className="space-y-2.5 mb-8 flex-1">
                 {[
                   lang === "en" ? "10 trips · 15 flights each" : "10 viajes · 15 vuelos c/u",
@@ -998,14 +1173,32 @@ export default function LandingPage() {
             </div>
 
             {/* PILOT */}
-            <div className="rounded-2xl border border-blue-700/40 bg-blue-950/10 p-6 flex flex-col">
+            <div className="relative rounded-2xl border border-blue-700/40 bg-blue-950/10 p-6 flex flex-col">
+              {pricingPeriod === "annual" && (
+                <div className="absolute top-4 right-4 rounded-full bg-emerald-600/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400 whitespace-nowrap">
+                  {lang === "en" ? "2 months free" : "2 meses gratis"}
+                </div>
+              )}
               <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-2">Pilot 🚀</p>
-              <p className="text-4xl font-black text-white mb-1">
-                {priceUSD !== null ? `≈$${priceUSD}` : "$10.000 ARS"}
-              </p>
-              <p className="text-xs text-gray-500 mb-1">{lang === "en" ? "/month" : "/mes"}</p>
-              {priceUSD !== null && <p className="text-[10px] text-gray-600 mb-5">$10.000 ARS · {lang === "en" ? "today's rate" : "cotización del día"}</p>}
-              {priceUSD === null && <div className="mb-5" />}
+              {pricingPeriod === "annual" ? (
+                <>
+                  <p className="text-4xl font-black text-white mb-1">$8.333 ARS</p>
+                  <p className="text-xs text-gray-500 mb-1">{lang === "en" ? "/month · billed annually" : "/mes · facturado anual"}</p>
+                  <p className="text-[10px] text-gray-600 mb-5">
+                    $100.000 ARS {lang === "en" ? "per year" : "por año"}
+                    {priceUSD !== null ? ` · ≈$${priceUSD * 10} USD` : ""}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-4xl font-black text-white mb-1">
+                    {priceUSD !== null ? `≈$${priceUSD}` : "$10.000 ARS"}
+                  </p>
+                  <p className="text-xs text-gray-500 mb-1">{lang === "en" ? "/month" : "/mes"}</p>
+                  {priceUSD !== null && <p className="text-[10px] text-gray-600 mb-5">$10.000 ARS · {lang === "en" ? "today's rate" : "cotización del día"}</p>}
+                  {priceUSD === null && <div className="mb-5" />}
+                </>
+              )}
               <ul className="space-y-2.5 mb-8 flex-1">
                 {[
                   lang === "en" ? "Unlimited trips & flights" : "Viajes y vuelos ilimitados",

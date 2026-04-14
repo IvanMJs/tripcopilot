@@ -85,11 +85,20 @@ export default function HomePage() {
   const [showNotifSheet, setShowNotifSheet] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
 
+  // Initialize with a fixed default to avoid hydration mismatch.
+  // A useEffect below checks localStorage and redirects first-time users to "trips".
   const [activeTab, setActiveTabRaw] = useState<string>("airports");
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef<string>("airports");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("tc-onboarded")) {
+      setActiveTabRaw("trips");
+      prevTabRef.current = "trips";
+    }
+  }, []);
   const [mounted, setMounted] = useState(false);
-  const [userPlan, setUserPlan] = useState<"free" | "premium" | null>(null);
+  const [userPlan, setUserPlan] = useState<"free" | "explorer" | "pilot" | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   // DB-backed state
@@ -185,7 +194,8 @@ export default function HomePage() {
       setUserId(user.id);
       supabase.from("user_profiles").select("plan").eq("id", user.id).single()
         .then(({ data }) => {
-          setUserPlan((data as { plan?: string } | null)?.plan === "premium" ? "premium" : "free");
+          const plan = (data as { plan?: string } | null)?.plan;
+          setUserPlan(plan === "pilot" ? "pilot" : plan === "explorer" ? "explorer" : "free");
         });
       // Update last_seen_at (throttle: only if >30min since last update)
       supabase.from("user_profiles").select("last_seen_at").eq("id", user.id).single()
@@ -366,6 +376,7 @@ export default function HomePage() {
 
   function markOnboarded() {
     localStorage.setItem("tripcopilot-onboarded", "true");
+    localStorage.setItem("tc-onboarded", "true");
   }
 
   function handleOnboardingSeeExample() {
@@ -551,6 +562,7 @@ export default function HomePage() {
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
+        locale={locale}
       />
 
       <NotificationSetupSheet
@@ -847,7 +859,7 @@ export default function HomePage() {
             {activeTab === "today" && (
               <div className="space-y-4">
                 <SmartAlertsPanel alerts={smartAlerts} onDismiss={dismissSmartAlert} locale={locale} />
-                <DepartureBoard trips={userTrips} statusMap={statusMap} locale={locale} geoPosition={userPosition} />
+                <DepartureBoard trips={userTrips} statusMap={statusMap} locale={locale} geoPosition={userPosition} userPlan={userPlan ?? undefined} onUpgrade={() => setShowUpgradeModal(true)} />
               </div>
             )}
 
@@ -1087,6 +1099,9 @@ export default function HomePage() {
           onDeleteTrip={deleteTrip}
           onRenameTrip={(id, name) => renameTripDB(id, name, locale)}
           onRenameDraft={(name) => setDraftTrip((prev) => prev ? { ...prev, name } : prev)}
+          userPlan={userPlan}
+          tripCount={userTrips.length}
+          onUpgrade={() => setShowUpgradeModal(true)}
         />
       )}
 

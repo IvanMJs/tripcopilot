@@ -3,13 +3,80 @@
 import { useState } from "react";
 import { PLANS } from "@/lib/mercadopago";
 
+// ── Labels ─────────────────────────────────────────────────────────────────
+
+const LABELS = {
+  es: {
+    title: "Elige tu plan",
+    close: "Cerrar",
+    currentPlan: "Plan actual",
+    freePricing: "Gratis para siempre",
+    redirecting: "Redirigiendo...",
+    goExplorer: "Ir a Explorer →",
+    goPilot: "Ir a Pilot →",
+    footerNote: "Pago seguro por MercadoPago · Cancelá cuando quieras",
+    freeFeatures: ["2 viajes", "3 vuelos por viaje", "Alertas básicas de check-in"],
+    explorerFeatures: [
+      "10 viajes · 15 vuelos c/u",
+      "Todas las notificaciones push",
+      "AI TripAdvisor",
+      "Mapa mundial de viajes",
+      "Travel Wrapped compartible",
+      "Trip Debrief",
+      "Export .ics / CSV",
+    ],
+    pilotFeatures: [
+      "Viajes y vuelos ilimitados",
+      "Todo lo de Explorer",
+      "AI Health Check 48h antes",
+      "Viajes compartidos",
+      "Morning Briefing semanal",
+      "Soporte prioritario",
+    ],
+  },
+  en: {
+    title: "Choose your plan",
+    close: "Close",
+    currentPlan: "Current plan",
+    freePricing: "Free forever",
+    redirecting: "Redirecting...",
+    goExplorer: "Go Explorer →",
+    goPilot: "Go Pilot →",
+    footerNote: "Secure payment via MercadoPago · Cancel anytime",
+    freeFeatures: ["2 trips", "3 flights per trip", "Basic check-in alerts"],
+    explorerFeatures: [
+      "10 trips · 15 flights each",
+      "All push notifications",
+      "AI TripAdvisor",
+      "World trip map",
+      "Shareable Travel Wrapped",
+      "Trip Debrief",
+      "Export .ics / CSV",
+    ],
+    pilotFeatures: [
+      "Unlimited trips & flights",
+      "Everything in Explorer",
+      "AI Health Check 48h before",
+      "Shared trips",
+      "Weekly Morning Briefing",
+      "Priority support",
+    ],
+  },
+} as const;
+
+// ── Props ──────────────────────────────────────────────────────────────────
+
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  locale?: "es" | "en";
 }
 
-export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
+// ── Component ──────────────────────────────────────────────────────────────
+
+export function UpgradeModal({ isOpen, onClose, locale = "es" }: UpgradeModalProps) {
   const [loading, setLoading] = useState<"explorer" | "pilot" | null>(null);
+  const L = LABELS[locale];
 
   if (!isOpen) return null;
 
@@ -51,10 +118,10 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
-          <h2 className="text-lg font-black text-white">Elige tu plan</h2>
+          <h2 className="text-lg font-black text-white">{L.title}</h2>
           <button
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={L.close}
             className="rounded-lg p-1.5 text-gray-400 hover:text-white hover:bg-white/[0.08] transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -71,12 +138,12 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           {/* Free card */}
           <div className="rounded-xl border border-white/[0.12] bg-white/[0.03] p-5 flex flex-col gap-4">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">Plan actual</span>
+              <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">{L.currentPlan}</span>
               <p className="mt-1 text-xl font-black text-white">{PLANS.free.name}</p>
-              <p className="text-sm text-gray-500 mt-0.5">Gratis para siempre</p>
+              <p className="text-sm text-gray-500 mt-0.5">{L.freePricing}</p>
             </div>
             <ul className="space-y-2 flex-1">
-              {PLANS.free.features.map((feat) => (
+              {L.freeFeatures.map((feat) => (
                 <li key={feat} className="flex items-center gap-2 text-sm text-gray-400">
                   <span className="h-4 w-4 shrink-0 rounded-full border border-gray-600 flex items-center justify-center">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-2.5 w-2.5 text-gray-500">
@@ -100,7 +167,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
               <p className="text-sm text-sky-400/80 mt-0.5">$5.000 ARS/mes</p>
             </div>
             <ul className="space-y-2 flex-1">
-              {PLANS.explorer.features.map((feat) => (
+              {L.explorerFeatures.map((feat) => (
                 <li key={feat} className="flex items-center gap-2 text-sm text-gray-200">
                   <span className="h-4 w-4 shrink-0 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-2.5 w-2.5 text-sky-400">
@@ -116,7 +183,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
               disabled={loading !== null}
               className="relative z-10 w-full rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 disabled:opacity-60 text-white text-sm font-black py-3 transition-all"
             >
-              {loading === "explorer" ? "Redirigiendo..." : "Ir a Explorer \u2192"}
+              {loading === "explorer" ? L.redirecting : L.goExplorer}
             </button>
           </div>
 
@@ -134,7 +201,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
               <p className="text-sm text-amber-400/80 mt-0.5">$10.000 ARS/mes</p>
             </div>
             <ul className="space-y-2 flex-1">
-              {PLANS.pilot.features.map((feat) => (
+              {L.pilotFeatures.map((feat) => (
                 <li key={feat} className="flex items-center gap-2 text-sm text-gray-200">
                   <span className="h-4 w-4 shrink-0 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-2.5 w-2.5 text-amber-400">
@@ -150,7 +217,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
               disabled={loading !== null}
               className="relative z-10 w-full rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 disabled:opacity-60 text-black text-sm font-black py-3 transition-all"
             >
-              {loading === "pilot" ? "Redirigiendo..." : "Ir a Pilot \u2192"}
+              {loading === "pilot" ? L.redirecting : L.goPilot}
             </button>
           </div>
 
@@ -158,7 +225,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
           {/* Footer note */}
           <p className="text-center text-xs text-gray-600 pt-2 pb-2">
-            Pago seguro por MercadoPago · Cancelá cuando quieras
+            {L.footerNote}
           </p>
         </div>
       </div>

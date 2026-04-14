@@ -19,6 +19,8 @@ interface DepartureBoardProps {
   statusMap: AirportStatusMap;
   locale: "es" | "en";
   geoPosition?: GeoPosition | null;
+  userPlan?: string | null;
+  onUpgrade?: () => void;
 }
 
 // ── Internal types ─────────────────────────────────────────────────────────
@@ -472,6 +474,8 @@ export function DepartureBoard({
   statusMap,
   locale,
   geoPosition,
+  userPlan,
+  onUpgrade,
 }: DepartureBoardProps) {
   const today = new Date().toISOString().slice(0, 10);
   const [warRoomDismissed, setWarRoomDismissed] = useState(false);
@@ -590,6 +594,8 @@ export function DepartureBoard({
           statusMap={statusMap}
           geoPosition={geoPosition}
           onExit={() => setWarRoomDismissed(true)}
+          userPlan={userPlan ?? undefined}
+          onUpgrade={onUpgrade}
         />
       )}
 

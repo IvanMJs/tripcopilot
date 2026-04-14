@@ -17,7 +17,7 @@ import { ReferralCard } from "@/components/ReferralCard";
 interface MyProfileViewProps {
   trips: TripTab[];
   locale: "es" | "en";
-  userPlan: "free" | "premium" | null;
+  userPlan: "free" | "explorer" | "pilot" | null;
   userId: string | null;
   onUpgrade: () => void;
 }
@@ -816,14 +816,18 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: My
 
       {/* Section 6 — Plan status */}
       <motion.div {...fadeUp(0.25)} className="px-4 pb-6">
-        {userPlan === "premium" ? (
+        {(userPlan === "explorer" || userPlan === "pilot") ? (
           <div className="rounded-2xl border border-amber-600/40 bg-gradient-to-br from-amber-950/40 to-[#07070f] p-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold uppercase tracking-widest text-amber-500/70">
                 {locale === "es" ? "Tu plan" : "Your plan"}
               </span>
             </div>
-            <p className="text-lg font-black text-white">{L.premiumPlan}</p>
+            <p className="text-lg font-black text-white">
+              {userPlan === "pilot"
+                ? (locale === "es" ? "Plan Pilot ✈️" : "Pilot Plan ✈️")
+                : (locale === "es" ? "Plan Explorer ⭐" : "Explorer Plan ⭐")}
+            </p>
             <p className="text-sm text-amber-400/80 mt-0.5">{L.premiumPerks}</p>
           </div>
         ) : (

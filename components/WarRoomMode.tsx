@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   AlertCircle,
   Info,
+  Lock,
 } from "lucide-react";
 import { TripFlight, AirportStatusMap, DelayStatus } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
@@ -58,6 +59,8 @@ const LABELS = {
     noConnection: "Sin conexión próxima",
     checklistEmpty: "Sin checklist",
     complete: "completados",
+    lockedTitle: "Solo en Explorer",
+    lockedCta: "Mejorar a Explorer →",
   },
   en: {
     warRoom: "War Room",
@@ -91,6 +94,8 @@ const LABELS = {
     noConnection: "No upcoming connection",
     checklistEmpty: "No checklist",
     complete: "complete",
+    lockedTitle: "Explorer only",
+    lockedCta: "Upgrade to Explorer →",
   },
 } as const;
 
@@ -156,6 +161,8 @@ export interface WarRoomModeProps {
   statusMap: AirportStatusMap;
   geoPosition?: GeoPosition | null;
   onExit: () => void;
+  userPlan?: string;
+  onUpgrade?: () => void;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -202,6 +209,32 @@ function readChecklistProgress(tripId: string): { done: number; total: number } 
   } catch {
     return { done: 0, total: 0 };
   }
+}
+
+// ── Locked card ────────────────────────────────────────────────────────────
+
+function LockedCard({
+  locale,
+  onUpgrade,
+}: {
+  locale: "es" | "en";
+  onUpgrade?: () => void;
+}) {
+  const L = LABELS[locale];
+  return (
+    <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <Lock className="h-4 w-4 text-gray-600 shrink-0" />
+        <span className="text-sm text-gray-600">{L.lockedTitle}</span>
+      </div>
+      <button
+        onClick={onUpgrade}
+        className="shrink-0 flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/30 px-2.5 py-1.5 text-[11px] font-semibold text-sky-400 hover:bg-sky-950/50 transition-colors"
+      >
+        {L.lockedCta}
+      </button>
+    </div>
+  );
 }
 
 // ── Sub-cards ──────────────────────────────────────────────────────────────
@@ -263,7 +296,10 @@ export function WarRoomMode({
   statusMap,
   geoPosition,
   onExit,
+  userPlan,
+  onUpgrade,
 }: WarRoomModeProps) {
+  const isFree = !userPlan || userPlan === "free";
   const L = LABELS[locale];
 
   const depISO = flightDepartureISO(flight);
@@ -388,7 +424,11 @@ export function WarRoomMode({
           </motion.div>
 
           {/* ── Card 3: Departure calculator ───────────────────────────── */}
-          {departureResult && departureResult.urgencyLevel !== "past" && (
+          {isFree ? (
+            <motion.div variants={staggerItem}>
+              <LockedCard locale={locale} onUpgrade={onUpgrade} />
+            </motion.div>
+          ) : departureResult && departureResult.urgencyLevel !== "past" && (
             <motion.div variants={staggerItem}>
               <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -415,33 +455,35 @@ export function WarRoomMode({
           )}
 
           {/* ── Card 4: Weather row ─────────────────────────────────────── */}
-          <motion.div variants={staggerItem}>
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <CloudRain className="h-3.5 w-3.5 text-gray-500" />
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-                  {L.weather}
-                </p>
+          {!isFree && (
+            <motion.div variants={staggerItem}>
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <CloudRain className="h-3.5 w-3.5 text-gray-500" />
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                    {L.weather}
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <WeatherCard
+                    iata={flight.originCode}
+                    isoDate={flight.isoDate}
+                    label={L.origin}
+                    locale={locale}
+                  />
+                  <WeatherCard
+                    iata={flight.destinationCode}
+                    isoDate={flight.isoDate}
+                    label={L.destination}
+                    locale={locale}
+                  />
+                </div>
               </div>
-              <div className="flex gap-3">
-                <WeatherCard
-                  iata={flight.originCode}
-                  isoDate={flight.isoDate}
-                  label={L.origin}
-                  locale={locale}
-                />
-                <WeatherCard
-                  iata={flight.destinationCode}
-                  isoDate={flight.isoDate}
-                  label={L.destination}
-                  locale={locale}
-                />
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
 
           {/* ── Card 5: Checklist progress ─────────────────────────────── */}
-          <motion.div variants={staggerItem}>
+          {!isFree && (<motion.div variants={staggerItem}>
             <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -499,42 +541,44 @@ export function WarRoomMode({
                 </div>
               )}
             </div>
-          </motion.div>
+          </motion.div>)}
 
           {/* ── Card 6: Connection risk ─────────────────────────────────── */}
-          <motion.div variants={staggerItem}>
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Plane className="h-3.5 w-3.5 text-gray-500 rotate-45" />
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
-                  {L.connection}
-                </p>
-              </div>
-              {connectionAnalysis ? (
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <ConnectionRiskIcon risk={connectionAnalysis.risk} />
-                    <span className="text-sm font-bold text-white">
-                      {connectionAnalysis.connectionAirport} — {cityName(connectionAnalysis.connectionAirport)}
-                    </span>
-                  </div>
-                  <p className={`text-xs font-semibold ${connectionRiskColor(connectionAnalysis.risk)}`}>
-                    {connectionRiskLabel(connectionAnalysis.risk, locale)}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {connectionAnalysis.effectiveBufferMinutes} {L.bufferMin}
-                    {connectionAnalysis.delayAddedMinutes > 0 && (
-                      <span className="text-amber-400 ml-1">
-                        ({locale === "es" ? "+" : "+"}{connectionAnalysis.delayAddedMinutes} min {locale === "es" ? "demora" : "delay"})
-                      </span>
-                    )}
+          {!isFree && (
+            <motion.div variants={staggerItem}>
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Plane className="h-3.5 w-3.5 text-gray-500 rotate-45" />
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+                    {L.connection}
                   </p>
                 </div>
-              ) : (
-                <p className="text-xs text-gray-600 italic">{L.noConnection}</p>
-              )}
-            </div>
-          </motion.div>
+                {connectionAnalysis ? (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <ConnectionRiskIcon risk={connectionAnalysis.risk} />
+                      <span className="text-sm font-bold text-white">
+                        {connectionAnalysis.connectionAirport} — {cityName(connectionAnalysis.connectionAirport)}
+                      </span>
+                    </div>
+                    <p className={`text-xs font-semibold ${connectionRiskColor(connectionAnalysis.risk)}`}>
+                      {connectionRiskLabel(connectionAnalysis.risk, locale)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {connectionAnalysis.effectiveBufferMinutes} {L.bufferMin}
+                      {connectionAnalysis.delayAddedMinutes > 0 && (
+                        <span className="text-amber-400 ml-1">
+                          ({locale === "es" ? "+" : "+"}{connectionAnalysis.delayAddedMinutes} min {locale === "es" ? "demora" : "delay"})
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-600 italic">{L.noConnection}</p>
+                )}
+              </div>
+            </motion.div>
+          )}
 
           {/* ── Card 7: Airport status alerts ─────────────────────────── */}
           {originStatus && originDelayStatus !== "ok" && originDelayStatus !== "unknown" && (

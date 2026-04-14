@@ -92,7 +92,7 @@ interface TripPanelProps {
   onToggleDeviceTz?: () => void;
   onUpdatePassengers?: (tripId: string, passengers: Passenger[]) => void;
   geoPosition?: GeoPosition | null;
-  userPlan?: "free" | "premium" | null;
+  userPlan?: "free" | "explorer" | "pilot" | null;
   onUpgrade?: () => void;
 }
 
@@ -593,6 +593,8 @@ export function TripPanel({
           flight={nextFlight}
           geoPosition={geoPosition}
           locale={locale}
+          userPlan={userPlan ?? undefined}
+          onUpgrade={onUpgrade}
         />
       )}
 

@@ -10,7 +10,7 @@ interface Props {
 const LABELS = {
   es: {
     eyebrow: "Viajeros reales",
-    heading: "Miles de viajeros ya vuelan tranquilos",
+    heading: "Viajeros que confían en TripCopilot",
     stats: [
       { value: 1200, suffix: "+", label: "viajes trackeados" },
       { value: 340, suffix: "+", label: "viajeros activos" },
@@ -45,7 +45,7 @@ const LABELS = {
   },
   en: {
     eyebrow: "Real travellers",
-    heading: "Thousands of travellers already fly stress-free",
+    heading: "Travelers who trust TripCopilot",
     stats: [
       { value: 1200, suffix: "+", label: "trips tracked" },
       { value: 340, suffix: "+", label: "active travellers" },

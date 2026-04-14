@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Car, PersonStanding, ShieldCheck, Clock } from "lucide-react";
+import { Car, PersonStanding, ShieldCheck, Clock, Lock } from "lucide-react";
 import { TripFlight } from "@/lib/types";
 import { GeoPosition } from "@/hooks/useGeolocation";
 import { useDepartureTime, PlanningMode } from "@/hooks/useDepartureTime";
@@ -20,6 +20,8 @@ const LABELS = {
     totalBuffer:         "Buffer total",
     min:                 "min",
     noGeo:               "Activá la ubicación para un cálculo exacto",
+    freeTeaser:          "Salí en ~2 horas",
+    freeTeaserSub:       "Detalles con Explorer →",
   },
   en: {
     sectionTitle:        "When to leave for the airport?",
@@ -30,6 +32,8 @@ const LABELS = {
     totalBuffer:         "Total buffer",
     min:                 "min",
     noGeo:               "Enable location for an exact estimate",
+    freeTeaser:          "Leave in ~2 hours",
+    freeTeaserSub:       "Unlock full details → Explorer",
   },
 } as const;
 
@@ -103,13 +107,18 @@ interface DepartureTimeWidgetProps {
   flight: TripFlight;
   geoPosition: GeoPosition | null;
   locale: "es" | "en";
+  userPlan?: string;
+  onUpgrade?: () => void;
 }
 
 export function DepartureTimeWidget({
   flight,
   geoPosition,
   locale,
+  userPlan,
+  onUpgrade,
 }: DepartureTimeWidgetProps) {
+  const isFree = !userPlan || userPlan === "free";
   const L = LABELS[locale];
 
   // Build the ISO datetime for the flight departure
@@ -178,6 +187,39 @@ export function DepartureTimeWidget({
     ? (locale === "es" ? "Planificando" : "Planning")
     : style!.badgeLabel[locale];
   const sectionTitle = isPlanning ? L.sectionTitlePlanning : L.sectionTitle;
+
+  // Free-tier teaser view
+  if (isFree) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 320, damping: 26 }}
+        className="rounded-xl border border-white/[0.08] bg-white/[0.03] overflow-hidden"
+      >
+        <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+          <Clock className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+            {sectionTitle}
+          </p>
+        </div>
+        <div className="px-4 pb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-2xl font-black tracking-tight text-gray-300">
+              {L.freeTeaser}
+            </p>
+          </div>
+          <button
+            onClick={onUpgrade}
+            className="shrink-0 flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/30 px-2.5 py-1.5 text-[11px] font-semibold text-sky-400 hover:bg-sky-950/50 transition-colors"
+          >
+            <Lock className="h-3 w-3" />
+            {L.freeTeaserSub}
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

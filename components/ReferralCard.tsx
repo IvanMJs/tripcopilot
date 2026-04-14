@@ -7,7 +7,6 @@ import { Copy, Check, Users, Gift } from "lucide-react";
 interface ReferralInfo {
   referralCode: string;
   referralCount: number;
-  bonusTrips: number;
 }
 
 interface ReferralCardProps {
@@ -16,26 +15,28 @@ interface ReferralCardProps {
 
 const LABELS = {
   es: {
-    title: "Invita a tus amigos",
-    subtitle: "Compartí tu código y ganen viajes bonus",
+    title: "✈️ Invitá a un amigo",
+    subtitle: "Ambos reciben 30 días de Explorer gratis",
+    rewardBadge: "🎁 30 días gratis",
     copyBtn: "Copiar link",
     copied: "¡Copiado!",
     whatsapp: "Compartir por WhatsApp",
-    friendsJoined: (n: number) => `${n} amigo${n !== 1 ? "s" : ""} se unió${n !== 1 ? "ron" : ""}`,
-    bonusTrips: (n: number) => `${n} viaje${n !== 1 ? "s" : ""} bonus`,
-    waMessage: (url: string) =>
-      `✈️ Usá TripCopilot para monitorear tus vuelos en tiempo real. Unite con mi link y conseguimos viajes bonus: ${url}`,
+    friendsInvited: (n: number) => `${n} amigo${n !== 1 ? "s" : ""} invitado${n !== 1 ? "s" : ""}`,
+    rewardEarned: (n: number) => `${n * 30} días ganados`,
+    waMessage: (code: string, url: string) =>
+      `¡Probá TripCopilot! Es la mejor app para monitorear tus vuelos. Usá mi código ${code} y ambos ganamos 30 días gratis de Explorer. ${url}`,
   },
   en: {
-    title: "Invite your friends",
-    subtitle: "Share your code and earn bonus trips",
+    title: "✈️ Invite a friend",
+    subtitle: "Both get 30 days of Explorer free",
+    rewardBadge: "🎁 30 days free",
     copyBtn: "Copy link",
     copied: "Copied!",
     whatsapp: "Share via WhatsApp",
-    friendsJoined: (n: number) => `${n} friend${n !== 1 ? "s" : ""} joined`,
-    bonusTrips: (n: number) => `${n} bonus trip${n !== 1 ? "s" : ""}`,
-    waMessage: (url: string) =>
-      `✈️ Use TripCopilot to monitor your flights in real time. Join with my link and we both get bonus trips: ${url}`,
+    friendsInvited: (n: number) => `${n} friend${n !== 1 ? "s" : ""} invited`,
+    rewardEarned: (n: number) => `${n * 30} days earned`,
+    waMessage: (code: string, url: string) =>
+      `Try TripCopilot! The best app for flight monitoring. Use my code ${code} and we both get 30 days of Explorer free. ${url}`,
   },
 } as const;
 
@@ -67,8 +68,8 @@ export function ReferralCard({ locale }: ReferralCardProps) {
   }
 
   function handleWhatsApp() {
-    if (!inviteUrl) return;
-    const text = encodeURIComponent(L.waMessage(inviteUrl));
+    if (!inviteUrl || !info) return;
+    const text = encodeURIComponent(L.waMessage(info.referralCode, inviteUrl));
     window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
   }
 
@@ -108,6 +109,9 @@ export function ReferralCard({ locale }: ReferralCardProps) {
           <p className="text-sm font-bold text-white leading-tight">{L.title}</p>
           <p className="text-xs text-gray-400 mt-0.5">{L.subtitle}</p>
         </div>
+        <span className="shrink-0 rounded-full bg-violet-600/20 border border-violet-500/30 px-2.5 py-1 text-[10px] font-bold text-violet-300 whitespace-nowrap">
+          {L.rewardBadge}
+        </span>
       </div>
 
       {/* Invite URL */}
@@ -156,13 +160,13 @@ export function ReferralCard({ locale }: ReferralCardProps) {
         <div className="flex items-center gap-2">
           <Users className="h-3.5 w-3.5 text-gray-500 shrink-0" aria-hidden="true" />
           <span className="text-xs font-semibold text-gray-300">
-            {L.friendsJoined(info.referralCount)}
+            {L.friendsInvited(info.referralCount)}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <Gift className="h-3.5 w-3.5 text-violet-400 shrink-0" aria-hidden="true" />
           <span className="text-xs font-semibold text-violet-300">
-            {L.bonusTrips(info.bonusTrips)}
+            {L.rewardEarned(info.referralCount)}
           </span>
         </div>
       </div>

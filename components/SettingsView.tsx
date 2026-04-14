@@ -24,11 +24,13 @@ import { getNotificationPrefs, DEFAULT_PREFS } from "@/lib/notificationPreferenc
 import type { ThemePreference } from "@/contexts/ThemeContext";
 import type { Locale } from "@/lib/i18n";
 
+const APP_VERSION = "2.0.0";
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SettingsViewProps {
   locale: "es" | "en";
-  userPlan: "free" | "premium" | null;
+  userPlan: "free" | "explorer" | "pilot" | null;
   onOpenNotifSettings: () => void;
   onSignOut: () => void;
   onUpgrade: () => void;
@@ -47,9 +49,11 @@ const LABELS = {
     sectionProfile: "Perfil",
     loading: "Cargando…",
     signOut: "Cerrar sesión",
-    planFree: "Plan gratuito",
-    planPremium: "Plan Premium ⭐",
-    upgradeCta: "Mejorar a Premium →",
+    planFree: "Plan Gratuito",
+    planExplorer: "Plan Explorer ⭐",
+    planPilot: "Plan Pilot ✈️",
+    upgradeCta: "Mejorar a Explorer →",
+    upgradeCtaExplorer: "Mejorar a Pilot →",
     // Appearance
     sectionAppearance: "Apariencia",
     theme: "Tema",
@@ -90,9 +94,11 @@ const LABELS = {
     sectionProfile: "Profile",
     loading: "Loading…",
     signOut: "Sign out",
-    planFree: "Free plan",
-    planPremium: "Premium Plan ⭐",
-    upgradeCta: "Upgrade to Premium →",
+    planFree: "Free Plan",
+    planExplorer: "Explorer Plan ⭐",
+    planPilot: "Pilot Plan ✈️",
+    upgradeCta: "Upgrade to Explorer →",
+    upgradeCtaExplorer: "Upgrade to Pilot →",
     // Appearance
     sectionAppearance: "Appearance",
     theme: "Theme",
@@ -381,23 +387,31 @@ export function SettingsView({
             {!authLoading && (
               <span
                 className={`shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${
-                  userPlan === "premium"
+                  userPlan === "pilot"
                     ? "bg-amber-950/50 border-amber-600/40 text-amber-400"
+                    : userPlan === "explorer"
+                    ? "bg-sky-950/50 border-sky-600/40 text-sky-400"
                     : "bg-gray-900 border-gray-700 text-gray-500"
                 }`}
               >
-                {userPlan === "premium" ? "Premium" : "Free"}
+                {userPlan === "pilot"
+                  ? L.planPilot
+                  : userPlan === "explorer"
+                  ? L.planExplorer
+                  : L.planFree}
               </span>
             )}
           </SettingsRow>
 
-          {/* Upgrade CTA for free users */}
-          {userPlan === "free" && (
+          {/* Upgrade CTA for non-pilot users */}
+          {(userPlan === "free" || userPlan === "explorer") && (
             <SettingsRow>
               <div className="h-8 w-8 rounded-xl bg-amber-950/40 border border-amber-700/30 flex items-center justify-center shrink-0">
                 <Gem className="h-4 w-4 text-amber-400" />
               </div>
-              <span className="flex-1 text-sm text-gray-300">{L.upgradeCta}</span>
+              <span className="flex-1 text-sm text-gray-300">
+                {userPlan === "explorer" ? L.upgradeCtaExplorer : L.upgradeCta}
+              </span>
               <button
                 onClick={onUpgrade}
                 className="shrink-0 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 active:scale-95 text-white text-xs font-bold px-3 py-1.5 transition-all"
@@ -602,7 +616,7 @@ export function SettingsView({
               <Info className="h-4 w-4 text-gray-600" />
             </div>
             <span className="flex-1 text-sm text-gray-500">{L.appVersion}</span>
-            <span className="shrink-0 text-xs font-mono text-gray-600">v1.0</span>
+            <span className="shrink-0 text-xs font-mono text-gray-600">v{APP_VERSION}</span>
           </SettingsRow>
         </SettingsCard>
 
@@ -643,7 +657,7 @@ export function SettingsView({
               <User className="h-4 w-4 text-violet-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-300">TripCopilot v1.0</p>
+              <p className="text-sm font-semibold text-gray-300">TripCopilot v{APP_VERSION}</p>
               <p className="text-xs text-gray-600 mt-0.5">{L.madeWith}</p>
             </div>
           </SettingsRow>

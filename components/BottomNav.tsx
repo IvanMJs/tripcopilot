@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass, BarChart2, Users } from "lucide-react";
 import { TripTab, TripFlight } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
+
+const BANNER_KEY = "tc-upgrade-banner-dismissed";
 
 interface Props {
   locale: "es" | "en";
@@ -19,6 +21,9 @@ interface Props {
   onDeleteTrip: (id: string) => void;
   onRenameTrip: (id: string, name: string) => void;
   onRenameDraft: (name: string) => void;
+  userPlan?: string | null;
+  tripCount?: number;
+  onUpgrade?: () => void;
 }
 
 function getNextFlightDate(flights: TripFlight[], locale: "es" | "en"): string | null {
@@ -39,10 +44,30 @@ function getNextFlightDate(flights: TripFlight[], locale: "es" | "en"): string |
 export function BottomNav({
   locale, activeTab, userTrips, draftTrip, draftId, tabLabels,
   onNavigate, onNewTrip, onDiscardDraft, onDeleteTrip, onRenameTrip, onRenameDraft,
+  userPlan, tripCount, onUpgrade,
 }: Props) {
   const [showTripPicker, setShowTripPicker]         = useState(false);
   const [renameInPickerId, setRenameInPickerId]     = useState<string | null>(null);
   const [renameInPickerName, setRenameInPickerName] = useState("");
+  const [bannerDismissed, setBannerDismissed]       = useState(true); // default true, hydrate below
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setBannerDismissed(!!localStorage.getItem(BANNER_KEY));
+    }
+  }, []);
+
+  function handleDismissBanner() {
+    setBannerDismissed(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(BANNER_KEY, "1");
+    }
+  }
+
+  const isFree = !userPlan || userPlan === "free";
+  const maxFreeTrips = 2;
+  const usedTrips = tripCount ?? userTrips.length;
+  const showUpgradeBanner = isFree && usedTrips >= maxFreeTrips && !bannerDismissed;
 
   const tripsActive = activeTab === "trips" || activeTab === draftId || userTrips.some((t) => t.id === activeTab);
   const totalTrips  = userTrips.length + (draftTrip ? 1 : 0);
@@ -80,6 +105,32 @@ export function BottomNav({
           </motion.button>
         </div>
       )}
+
+    {/* Upgrade micro-banner for free users at trip limit */}
+    {showUpgradeBanner && (
+      <div className="mx-3 mb-1.5">
+        <div className="flex items-center justify-between gap-2 rounded-full border border-sky-500/30 bg-sky-950/70 backdrop-blur-sm px-3 py-1.5">
+          <span className="text-[11px] font-semibold text-sky-300 truncate">
+            {locale === "es"
+              ? `${usedTrips}/${maxFreeTrips} viajes usados · `
+              : `${usedTrips}/${maxFreeTrips} trips used · `}
+            <button
+              onClick={onUpgrade}
+              className="underline underline-offset-2 text-sky-400 hover:text-sky-300"
+            >
+              Upgrade →
+            </button>
+          </span>
+          <button
+            onClick={handleDismissBanner}
+            aria-label={locale === "es" ? "Cerrar" : "Dismiss"}
+            className="shrink-0 text-sky-500 hover:text-sky-300 transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    )}
 
     <nav
       aria-label={locale === "es" ? "Navegación principal" : "Main navigation"}
