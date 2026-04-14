@@ -5,9 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plane, Clock, MapPin, CloudSun } from "lucide-react";
 import { TripTab, AirportStatusMap, DelayStatus, TripFlight } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
+import { flightDepartureISO, minutesUntilISO } from "@/lib/flightTime";
+import { NextFlightHero } from "@/components/NextFlightHero";
 import { useDestinationWeather } from "@/hooks/useDestinationWeather";
 import { useDepartureTime } from "@/hooks/useDepartureTime";
 import { GeoPosition } from "@/hooks/useGeolocation";
+import { WarRoomMode } from "@/components/WarRoomMode";
 
 // ── Props ──────────────────────────────────────────────────────────────────
 
@@ -22,6 +25,7 @@ interface DepartureBoardProps {
 
 interface BoardFlight extends TripFlight {
   tripName: string;
+  tripId: string;
   status: DelayStatus;
 }
 
@@ -77,46 +81,6 @@ const URGENCY_ACCENT: Record<UrgencyLevel, string> = {
 
 function cityName(iata: string): string {
   return AIRPORTS[iata]?.city ?? iata;
-}
-
-function flightDepartureISO(flight: TripFlight): string {
-  if (!flight.departureTime) return "";
-  const airport = AIRPORTS[flight.originCode];
-  const tz = airport?.timezone ?? "UTC";
-  try {
-    const [h, m] = flight.departureTime.split(":").map(Number);
-    const refMs = Date.UTC(
-      parseInt(flight.isoDate.slice(0, 4)),
-      parseInt(flight.isoDate.slice(5, 7)) - 1,
-      parseInt(flight.isoDate.slice(8, 10)),
-      h, m, 0,
-    );
-    const tzParts = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
-      year: "numeric", month: "numeric", day: "numeric",
-      hour: "numeric", minute: "numeric", second: "numeric",
-      hour12: false,
-    }).formatToParts(new Date(refMs));
-    const get = (type: string) =>
-      parseInt(tzParts.find((p) => p.type === type)?.value ?? "0");
-    const tzHour = get("hour") % 24;
-    const tzMin  = get("minute");
-    const offsetMin = (h * 60 + m) - (tzHour * 60 + tzMin);
-    const midnightUTC = Date.UTC(
-      parseInt(flight.isoDate.slice(0, 4)),
-      parseInt(flight.isoDate.slice(5, 7)) - 1,
-      parseInt(flight.isoDate.slice(8, 10)),
-    );
-    const depMs = midnightUTC + (h * 60 + m + offsetMin) * 60000;
-    return new Date(depMs).toISOString();
-  } catch {
-    return `${flight.isoDate}T${flight.departureTime}:00`;
-  }
-}
-
-function minutesUntilISO(iso: string): number {
-  if (!iso) return Infinity;
-  return (new Date(iso).getTime() - Date.now()) / 60000;
 }
 
 function formatCountdown(totalMinutes: number, locale: "es" | "en"): string {
@@ -510,6 +474,7 @@ export function DepartureBoard({
   geoPosition,
 }: DepartureBoardProps) {
   const today = new Date().toISOString().slice(0, 10);
+  const [warRoomDismissed, setWarRoomDismissed] = useState(false);
 
   // All flights today, sorted by departure time
   const todayFlights: BoardFlight[] = trips
@@ -519,6 +484,7 @@ export function DepartureBoard({
         .map<BoardFlight>((f) => ({
           ...f,
           tripName: trip.name,
+          tripId: trip.id,
           status: statusMap[f.originCode]?.status ?? "unknown",
         })),
     )
@@ -549,6 +515,7 @@ export function DepartureBoard({
               .map<BoardFlight>((f) => ({
                 ...f,
                 tripName: trip.name,
+                tripId: trip.id,
                 status: statusMap[f.originCode]?.status ?? "unknown",
               })),
           )
@@ -561,91 +528,162 @@ export function DepartureBoard({
   const dateLabel = formatDate(today, locale);
   const flightCount = todayFlights.length;
 
+  // Earliest future flight across ALL trips (for the hero countdown)
+  const globalNextFlight: TripFlight | null = (() => {
+    const now = new Date().toISOString().slice(0, 10);
+    const candidates = trips
+      .flatMap((t) => t.flights)
+      .filter((f) => f.isoDate >= now);
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) =>
+      a.isoDate.localeCompare(b.isoDate) ||
+      (a.departureTime ?? "").localeCompare(b.departureTime ?? ""),
+    );
+    return candidates[0] ?? null;
+  })();
+
+  // War Room: active when the next flight departs within 12 hours
+  const warRoomFlight: BoardFlight | null = (() => {
+    if (!globalNextFlight) return null;
+    const depISO = flightDepartureISO(globalNextFlight);
+    const mins = minutesUntilISO(depISO);
+    if (mins > 720 || mins < -30) return null; // 12h = 720 min
+    // Find the BoardFlight version (has tripId)
+    const found = todayFlights.find((f) => f.id === globalNextFlight.id);
+    if (found) return found;
+    // Fallback: build a minimal BoardFlight from globalNextFlight
+    const parentTrip = trips.find((t) => t.flights.some((f) => f.id === globalNextFlight.id));
+    if (!parentTrip) return null;
+    return {
+      ...globalNextFlight,
+      tripName: parentTrip.name,
+      tripId: parentTrip.id,
+      status: statusMap[globalNextFlight.originCode]?.status ?? "unknown",
+    };
+  })();
+
+  // Find the flight that comes right after warRoomFlight (for connection analysis)
+  const nextConnectingFlight: TripFlight | null = (() => {
+    if (!warRoomFlight) return null;
+    const parentTrip = trips.find((t) => t.id === warRoomFlight.tripId);
+    if (!parentTrip) return null;
+    const sorted = [...parentTrip.flights].sort((a, b) =>
+      a.isoDate.localeCompare(b.isoDate) ||
+      (a.departureTime ?? "").localeCompare(b.departureTime ?? ""),
+    );
+    const idx = sorted.findIndex((f) => f.id === warRoomFlight.id);
+    if (idx === -1 || idx >= sorted.length - 1) return null;
+    return sorted[idx + 1] ?? null;
+  })();
+
+  const showWarRoom = warRoomFlight !== null && !warRoomDismissed;
+
   return (
     <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-black text-white">
-            {locale === "es" ? "Vuelos de hoy" : "Today's flights"}
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">{dateLabel}</p>
-        </div>
-        {flightCount > 0 && (
-          <span className="text-xs font-semibold text-gray-500 px-2 py-1 rounded-lg border border-white/[0.08] bg-white/[0.03]">
-            {flightCount}{" "}
-            {flightCount === 1
-              ? (locale === "es" ? "vuelo" : "flight")
-              : (locale === "es" ? "vuelos" : "flights")}
-          </span>
-        )}
-      </div>
-
-      {/* Empty state */}
-      {todayFlights.length === 0 && (
-        <EmptyState locale={locale} nextFlight={nextFlight} />
+      {/* War Room Mode — replaces normal view when flight < 12h */}
+      {showWarRoom && warRoomFlight && (
+        <WarRoomMode
+          flight={warRoomFlight}
+          nextFlight={nextConnectingFlight}
+          tripId={warRoomFlight.tripId}
+          locale={locale}
+          statusMap={statusMap}
+          geoPosition={geoPosition}
+          onExit={() => setWarRoomDismissed(true)}
+        />
       )}
 
-      {/* Hero card for the next flight */}
-      <AnimatePresence>
-        {heroFlight && (
-          <HeroCard
-            key={heroFlight.id}
-            flight={heroFlight}
-            locale={locale}
-            geoPosition={geoPosition}
-          />
-        )}
-      </AnimatePresence>
+      {/* Normal content — shown when War Room is dismissed or no urgent flight */}
+      {!showWarRoom && (
+        <>
+          {/* Next Flight Hero — shown when no war room */}
+          <NextFlightHero nextFlight={globalNextFlight} locale={locale} />
 
-      {/* Other today flights */}
-      {otherTodayFlights.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-white/[0.07] overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)",
-          }}
-        >
-          <div className="px-4 py-2 border-b border-white/[0.05]">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
-              {locale === "es" ? "También hoy" : "Also today"}
-            </p>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-black text-white">
+                {locale === "es" ? "Vuelos de hoy" : "Today's flights"}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">{dateLabel}</p>
+            </div>
+            {flightCount > 0 && (
+              <span className="text-xs font-semibold text-gray-500 px-2 py-1 rounded-lg border border-white/[0.08] bg-white/[0.03]">
+                {flightCount}{" "}
+                {flightCount === 1
+                  ? (locale === "es" ? "vuelo" : "flight")
+                  : (locale === "es" ? "vuelos" : "flights")}
+              </span>
+            )}
           </div>
-          {otherTodayFlights.map((flight, i) => (
-            <CompactFlightRow
-              key={flight.id}
-              flight={flight}
-              locale={locale}
-              index={i}
-            />
-          ))}
-        </motion.div>
-      )}
 
-      {/* If no hero but there are flights (all past), show them as compact list */}
-      {!heroFlight && todayFlights.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="rounded-2xl border border-white/[0.07] overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)",
-          }}
-        >
-          {todayFlights.map((flight, i) => (
-            <CompactFlightRow
-              key={flight.id}
-              flight={flight}
-              locale={locale}
-              index={i}
-            />
-          ))}
-        </motion.div>
+          {/* Empty state */}
+          {todayFlights.length === 0 && (
+            <EmptyState locale={locale} nextFlight={nextFlight} />
+          )}
+
+          {/* Hero card for the next flight */}
+          <AnimatePresence>
+            {heroFlight && (
+              <HeroCard
+                key={heroFlight.id}
+                flight={heroFlight}
+                locale={locale}
+                geoPosition={geoPosition}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Other today flights */}
+          {otherTodayFlights.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="rounded-2xl border border-white/[0.07] overflow-hidden"
+              style={{
+                background:
+                  "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)",
+              }}
+            >
+              <div className="px-4 py-2 border-b border-white/[0.05]">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+                  {locale === "es" ? "También hoy" : "Also today"}
+                </p>
+              </div>
+              {otherTodayFlights.map((flight, i) => (
+                <CompactFlightRow
+                  key={flight.id}
+                  flight={flight}
+                  locale={locale}
+                  index={i}
+                />
+              ))}
+            </motion.div>
+          )}
+
+          {/* If no hero but there are flights (all past), show them as compact list */}
+          {!heroFlight && todayFlights.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="rounded-2xl border border-white/[0.07] overflow-hidden"
+              style={{
+                background:
+                  "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)",
+              }}
+            >
+              {todayFlights.map((flight, i) => (
+                <CompactFlightRow
+                  key={flight.id}
+                  flight={flight}
+                  locale={locale}
+                  index={i}
+                />
+              ))}
+            </motion.div>
+          )}
+        </>
       )}
     </div>
   );

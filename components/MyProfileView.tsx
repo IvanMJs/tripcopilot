@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion, type Easing } from "framer-motion";
-import { TrendingUp, Globe, Plane, MapPin, Zap, Award, Share2, Check, ImageIcon, Download } from "lucide-react";
+import { motion, AnimatePresence, type Easing } from "framer-motion";
+import { TrendingUp, Globe, Plane, MapPin, Zap, Award, Share2, Check, ImageIcon, Download, X } from "lucide-react";
 import { WorldMapView } from "@/components/WorldMapView";
 import { TripTab } from "@/lib/types";
 import { computeTripStats } from "@/lib/tripStats";
 import { PLANS } from "@/lib/mercadopago";
 import { generateWrappedImage } from "@/lib/wrappedImage";
+import { AIRPORTS } from "@/lib/airports";
+import { TravelPersonality } from "@/components/TravelPersonality";
 
 interface MyProfileViewProps {
   trips: TripTab[];
   locale: "es" | "en";
   userPlan: "free" | "premium" | null;
+  userId: string | null;
   onUpgrade: () => void;
 }
 
@@ -51,6 +54,12 @@ const LABELS = {
       aroundWorld: "Vuelta al mundo",
       unlocked: "Desbloqueado",
     },
+    stamp: {
+      firstVisit: "Primera visita",
+      visited: "veces visitado",
+      of: "de",
+      countriesVisited: "Países visitados",
+    },
   },
   en: {
     title: "My travel history",
@@ -85,6 +94,12 @@ const LABELS = {
       tenThousandKm: "10,000 km",
       aroundWorld: "Around the world",
       unlocked: "Unlocked",
+    },
+    stamp: {
+      firstVisit: "First visit",
+      visited: "times visited",
+      of: "of",
+      countriesVisited: "Countries visited",
     },
   },
 } as const;
@@ -128,15 +143,220 @@ const fadeUp = (delay: number) => ({
   transition: { duration: 0.35, ease: EASE_OUT, delay },
 });
 
-export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileViewProps) {
+// ── Country flag helper ───────────────────────────────────────────────────────
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  Argentina:          "🇦🇷",
+  Brazil:             "🇧🇷",
+  Chile:              "🇨🇱",
+  Colombia:           "🇨🇴",
+  Peru:               "🇵🇪",
+  Uruguay:            "🇺🇾",
+  Bolivia:            "🇧🇴",
+  Ecuador:            "🇪🇨",
+  Panama:             "🇵🇦",
+  Mexico:             "🇲🇽",
+  Cuba:               "🇨🇺",
+  "Dominican Republic": "🇩🇴",
+  "Puerto Rico":      "🇵🇷",
+  Bahamas:            "🇧🇸",
+  Jamaica:            "🇯🇲",
+  Barbados:           "🇧🇧",
+  Curaçao:            "🇨🇼",
+  Aruba:              "🇦🇼",
+  Antigua:            "🇦🇬",
+  "Trinidad & Tobago":"🇹🇹",
+  "Costa Rica":       "🇨🇷",
+  Guatemala:          "🇬🇹",
+  "El Salvador":      "🇸🇻",
+  "Cayman Islands":   "🇰🇾",
+  "United Kingdom":   "🇬🇧",
+  France:             "🇫🇷",
+  Spain:              "🇪🇸",
+  Italy:              "🇮🇹",
+  Germany:            "🇩🇪",
+  Netherlands:        "🇳🇱",
+  Portugal:           "🇵🇹",
+  Switzerland:        "🇨🇭",
+  Austria:            "🇦🇹",
+  Belgium:            "🇧🇪",
+  Greece:             "🇬🇷",
+  Turkey:             "🇹🇷",
+  Norway:             "🇳🇴",
+  Sweden:             "🇸🇪",
+  Denmark:            "🇩🇰",
+  Finland:            "🇫🇮",
+  Poland:             "🇵🇱",
+  Japan:              "🇯🇵",
+  China:              "🇨🇳",
+  "South Korea":      "🇰🇷",
+  India:              "🇮🇳",
+  Thailand:           "🇹🇭",
+  Singapore:          "🇸🇬",
+  Australia:          "🇦🇺",
+  "New Zealand":      "🇳🇿",
+  Canada:             "🇨🇦",
+  USA:                "🇺🇸",
+};
+
+function countryFlag(country: string): string {
+  return COUNTRY_FLAGS[country] ?? "🌍";
+}
+
+function formatStampDate(isoDate: string, locale: "es" | "en"): string {
+  if (!isoDate) return "";
+  return new Date(isoDate + "T00:00:00").toLocaleDateString(
+    locale === "en" ? "en-US" : "es-AR",
+    { day: "numeric", month: "short", year: "numeric" },
+  );
+}
+
+// ── StampCard component ───────────────────────────────────────────────────────
+
+interface StampCardProps {
+  data: AirportStampData;
+  locale: "es" | "en";
+  onClose: () => void;
+}
+
+function StampCard({ data, locale, onClose }: StampCardProps) {
+  const L = LABELS[locale];
+  const flag = countryFlag(data.country);
+  const dateStr = formatStampDate(data.firstVisitDate, locale);
+
+  return (
+    <motion.div
+      key={data.iata}
+      initial={{ opacity: 0, scale: 0.85, rotate: -4 }}
+      animate={{ opacity: 1, scale: 1, rotate: -1.5 }}
+      exit={{ opacity: 0, scale: 0.80, rotate: 3 }}
+      transition={{ type: "spring", stiffness: 360, damping: 22 }}
+      className="relative mt-3 mx-auto"
+      style={{ maxWidth: 320 }}
+    >
+      {/* Stamp-style visual */}
+      <div
+        className="relative rounded-xl overflow-hidden"
+        style={{
+          background: "linear-gradient(145deg, rgba(245,240,220,0.96) 0%, rgba(230,220,190,0.98) 100%)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.5), inset 0 0 0 3px rgba(0,0,0,0.12), inset 0 0 0 6px rgba(245,240,220,0.5)",
+          filter: "sepia(0.15)",
+        }}
+      >
+        {/* Perforated border effect */}
+        <div
+          className="absolute inset-0 rounded-xl pointer-events-none"
+          style={{
+            border: "2px dashed rgba(139,92,246,0.45)",
+            margin: 6,
+            borderRadius: 10,
+          }}
+        />
+
+        <div className="px-5 pt-5 pb-4 relative z-10">
+          {/* Close */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 p-1 rounded-full bg-black/10 hover:bg-black/20 transition-colors"
+          >
+            <X className="h-3.5 w-3.5 text-gray-700" />
+          </button>
+
+          {/* Flag + country */}
+          <div className="flex flex-col items-center text-center gap-1 mb-3">
+            <span className="text-5xl leading-none">{flag}</span>
+            <p className="text-lg font-black text-gray-800 leading-tight mt-1">
+              {data.country}
+            </p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+              {data.iata} · {data.airportName.length > 30 ? data.airportName.slice(0, 28) + "…" : data.airportName}
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gradient-to-r from-transparent via-violet-400/40 to-transparent mb-3" />
+
+          {/* Stats */}
+          <div className="flex justify-around text-center">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">
+                {L.stamp.firstVisit}
+              </p>
+              <p className="text-sm font-black text-gray-800">{dateStr || "–"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">
+                {L.stamp.visited}
+              </p>
+              <p className="text-2xl font-black text-violet-700 leading-none">
+                {data.visitCount}
+                <span className="text-xs font-normal text-gray-500 ml-1">×</span>
+              </p>
+            </div>
+          </div>
+
+          {/* STAMP text watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.07]">
+            <p
+              className="text-7xl font-black text-violet-700 uppercase tracking-widest"
+              style={{ transform: "rotate(-20deg)" }}
+            >
+              STAMP
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── AirportStampData ──────────────────────────────────────────────────────────
+
+interface AirportStampData {
+  iata: string;
+  airportName: string;
+  country: string;
+  firstVisitDate: string;
+  visitCount: number;
+}
+
+export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: MyProfileViewProps) {
   const L = LABELS[locale];
   const [wrappedCopied, setWrappedCopied] = useState(false);
   const [wrappedImageLoading, setWrappedImageLoading] = useState(false);
+  const [selectedIata, setSelectedIata] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const allFlights = trips.flatMap((t) => t.flights);
     const merged: TripTab = { id: "global", name: "Global", flights: allFlights, accommodations: [] };
     return computeTripStats(merged);
+  }, [trips]);
+
+  // Per-airport stamp data: first visit date + visit count
+  const stampDataMap = useMemo<Record<string, AirportStampData>>(() => {
+    const map: Record<string, { dates: string[] }> = {};
+    for (const trip of trips) {
+      for (const flight of trip.flights) {
+        for (const code of [flight.originCode, flight.destinationCode]) {
+          if (!map[code]) map[code] = { dates: [] };
+          map[code].dates.push(flight.isoDate);
+        }
+      }
+    }
+    const result: Record<string, AirportStampData> = {};
+    for (const [iata, data] of Object.entries(map)) {
+      const airport = AIRPORTS[iata];
+      if (!airport) continue;
+      const sorted = [...data.dates].sort();
+      result[iata] = {
+        iata,
+        airportName: airport.name,
+        country: airport.country ?? "USA",
+        firstVisitDate: sorted[0] ?? "",
+        visitCount: sorted.length,
+      };
+    }
+    return result;
   }, [trips]);
 
   // Count-up animations — staggered 150 ms apart
@@ -333,10 +553,48 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
         </motion.div>
       )}
 
-      {/* Section 3b — World Map */}
+      {/* Section 3b — World Map with country stamp collection */}
       {stats.totalFlights >= 1 && (
         <motion.div {...fadeUp(0.12)} className="px-4 pb-4">
-          <WorldMapView trips={trips} locale={locale} />
+          {/* Countries counter */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-blue-400" />
+              <span className="text-sm font-bold text-gray-300">
+                {L.stamp.countriesVisited}
+              </span>
+            </div>
+            <span className="text-sm font-black text-white tabular-nums">
+              {stats.countriesVisited.length}
+              <span className="text-gray-500 font-normal text-xs ml-1">
+                {L.stamp.of} 195
+              </span>
+            </span>
+          </div>
+
+          <WorldMapView
+            trips={trips}
+            locale={locale}
+            onAirportClick={(iata) => setSelectedIata((prev) => prev === iata ? null : iata)}
+          />
+
+          {/* Stamp popup */}
+          <AnimatePresence>
+            {selectedIata && stampDataMap[selectedIata] && (
+              <StampCard
+                data={stampDataMap[selectedIata]}
+                locale={locale}
+                onClose={() => setSelectedIata(null)}
+              />
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+
+      {/* Section 3c — Travel Personality (AI-generated) */}
+      {userId && (
+        <motion.div {...fadeUp(0.13)}>
+          <TravelPersonality trips={trips} userId={userId} locale={locale} />
         </motion.div>
       )}
 

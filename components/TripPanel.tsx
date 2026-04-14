@@ -44,6 +44,7 @@ import { ConnectionRiskBar } from "./ConnectionRiskBar";
 import { StopoverBadge } from "./StopoverBadge";
 import { TripStatsCard } from "./TripStatsCard";
 import { TripShareModal } from "./TripShareModal";
+import { generateTripCardImage } from "@/lib/tripCardImage";
 import { TripPassengers } from "./TripPassengers";
 import { TripChecklist } from "./TripChecklist";
 import { PriceAlerts } from "./PriceAlerts";
@@ -139,6 +140,7 @@ export function TripPanel({
   const [viewMode, setViewMode]         = useState<"list" | "timeline">("list");
   const [panelTab, setPanelTab]         = useState<"flights" | "expenses" | "alerts" | "passengers" | "checklist">("flights");
   const [showQuickExpense, setShowQuickExpense] = useState(false);
+  const [tripCardLoading, setTripCardLoading] = useState(false);
 
   const sorted = useMemo(
     () => [...trip.flights].sort((a, b) => {
@@ -931,6 +933,41 @@ export function TripPanel({
                 {copied ? (locale === "en" ? "Copied!" : "¡Copiado!") : (locale === "en" ? "Copy link" : "Copiar link")}
               </button>
             )}
+
+            <button
+              disabled={tripCardLoading}
+              onClick={async () => {
+                setTripCardLoading(true);
+                try {
+                  const blob = await generateTripCardImage({
+                    tripName: trip.name,
+                    flights: sorted,
+                    locale,
+                  });
+                  const file = new File([blob], "trip-card.png", { type: "image/png" });
+                  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: trip.name });
+                  } else {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `trip-card-${trip.name.replace(/\s+/g, "-")}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }
+                } catch {
+                  // cancelled or unavailable
+                } finally {
+                  setTripCardLoading(false);
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-violet-800/40 bg-violet-950/20 px-3 py-1.5 text-xs text-violet-400 hover:text-violet-300 hover:bg-violet-950/40 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              {tripCardLoading
+                ? (locale === "en" ? "Generating..." : "Generando...")
+                : (locale === "en" ? "Trip card" : "Tarjeta")}
+            </button>
           </div>
         </div>
       )}

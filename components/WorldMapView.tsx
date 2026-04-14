@@ -8,6 +8,7 @@ import { TripTab } from "@/lib/types";
 interface WorldMapViewProps {
   trips: TripTab[];
   locale: "es" | "en";
+  onAirportClick?: (iata: string) => void;
 }
 
 const WORLD_COUNTRIES = 195;
@@ -78,7 +79,7 @@ function buildGridLines(): React.ReactNode[] {
   return lines;
 }
 
-export function WorldMapView({ trips, locale }: WorldMapViewProps) {
+export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProps) {
   const L = LABELS[locale];
 
   const { visitedCodes, countriesSet } = useMemo(() => {
@@ -159,14 +160,25 @@ export function WorldMapView({ trips, locale }: WorldMapViewProps) {
             const { x, y } = project(airport.lat, airport.lng, MAP_WIDTH, MAP_HEIGHT);
             const label = airport.city ?? code;
 
+            const isClickable = !!onAirportClick;
+
             return (
-              <g key={code} filter="url(#glow)">
+              <g
+                key={code}
+                filter="url(#glow)"
+                onClick={isClickable ? () => onAirportClick(code) : undefined}
+                style={{ cursor: isClickable ? "pointer" : undefined }}
+              >
+                {/* Larger invisible hit area */}
+                {isClickable && (
+                  <circle cx={x} cy={y} r={10} fill="transparent" />
+                )}
                 <circle
                   cx={x}
                   cy={y}
-                  r={3}
+                  r={isClickable ? 4 : 3}
                   fill="rgba(139,92,246,0.9)"
-                  className="animate-pulse"
+                  className={isClickable ? "hover:fill-violet-300 transition-colors" : "animate-pulse"}
                 >
                   <title>{label}</title>
                 </circle>

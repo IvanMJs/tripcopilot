@@ -52,6 +52,7 @@ import dynamic from "next/dynamic";
 import { DepartureBoard } from "@/components/DepartureBoard";
 import { SmartAlertsPanel } from "@/components/SmartAlertsPanel";
 import { useSmartAlerts } from "@/hooks/useSmartAlerts";
+import { useConnectionAlerts } from "@/hooks/useConnectionAlerts";
 import { DiscoverView } from "@/components/DiscoverView";
 import { MyProfileView } from "@/components/MyProfileView";
 import { UpgradeModal } from "@/components/UpgradeModal";
@@ -319,6 +320,9 @@ export default function HomePage() {
 
   // ── Smart alerts ─────────────────────────────────────────────────────────
   const { alerts: smartAlerts, dismiss: dismissSmartAlert } = useSmartAlerts(userTrips, statusMap, locale);
+
+  // ── Connection alerts (side-effect: fires push notifications) ────────────
+  useConnectionAlerts(userTrips, statusMap, locale);
 
   // ── Offline sync ──────────────────────────────────────────────────────────
   const { isOnline: offlineIsOnline, lastSync } = useOfflineSync(userId, userTrips, statusMap);
@@ -844,6 +848,7 @@ export default function HomePage() {
                 trips={userTrips}
                 locale={locale}
                 userPlan={userPlan}
+                userId={userId}
                 onUpgrade={() => setShowUpgradeModal(true)}
               />
             )}

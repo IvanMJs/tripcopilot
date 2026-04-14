@@ -25,6 +25,7 @@ import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, AIRLINE_UPGRADE_URLS, TripPanelLab
 import { DaysCountdown, ExchangeRateRow } from "./helpers";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { AirportInfoCard } from "@/components/AirportInfoCard";
+import { LiveFlightTracker } from "@/components/LiveFlightTracker";
 
 export interface FlightCardBodyProps {
   flight: TripFlight;
@@ -180,6 +181,17 @@ export function FlightCardBody({
   const isLocalTime = airportOffsetHours === null ||
     Math.abs(deviceOffsetHours - airportOffsetHours) < 0.01;
 
+  // Build ISO datetime strings for live position tracking
+  const departureISO =
+    flight.departureTime
+      ? `${flight.isoDate}T${flight.departureTime}:00`
+      : `${flight.isoDate}T00:00:00`;
+  const arrivalDate = flight.arrivalDate ?? flight.isoDate;
+  const arrivalISO =
+    flight.arrivalTime
+      ? `${arrivalDate}T${flight.arrivalTime}:00`
+      : null;
+
   return (
     <motion.div
       initial={false}
@@ -187,6 +199,17 @@ export function FlightCardBody({
       transition={{ duration: 0.28, ease: "easeOut" }}
       style={{ overflow: "hidden" }}
     >
+
+      {/* ── Live flight position tracker (shown when flight is currently active) ── */}
+      {arrivalISO && (
+        <LiveFlightTracker
+          originIata={flight.originCode}
+          destIata={flight.destinationCode}
+          departureISO={departureISO}
+          arrivalISO={arrivalISO}
+          locale={locale}
+        />
+      )}
 
       {/* ── SECTION: Operativo (exception-first, only when relevant) ─────────── */}
       {hasOperativoContent && (
