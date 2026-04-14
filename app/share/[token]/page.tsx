@@ -7,6 +7,7 @@ import { getTripByShareToken } from "@/lib/tripShareServer";
 import { AIRPORTS } from "@/lib/airports";
 import { AutoRefresh } from "./AutoRefresh";
 import { InstallBanner } from "./InstallBanner";
+import { SharedTripReactions } from "@/components/SharedTripReactions";
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 
@@ -502,6 +503,11 @@ export default async function ShareTripPage({ params }: PageProps) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Reactions */}
+      <div className="max-w-lg mx-auto px-5 pb-2">
+        <SharedTripReactions shareToken={token} />
       </div>
 
       {/* Content */}

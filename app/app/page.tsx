@@ -187,6 +187,18 @@ export default function HomePage() {
         .then(({ data }) => {
           setUserPlan((data as { plan?: string } | null)?.plan === "premium" ? "premium" : "free");
         });
+      // Update last_seen_at (throttle: only if >30min since last update)
+      supabase.from("user_profiles").select("last_seen_at").eq("id", user.id).single()
+        .then(({ data }) => {
+          const lastSeen = (data as { last_seen_at?: string | null } | null)?.last_seen_at
+            ? new Date((data as { last_seen_at: string }).last_seen_at)
+            : null;
+          const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+          if (!lastSeen || lastSeen < thirtyMinAgo) {
+            // Fire-and-forget: void makes the dangling promise intent explicit
+            void supabase.from("user_profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id);
+          }
+        });
     });
   }, []);
 

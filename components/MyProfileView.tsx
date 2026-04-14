@@ -12,6 +12,7 @@ import { AIRPORTS } from "@/lib/airports";
 import { TravelPersonality } from "@/components/TravelPersonality";
 import { TravelStreaks } from "@/components/TravelStreaks";
 import { TravelChallenges } from "@/components/TravelChallenges";
+import { ReferralCard } from "@/components/ReferralCard";
 
 interface MyProfileViewProps {
   trips: TripTab[];
@@ -609,6 +610,13 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: My
       <motion.div {...fadeUp(0.14)}>
         <TravelChallenges trips={trips} stats={stats} locale={locale} />
       </motion.div>
+
+      {/* Section 3e — Referral Card */}
+      {userId !== null && (
+        <motion.div {...fadeUp(0.145)}>
+          <ReferralCard locale={locale} />
+        </motion.div>
+      )}
 
       {/* Section 4 — Achievements */}
       <motion.div {...fadeUp(0.15)} className="px-4 pb-4">

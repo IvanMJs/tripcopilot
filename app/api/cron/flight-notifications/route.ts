@@ -907,6 +907,171 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── Weekly Recap (fires on Sundays) ──────────────────────────────────────
+  // For each user with weeklyRecap: true, count flights in the past 7 days
+  // and send a summary push if any occurred. Deduplicates via notification_log.
+  if (now.getUTCDay() === 0) {
+    const sevenDaysAgoISO = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+
+    const { data: recentFlights } = await supabase
+      .from("flights")
+      .select("id, origin_code, destination_code, iso_date, trips!inner(user_id)")
+      .gte("iso_date", sevenDaysAgoISO)
+      .lt("iso_date", todayISO);
+
+    if (recentFlights?.length) {
+      type RecentFlightRow = { id: string; origin_code: string; destination_code: string; iso_date: string; trips: { user_id: string } };
+      const recapByUser = new Map<string, RecentFlightRow[]>();
+      for (const f of recentFlights as unknown as RecentFlightRow[]) {
+        const uid = f.trips.user_id;
+        if (!recapByUser.has(uid)) recapByUser.set(uid, []);
+        recapByUser.get(uid)!.push(f);
+      }
+
+      const isoWeekRecap = (() => {
+        const d = new Date(now);
+        d.setUTCHours(0, 0, 0, 0);
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+      })();
+
+      for (const [recapUserId, recapFlights] of Array.from(recapByUser)) {
+        const recapType = `weekly_recap_${isoWeekRecap}`;
+
+        // Check user pref
+        const { data: profileData } = await supabase
+          .from("user_profiles")
+          .select("notification_prefs")
+          .eq("id", recapUserId)
+          .single();
+        const prefs = (profileData as { notification_prefs?: { weeklyRecap?: boolean } } | null)?.notification_prefs;
+        if (prefs?.weeklyRecap === false) continue;
+
+        // Deduplicate
+        const { data: existingRecap } = await supabase
+          .from("notification_log")
+          .select("id")
+          .eq("user_id", recapUserId)
+          .eq("type", recapType)
+          .limit(1)
+          .maybeSingle();
+        if (existingRecap) continue;
+
+        const { data: recapSubs } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", recapUserId);
+        if (!recapSubs?.length) continue;
+
+        const recapLocale = await getUserLocale(recapUserId);
+        const flightCount = recapFlights.length;
+
+        const title = recapLocale === "es"
+          ? `📊 Tu semana en TripCopilot`
+          : `📊 Your week on TripCopilot`;
+        const body = recapLocale === "es"
+          ? `Esta semana: ${flightCount} vuelo${flightCount !== 1 ? "s" : ""} registrado${flightCount !== 1 ? "s" : ""}.`
+          : `This week: ${flightCount} flight${flightCount !== 1 ? "s" : ""} tracked.`;
+
+        notificationsFailed += await pushToAll(recapSubs, supabase, { title, body, url: "/app" }, recapType);
+        notificationsSent++;
+
+        await supabase.from("notification_log").insert({
+          user_id: recapUserId,
+          type: recapType,
+          sent_at: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
+  // ── Re-engagement (users with upcoming flight but inactive for 3+ days) ──
+  {
+    const sevenDaysAheadISO = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const threeDaysAgoISO = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: upcomingReEngageFlights } = await supabase
+      .from("flights")
+      .select("id, flight_code, destination_code, iso_date, trips!inner(user_id)")
+      .gt("iso_date", todayISO)
+      .lte("iso_date", sevenDaysAheadISO);
+
+    if (upcomingReEngageFlights?.length) {
+      type ReEngageFlightRow = { id: string; flight_code: string; destination_code: string; iso_date: string; trips: { user_id: string } };
+
+      // Collect the soonest upcoming flight per user
+      const soonestByUser = new Map<string, ReEngageFlightRow>();
+      for (const f of upcomingReEngageFlights as unknown as ReEngageFlightRow[]) {
+        const uid = f.trips.user_id;
+        const current = soonestByUser.get(uid);
+        if (!current || f.iso_date < current.iso_date) {
+          soonestByUser.set(uid, f);
+        }
+      }
+
+      for (const [reEngageUserId, nextFlight] of Array.from(soonestByUser)) {
+        // Check user pref
+        const { data: reEngageProfile } = await supabase
+          .from("user_profiles")
+          .select("notification_prefs, last_seen_at")
+          .eq("id", reEngageUserId)
+          .single();
+        const reEngagePrefs = (reEngageProfile as { notification_prefs?: { reEngagement?: boolean }; last_seen_at?: string | null } | null);
+        if (reEngagePrefs?.notification_prefs?.reEngagement === false) continue;
+
+        // Check last_seen_at — skip if seen within 3 days
+        const lastSeen = reEngagePrefs?.last_seen_at ? new Date(reEngagePrefs.last_seen_at) : null;
+        if (lastSeen && lastSeen >= new Date(threeDaysAgoISO)) continue;
+
+        const reEngageType = `re_engagement_${nextFlight.id}`;
+
+        // Deduplicate: only once per flight
+        const { data: existingReEngage } = await supabase
+          .from("notification_log")
+          .select("id")
+          .eq("user_id", reEngageUserId)
+          .eq("type", reEngageType)
+          .limit(1)
+          .maybeSingle();
+        if (existingReEngage) continue;
+
+        const { data: reEngageSubs } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", reEngageUserId);
+        if (!reEngageSubs?.length) continue;
+
+        const reEngageLocale = await getUserLocale(reEngageUserId);
+        const todayMidnight = new Date(todayISO + "T00:00:00Z").getTime();
+        const flightMidnight = new Date(nextFlight.iso_date + "T00:00:00Z").getTime();
+        const daysUntil = Math.round((flightMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
+        const destCode = nextFlight.destination_code;
+
+        const title = reEngageLocale === "es"
+          ? `✈️ Tenés un vuelo a ${destCode} en ${daysUntil} día${daysUntil !== 1 ? "s" : ""}`
+          : `✈️ You have a flight to ${destCode} in ${daysUntil} day${daysUntil !== 1 ? "s" : ""}`;
+        const body = reEngageLocale === "es"
+          ? "¡Revisá tu checklist y confirmá todo antes de volar!"
+          : "Check your checklist and confirm everything before you fly!";
+
+        notificationsFailed += await pushToAll(reEngageSubs, supabase, { title, body, url: "/app" }, reEngageType);
+        notificationsSent++;
+
+        await supabase.from("notification_log").insert({
+          user_id: reEngageUserId,
+          type: reEngageType,
+          sent_at: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
   await supabase.from("cron_runs").insert({
     flights_processed: flights.length,
     notifications_sent: notificationsSent,

@@ -976,6 +976,80 @@ export function TripPanel({
                 ? (locale === "en" ? "Generating..." : "Generando...")
                 : (locale === "en" ? "Trip card" : "Tarjeta")}
             </button>
+
+            {/* WhatsApp deep-link share */}
+            <button
+              onClick={() => {
+                const waFlights: WhatsAppFlight[] = sorted.map((f) => ({
+                  flightCode:      f.flightCode,
+                  airlineName:     f.airlineName,
+                  originCode:      f.originCode,
+                  originCity:      AIRPORTS[f.originCode]?.city ?? f.originCode,
+                  destinationCode: f.destinationCode,
+                  destinationCity: AIRPORTS[f.destinationCode]?.city ?? f.destinationCode,
+                  isoDate:         f.isoDate,
+                  departureTime:   f.departureTime || undefined,
+                  arrivalTime:     f.arrivalTime   || undefined,
+                  arrivalDate:     f.arrivalDate   || undefined,
+                  arrivalBuffer:   f.arrivalBuffer,
+                  arrivalRec:      f.departureTime ? subtractHours(f.departureTime, f.arrivalBuffer) : undefined,
+                }));
+                const shareUrl = buildShareURL(trip.name, trip.flights);
+                const msg = buildWhatsAppMessage(trip.name, waFlights, locale, trip.accommodations);
+                const fullMsg = `${msg}\n${shareUrl}`;
+                window.open(buildWhatsAppURL(fullMsg), "_blank", "noopener,noreferrer");
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-800/40 bg-emerald-950/15 px-3 py-1.5 text-xs text-emerald-400 hover:bg-emerald-950/35 transition-colors"
+            >
+              <span aria-hidden="true" className="text-sm leading-none">💬</span>
+              {locale === "en" ? "Share via WA" : "Compartir WA"}
+            </button>
+
+            {/* Instagram — copy card image to clipboard */}
+            <button
+              disabled={tripCardLoading}
+              onClick={async () => {
+                setTripCardLoading(true);
+                try {
+                  const blob = await generateTripCardImage({
+                    tripName: trip.name,
+                    flights: sorted,
+                    locale,
+                  });
+                  if (navigator.clipboard && typeof ClipboardItem !== "undefined") {
+                    await navigator.clipboard.write([
+                      new ClipboardItem({ "image/png": blob }),
+                    ]);
+                    toast.success(
+                      locale === "en"
+                        ? "Image copied! Paste it in Instagram Stories"
+                        : "¡Imagen copiada! Pegala en Instagram Stories",
+                      { duration: 4000 },
+                    );
+                  } else {
+                    // Fallback: download image
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `trip-card-${trip.name.replace(/\s+/g, "-")}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    toast.success(
+                      locale === "en" ? "Image downloaded!" : "¡Imagen descargada!",
+                      { duration: 3000 },
+                    );
+                  }
+                } catch {
+                  // cancelled or unavailable
+                } finally {
+                  setTripCardLoading(false);
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-pink-800/40 bg-pink-950/15 px-3 py-1.5 text-xs text-pink-400 hover:bg-pink-950/30 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <span aria-hidden="true" className="text-sm leading-none">📸</span>
+              Instagram
+            </button>
           </div>
         </div>
       )}

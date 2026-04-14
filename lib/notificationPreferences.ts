@@ -8,6 +8,9 @@ export interface NotificationPreferences {
   weatherAlerts: boolean;
   priceDrops: boolean;
   weeklyDigest: boolean;
+  morningBriefing: boolean;
+  weeklyRecap: boolean;
+  reEngagement: boolean;
 }
 
 export const DEFAULT_PREFS: Omit<NotificationPreferences, "userId"> = {
@@ -17,6 +20,9 @@ export const DEFAULT_PREFS: Omit<NotificationPreferences, "userId"> = {
   weatherAlerts: false,
   priceDrops: true,
   weeklyDigest: false,
+  morningBriefing: true,
+  weeklyRecap: true,
+  reEngagement: true,
 };
 
 export async function getNotificationPrefs(
@@ -48,6 +54,9 @@ export async function getNotificationPrefs(
     weatherAlerts:     typeof stored.weatherAlerts     === "boolean" ? stored.weatherAlerts     : DEFAULT_PREFS.weatherAlerts,
     priceDrops:        typeof stored.priceDrops        === "boolean" ? stored.priceDrops        : DEFAULT_PREFS.priceDrops,
     weeklyDigest:      typeof stored.weeklyDigest      === "boolean" ? stored.weeklyDigest      : DEFAULT_PREFS.weeklyDigest,
+    morningBriefing:   typeof stored.morningBriefing   === "boolean" ? stored.morningBriefing   : DEFAULT_PREFS.morningBriefing,
+    weeklyRecap:       typeof stored.weeklyRecap       === "boolean" ? stored.weeklyRecap       : DEFAULT_PREFS.weeklyRecap,
+    reEngagement:      typeof stored.reEngagement      === "boolean" ? stored.reEngagement      : DEFAULT_PREFS.reEngagement,
   };
 }
 

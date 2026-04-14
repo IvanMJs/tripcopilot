@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { NotifCarousel } from "@/components/NotifCarousel";
 import { AppScreenshotCarousel } from "@/components/AppScreenshotCarousel";
+import { SocialProofSection } from "@/components/SocialProofSection";
+import { TrustBadges } from "@/components/TrustBadges";
 
 const FAQ_ITEMS_ES = [
   {
@@ -1094,6 +1096,12 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── SOCIAL PROOF ─────────────────────────────────────────────────── */}
+      <SocialProofSection lang={lang} />
+
+      {/* ── TRUST BADGES ─────────────────────────────────────────────────── */}
+      <TrustBadges lang={lang} />
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
       <FaqSection lang={lang} />

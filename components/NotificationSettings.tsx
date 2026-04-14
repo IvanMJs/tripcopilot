@@ -11,6 +11,8 @@ import {
   CloudRain,
   TrendingDown,
   MailCheck,
+  Sunrise,
+  BarChart2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
@@ -86,6 +88,30 @@ const PREF_ROWS: PrefRow[] = [
     labelEn: "Weekly digest",
     descEs: "Resumen de tus próximos viajes cada semana",
     descEn: "Summary of your upcoming trips every week",
+  },
+  {
+    key: "morningBriefing",
+    icon: <Sunrise className="h-4 w-4" />,
+    labelEs: "Resumen matutino",
+    labelEn: "Morning Briefing",
+    descEs: "Resumen matutino de viajes próximos",
+    descEn: "Morning digest for upcoming trips",
+  },
+  {
+    key: "weeklyRecap",
+    icon: <BarChart2 className="h-4 w-4" />,
+    labelEs: "Recap semanal",
+    labelEn: "Weekly Recap",
+    descEs: "Resumen semanal de actividad",
+    descEn: "Weekly activity summary",
+  },
+  {
+    key: "reEngagement",
+    icon: <Bell className="h-4 w-4" />,
+    labelEs: "Recordatorios de viaje",
+    labelEn: "Re-engagement",
+    descEs: "Recordatorio de viajes próximos",
+    descEn: "Upcoming trip reminders",
   },
 ];
 
