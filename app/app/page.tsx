@@ -824,7 +824,7 @@ export default function HomePage() {
             )}
 
             {activeTab === "today" && (
-              <DepartureBoard trips={userTrips} statusMap={statusMap} locale={locale} />
+              <DepartureBoard trips={userTrips} statusMap={statusMap} locale={locale} geoPosition={userPosition} />
             )}
 
             {activeTab === "flights" && (

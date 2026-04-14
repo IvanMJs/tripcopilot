@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plane, Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass, BarChart2, Users } from "lucide-react";
+import { Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass, BarChart2, Users } from "lucide-react";
 import { TripTab, TripFlight } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 
@@ -65,9 +65,25 @@ export function BottomNav({
   }
 
   return (
+    <div className="fixed bottom-0 inset-x-0 z-50 md:hidden">
+
+      {/* FAB — floating above the nav bar, hidden when a draft is active */}
+      {!draftTrip && (
+        <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-10">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => { haptics.impact(); setShowTripPicker(false); onNewTrip(); }}
+            aria-label={locale === "es" ? "Nuevo viaje" : "New trip"}
+            className="h-14 w-14 rounded-full bg-gradient-to-br from-violet-600 to-violet-800 shadow-lg shadow-violet-500/30 ring-4 ring-[#0a0a14] flex items-center justify-center"
+          >
+            <Plus className="h-7 w-7 text-white" strokeWidth={2} />
+          </motion.button>
+        </div>
+      )}
+
     <nav
       aria-label={locale === "es" ? "Navegación principal" : "Main navigation"}
-      className="fixed bottom-0 inset-x-0 z-50 md:hidden bottom-nav-bg"
+      className="bottom-nav-bg"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="relative">
@@ -321,19 +337,9 @@ export function BottomNav({
             </span>
           </button>
 
-          {/* Nuevo viaje */}
-          <button
-            onClick={() => { setShowTripPicker(false); onNewTrip(); }}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors text-gray-500 hover:text-violet-400"
-          >
-            <motion.div whileTap={{ scale: 0.82 }} className="flex items-center justify-center w-10 h-8 rounded-xl transition-all duration-200">
-              <Plus className="w-[22px] h-[22px]" strokeWidth={1.5} />
-            </motion.div>
-            <span className="text-xs font-semibold leading-none">{locale === "es" ? "Nuevo" : "New"}</span>
-          </button>
-
         </div>
       </div>
     </nav>
+    </div>
   );
 }

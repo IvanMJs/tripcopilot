@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
 
 interface OnboardingModalProps {
   locale: "es" | "en";
@@ -38,7 +39,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950 shadow-2xl overflow-hidden animate-slide-up">
 
         {/* Steps — fixed height to prevent layout shift */}
-        <div className="relative overflow-hidden" style={{ minHeight: 260 }}>
+        <div className="relative overflow-hidden" style={{ minHeight: 290 }}>
 
           {/* Step 0: Welcome */}
           {step === 0 && (
@@ -132,42 +133,57 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
             </div>
           )}
 
-          {/* Step 2: Real-time alerts */}
+          {/* Step 2: App preview */}
           {step === 2 && (
             <div
               key="step-2"
-              className={`absolute inset-0 px-6 pt-10 pb-4 flex flex-col items-center justify-center text-center gap-5 ${
+              className={`absolute inset-0 px-6 pt-8 pb-4 flex flex-col items-center justify-center text-center gap-4 ${
                 direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
               }`}
             >
-              {/* Bell with ping */}
-              <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
-                <span className="absolute inline-flex h-16 w-16 rounded-2xl bg-emerald-500/20 border border-emerald-600/30" />
-                <span
-                  className="absolute inline-flex h-16 w-16 rounded-2xl bg-emerald-500/10"
-                  style={{ animation: "ping-ring 1.5s cubic-bezier(0, 0, 0.2, 1) infinite" }}
-                />
-                <svg className="h-8 w-8 text-emerald-400 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                <style>{`
-                  @keyframes ping-ring {
-                    0%   { transform: scale(1); opacity: 0.6; }
-                    75%, 100% { transform: scale(1.4); opacity: 0; }
-                  }
-                `}</style>
-              </div>
               <div>
-                <h2 className="text-xl font-black text-white mb-2">
-                  {es ? "Alertas en tiempo real" : "Real-time alerts"}
+                <h2 className="text-xl font-black text-white mb-1">
+                  {es ? "Esto es lo que verás" : "This is what you'll see"}
                 </h2>
                 <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
                   {es
-                    ? "Push antes de que salga tu vuelo — demoras, cambios de puerta y cancelaciones. Siempre informado."
-                    : "Push notifications before your flight — delays, gate changes, and cancellations. Always informed."}
+                    ? "Tu vuelo, el clima y cuándo salir — todo en un vistazo."
+                    : "Your flight, the weather, and when to leave — all at a glance."}
                 </p>
               </div>
+
+              {/* Mini flight card mockup */}
+              <motion.div
+                className="w-full max-w-[280px] rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/60 to-indigo-950/40 px-4 py-3.5 text-left shadow-lg shadow-violet-900/20"
+                initial={{ opacity: 0, scale: 0.92, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.3, ease: "easeOut" }}
+              >
+                {/* Flight header */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-white/90 tracking-wide">AA 1234</span>
+                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-900/30 border border-emerald-700/30 px-1.5 py-0.5 rounded-full">
+                    {es ? "✅ A tiempo" : "✅ On time"}
+                  </span>
+                </div>
+
+                {/* Route */}
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="text-sm font-black text-white">Buenos Aires</span>
+                  <span className="text-gray-500 text-xs">→</span>
+                  <span className="text-sm font-black text-white">Miami</span>
+                </div>
+
+                {/* Details row */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                    🌡️ 24°C ☀️
+                  </span>
+                  <span className="text-xs text-violet-300 font-semibold">
+                    {es ? "Salí a las 14:30 · en 2h" : "Leave at 14:30 · in 2h"}
+                  </span>
+                </div>
+              </motion.div>
             </div>
           )}
 

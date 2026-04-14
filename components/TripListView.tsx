@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Plane, ChevronRight, Trash2, Plus, MapPin, X, Clock, ChevronDown, ChevronUp, Eye, Pencil as PencilIcon } from "lucide-react";
 import { TripTab } from "@/lib/types";
 import { AirportStatusMap } from "@/lib/types";
@@ -204,85 +205,116 @@ export function TripListView({
 
       {/* Empty state — only when no active trips and no past trips */}
       {activeTrips.length === 0 && pastTrips.length === 0 && !exampleTrip && (
-        <div
-          className="rounded-2xl border border-white/[0.06] overflow-hidden"
-          style={{ background: "linear-gradient(150deg, rgba(12,12,22,0.97) 0%, rgba(8,8,16,0.99) 100%)" }}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="rounded-2xl border border-white/[0.06] overflow-hidden empty-state-card"
         >
-          <div className="px-6 py-12 flex flex-col items-center text-center">
-            {/* Inline SVG: stylized plane with trail */}
-            <div className="mb-5 select-none" aria-hidden="true">
-              <svg
-                width="120"
-                height="120"
-                viewBox="0 0 120 120"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {/* Soft gradient background circle */}
-                <circle cx="60" cy="60" r="54" fill="url(#emptyBg)" opacity="0.6" />
-                {/* Trail lines */}
-                <line x1="14" y1="78" x2="44" y2="68" stroke="url(#trailGrad)" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-                <line x1="10" y1="86" x2="36" y2="78" stroke="url(#trailGrad)" strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
-                <line x1="8" y1="94" x2="28" y2="88" stroke="url(#trailGrad)" strokeWidth="1" strokeLinecap="round" opacity="0.2" />
-                {/* Plane body */}
-                <path
-                  d="M52 65 L88 42 C92 39 95 41 94 45 L78 78 C77 81 74 82 71 80 L62 74 L52 78 L54 70 L52 65Z"
-                  fill="url(#planeGrad)"
-                />
-                {/* Left wing */}
-                <path
-                  d="M62 74 L44 86 C41 88 40 86 42 83 L52 65 L62 74Z"
-                  fill="url(#wingGrad)"
-                  opacity="0.85"
-                />
-                {/* Tail fin */}
-                <path
-                  d="M78 78 L82 90 C83 93 80 94 78 92 L71 80 L78 78Z"
-                  fill="url(#wingGrad)"
-                  opacity="0.75"
-                />
-                {/* Window highlight */}
-                <circle cx="76" cy="56" r="3" fill="white" opacity="0.35" />
-                {/* Star dots around the plane */}
-                <circle cx="98" cy="30" r="1.5" fill="#a78bfa" opacity="0.7" />
-                <circle cx="104" cy="50" r="1" fill="#60a5fa" opacity="0.5" />
-                <circle cx="92" cy="22" r="1" fill="#a78bfa" opacity="0.4" />
-                <defs>
-                  <radialGradient id="emptyBg" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#312e81" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#1e1b4b" stopOpacity="0" />
-                  </radialGradient>
-                  <linearGradient id="planeGrad" x1="52" y1="42" x2="94" y2="80" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#818cf8" />
-                    <stop offset="100%" stopColor="#6366f1" />
-                  </linearGradient>
-                  <linearGradient id="wingGrad" x1="40" y1="65" x2="82" y2="94" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#a5b4fc" />
-                    <stop offset="100%" stopColor="#818cf8" />
-                  </linearGradient>
-                  <linearGradient id="trailGrad" x1="8" y1="78" x2="44" y2="68" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0" />
-                    <stop offset="100%" stopColor="#818cf8" stopOpacity="0.8" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <h3 className="text-base font-bold text-white mb-2">
-              {locale === "es" ? "Tu primera aventura empieza aquí" : "Your first adventure starts here"}
-            </h3>
-            <p className="text-sm text-gray-400 mb-6 max-w-xs leading-relaxed">
-              {locale === "es"
-                ? "Importá un boarding pass con IA en segundos. Sin tipear nada."
-                : "Import a boarding pass with AI in seconds. No typing needed."}
-            </p>
-            <button
-              onClick={onCreateTrip}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-6 py-3 transition-all tap-scale"
+          <div className="px-6 pt-12 pb-8 flex flex-col items-center text-center">
+
+            {/* Animated plane icon */}
+            <motion.div
+              className="mb-6 select-none"
+              aria-hidden="true"
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
-              {locale === "es" ? "Crear mi primer viaje →" : "Create my first trip →"}
-            </button>
+              <div className="relative h-24 w-24 flex items-center justify-center">
+                {/* Glow ring */}
+                <div className="absolute inset-0 rounded-full bg-violet-600/10 border border-violet-500/20" />
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-violet-500/5"
+                  animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <Plane className="h-10 w-10 text-violet-400 relative z-10 -rotate-45" />
+              </div>
+            </motion.div>
+
+            {/* Heading */}
+            <motion.h3
+              className="text-xl font-black text-white mb-2"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.35 }}
+            >
+              {locale === "es"
+                ? "Tu próxima aventura empieza acá"
+                : "Your next adventure starts here"}
+            </motion.h3>
+
+            <motion.p
+              className="text-sm text-gray-400 mb-8 max-w-xs leading-relaxed"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.35 }}
+            >
+              {locale === "es"
+                ? "Agregá tu primer vuelo y dejá que TripCopilot se encargue del resto"
+                : "Add your first flight and let TripCopilot handle the rest"}
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              className="w-full max-w-xs space-y-3"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.35 }}
+            >
+              <button
+                onClick={onCreateTrip}
+                className="shimmer-btn w-full inline-flex items-center justify-center gap-2 rounded-xl btn-primary text-white text-sm font-bold px-6 py-3.5 transition-all tap-scale"
+              >
+                ✈️ {locale === "es" ? "Agregar mi primer vuelo" : "Add my first flight"}
+              </button>
+              {onSelectExample && (
+                <button
+                  onClick={onSelectExample}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.03] hover:bg-white/[0.06] text-gray-300 text-sm font-medium px-6 py-3 transition-all tap-scale"
+                >
+                  {locale === "es" ? "Ver viaje de ejemplo" : "See example trip"}
+                </button>
+              )}
+            </motion.div>
+
+            {/* Feature preview cards */}
+            <motion.div
+              className="mt-8 w-full grid grid-cols-3 gap-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+            >
+              {[
+                {
+                  icon: "🔮",
+                  title: locale === "es" ? "Predicción de demoras" : "Delay prediction",
+                  sub: locale === "es" ? "Sabé antes que la aerolínea" : "Know before the airline",
+                },
+                {
+                  icon: "📋",
+                  title: locale === "es" ? "Checklist inteligente" : "Smart checklist",
+                  sub: locale === "es" ? "Nunca olvides nada" : "Never forget anything",
+                },
+                {
+                  icon: "⏰",
+                  title: locale === "es" ? "Cuándo salir" : "When to leave",
+                  sub: locale === "es" ? "Calculamos tu hora ideal" : "We calculate your ideal time",
+                },
+              ].map((card) => (
+                <div
+                  key={card.icon}
+                  className="flex flex-col items-center text-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] px-2 py-3"
+                >
+                  <span className="text-xl leading-none">{card.icon}</span>
+                  <span className="text-[11px] font-semibold text-white/80 leading-tight">{card.title}</span>
+                  <span className="text-[10px] text-gray-500 leading-tight">{card.sub}</span>
+                </div>
+              ))}
+            </motion.div>
+
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* N4: FAB for new trip — only when no trips exist */}
