@@ -42,12 +42,15 @@ import { StopoverBadge } from "./StopoverBadge";
 import { TripStatsCard } from "./TripStatsCard";
 import { TripShareModal } from "./TripShareModal";
 import { TripPassengers } from "./TripPassengers";
+import { TripChecklist } from "./TripChecklist";
 import { PriceAlerts } from "./PriceAlerts";
 import { LoungeInfo } from "./LoungeInfo";
 import { VisaInfo } from "./VisaInfo";
 import { airportToCountry } from "@/lib/visaRequirements";
 import { LayoverGuide } from "./LayoverGuide";
 import { EmptyState } from "./EmptyState";
+import { DepartureTimeWidget } from "./DepartureTimeWidget";
+import { GeoPosition } from "@/hooks/useGeolocation";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -82,6 +85,7 @@ interface TripPanelProps {
   deviceTz?: string;
   onToggleDeviceTz?: () => void;
   onUpdatePassengers?: (tripId: string, passengers: Passenger[]) => void;
+  geoPosition?: GeoPosition | null;
 }
 
 export function TripPanel({
@@ -106,6 +110,7 @@ export function TripPanel({
   deviceTz,
   onToggleDeviceTz,
   onUpdatePassengers,
+  geoPosition = null,
 }: TripPanelProps) {
   const { locale } = useLanguage();
   const L = TRIP_PANEL_LABELS[locale];
@@ -119,7 +124,7 @@ export function TripPanel({
   const [renamingTripName, setRenamingTripName] = useState("");
   const [saving, setSaving]             = useState(false);
   const [viewMode, setViewMode]         = useState<"list" | "timeline">("list");
-  const [panelTab, setPanelTab]         = useState<"flights" | "expenses" | "alerts" | "passengers">("flights");
+  const [panelTab, setPanelTab]         = useState<"flights" | "expenses" | "alerts" | "passengers" | "checklist">("flights");
 
   const sorted = useMemo(
     () => [...trip.flights].sort((a, b) => {
@@ -465,6 +470,7 @@ export function TripPanel({
               { id: "expenses",   label: locale === "es" ? "Gastos"    : "Expenses",   icon: "💰" },
               { id: "alerts",     label: locale === "es" ? "Alertas"   : "Alerts",     icon: "🔔" },
               { id: "passengers", label: locale === "es" ? "Pasajeros" : "Passengers", icon: "👥" },
+              { id: "checklist",  label: locale === "es" ? "Lista"     : "Checklist",  icon: "✅" },
             ] as const
           ).map((tab) => (
             <button
@@ -527,6 +533,20 @@ export function TripPanel({
       {/* Passengers tab */}
       {panelTab === "passengers" && !isDraft && (
         <TripPassengers tripId={trip.id} />
+      )}
+
+      {/* Checklist tab */}
+      {panelTab === "checklist" && !isDraft && (
+        <TripChecklist tripId={trip.id} locale={locale} />
+      )}
+
+      {/* Departure time widget — shown when a flight departs within 24 hours */}
+      {(panelTab === "flights" || isDraft) && nextFlight && (
+        <DepartureTimeWidget
+          flight={nextFlight}
+          geoPosition={geoPosition}
+          locale={locale}
+        />
       )}
 
       {/* Flight cards */}

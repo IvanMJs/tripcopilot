@@ -54,6 +54,7 @@ import { DiscoverView } from "@/components/DiscoverView";
 import { MyProfileView } from "@/components/MyProfileView";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { SettingsView } from "@/components/SettingsView";
 import { PLANS } from "@/lib/mercadopago";
 
 const TripAssistant = dynamic(() => import("@/components/TripAssistant").then((m) => ({ default: m.TripAssistant })), { ssr: false });
@@ -106,7 +107,7 @@ export default function HomePage() {
   } = useUserTrips();
 
   // All navigable tab IDs in display order for directional slide
-  const allTabIds = ["airports", "today", "flights", "profile", "discover", "trips", ...userTrips.map((t) => t.id), DRAFT_ID, EXAMPLE_ID, "help"];
+  const allTabIds = ["airports", "today", "flights", "profile", "discover", "trips", ...userTrips.map((t) => t.id), DRAFT_ID, EXAMPLE_ID, "help", "settings"];
 
   function setActiveTab(newTab: string) {
     const prevIdx = allTabIds.indexOf(prevTabRef.current);
@@ -629,13 +630,17 @@ export default function HomePage() {
                 ))}
               </div>
 
-              {/* Notification settings gear */}
+              {/* Settings gear — opens settings tab */}
               {mounted && (
                 <button
-                  onClick={() => setShowNotifSettings(true)}
-                  title={locale === "en" ? "Notification preferences" : "Preferencias de notificaciones"}
-                  aria-label={locale === "es" ? "Preferencias de notificaciones" : "Notification preferences"}
-                  className="flex items-center justify-center rounded-md border border-gray-700 bg-gray-900 p-1.5 text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors"
+                  onClick={() => navigateAway("settings")}
+                  title={locale === "en" ? "Settings" : "Ajustes"}
+                  aria-label={locale === "es" ? "Ajustes" : "Settings"}
+                  className={`flex items-center justify-center rounded-md border p-1.5 transition-colors ${
+                    activeTab === "settings"
+                      ? "border-violet-700/60 bg-violet-900/20 text-violet-400"
+                      : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300 hover:border-gray-600"
+                  }`}
                 >
                   <Settings className="h-3.5 w-3.5" />
                 </button>
@@ -843,6 +848,16 @@ export default function HomePage() {
               <HelpPanel />
             )}
 
+            {activeTab === "settings" && (
+              <SettingsView
+                locale={locale}
+                userPlan={userPlan}
+                onOpenNotifSettings={() => setShowNotifSettings(true)}
+                onSignOut={handleLogout}
+                onUpgrade={() => setShowUpgradeModal(true)}
+              />
+            )}
+
             {activeTab === "trips" && (
               <>
                 <TripListView
@@ -904,6 +919,7 @@ export default function HomePage() {
                 showDeviceTz={showDeviceTz}
                 deviceTz={deviceTz}
                 onToggleDeviceTz={handleToggleDeviceTz}
+                geoPosition={userPosition}
               />
             )}
 
@@ -949,6 +965,7 @@ export default function HomePage() {
                   showDeviceTz={showDeviceTz}
                   deviceTz={deviceTz}
                   onToggleDeviceTz={handleToggleDeviceTz}
+                  geoPosition={userPosition}
                 />
               </div>
             )}
@@ -986,6 +1003,7 @@ export default function HomePage() {
                   showDeviceTz={showDeviceTz}
                   deviceTz={deviceTz}
                   onToggleDeviceTz={handleToggleDeviceTz}
+                  geoPosition={userPosition}
                 />
               ) : null
             )}
