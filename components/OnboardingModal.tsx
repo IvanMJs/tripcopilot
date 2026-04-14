@@ -9,7 +9,7 @@ interface OnboardingModalProps {
   onStartFresh: () => void;
 }
 
-const STEP_COUNT = 3;
+const STEP_COUNT = 4;
 
 export function OnboardingModal({ locale, onSeeExample, onStartFresh }: OnboardingModalProps) {
   const [step, setStep] = useState(0);
@@ -41,7 +41,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
         {/* Steps — fixed height to prevent layout shift */}
         <div className="relative overflow-hidden" style={{ minHeight: 290 }}>
 
-          {/* Step 0: Welcome */}
+          {/* Step 0: Welcome + Create your first trip */}
           {step === 0 && (
             <div
               key="step-0"
@@ -75,6 +75,17 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
                   {es
                     ? "TripCopilot monitorea tus vuelos 24/7 con alertas en tiempo real para que viajes tranquilo."
                     : "TripCopilot monitors your flights 24/7 with real-time alerts so you travel stress-free."}
+                </p>
+              </div>
+              {/* Highlight: create first trip */}
+              <div className="w-full max-w-xs rounded-xl border border-blue-500/30 bg-blue-950/30 px-4 py-3 text-left">
+                <p className="text-xs font-bold text-blue-400 mb-1">
+                  {es ? "Comenzá acá" : "Start here"}
+                </p>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  {es
+                    ? "Creá tu primer viaje con el botón + y empezá a monitorear tus vuelos."
+                    : "Create your first trip with the + button and start monitoring your flights."}
                 </p>
               </div>
             </div>
@@ -117,7 +128,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
             </div>
           )}
 
-          {/* Step 2: App preview */}
+          {/* Step 2: Smart alerts + packing + weather */}
           {step === 2 && (
             <div
               key="step-2"
@@ -125,47 +136,111 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
                 direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
               }`}
             >
+              {/* Icon */}
+              <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
+                <div className="absolute inset-0 rounded-2xl bg-emerald-600/20 border border-emerald-600/30" />
+                <svg
+                  className="h-8 w-8 text-emerald-400 relative z-10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                  <line x1="6" y1="1" x2="6" y2="4" />
+                  <line x1="10" y1="1" x2="10" y2="4" />
+                  <line x1="14" y1="1" x2="14" y2="4" />
+                </svg>
+              </div>
               <div>
-                <h2 className="text-xl font-black text-white mb-1">
-                  {es ? "Esto es lo que verás" : "This is what you'll see"}
+                <h2 className="text-xl font-black text-white mb-2">
+                  {es ? "Todo listo para volar" : "Ready to fly"}
                 </h2>
                 <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
                   {es
-                    ? "Tu vuelo, el clima y cuándo salir — todo en un vistazo."
-                    : "Your flight, the weather, and when to leave — all at a glance."}
+                    ? "Alertas inteligentes de demoras, lista de equipaje personalizada y el clima en destino — todo en un lugar."
+                    : "Smart delay alerts, personalized packing list, and weather at your destination — all in one place."}
                 </p>
               </div>
+              {/* Feature pills */}
+              <div className="flex flex-wrap justify-center gap-2">
+                {[
+                  { icon: "🔔", label: es ? "Alertas de demoras" : "Delay alerts" },
+                  { icon: "🌦️", label: es ? "Clima en destino" : "Destination weather" },
+                  { icon: "🎒", label: es ? "Lista de equipaje" : "Packing list" },
+                ].map((pill) => (
+                  <span
+                    key={pill.label}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-gray-300"
+                  >
+                    {pill.icon} {pill.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
-              {/* Mini flight card mockup */}
+          {/* Step 3: Discover tab + AI suggestions + travel stats */}
+          {step === 3 && (
+            <div
+              key="step-3"
+              className={`absolute inset-0 px-6 pt-8 pb-4 flex flex-col items-center justify-center text-center gap-4 ${
+                direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
+              }`}
+            >
+              {/* Icon */}
+              <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
+                <div className="absolute inset-0 rounded-2xl bg-amber-600/20 border border-amber-600/30" />
+                <svg
+                  className="h-8 w-8 text-amber-400 relative z-10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white mb-2">
+                  {es ? "Descubrí tu próximo viaje" : "Discover your next trip"}
+                </h2>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
+                  {es
+                    ? "Sugerencias de IA basadas en tus viajes anteriores, tus stats de viajero y destinos inspiradores para cada temporada."
+                    : "AI suggestions based on your past trips, traveler stats, and inspiring destinations for every season."}
+                </p>
+              </div>
+              {/* Mini stats mockup */}
               <motion.div
-                className="w-full max-w-[280px] rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/60 to-indigo-950/40 px-4 py-3.5 text-left shadow-lg shadow-violet-900/20"
+                className="w-full max-w-[280px] rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/40 to-orange-950/30 px-4 py-3 text-left"
                 initial={{ opacity: 0, scale: 0.92, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.3, ease: "easeOut" }}
               >
-                {/* Flight header */}
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white/90 tracking-wide">AA 1234</span>
-                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-900/30 border border-emerald-700/30 px-1.5 py-0.5 rounded-full">
-                    {es ? "✅ A tiempo" : "✅ On time"}
-                  </span>
-                </div>
-
-                {/* Route */}
-                <div className="flex items-center gap-2 mb-2.5">
-                  <span className="text-sm font-black text-white">Buenos Aires</span>
-                  <span className="text-gray-500 text-xs">→</span>
-                  <span className="text-sm font-black text-white">Miami</span>
-                </div>
-
-                {/* Details row */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
-                    🌡️ 24°C ☀️
-                  </span>
-                  <span className="text-xs text-violet-300 font-semibold">
-                    {es ? "Salí a las 14:30 · en 2h" : "Leave at 14:30 · in 2h"}
-                  </span>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400/70 mb-2">
+                  {es ? "Tus stats de viajero" : "Your traveler stats"}
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p className="text-lg font-black text-white">12</p>
+                    <p className="text-[10px] text-gray-500">{es ? "vuelos" : "flights"}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black text-white">4</p>
+                    <p className="text-[10px] text-gray-500">{es ? "países" : "countries"}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black text-white">18k</p>
+                    <p className="text-[10px] text-gray-500">km</p>
+                  </div>
                 </div>
               </motion.div>
             </div>

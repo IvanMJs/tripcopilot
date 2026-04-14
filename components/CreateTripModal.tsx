@@ -2,18 +2,23 @@
 
 import { useRef, useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { AirportSearchInput } from "@/components/AirportSearchInput";
+import { CostEstimatorCard } from "@/components/CostEstimatorCard";
+import { CITY_BUDGETS } from "@/lib/cityBudgets";
 
 interface Props {
   locale: "es" | "en";
   tripCount: number;
   onClose: () => void;
-  onConfirm: (name: string) => void;
+  onConfirm: (name: string, destination?: string) => void;
+  prefillDestination?: string;
 }
 
-export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props) {
+export function CreateTripModal({ locale, tripCount, onClose, onConfirm, prefillDestination }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const [creating, setCreating] = useState(false);
+  const [selectedDestination, setSelectedDestination] = useState<string>(prefillDestination ?? "");
 
   // A7: Focus trap — focus first input on open, close on Escape
   useEffect(() => {
@@ -32,7 +37,7 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
     const name = val || (locale === "en" ? `Trip ${tripCount + 1}` : `Viaje ${tripCount + 1}`);
     setCreating(true);
     try {
-      await Promise.resolve(onConfirm(name));
+      await Promise.resolve(onConfirm(name, selectedDestination || undefined));
     } finally {
       setCreating(false);
     }
@@ -75,6 +80,24 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm }: Props
               {locale === "es" ? "Nombre del viaje" : "Trip name"}
             </label>
           </div>
+
+          {/* Destination field */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              {locale === "es" ? "Destino (opcional)" : "Destination (optional)"}
+            </label>
+            <AirportSearchInput
+              value={selectedDestination}
+              onChange={setSelectedDestination}
+              placeholder={locale === "es" ? "Ej: Miami, MIA..." : "E.g. Miami, MIA..."}
+              locale={locale}
+            />
+          </div>
+
+          {/* Cost estimator — shown when a known destination is selected */}
+          {selectedDestination && CITY_BUDGETS[selectedDestination] && (
+            <CostEstimatorCard iata={selectedDestination} locale={locale} />
+          )}
 
           <div className="flex flex-col sm:flex-row gap-2">
             <button

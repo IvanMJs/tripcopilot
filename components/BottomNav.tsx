@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, X, Map, Trash2, ChevronUp, CalendarDays, Compass, User, Users } from "lucide-react";
+import { Plus, Pencil, X, Map, Trash2, ChevronUp, CalendarDays, Compass, User, Users, Bell } from "lucide-react";
 import { TripTab, TripFlight } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 
@@ -25,6 +25,8 @@ interface Props {
   tripCount?: number;
   onUpgrade?: () => void;
   hasUpcomingFlight?: boolean;
+  unreadCount?: number;
+  onNotificationsOpen?: () => void;
 }
 
 function getNextFlightDate(flights: TripFlight[], locale: "es" | "en"): string | null {
@@ -45,7 +47,7 @@ function getNextFlightDate(flights: TripFlight[], locale: "es" | "en"): string |
 export function BottomNav({
   locale, activeTab, userTrips, draftTrip, draftId, tabLabels,
   onNavigate, onNewTrip, onDiscardDraft, onDeleteTrip, onRenameTrip, onRenameDraft,
-  userPlan, tripCount, onUpgrade, hasUpcomingFlight,
+  userPlan, tripCount, onUpgrade, hasUpcomingFlight, unreadCount, onNotificationsOpen,
 }: Props) {
   const [showTripPicker, setShowTripPicker]         = useState(false);
   const [renameInPickerId, setRenameInPickerId]     = useState<string | null>(null);
@@ -391,6 +393,24 @@ export function BottomNav({
             </motion.div>
             <span className={`text-xs leading-none ${activeTab === "profile" ? "font-bold" : "font-semibold"}`}>{tabLabels.profile}</span>
           </button>
+
+          {/* Bell — notifications hub, subtle button at the far right */}
+          {onNotificationsOpen && (
+            <button
+              onClick={() => { haptics.impact(); onNotificationsOpen(); }}
+              aria-label={locale === "es" ? "Notificaciones" : "Notifications"}
+              className="flex flex-col items-center justify-center gap-0.5 px-2 relative tap-scale transition-colors text-gray-500 hover:text-gray-300"
+            >
+              <div className="relative flex items-center justify-center w-8 h-8">
+                <Bell className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                {(unreadCount ?? 0) > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none ring-2 ring-[#0a0a14]">
+                    {(unreadCount ?? 0) > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </div>
+            </button>
+          )}
 
         </div>
       </div>

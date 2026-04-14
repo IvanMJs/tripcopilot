@@ -66,6 +66,9 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { exportAllTripsJSON } from "@/lib/dataExport";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { NotificationsHubPanel } from "@/components/NotificationsHubPanel";
+import { TripHistoryView } from "@/components/TripHistoryView";
+import { getUnreadCount } from "@/lib/notificationsHub";
 
 const TripAssistant = dynamic(() => import("@/components/TripAssistant").then((m) => ({ default: m.TripAssistant })), { ssr: false });
 const TripDebriefModal = dynamic(() => import("@/components/TripDebriefModal").then((m) => ({ default: m.TripDebriefModal })), { ssr: false });
@@ -155,6 +158,16 @@ export default function HomePage() {
   const [showOnboarding, setShowOnboarding]   = useState(false);
   const [exampleTrip,    setExampleTrip]       = useState<ReturnType<typeof makeExampleTrip> | null>(null);
 
+  // Notifications hub
+  const [showNotificationsHub, setShowNotificationsHub] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Trip history view
+  const [showTripHistory, setShowTripHistory] = useState(false);
+
+  // Prefill destination for CreateTripModal (used by "Create similar")
+  const [prefillDestination, setPrefillDestination] = useState<string | undefined>(undefined);
+
   // Delete confirmation modal
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string; flightCount: number } | null>(null);
 
@@ -225,6 +238,11 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Compute unread notification count on mount (client-only)
+  useEffect(() => {
+    setUnreadCount(getUnreadCount());
   }, []);
 
   // Show onboarding only for new users: not flagged, 0 trips, and trips have finished loading
@@ -453,10 +471,11 @@ export default function HomePage() {
     setShowCreateModal(true);
   }
 
-  function confirmCreateTrip(name: string) {
+  function confirmCreateTrip(name: string, _destination?: string) {
     setDraftTrip({ name, flights: [], accommodations: [] });
     setActiveTab(DRAFT_ID);
     setShowCreateModal(false);
+    setPrefillDestination(undefined);
   }
 
   async function saveDraftTrip() {
@@ -524,6 +543,14 @@ export default function HomePage() {
   async function handleDuplicateTrip(tripId: string) {
     const newId = await duplicateTripWithLocaleDB(tripId, locale);
     if (newId) setActiveTab(newId);
+  }
+
+  function handleCreateSimilar(trip: typeof userTrips[0]) {
+    // Extract destination from the first flight of the trip
+    const firstFlight = trip.flights[0];
+    const destination = firstFlight?.destinationCode ?? "";
+    setPrefillDestination(destination || undefined);
+    openCreateTripModal();
   }
 
   function navigateAway(targetTab: string) {
@@ -656,8 +683,9 @@ export default function HomePage() {
         <CreateTripModal
           locale={locale}
           tripCount={userTrips.length}
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => { setShowCreateModal(false); setPrefillDestination(undefined); }}
           onConfirm={confirmCreateTrip}
+          prefillDestination={prefillDestination}
         />
       )}
 
@@ -689,6 +717,26 @@ export default function HomePage() {
           locale={locale}
           onClose={() => setDebriefTrip(null)}
         />
+      )}
+
+      {/* Notifications hub panel */}
+      <NotificationsHubPanel
+        open={showNotificationsHub}
+        locale={locale}
+        onClose={() => { setShowNotificationsHub(false); setUnreadCount(getUnreadCount()); }}
+      />
+
+      {/* Trip history view — full-screen overlay */}
+      {showTripHistory && (
+        <div className="fixed inset-0 z-50 bg-[#080810] overflow-y-auto">
+          <TripHistoryView
+            trips={userTrips}
+            locale={locale}
+            onCreateSimilar={handleCreateSimilar}
+            onViewTrip={(trip) => { setShowTripHistory(false); setActiveTab(trip.id); }}
+            onClose={() => setShowTripHistory(false)}
+          />
+        </div>
       )}
 
       {/* Offline banner */}
@@ -961,7 +1009,12 @@ export default function HomePage() {
 
             {activeTab === "discover" && (
               <Suspense fallback={<LoadingSkeleton />}>
-                <DiscoverView trips={userTrips} locale={locale} />
+                <DiscoverView
+                  trips={userTrips}
+                  locale={locale}
+                  userPlan={userPlan}
+                  onUpgrade={() => setShowUpgradeModal(true)}
+                />
               </Suspense>
             )}
 
@@ -995,6 +1048,8 @@ export default function HomePage() {
                   exampleTrip={exampleTrip}
                   onSelectExample={() => setActiveTab(EXAMPLE_ID)}
                   onDismissExample={handleDismissExample}
+                  onCreateSimilar={handleCreateSimilar}
+                  onViewArchivedTrip={() => setShowTripHistory(true)}
                 />
                 {!tripsLoading && userTrips.length >= PLANS.free.maxTrips && (
                   <div className="mx-4 mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 flex items-center justify-between gap-3">
@@ -1195,6 +1250,8 @@ export default function HomePage() {
           tripCount={userTrips.length}
           onUpgrade={() => setShowUpgradeModal(true)}
           hasUpcomingFlight={hasUpcomingFlight}
+          unreadCount={unreadCount}
+          onNotificationsOpen={() => setShowNotificationsHub(true)}
         />
       )}
 
