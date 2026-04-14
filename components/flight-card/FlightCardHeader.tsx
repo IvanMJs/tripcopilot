@@ -422,6 +422,7 @@ export function FlightCardHeader({
       {/* ── Expand / collapse affordance ─────────────────────────────────────── */}
       <button
         onClick={onToggleExpanded}
+        aria-expanded={expanded}
         className="w-full flex justify-center items-center gap-1 py-2 text-gray-600 hover:text-gray-400 transition-colors"
         aria-label={
           expanded

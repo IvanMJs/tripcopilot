@@ -200,7 +200,11 @@ function HeroCard({ flight, locale, geoPosition }: HeroCardProps) {
       {/* Countdown + departure time */}
       <div className="px-4 pb-3 flex items-end justify-between gap-4">
         <div>
-          <p className={`text-3xl font-black tabular-nums leading-none ${accentClass}`}>
+          <p
+            aria-live="polite"
+            aria-atomic="true"
+            className={`text-3xl font-black tabular-nums leading-none ${accentClass}`}
+          >
             {liveMinutes === Infinity
               ? "--:--"
               : liveMinutes <= 0

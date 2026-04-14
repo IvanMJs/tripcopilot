@@ -16,6 +16,7 @@ import {
   Shield,
   Info,
   Gem,
+  Download,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -34,6 +35,7 @@ export interface SettingsViewProps {
   onOpenNotifSettings: () => void;
   onSignOut: () => void;
   onUpgrade: () => void;
+  onExportAllData?: () => void;
 }
 
 type TempUnit = "C" | "F";
@@ -197,6 +199,7 @@ export function SettingsView({
   onOpenNotifSettings,
   onSignOut,
   onUpgrade,
+  onExportAllData,
 }: SettingsViewProps) {
   const L = LABELS[locale];
   const { theme, setTheme } = useTheme();
@@ -597,17 +600,26 @@ export function SettingsView({
             </button>
           </SettingsRow>
 
-          {/* Export data — placeholder */}
+          {/* Export data */}
           <SettingsRow>
-            <div className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0">
-              <ExternalLink className="h-4 w-4 text-gray-600" />
+            <div className="h-8 w-8 rounded-xl bg-blue-950/30 border border-blue-800/30 flex items-center justify-center shrink-0">
+              <Download className="h-4 w-4 text-blue-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500">{L.exportData}</p>
+              <p className="text-sm text-gray-300">{L.exportData}</p>
             </div>
-            <span className="shrink-0 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-gray-600 uppercase tracking-wider">
-              {L.exportComingSoon}
-            </span>
+            {onExportAllData ? (
+              <button
+                onClick={onExportAllData}
+                className="shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-blue-950/30 hover:border-blue-800/40 hover:text-blue-400 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors"
+              >
+                {locale === "es" ? "Exportar" : "Export"}
+              </button>
+            ) : (
+              <span className="shrink-0 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-gray-600 uppercase tracking-wider">
+                {L.exportComingSoon}
+              </span>
+            )}
           </SettingsRow>
 
           {/* App version */}

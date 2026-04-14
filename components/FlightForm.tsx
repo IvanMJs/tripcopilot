@@ -6,6 +6,8 @@ import { TripFlight } from "@/lib/types";
 import { AIRLINES, parseFlightCode } from "@/lib/flightUtils";
 import { analytics } from "@/lib/analytics";
 import { AirportSearchInput } from "./AirportSearchInput";
+import { FlightLookupInput } from "./FlightLookupInput";
+import { CommonFlightInfo } from "@/lib/commonFlights";
 
 // ── Airline preview map ────────────────────────────────────────────────────────
 const AIRLINE_NAMES: Record<string, string> = {
@@ -158,6 +160,16 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
     if (e.key === "Enter") handleAdd();
   }
 
+  function handleAutoFill(data: CommonFlightInfo) {
+    setForm((prev) => ({
+      ...prev,
+      originCode:    data.origin,
+      destCode:      data.destination,
+      departureTime: data.departureTime,
+    }));
+    setError("");
+  }
+
   const isValidFlightCode = /^[A-Z]{2}\d{1,4}$/.test(form.flightCode);
   const showValidation = form.flightCode.length >= 3;
   const airlinePreviewCode = form.flightCode.slice(0, 2).toUpperCase();
@@ -187,6 +199,9 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
           {L.importBtn}
         </button>
       </div>
+
+      {/* Auto-fill lookup */}
+      <FlightLookupInput locale={locale} onAutoFill={handleAutoFill} />
 
       {/* Row 1: Flight code — full width */}
       <div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass, BarChart2, Users } from "lucide-react";
+import { Plus, Pencil, X, Map, Trash2, ChevronUp, CalendarDays, Compass, User, Users } from "lucide-react";
 import { TripTab, TripFlight } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 
@@ -24,6 +24,7 @@ interface Props {
   userPlan?: string | null;
   tripCount?: number;
   onUpgrade?: () => void;
+  hasUpcomingFlight?: boolean;
 }
 
 function getNextFlightDate(flights: TripFlight[], locale: "es" | "en"): string | null {
@@ -44,7 +45,7 @@ function getNextFlightDate(flights: TripFlight[], locale: "es" | "en"): string |
 export function BottomNav({
   locale, activeTab, userTrips, draftTrip, draftId, tabLabels,
   onNavigate, onNewTrip, onDiscardDraft, onDeleteTrip, onRenameTrip, onRenameDraft,
-  userPlan, tripCount, onUpgrade,
+  userPlan, tripCount, onUpgrade, hasUpcomingFlight,
 }: Props) {
   const [showTripPicker, setShowTripPicker]         = useState(false);
   const [renameInPickerId, setRenameInPickerId]     = useState<string | null>(null);
@@ -133,6 +134,7 @@ export function BottomNav({
     )}
 
     <nav
+      role="navigation"
       aria-label={locale === "es" ? "Navegación principal" : "Main navigation"}
       className="bottom-nav-bg"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -304,23 +306,32 @@ export function BottomNav({
 
         <div className="flex h-[60px]">
 
-          {/* Perfil/Stats */}
+          {/* Hoy (left-most, most important) */}
           <button
-            onClick={() => { haptics.impact(); onNavigate("profile"); }}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`}
+            onClick={() => { haptics.impact(); onNavigate("today"); }}
+            aria-label={locale === "es" ? "Hoy" : "Today"}
+            aria-current={activeTab === "today" ? "page" : undefined}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`}
           >
-            <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
-              {activeTab === "profile" && (
-                <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+            <div className="relative">
+              <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
+                {activeTab === "today" && (
+                  <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+                )}
+                <CalendarDays className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "today" ? 2.5 : 1.5} />
+              </motion.div>
+              {hasUpcomingFlight && activeTab !== "today" && (
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-violet-500 ring-2 ring-[#0a0a14]" aria-label={locale === "es" ? "Vuelo próximo" : "Upcoming flight"} />
               )}
-              <BarChart2 className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "profile" ? 2.5 : 1.5} />
-            </motion.div>
-            <span className={`text-xs leading-none ${activeTab === "profile" ? "font-bold" : "font-semibold"}`}>{tabLabels.profile}</span>
+            </div>
+            <span className={`text-xs leading-none ${activeTab === "today" ? "font-bold" : "font-semibold"}`}>{locale === "es" ? "Hoy" : "Today"}</span>
           </button>
 
           {/* Mi viaje / Mis viajes */}
           <button
             onClick={handleTripNavTap}
+            aria-label={tripsLabel}
+            aria-current={tripsActive ? "page" : undefined}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${tripsActive ? "text-violet-400" : "text-gray-500"}`}
           >
             <div className="relative">
@@ -344,37 +355,14 @@ export function BottomNav({
             </div>
           </button>
 
-          {/* Aeropuertos */}
-          <button
-            onClick={() => { haptics.impact(); onNavigate("airports"); }}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "airports" ? "text-violet-400" : "text-gray-500"}`}
-          >
-            <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
-              {activeTab === "airports" && (
-                <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
-              )}
-              <MapPin className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "airports" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "airports" ? 2.5 : 1.5} />
-            </motion.div>
-            <span className={`text-xs leading-none ${activeTab === "airports" ? "font-bold" : "font-semibold"}`}>{tabLabels.airports}</span>
-          </button>
+          {/* FAB spacer — center slot */}
+          <div className="flex-1" aria-hidden="true" />
 
-          {/* Hoy */}
-          <button
-            onClick={() => { haptics.impact(); onNavigate("today"); }}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`}
-          >
-            <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
-              {activeTab === "today" && (
-                <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
-              )}
-              <CalendarDays className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "today" ? 2.5 : 1.5} />
-            </motion.div>
-            <span className={`text-xs leading-none ${activeTab === "today" ? "font-bold" : "font-semibold"}`}>{locale === "es" ? "Hoy" : "Today"}</span>
-          </button>
-
-          {/* Explorar */}
+          {/* Descubrir */}
           <button
             onClick={() => { haptics.impact(); onNavigate("discover"); }}
+            aria-label={locale === "es" ? "Descubrir" : "Discover"}
+            aria-current={activeTab === "discover" ? "page" : undefined}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "discover" ? "text-violet-400" : "text-gray-500"}`}
           >
             <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
@@ -384,8 +372,24 @@ export function BottomNav({
               <Compass className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "discover" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "discover" ? 2.5 : 1.5} />
             </motion.div>
             <span className={`text-xs leading-none ${activeTab === "discover" ? "font-bold" : "font-semibold"}`}>
-              {locale === "es" ? "Explorar" : "Explore"}
+              {locale === "es" ? "Descubrir" : "Discover"}
             </span>
+          </button>
+
+          {/* Perfil */}
+          <button
+            onClick={() => { haptics.impact(); onNavigate("profile"); }}
+            aria-label={tabLabels.profile}
+            aria-current={activeTab === "profile" ? "page" : undefined}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`}
+          >
+            <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
+              {activeTab === "profile" && (
+                <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+              )}
+              <User className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "profile" ? 2.5 : 1.5} />
+            </motion.div>
+            <span className={`text-xs leading-none ${activeTab === "profile" ? "font-bold" : "font-semibold"}`}>{tabLabels.profile}</span>
           </button>
 
         </div>

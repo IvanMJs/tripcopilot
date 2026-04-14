@@ -222,9 +222,14 @@ export function FlightCard({
     return getTafAtTime(tafData, depUnix);
   })();
 
+  const flightCardLabel = locale === "es"
+    ? `Vuelo ${flight.flightCode} ${flight.originCode} a ${flight.destinationCode}`
+    : `Flight ${flight.flightCode} ${flight.originCode} to ${flight.destinationCode}`;
+
   return (
     <div
       id={`flight-card-${idx}`}
+      aria-label={flightCardLabel}
       className={`relative rounded-xl border-2 transition-all animate-fade-in-up stagger-item hover:-translate-y-1 ${
         connectionToNext && connectionToNext.risk === "missed"   ? "border-red-700/60"    :
         connectionToNext && connectionToNext.risk === "at_risk"  ? "border-orange-600/60" :
