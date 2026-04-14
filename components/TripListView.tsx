@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Plane, ChevronRight, Trash2, Plus, MapPin, X, Clock, ChevronDown, ChevronUp, Eye, Pencil as PencilIcon } from "lucide-react";
 import { TripTab } from "@/lib/types";
 import { AirportStatusMap } from "@/lib/types";
@@ -9,6 +9,8 @@ import { calculateTripRiskScore } from "@/lib/tripRiskScore";
 import { TripListSkeleton } from "./TripListSkeleton";
 import { formatRelativeDate } from "@/lib/formatDate";
 import { AIRPORTS } from "@/lib/airports";
+import { usePostFlightWelcome } from "@/hooks/usePostFlightWelcome";
+import { PostFlightWelcomeBanner } from "./PostFlightWelcomeBanner";
 
 interface TripListViewProps {
   trips: TripTab[];
@@ -126,6 +128,7 @@ export function TripListView({
   onDismissExample,
 }: TripListViewProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const { landedFlight, dismiss: dismissWelcome } = usePostFlightWelcome(trips);
 
   if (loading) {
     return <TripListSkeleton />;
@@ -158,6 +161,18 @@ export function TripListView({
           {locale === "es" ? "Nuevo" : "New"}
         </button>
       </div>
+
+      {/* Post-flight welcome banner */}
+      <AnimatePresence>
+        {landedFlight && (
+          <PostFlightWelcomeBanner
+            key={landedFlight.flightId}
+            flight={landedFlight}
+            locale={locale}
+            onDismiss={dismissWelcome}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Next flight countdown pill */}
       {nextFlight && (() => {

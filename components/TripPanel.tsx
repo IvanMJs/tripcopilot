@@ -8,7 +8,7 @@ import {
   Plane, Bell, Trash2, Pencil, Copy, Check,
   Save, ChevronRight,
   Sparkles, Loader2, List, GitBranch,
-  Eye, Users,
+  Eye, Users, Lock,
 } from "lucide-react";
 import { AirportStatusMap, TripFlight, TripTab, Accommodation, Passenger } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
@@ -87,6 +87,8 @@ interface TripPanelProps {
   onToggleDeviceTz?: () => void;
   onUpdatePassengers?: (tripId: string, passengers: Passenger[]) => void;
   geoPosition?: GeoPosition | null;
+  userPlan?: "free" | "premium" | null;
+  onUpgrade?: () => void;
 }
 
 export function TripPanel({
@@ -112,6 +114,8 @@ export function TripPanel({
   onToggleDeviceTz,
   onUpdatePassengers,
   geoPosition = null,
+  userPlan,
+  onUpgrade,
 }: TripPanelProps) {
   const { locale } = useLanguage();
   const L = TRIP_PANEL_LABELS[locale];
@@ -769,6 +773,57 @@ export function TripPanel({
       {/* Carbon footprint — shown in flights tab when there are flights */}
       {(panelTab === "flights" || isDraft) && sorted.length > 0 && (
         <CarbonFootprint flights={sorted} locale={locale} />
+      )}
+
+      {/* Premium teaser cards — free users only, flights tab */}
+      {panelTab === "flights" && !isDraft && sorted.length > 0 && userPlan === "free" && (
+        <div className="space-y-3">
+          {/* Teaser 1: AI Health Check */}
+          <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 overflow-hidden">
+            <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 z-10 flex flex-col items-center justify-center">
+              <Lock className="h-5 w-5 text-violet-400 mb-2" />
+              <p className="text-sm font-bold text-white">AI Health Check</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {locale === "es" ? "Disponible en Explorer" : "Available in Explorer"}
+              </p>
+              <button
+                onClick={onUpgrade}
+                className="mt-3 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
+              >
+                {locale === "es" ? "Mejorar plan →" : "Upgrade plan →"}
+              </button>
+            </div>
+            <div className="space-y-2" aria-hidden>
+              <div className="h-4 w-3/4 rounded bg-white/[0.05]" />
+              <div className="h-4 w-1/2 rounded bg-white/[0.05]" />
+              <div className="h-8 w-full rounded bg-white/[0.05]" />
+            </div>
+          </div>
+
+          {/* Teaser 2: Price Alerts */}
+          <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 overflow-hidden">
+            <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 z-10 flex flex-col items-center justify-center">
+              <Lock className="h-5 w-5 text-violet-400 mb-2" />
+              <p className="text-sm font-bold text-white">
+                {locale === "es" ? "Alertas de precio" : "Price alerts"}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {locale === "es" ? "Disponible en Explorer" : "Available in Explorer"}
+              </p>
+              <button
+                onClick={onUpgrade}
+                className="mt-3 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
+              >
+                {locale === "es" ? "Mejorar plan →" : "Upgrade plan →"}
+              </button>
+            </div>
+            <div className="space-y-2" aria-hidden>
+              <div className="h-4 w-2/3 rounded bg-white/[0.05]" />
+              <div className="h-4 w-5/6 rounded bg-white/[0.05]" />
+              <div className="h-6 w-1/3 rounded bg-white/[0.05]" />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Action bar */}

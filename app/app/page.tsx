@@ -1004,6 +1004,8 @@ export default function HomePage() {
                   deviceTz={deviceTz}
                   onToggleDeviceTz={handleToggleDeviceTz}
                   geoPosition={userPosition}
+                  userPlan={userPlan}
+                  onUpgrade={() => setShowUpgradeModal(true)}
                 />
               ) : null
             )}

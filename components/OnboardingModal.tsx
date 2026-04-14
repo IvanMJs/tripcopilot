@@ -52,12 +52,10 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
               {/* Animated plane icon */}
               <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
                 <div
-                  className="absolute inset-0 rounded-2xl bg-blue-600/20 border border-blue-600/30"
-                  style={{ animation: "pulse 2s ease-in-out infinite" }}
+                  className="absolute inset-0 rounded-2xl bg-blue-600/20 border border-blue-600/30 animate-pulse"
                 />
                 <svg
-                  className="h-8 w-8 text-blue-400 relative z-10"
-                  style={{ animation: "onboarding-fly 2.5s ease-in-out infinite" }}
+                  className="h-8 w-8 text-blue-400 relative z-10 animate-onboarding-fly"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -68,12 +66,6 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
                   <path d="M22 2L11 13" />
                   <path d="M22 2L15 22l-4-9-9-4 22-7z" />
                 </svg>
-                <style>{`
-                  @keyframes onboarding-fly {
-                    0%, 100% { transform: translateX(-4px) translateY(2px) rotate(-8deg); }
-                    50% { transform: translateX(4px) translateY(-2px) rotate(8deg); }
-                  }
-                `}</style>
               </div>
               <div>
                 <h2 className="text-xl font-black text-white mb-2">
@@ -108,17 +100,9 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
                   </svg>
                   {/* Scan line */}
                   <div
-                    className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-90"
-                    style={{ animation: "scan-line 1.8s ease-in-out infinite" }}
+                    className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-90 animate-onboarding-scan"
                   />
                 </div>
-                <style>{`
-                  @keyframes scan-line {
-                    0%   { top: 20%; }
-                    50%  { top: 75%; }
-                    100% { top: 20%; }
-                  }
-                `}</style>
               </div>
               <div>
                 <h2 className="text-xl font-black text-white mb-2">

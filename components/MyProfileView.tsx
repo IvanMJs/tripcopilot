@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, type Easing } from "framer-motion";
-import { TrendingUp, Globe, Plane, MapPin, Zap, Award, Share2, Check } from "lucide-react";
+import { TrendingUp, Globe, Plane, MapPin, Zap, Award, Share2, Check, ImageIcon, Download } from "lucide-react";
 import { WorldMapView } from "@/components/WorldMapView";
 import { TripTab } from "@/lib/types";
 import { computeTripStats } from "@/lib/tripStats";
 import { PLANS } from "@/lib/mercadopago";
+import { generateWrappedImage } from "@/lib/wrappedImage";
 
 interface MyProfileViewProps {
   trips: TripTab[];
@@ -35,6 +36,8 @@ const LABELS = {
     wrapped: {
       title: "Mi Travel Wrapped",
       share: "Compartir mis stats",
+      shareImage: "Compartir imagen",
+      generatingImage: "Generando imagen...",
       copied: "¡Copiado!",
       tagline: (flights: number, km: number, countries: number) =>
         `${flights} vuelo${flights !== 1 ? "s" : ""} · ${km.toLocaleString()} km · ${countries} país${countries !== 1 ? "es" : ""} · TripCopilot ✈️`,
@@ -68,6 +71,8 @@ const LABELS = {
     wrapped: {
       title: "My Travel Wrapped",
       share: "Share my stats",
+      shareImage: "Share as image",
+      generatingImage: "Generating image...",
       copied: "Copied!",
       tagline: (flights: number, km: number, countries: number) =>
         `${flights} flight${flights !== 1 ? "s" : ""} · ${km.toLocaleString()} km · ${countries} countr${countries !== 1 ? "ies" : "y"} · TripCopilot ✈️`,
@@ -126,6 +131,7 @@ const fadeUp = (delay: number) => ({
 export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileViewProps) {
   const L = LABELS[locale];
   const [wrappedCopied, setWrappedCopied] = useState(false);
+  const [wrappedImageLoading, setWrappedImageLoading] = useState(false);
 
   const stats = useMemo(() => {
     const allFlights = trips.flatMap((t) => t.flights);
@@ -139,29 +145,98 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
   const animKm           = useCountUp(stats.totalDistanceKm,            1200,  300);
   const animDestinations = useCountUp(stats.uniqueDestinations.length,   800,  450);
 
-  // Derive badges
+  // Derive badges with progress data
   const badges = useMemo(() => {
-    const earned: { emoji: string; label: string }[] = [];
-    if (stats.totalFlights >= 1) {
-      earned.push({ emoji: "✈️", label: L.badges.firstFlight });
+    const AROUND_EARTH_KM = 40075;
+    type BadgeEntry = {
+      emoji: string;
+      label: string;
+      unlocked: boolean;
+      current: number;
+      target: number;
+      unit: string;
+    };
+    const all: BadgeEntry[] = [
+      {
+        emoji: "✈️",
+        label: L.badges.firstFlight,
+        unlocked: stats.totalFlights >= 1,
+        current: Math.min(stats.totalFlights, 1),
+        target: 1,
+        unit: locale === "es" ? "vuelo" : "flight",
+      },
+      {
+        emoji: "🗺️",
+        label: L.badges.explorer,
+        unlocked: stats.countriesVisited.length >= 3,
+        current: Math.min(stats.countriesVisited.length, 3),
+        target: 3,
+        unit: locale === "es" ? "países" : "countries",
+      },
+      {
+        emoji: "🌍",
+        label: L.badges.globalTraveler,
+        unlocked: stats.countriesVisited.length >= 5,
+        current: Math.min(stats.countriesVisited.length, 5),
+        target: 5,
+        unit: locale === "es" ? "países" : "countries",
+      },
+      {
+        emoji: "💺",
+        label: L.badges.frequentFlyer,
+        unlocked: stats.totalFlights >= 10,
+        current: Math.min(stats.totalFlights, 10),
+        target: 10,
+        unit: locale === "es" ? "vuelos" : "flights",
+      },
+      {
+        emoji: "📏",
+        label: L.badges.tenThousandKm,
+        unlocked: stats.totalDistanceKm >= 10000,
+        current: Math.min(stats.totalDistanceKm, 10000),
+        target: 10000,
+        unit: "km",
+      },
+      {
+        emoji: "🌐",
+        label: L.badges.aroundWorld,
+        unlocked: stats.totalDistanceKm >= AROUND_EARTH_KM,
+        current: Math.min(stats.totalDistanceKm, AROUND_EARTH_KM),
+        target: AROUND_EARTH_KM,
+        unit: "km",
+      },
+    ];
+    return all;
+  }, [stats, L.badges, locale]);
+
+  // Track newly unlocked badges via localStorage
+  const [newlyUnlocked, setNewlyUnlocked] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const storageKey = "tripcopilot-seen-badges";
+    let seen: string[] = [];
+    try {
+      seen = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as string[];
+    } catch {
+      seen = [];
     }
-    if (stats.countriesVisited.length >= 3) {
-      earned.push({ emoji: "🗺️", label: L.badges.explorer });
+    const seenSet = new Set(seen);
+    const freshUnlocked = new Set(
+      badges
+        .filter((b) => b.unlocked && !seenSet.has(b.label))
+        .map((b) => b.label),
+    );
+    if (freshUnlocked.size > 0) {
+      setNewlyUnlocked(freshUnlocked);
+      const updated = Array.from(seenSet).concat(Array.from(freshUnlocked));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch {
+        // localStorage unavailable — silently ignore
+      }
     }
-    if (stats.countriesVisited.length >= 5) {
-      earned.push({ emoji: "🌍", label: L.badges.globalTraveler });
-    }
-    if (stats.totalFlights >= 10) {
-      earned.push({ emoji: "💺", label: L.badges.frequentFlyer });
-    }
-    if (stats.totalDistanceKm >= 10000) {
-      earned.push({ emoji: "📏", label: L.badges.tenThousandKm });
-    }
-    if (stats.timesAroundEarth >= 1) {
-      earned.push({ emoji: "🌐", label: L.badges.aroundWorld });
-    }
-    return earned;
-  }, [stats, L.badges]);
+  // Intentionally run once after mount; badges reference is stable at that point.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const badgePillColors = [
     "bg-emerald-950/50 border-emerald-700/40 text-emerald-300",
@@ -272,22 +347,43 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
           <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest">{L.achievements}</h2>
         </div>
 
-        {badges.length === 0 ? (
+        {stats.totalFlights === 0 && stats.totalDistanceKm === 0 ? (
           <p className="text-sm text-gray-600 italic">{L.emptyAchievements}</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {badges.map((badge, i) => (
-              <div
-                key={badge.label}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 ${badgePillColors[i % badgePillColors.length]}`}
-              >
-                <span className="text-base leading-none" aria-hidden>{badge.emoji}</span>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold leading-tight">{badge.label}</span>
-                  <span className="text-[10px] opacity-60 leading-tight">{L.badges.unlocked}</span>
+          <div className="grid grid-cols-3 gap-2">
+            {badges.map((badge, i) => {
+              const progressPct = badge.target > 0
+                ? Math.round((badge.current / badge.target) * 100)
+                : 0;
+              const isNew = newlyUnlocked.has(badge.label);
+              const colorClass = badgePillColors[i % badgePillColors.length];
+              return (
+                <div
+                  key={badge.label}
+                  className={`flex flex-col items-center rounded-2xl border p-3 gap-1 text-center ${colorClass} ${isNew && badge.unlocked ? "animate-pulse" : ""}`}
+                >
+                  <span className="text-2xl leading-none" aria-hidden>{badge.emoji}</span>
+                  <p className="text-xs font-bold leading-tight">{badge.label}</p>
+                  {badge.unlocked ? (
+                    <span className="text-[10px] text-emerald-400">
+                      {locale === "es" ? "✓ Desbloqueado" : "✓ Unlocked"}
+                    </span>
+                  ) : (
+                    <div className="w-full">
+                      <div className="h-1 w-full rounded-full bg-white/[0.06] mt-1">
+                        <div
+                          className="h-full rounded-full bg-violet-500"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-gray-500">
+                        {badge.current.toLocaleString()}/{badge.target.toLocaleString()} {badge.unit}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </motion.div>
@@ -354,39 +450,88 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
               </p>
             )}
 
-            <button
-              onClick={async () => {
-                const text = L.wrapped.tagline(
-                  stats.totalFlights,
-                  stats.totalDistanceKm,
-                  stats.countriesVisited.length,
-                );
-                try {
-                  if (navigator.share) {
-                    await navigator.share({ text, title: "TripCopilot" });
-                  } else {
-                    await navigator.clipboard.writeText(text);
-                    setWrappedCopied(true);
-                    setTimeout(() => setWrappedCopied(false), 2000);
+            <div className="flex gap-2">
+              {/* Text share */}
+              <button
+                onClick={async () => {
+                  const text = L.wrapped.tagline(
+                    stats.totalFlights,
+                    stats.totalDistanceKm,
+                    stats.countriesVisited.length,
+                  );
+                  try {
+                    if (navigator.share) {
+                      await navigator.share({ text, title: "TripCopilot" });
+                    } else {
+                      await navigator.clipboard.writeText(text);
+                      setWrappedCopied(true);
+                      setTimeout(() => setWrappedCopied(false), 2000);
+                    }
+                  } catch {
+                    // cancelled or unavailable
                   }
-                } catch {
-                  // cancelled or unavailable
-                }
-              }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/[0.15] active:scale-95 border border-white/[0.12] text-white text-sm font-bold py-2.5 transition-all"
-            >
-              {wrappedCopied ? (
-                <>
-                  <Check className="h-4 w-4 text-emerald-400" />
-                  {L.wrapped.copied}
-                </>
-              ) : (
-                <>
-                  <Share2 className="h-4 w-4" />
-                  {L.wrapped.share}
-                </>
-              )}
-            </button>
+                }}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/[0.15] active:scale-95 border border-white/[0.12] text-white text-sm font-bold py-2.5 transition-all"
+              >
+                {wrappedCopied ? (
+                  <>
+                    <Check className="h-4 w-4 text-emerald-400" />
+                    {L.wrapped.copied}
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="h-4 w-4" />
+                    {L.wrapped.share}
+                  </>
+                )}
+              </button>
+
+              {/* Image share */}
+              <button
+                disabled={wrappedImageLoading}
+                onClick={async () => {
+                  setWrappedImageLoading(true);
+                  try {
+                    const blob = await generateWrappedImage({
+                      totalFlights: stats.totalFlights,
+                      totalKm: stats.totalDistanceKm,
+                      countries: stats.countriesVisited.length,
+                      destinations: stats.uniqueDestinations.length,
+                      airborneHours: stats.totalDurationHours,
+                      favoriteRoute: stats.mostFrequentRoute ?? undefined,
+                    });
+                    const file = new File([blob], "travel-wrapped.png", { type: "image/png" });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                      await navigator.share({ files: [file], title: "TripCopilot Travel Wrapped" });
+                    } else {
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "travel-wrapped.png";
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }
+                  } catch {
+                    // cancelled or unavailable
+                  } finally {
+                    setWrappedImageLoading(false);
+                  }
+                }}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 active:scale-95 border border-violet-500/30 text-violet-200 text-sm font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {wrappedImageLoading ? (
+                  <>
+                    <Download className="h-4 w-4 animate-bounce" />
+                    {L.wrapped.generatingImage}
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="h-4 w-4" />
+                    {L.wrapped.shareImage}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </motion.div>
       )}

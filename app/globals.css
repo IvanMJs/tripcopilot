@@ -627,14 +627,20 @@ body::after {
 }
 
 /* ── Hero animated gradient ────────────────────────────────────────────────── */
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+@keyframes hero-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 .hero-gradient {
-  background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e, #0d0d2b);
+  background: linear-gradient(-45deg, #0a0a1a, #1a0535, #0f1729, #150a2e, #0a0a1a);
   background-size: 400% 400%;
-  animation: gradient-shift 12s ease infinite;
+  animation: hero-shift 15s ease infinite;
+}
+
+.hero-dots {
+  background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 /* ── Micro-animations ────────────────────────────────────────────────────── */
@@ -696,6 +702,20 @@ html.light .shimmer {
   background-size: 300% 300%;
   animation: hero-gradient-shift 8s ease infinite;
 }
+
+/* ── Onboarding modal animations ──────────────────────────────────────────── */
+@keyframes onboarding-fly {
+  0%, 100% { transform: translateX(-4px) translateY(2px) rotate(-8deg); }
+  50%       { transform: translateX(4px) translateY(-2px) rotate(8deg); }
+}
+.animate-onboarding-fly { animation: onboarding-fly 2.5s ease-in-out infinite; }
+
+@keyframes onboarding-scan-line {
+  0%   { top: 20%; }
+  50%  { top: 75%; }
+  100% { top: 20%; }
+}
+.animate-onboarding-scan { animation: onboarding-scan-line 1.8s ease-in-out infinite; }
 
 /* ── P7: Gradient top border on status cards ───────────────────────────────── */
 .border-top-success {

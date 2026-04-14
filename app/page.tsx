@@ -411,6 +411,8 @@ export default function LandingPage() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="hero-gradient relative pt-24 pb-16 px-4 overflow-hidden">
+        {/* Dot grid texture overlay */}
+        <div className="hero-dots absolute inset-0 pointer-events-none" />
         {/* Background glows layered on top of animated gradient */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-10"
@@ -983,11 +985,14 @@ export default function LandingPage() {
               <button
                 onClick={() => handleSubscribe("explorer")}
                 disabled={subscribeLoading !== null}
-                className="w-full rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-60 active:scale-95 py-3 text-sm font-bold text-white transition-all flex items-center justify-center gap-2"
+                className="shimmer-btn w-full rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-60 active:scale-95 py-3 text-sm font-bold text-white transition-all flex items-center justify-center gap-2"
               >
                 {subscribeLoading === "explorer" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                {lang === "en" ? "Subscribe Explorer" : "Suscribirse a Explorer"}
+                {lang === "en" ? "Start Explorer →" : "Empezar Explorer →"}
               </button>
+              <p className="text-xs text-center text-gray-500 mt-2">
+                {lang === "en" ? "Cancel anytime" : "Cancelá en cualquier momento"}
+              </p>
             </div>
 
             {/* PILOT */}
@@ -1037,39 +1042,54 @@ export default function LandingPage() {
             <div className="absolute inset-0 pointer-events-none"
               style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(251,191,36,0.06) 0%, transparent 65%)" }} />
 
-            <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-5">El cálculo es simple</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 mb-5">
+              {lang === "en" ? "The math is simple" : "El cálculo es simple"}
+            </p>
 
             {/* Big number */}
             <p className="text-5xl sm:text-7xl font-black text-amber-400 mb-3 tracking-tight">$300–$1.000</p>
             <p className="text-base sm:text-xl text-gray-300 font-semibold mb-3">
-              es lo que cuesta en promedio perder una conexión
+              {lang === "en"
+                ? "the average cost of missing a connection"
+                : "es lo que cuesta en promedio perder una conexión"}
             </p>
             <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-xl mx-auto">
-              Rebooking, hotel inesperado, traslado. Si viajás 4 veces al año con escala,
-              la probabilidad de que te pase en algún momento no es baja — y cuando pasa, lo pagás caro.
+              {lang === "en"
+                ? "Rebooking, unexpected hotel, transfer. If you fly 4 times a year with a layover, the odds of it happening at some point aren't low — and when it does, you pay for it."
+                : "Rebooking, hotel inesperado, traslado. Si viajás 4 veces al año con escala, la probabilidad de que te pase en algún momento no es baja — y cuando pasa, lo pagás caro."}
             </p>
 
             {/* Comparison */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               <div className="rounded-2xl border border-red-800/30 bg-red-950/20 px-6 py-4 text-center">
                 <p className="text-2xl sm:text-3xl font-black text-red-400">$300+</p>
-                <p className="text-xs text-gray-500 mt-1">perder una conexión</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {lang === "en" ? "missing a connection" : "perder una conexión"}
+                </p>
               </div>
               <div className="text-gray-600 text-xl font-black">vs</div>
               <div className="rounded-2xl border border-emerald-700/30 bg-emerald-950/15 px-6 py-4 text-center">
                 <p className="text-2xl sm:text-3xl font-black text-emerald-400">
-                  {priceUSD !== null ? `≈$${priceUSD}` : "$10.000 ARS"}<span className="text-lg">/mes</span>
+                  {priceUSD !== null ? `≈$${priceUSD}` : "$10.000 ARS"}
+                  <span className="text-lg">{lang === "en" ? "/mo" : "/mes"}</span>
                 </p>
-                <p className="text-xs text-gray-500 mt-1">TripCopilot monitoreando</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {lang === "en" ? "TripCopilot monitoring" : "TripCopilot monitoreando"}
+                </p>
                 {priceUSD !== null && (
-                  <p className="text-[10px] text-gray-600 mt-0.5">$10.000 ARS · cotización del día</p>
+                  <p className="text-[10px] text-gray-600 mt-0.5">
+                    $10.000 ARS · {lang === "en" ? "today's rate" : "cotización del día"}
+                  </p>
                 )}
               </div>
             </div>
 
             <p className="text-sm text-gray-400 leading-relaxed font-medium">
-              TripCopilot se paga solo con prevenir{" "}
-              <span className="text-white font-bold">una sola situación.</span>
+              {lang === "en" ? (
+                <>TripCopilot pays for itself by preventing{" "}<span className="text-white font-bold">a single situation.</span></>
+              ) : (
+                <>TripCopilot se paga solo con prevenir{" "}<span className="text-white font-bold">una sola situación.</span></>
+              )}
             </p>
           </div>
         </div>
