@@ -12,6 +12,7 @@ import { formatRelativeDate } from "@/lib/formatDate";
 import { AIRPORTS } from "@/lib/airports";
 import { usePostFlightWelcome } from "@/hooks/usePostFlightWelcome";
 import { PostFlightWelcomeBanner } from "./PostFlightWelcomeBanner";
+import { TripTemplates, type SelectedTemplate } from "./TripTemplates";
 
 interface TripListViewProps {
   trips: TripTab[];
@@ -24,6 +25,7 @@ interface TripListViewProps {
   exampleTrip?: TripTab | null;
   onSelectExample?: () => void;
   onDismissExample?: () => void;
+  onSelectTemplate?: (template: SelectedTemplate) => void;
 }
 
 function isTripPast(trip: TripTab): boolean {
@@ -127,6 +129,7 @@ export function TripListView({
   exampleTrip,
   onSelectExample,
   onDismissExample,
+  onSelectTemplate,
 }: TripListViewProps) {
   const [historyOpen, setHistoryOpen]   = useState(false);
   const [showAllPast, setShowAllPast]   = useState(false);
@@ -331,6 +334,13 @@ export function TripListView({
             </motion.div>
 
           </div>
+
+          {/* Trip templates — visible in empty state */}
+          {onSelectTemplate && (
+            <div className="px-4 pb-6">
+              <TripTemplates locale={locale} onSelectTemplate={onSelectTemplate} />
+            </div>
+          )}
         </motion.div>
       )}
 
@@ -476,6 +486,11 @@ export function TripListView({
           </div>
         );
       })}
+
+      {/* Trip templates — shown when user has few active trips */}
+      {activeTrips.length > 0 && activeTrips.length < 3 && onSelectTemplate && (
+        <TripTemplates locale={locale} onSelectTemplate={onSelectTemplate} />
+      )}
 
       {/* Past trips — collapsible history section */}
       {pastTrips.length > 0 && (

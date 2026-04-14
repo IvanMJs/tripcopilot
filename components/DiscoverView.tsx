@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Search, Compass, MapPin } from "lucide-react";
 import { AIRPORTS } from "@/lib/airports";
 import { TripTab } from "@/lib/types";
+import { ExploreMap } from "@/components/ExploreMap";
 
 // Gradient + emoji visuals keyed by IATA code
 const DESTINATION_VISUALS: Record<string, { gradient: string; emoji: string }> = {
@@ -289,9 +290,10 @@ const CABIN_MAP: Record<string, string> = {
 interface Props {
   trips: TripTab[];
   locale: "es" | "en";
+  onCreateTrip?: (destIata: string, destName: string) => void;
 }
 
-export function DiscoverView({ trips, locale }: Props) {
+export function DiscoverView({ trips, locale, onCreateTrip }: Props) {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [date, setDate] = useState("");
@@ -353,6 +355,13 @@ export function DiscoverView({ trips, locale }: Props) {
           </p>
         </div>
       </div>
+
+      {/* Explore destinations section */}
+      <ExploreMap
+        defaultOrigin={recentOrigin}
+        locale={locale}
+        onCreateTrip={onCreateTrip}
+      />
 
       {/* Search form */}
       <form

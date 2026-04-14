@@ -55,6 +55,8 @@ import { LayoverGuide } from "./LayoverGuide";
 import { EmptyState } from "./EmptyState";
 import { DepartureTimeWidget } from "./DepartureTimeWidget";
 import { GeoPosition } from "@/hooks/useGeolocation";
+import { FlightArcAnimation } from "./FlightArcAnimation";
+import { TripWeatherSummary } from "./TripWeatherSummary";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
 
@@ -141,6 +143,7 @@ export function TripPanel({
   const [panelTab, setPanelTab]         = useState<"flights" | "expenses" | "alerts" | "passengers" | "checklist">("flights");
   const [showQuickExpense, setShowQuickExpense] = useState(false);
   const [tripCardLoading, setTripCardLoading] = useState(false);
+  const [arcAnimation, setArcAnimation] = useState<{ origin: string; dest: string } | null>(null);
 
   const sorted = useMemo(
     () => [...trip.flights].sort((a, b) => {
@@ -494,6 +497,11 @@ export function TripPanel({
 
       {/* Trip Stats */}
       {!isDraft && trip.flights.length > 0 && <TripStatsCard trip={trip} locale={locale} />}
+
+      {/* Trip Weather Summary — shown when trip has 2+ flights */}
+      {!isDraft && sorted.length >= 2 && (
+        <TripWeatherSummary flights={sorted} locale={locale} />
+      )}
 
       {/* Panel tab switcher */}
       {!isDraft && (
@@ -1003,7 +1011,11 @@ export function TripPanel({
           <AddFlightForm
             tripId={trip.id}
             existingFlights={trip.flights}
-            onAdd={(tid, flight) => { onAddFlight(tid, flight); if (sorted.length > 0) setShowAddForm(false); }}
+            onAdd={(tid, flight) => {
+              onAddFlight(tid, flight);
+              setArcAnimation({ origin: flight.originCode, dest: flight.destinationCode });
+              if (sorted.length > 0) setShowAddForm(false);
+            }}
             onOpenImport={() => setShowImport(true)}
             locale={locale}
             L={L}
@@ -1035,6 +1047,14 @@ export function TripPanel({
           tripId={trip.id}
           locale={locale}
           onClose={() => setShowQuickExpense(false)}
+        />
+      )}
+
+      {arcAnimation && (
+        <FlightArcAnimation
+          originIata={arcAnimation.origin}
+          destIata={arcAnimation.dest}
+          onComplete={() => setArcAnimation(null)}
         />
       )}
     </section>

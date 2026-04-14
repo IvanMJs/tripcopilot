@@ -10,6 +10,8 @@ import { PLANS } from "@/lib/mercadopago";
 import { generateWrappedImage } from "@/lib/wrappedImage";
 import { AIRPORTS } from "@/lib/airports";
 import { TravelPersonality } from "@/components/TravelPersonality";
+import { TravelStreaks } from "@/components/TravelStreaks";
+import { TravelChallenges } from "@/components/TravelChallenges";
 
 interface MyProfileViewProps {
   trips: TripTab[];
@@ -478,6 +480,11 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: My
         </div>
       </motion.div>
 
+      {/* Section 1b — Travel Streaks */}
+      <motion.div {...fadeUp(0.03)}>
+        <TravelStreaks trips={trips} locale={locale} />
+      </motion.div>
+
       {/* Section 2 — Big stats grid */}
       <motion.div {...fadeUp(0.05)} className="px-4 pb-4">
         <div className="grid grid-cols-2 gap-3">
@@ -597,6 +604,11 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: My
           <TravelPersonality trips={trips} userId={userId} locale={locale} />
         </motion.div>
       )}
+
+      {/* Section 3d — Travel Challenges */}
+      <motion.div {...fadeUp(0.14)}>
+        <TravelChallenges trips={trips} stats={stats} locale={locale} />
+      </motion.div>
 
       {/* Section 4 — Achievements */}
       <motion.div {...fadeUp(0.15)} className="px-4 pb-4">

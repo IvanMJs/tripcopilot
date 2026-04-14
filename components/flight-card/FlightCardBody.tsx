@@ -26,6 +26,8 @@ import { DaysCountdown, ExchangeRateRow } from "./helpers";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { AirportInfoCard } from "@/components/AirportInfoCard";
 import { LiveFlightTracker } from "@/components/LiveFlightTracker";
+import { AirportGuide } from "@/components/AirportGuide";
+import { DestinationTips } from "@/components/DestinationTips";
 
 export interface FlightCardBodyProps {
   flight: TripFlight;
@@ -172,6 +174,8 @@ export function FlightCardBody({
   const [openAeropuerto, setOpenAeropuerto] = useState(false);
   const [openRuta, setOpenRuta] = useState(true);
   const [openExtras, setOpenExtras] = useState(false);
+  const [showAirportGuide, setShowAirportGuide] = useState(false);
+  const [showDestTips, setShowDestTips] = useState(false);
 
   const isToday = daysUntil === 0;
   const airlineAppUrl = AIRLINE_APP_URLS[flight.airlineCode] ?? null;
@@ -729,6 +733,44 @@ export function FlightCardBody({
                 </div>
               )}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── SECTION: Airport Guide (destination) ─────────────────────────────── */}
+      <div className="border-t border-white/5">
+        <SectionHeader
+          label={locale === "es" ? "Guía del aeropuerto" : "Airport Guide"}
+          icon={<Globe className="h-3 w-3" />}
+          open={showAirportGuide}
+          onToggle={() => setShowAirportGuide((v) => !v)}
+        />
+        {showAirportGuide && (
+          <div className="px-4 pb-3">
+            <AirportGuide
+              airportIata={flight.destinationCode}
+              airportName={destName}
+              locale={locale}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ── SECTION: Destination Tips ─────────────────────────────────────────── */}
+      <div className="border-t border-white/5">
+        <SectionHeader
+          label={locale === "es" ? "Tips del destino" : "Destination Tips"}
+          icon={<MapPin className="h-3 w-3" />}
+          open={showDestTips}
+          onToggle={() => setShowDestTips((v) => !v)}
+        />
+        {showDestTips && (
+          <div className="px-4 pb-3">
+            <DestinationTips
+              city={AIRPORTS[flight.destinationCode]?.city ?? flight.destinationCode}
+              country={AIRPORTS[flight.destinationCode]?.country ?? "USA"}
+              locale={locale}
+            />
           </div>
         )}
       </div>

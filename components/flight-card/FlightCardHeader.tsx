@@ -9,6 +9,7 @@ import { TripPanelLabels, AIRLINE_CHECKIN_URLS, AIRLINE_APP_URLS } from "@/compo
 import { DaysCountdown } from "./helpers";
 import { useFlightLiveStatus } from "@/hooks/useFlightLiveStatus";
 import { LiveStatusPill } from "./LiveStatusPill";
+import { FlightPunctualityBadge } from "@/components/FlightPunctualityBadge";
 
 const SONAR_RINGS = [0, 1, 2];
 
@@ -216,6 +217,22 @@ export function FlightCardHeader({
             {liveData && liveEnabled && (
               <LiveStatusPill liveData={liveData} locale={locale} />
             )}
+            {/* On-time punctuality estimate */}
+            {(() => {
+              const hour = parseInt(flight.departureTime?.split(":")[0] ?? "", 10);
+              return !isNaN(hour) ? (
+                <FlightPunctualityBadge
+                  flight={{
+                    airline: flight.airlineCode,
+                    origin: flight.originCode,
+                    dest: flight.destinationCode,
+                    departureHour: hour,
+                  }}
+                  locale={locale}
+                  pillOnly
+                />
+              ) : null;
+            })()}
           </div>
 
           {/* Trash / confirm-delete — only shown when onRemove is provided */}
