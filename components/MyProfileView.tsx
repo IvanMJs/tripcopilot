@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, type Easing } from "framer-motion";
 import { TrendingUp, Globe, Plane, MapPin, Zap, Award, Share2, Check } from "lucide-react";
 import { WorldMapView } from "@/components/WorldMapView";
@@ -86,6 +86,37 @@ const LABELS = {
 
 const EASE_OUT: Easing = "easeOut";
 
+function useCountUp(target: number, duration = 800, delay = 0): number {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    if (target === 0) {
+      setCurrent(0);
+      return;
+    }
+    let timeout: ReturnType<typeof setTimeout>;
+    let raf: number;
+    timeout = setTimeout(() => {
+      const start = performance.now();
+      function step(now: number) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease-out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setCurrent(Math.round(eased * target));
+        if (progress < 1) raf = requestAnimationFrame(step);
+      }
+      raf = requestAnimationFrame(step);
+    }, delay);
+    return () => {
+      clearTimeout(timeout);
+      cancelAnimationFrame(raf);
+    };
+  // Run once on first render; target is treated as stable initial value.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return current;
+}
+
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0 },
@@ -101,6 +132,12 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
     const merged: TripTab = { id: "global", name: "Global", flights: allFlights, accommodations: [] };
     return computeTripStats(merged);
   }, [trips]);
+
+  // Count-up animations — staggered 150 ms apart
+  const animFlights      = useCountUp(stats.totalFlights,               800,    0);
+  const animCountries    = useCountUp(stats.countriesVisited.length,     800,  150);
+  const animKm           = useCountUp(stats.totalDistanceKm,            1200,  300);
+  const animDestinations = useCountUp(stats.uniqueDestinations.length,   800,  450);
 
   // Derive badges
   const badges = useMemo(() => {
@@ -156,7 +193,7 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
                 <Plane className="h-4 w-4 text-violet-400" />
               </div>
             </div>
-            <p className="text-3xl font-black text-white leading-none">{stats.totalFlights}</p>
+            <p className="text-3xl font-black text-white leading-none tabular-nums">{animFlights}</p>
             <p className="text-xs text-gray-500 font-medium">{L.totalFlights}</p>
           </div>
 
@@ -167,7 +204,7 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
                 <Globe className="h-4 w-4 text-blue-400" />
               </div>
             </div>
-            <p className="text-3xl font-black text-white leading-none">{stats.countriesVisited.length}</p>
+            <p className="text-3xl font-black text-white leading-none tabular-nums">{animCountries}</p>
             <p className="text-xs text-gray-500 font-medium">{L.countries}</p>
           </div>
 
@@ -178,8 +215,8 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
                 <TrendingUp className="h-4 w-4 text-emerald-400" />
               </div>
             </div>
-            <p className="text-3xl font-black text-white leading-none">
-              {stats.totalDistanceKm.toLocaleString()}
+            <p className="text-3xl font-black text-white leading-none tabular-nums">
+              {animKm.toLocaleString()}
             </p>
             <p className="text-xs text-gray-500 font-medium">{L.totalKm}</p>
           </div>
@@ -191,7 +228,7 @@ export function MyProfileView({ trips, locale, userPlan, onUpgrade }: MyProfileV
                 <MapPin className="h-4 w-4 text-amber-400" />
               </div>
             </div>
-            <p className="text-3xl font-black text-white leading-none">{stats.uniqueDestinations.length}</p>
+            <p className="text-3xl font-black text-white leading-none tabular-nums">{animDestinations}</p>
             <p className="text-xs text-gray-500 font-medium">{L.destinations}</p>
           </div>
         </div>

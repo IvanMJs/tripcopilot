@@ -61,6 +61,34 @@ function buildRouteLabel(trip: TripTab): string {
   return `${airportLabel(codes[0])} → ${airportLabel(codes[1])} +${codes.length - 2}`;
 }
 
+interface NextFlightInfo {
+  tripId: string;
+  destCode: string;
+  isoDate: string;
+  daysUntil: number;
+}
+
+function findNextFlightAcrossTrips(trips: TripTab[]): NextFlightInfo | null {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  let best: NextFlightInfo | null = null;
+
+  for (const trip of trips) {
+    for (const f of trip.flights) {
+      if (f.isoDate < todayStr) continue;
+      const daysUntil = Math.round(
+        (new Date(f.isoDate + "T00:00:00").getTime() - new Date(todayStr + "T00:00:00").getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
+      if (daysUntil > 30) continue;
+      if (!best || f.isoDate < best.isoDate) {
+        best = { tripId: trip.id, destCode: f.destinationCode, isoDate: f.isoDate, daysUntil };
+      }
+    }
+  }
+
+  return best;
+}
+
 function getNextFlightLabel(trip: TripTab, locale: "es" | "en"): { label: string; isToday: boolean } | null {
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = trip.flights
@@ -104,6 +132,7 @@ export function TripListView({
 
   const activeTrips = trips.filter((t) => !isTripPast(t));
   const pastTrips   = trips.filter((t) =>  isTripPast(t));
+  const nextFlight  = findNextFlightAcrossTrips(activeTrips);
 
   return (
     <div className="space-y-4 animate-fade-in-up">
@@ -128,6 +157,50 @@ export function TripListView({
           {locale === "es" ? "Nuevo" : "New"}
         </button>
       </div>
+
+      {/* Next flight countdown pill */}
+      {nextFlight && (() => {
+        const cityName = AIRPORTS[nextFlight.destCode]?.city ?? nextFlight.destCode;
+        const { daysUntil } = nextFlight;
+
+        let pillText: string;
+        if (daysUntil === 0) {
+          pillText = locale === "es"
+            ? `¡Hoy volás a ${cityName}!`
+            : `Flying to ${cityName} today!`;
+        } else if (daysUntil === 1) {
+          pillText = locale === "es"
+            ? `Mañana volás a ${cityName}`
+            : `Flying to ${cityName} tomorrow!`;
+        } else if (daysUntil <= 7) {
+          pillText = locale === "es"
+            ? `${cityName} en ${daysUntil} días`
+            : `${cityName} in ${daysUntil} days`;
+        } else {
+          pillText = locale === "es"
+            ? `Próximo viaje: ${cityName} · en ${daysUntil} días`
+            : `Next trip: ${cityName} · in ${daysUntil} days`;
+        }
+
+        const pillStyle =
+          daysUntil === 0
+            ? "from-amber-950/60 to-orange-950/60 border-amber-700/40 text-amber-300 shadow-amber-900/20"
+            : daysUntil === 1
+            ? "from-blue-950/60 to-blue-900/40 border-blue-700/40 text-blue-300 shadow-blue-900/20"
+            : daysUntil <= 7
+            ? "from-indigo-950/60 to-violet-950/40 border-indigo-700/40 text-indigo-300 shadow-indigo-900/20"
+            : "from-gray-900/60 to-gray-900/40 border-white/[0.08] text-gray-400 shadow-black/20";
+
+        return (
+          <button
+            onClick={() => onSelect(nextFlight.tripId)}
+            className={`w-full flex items-center gap-2.5 rounded-xl bg-gradient-to-r ${pillStyle} border px-4 py-2.5 shadow-lg transition-all active:scale-[0.98] tap-scale`}
+          >
+            <Plane className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold">{pillText}</span>
+          </button>
+        );
+      })()}
 
       {/* Empty state — only when no active trips and no past trips */}
       {activeTrips.length === 0 && pastTrips.length === 0 && !exampleTrip && (

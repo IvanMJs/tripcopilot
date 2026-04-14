@@ -5,19 +5,49 @@ import { Search, Compass, MapPin } from "lucide-react";
 import { AIRPORTS } from "@/lib/airports";
 import { TripTab } from "@/lib/types";
 
-// Popular destinations with Unsplash photo URLs
+// Gradient + emoji visuals keyed by IATA code
+const DESTINATION_VISUALS: Record<string, { gradient: string; emoji: string }> = {
+  MIA: { gradient: "from-cyan-600/40 to-blue-800/40",     emoji: "🏖️" },
+  CUN: { gradient: "from-teal-600/40 to-emerald-800/40",  emoji: "🌴" },
+  SCL: { gradient: "from-amber-700/40 to-red-900/40",     emoji: "⛰️" },
+  BOG: { gradient: "from-green-700/40 to-emerald-900/40", emoji: "🌿" },
+  LIM: { gradient: "from-yellow-700/40 to-orange-900/40", emoji: "🏛️" },
+  GRU: { gradient: "from-green-600/40 to-yellow-800/40",  emoji: "🌆" },
+  JFK: { gradient: "from-indigo-700/40 to-gray-900/40",   emoji: "🗽" },
+  MAD: { gradient: "from-red-700/40 to-yellow-800/40",    emoji: "🏰" },
+  FCO: { gradient: "from-amber-600/40 to-red-800/40",     emoji: "🏛️" },
+  LHR: { gradient: "from-gray-600/40 to-blue-900/40",     emoji: "🎡" },
+  CDG: { gradient: "from-blue-600/40 to-purple-800/40",   emoji: "🗼" },
+  BRC: { gradient: "from-sky-600/40 to-indigo-800/40",    emoji: "⛷️" },
+  USH: { gradient: "from-cyan-800/40 to-blue-900/40",     emoji: "🧊" },
+  MVD: { gradient: "from-blue-600/40 to-indigo-800/40",   emoji: "🌊" },
+  PUJ: { gradient: "from-teal-500/40 to-cyan-800/40",     emoji: "🏝️" },
+  CTG: { gradient: "from-orange-600/40 to-red-800/40",    emoji: "🏰" },
+  MDZ: { gradient: "from-violet-700/40 to-red-900/40",    emoji: "🍷" },
+  EZE: { gradient: "from-blue-700/40 to-indigo-900/40",   emoji: "💃" },
+  PMI: { gradient: "from-cyan-500/40 to-blue-700/40",     emoji: "🏄" },
+  BCN: { gradient: "from-yellow-600/40 to-red-800/40",    emoji: "🎨" },
+  NAT: { gradient: "from-amber-500/40 to-orange-700/40",  emoji: "🌊" },
+};
+
+const DEFAULT_VISUAL = { gradient: "from-violet-700/40 to-gray-900/40", emoji: "✈️" };
+
+function getVisual(iata: string): { gradient: string; emoji: string } {
+  return DESTINATION_VISUALS[iata] ?? DEFAULT_VISUAL;
+}
+
+// Popular destinations
 const POPULAR_DESTINATIONS: {
   iata: string;
   city: string;
   country: string;
-  photo: string;
 }[] = [
-  { iata: "MIA", city: "Miami",         country: "Estados Unidos", photo: "https://source.unsplash.com/400x300/?miami,beach"      },
-  { iata: "CUN", city: "Cancún",        country: "México",         photo: "https://source.unsplash.com/400x300/?cancun,beach"     },
-  { iata: "SCL", city: "Santiago",      country: "Chile",          photo: "https://source.unsplash.com/400x300/?santiago,chile"   },
-  { iata: "BOG", city: "Bogotá",        country: "Colombia",       photo: "https://source.unsplash.com/400x300/?bogota,colombia"  },
-  { iata: "GRU", city: "São Paulo",     country: "Brasil",         photo: "https://source.unsplash.com/400x300/?sao paulo,city"   },
-  { iata: "LIM", city: "Lima",          country: "Perú",           photo: "https://source.unsplash.com/400x300/?lima,peru,travel" },
+  { iata: "MIA", city: "Miami",     country: "Estados Unidos" },
+  { iata: "CUN", city: "Cancún",    country: "México"         },
+  { iata: "SCL", city: "Santiago",  country: "Chile"          },
+  { iata: "BOG", city: "Bogotá",    country: "Colombia"       },
+  { iata: "GRU", city: "São Paulo", country: "Brasil"         },
+  { iata: "LIM", city: "Lima",      country: "Perú"           },
 ];
 
 interface SeasonalIdea {
@@ -25,7 +55,6 @@ interface SeasonalIdea {
   city: string;
   tag: string;
   description: string;
-  photo: string;
 }
 
 interface SeasonConfig {
@@ -44,28 +73,24 @@ const SEASONS: Record<string, SeasonConfig> = {
         city: "Mallorca",
         tag: "Verano / Summer",
         description: "Playas cristalinas, calas secretas y vida mediterránea.",
-        photo: "https://source.unsplash.com/400x300/?mallorca,beach",
       },
       {
         iata: "CUN",
         city: "Cancún",
         tag: "Verano / Summer",
         description: "Mar Caribe turquesa, cenotes y resorts de primer nivel.",
-        photo: "https://source.unsplash.com/400x300/?cancun,beach",
       },
       {
         iata: "MIA",
         city: "Miami",
         tag: "Verano / Summer",
         description: "South Beach, nightlife vibrante y shopping inigualable.",
-        photo: "https://source.unsplash.com/400x300/?miami,beach,summer",
       },
       {
         iata: "PUJ",
         city: "Punta Cana",
         tag: "Verano / Summer",
         description: "Playas de arena blanca y todo incluido en el Caribe.",
-        photo: "https://source.unsplash.com/400x300/?punta cana,beach",
       },
     ],
   },
@@ -78,28 +103,24 @@ const SEASONS: Record<string, SeasonConfig> = {
         city: "Mendoza",
         tag: "Semana Santa",
         description: "Bodegas, montañas y los mejores vinos del mundo.",
-        photo: "https://source.unsplash.com/400x300/?mendoza,wine,mountain",
       },
       {
         iata: "EZE",
         city: "Buenos Aires",
         tag: "Semana Santa",
         description: "Teatro, tango y gastronomía porteña sin igual.",
-        photo: "https://source.unsplash.com/400x300/?buenos aires,city",
       },
       {
         iata: "MVD",
         city: "Montevideo",
         tag: "Semana Santa",
         description: "Playa, carnaval fuera de temporada y tranquilidad.",
-        photo: "https://source.unsplash.com/400x300/?montevideo,uruguay",
       },
       {
         iata: "CTG",
         city: "Cartagena",
         tag: "Semana Santa",
         description: "Ciudad amurallada, playas caribeñas y calor tropical.",
-        photo: "https://source.unsplash.com/400x300/?cartagena,colombia,caribbean",
       },
     ],
   },
@@ -112,28 +133,24 @@ const SEASONS: Record<string, SeasonConfig> = {
         city: "Santiago",
         tag: "Otoño / Fall",
         description: "Valle del vino, Andes nevados y gastronomía chilena.",
-        photo: "https://source.unsplash.com/400x300/?santiago,chile,autumn",
       },
       {
         iata: "GRU",
         city: "São Paulo",
         tag: "Otoño / Fall",
         description: "Metrópolis vibrante, arte, gastronomía y cultura.",
-        photo: "https://source.unsplash.com/400x300/?sao paulo,city,autumn",
       },
       {
         iata: "LIM",
         city: "Lima",
         tag: "Otoño / Fall",
         description: "Capital gastronómica de América, historia y mar.",
-        photo: "https://source.unsplash.com/400x300/?lima,peru,travel",
       },
       {
         iata: "USH",
         city: "Ushuaia",
         tag: "Otoño / Fall",
         description: "Fin del mundo, glaciares y auroras australes.",
-        photo: "https://source.unsplash.com/400x300/?ushuaia,patagonia",
       },
     ],
   },
@@ -146,28 +163,24 @@ const SEASONS: Record<string, SeasonConfig> = {
         city: "Bariloche",
         tag: "Invierno / Winter",
         description: "Esquí de clase mundial, chocolate y lagos patagónicos.",
-        photo: "https://source.unsplash.com/400x300/?bariloche,ski,snow",
       },
       {
         iata: "CDG",
         city: "París",
         tag: "Invierno / Winter",
         description: "La ciudad luz en temporada baja: museos sin colas.",
-        photo: "https://source.unsplash.com/400x300/?paris,winter,eiffel",
       },
       {
         iata: "JFK",
         city: "Nueva York",
         tag: "Invierno / Winter",
         description: "Times Square nevado, Broadway y el mejor shopping.",
-        photo: "https://source.unsplash.com/400x300/?new york,winter,snow",
       },
       {
         iata: "FCO",
         city: "Roma",
         tag: "Invierno / Winter",
         description: "Menos turistas, precios bajos y la mejor pasta.",
-        photo: "https://source.unsplash.com/400x300/?rome,italy,winter",
       },
     ],
   },
@@ -180,28 +193,24 @@ const SEASONS: Record<string, SeasonConfig> = {
         city: "Barcelona",
         tag: "Primavera / Spring",
         description: "Gaudí, playas, tapas y el mejor clima del año.",
-        photo: "https://source.unsplash.com/400x300/?barcelona,spring",
       },
       {
         iata: "NAT",
         city: "Natal",
         tag: "Primavera / Spring",
-        description: "Dunas, lagoas e praias paradisíacas do Nordeste.",
-        photo: "https://source.unsplash.com/400x300/?natal,brazil,beach",
+        description: "Dunas, lagoas e praias paradísíacas do Nordeste.",
       },
       {
         iata: "BOG",
         city: "Bogotá",
         tag: "Primavera / Spring",
         description: "Ciudad eterna de primavera, café y arte urbano.",
-        photo: "https://source.unsplash.com/400x300/?bogota,colombia",
       },
       {
         iata: "MVD",
         city: "Montevideo",
         tag: "Primavera / Spring",
         description: "Rambla, playa y la ciudad más tranquila del Río de la Plata.",
-        photo: "https://source.unsplash.com/400x300/?montevideo,uruguay,spring",
       },
     ],
   },
@@ -283,10 +292,10 @@ interface Props {
 }
 
 export function DiscoverView({ trips, locale }: Props) {
-  const [origin, setOrigin]           = useState("");
+  const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
-  const [date, setDate]               = useState("");
-  const [cabin, setCabin]             = useState("e");
+  const [date, setDate] = useState("");
+  const [cabin, setCabin] = useState("e");
 
   const seasonal = getSeasonalContent();
 
@@ -295,13 +304,12 @@ export function DiscoverView({ trips, locale }: Props) {
     const allFlights = trips.flatMap((t) => t.flights);
     if (allFlights.length === 0) return "EZE";
     const sorted = [...allFlights].sort((a, b) =>
-      b.isoDate.localeCompare(a.isoDate)
+      b.isoDate.localeCompare(a.isoDate),
     );
     return sorted[0].originCode;
   })();
 
-  const recentCity =
-    AIRPORTS[recentOrigin]?.city ?? recentOrigin;
+  const recentCity = AIRPORTS[recentOrigin]?.city ?? recentOrigin;
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -329,7 +337,6 @@ export function DiscoverView({ trips, locale }: Props) {
 
   return (
     <div className="space-y-8 pb-6">
-
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-500/20">
@@ -451,26 +458,32 @@ export function DiscoverView({ trips, locale }: Props) {
           </h3>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {POPULAR_DESTINATIONS.map((dest) => (
-            <button
-              key={dest.iata}
-              onClick={() => openDestination(dest.iata)}
-              className="group relative rounded-2xl overflow-hidden aspect-[4/3] text-left focus:outline-none focus:ring-2 focus:ring-violet-500/60"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={dest.photo}
-                alt={dest.city}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <p className="text-sm font-bold text-white leading-tight">{dest.city}</p>
-                <p className="text-xs text-gray-300 leading-tight">{dest.iata} · {dest.country}</p>
-              </div>
-            </button>
-          ))}
+          {POPULAR_DESTINATIONS.map((dest) => {
+            const visual = getVisual(dest.iata);
+            return (
+              <button
+                key={dest.iata}
+                onClick={() => openDestination(dest.iata)}
+                className="group relative rounded-2xl overflow-hidden aspect-[4/3] text-left focus:outline-none focus:ring-2 focus:ring-violet-500/60 border border-white/[0.06] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${visual.gradient} transition-opacity duration-300 group-hover:opacity-80`}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-5xl drop-shadow-lg select-none" aria-hidden>
+                    {visual.emoji}
+                  </span>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-sm font-bold text-white leading-tight">{dest.city}</p>
+                  <p className="text-xs text-gray-300 leading-tight">
+                    {dest.iata} · {dest.country}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -486,34 +499,36 @@ export function DiscoverView({ trips, locale }: Props) {
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {seasonal.ideas.map((idea) => (
-            <button
-              key={idea.iata}
-              onClick={() => openDestination(idea.iata)}
-              className="group relative rounded-2xl overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-violet-500/60"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={idea.photo}
-                alt={idea.city}
-                className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <p className="text-sm font-bold text-white">{idea.city}</p>
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-amber-400 border border-amber-700/40 rounded px-1 py-0.5">
-                    {idea.tag}
+          {seasonal.ideas.map((idea) => {
+            const visual = getVisual(idea.iata);
+            return (
+              <button
+                key={idea.iata}
+                onClick={() => openDestination(idea.iata)}
+                className="group relative rounded-2xl overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-violet-500/60 border border-white/[0.06] transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
+              >
+                <div
+                  className={`h-32 bg-gradient-to-br ${visual.gradient} flex items-center justify-center transition-opacity duration-300 group-hover:opacity-80`}
+                >
+                  <span className="text-5xl drop-shadow-lg select-none" aria-hidden>
+                    {visual.emoji}
                   </span>
                 </div>
-                <p className="text-xs text-gray-300 leading-snug">{idea.description}</p>
-              </div>
-            </button>
-          ))}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="text-sm font-bold text-white">{idea.city}</p>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-amber-400 border border-amber-700/40 rounded px-1 py-0.5">
+                      {idea.tag}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-300 leading-snug">{idea.description}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
-
     </div>
   );
 }

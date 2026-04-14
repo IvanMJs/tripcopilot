@@ -8,10 +8,11 @@ interface WeatherWidgetProps {
   airportIata: string;
   isoDate: string;
   locale: "es" | "en";
+  defaultExpanded?: boolean;
 }
 
-export function WeatherWidget({ airportIata, isoDate, locale }: WeatherWidgetProps) {
-  const [expanded, setExpanded] = useState(false);
+export function WeatherWidget({ airportIata, isoDate, locale, defaultExpanded }: WeatherWidgetProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const { forecast, loading } = useDestinationWeather(airportIata, isoDate, locale);
 
   // Don't render while loading or when no data (fail silently)
@@ -34,7 +35,7 @@ export function WeatherWidget({ airportIata, isoDate, locale }: WeatherWidgetPro
     <div className="mt-1.5">
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-400 transition-colors w-full text-left"
+        className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-300 transition-colors w-full text-left"
         aria-label={locale === "es" ? "Ver pronóstico del tiempo" : "View weather forecast"}
       >
         <span className="flex-1">{summary}</span>

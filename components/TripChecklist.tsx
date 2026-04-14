@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Plus, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -12,6 +12,7 @@ import {
   getItemsByCategory,
   countChecked,
 } from "@/lib/checklistDefaults";
+import { haptics } from "@/lib/haptics";
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 
@@ -112,6 +113,70 @@ function clearPayload(tripId: string): void {
   } catch {
     // fail silently
   }
+}
+
+function celebrationKey(tripId: string) {
+  return `tripcopilot-checklist-celebrated-${tripId}`;
+}
+
+function hasCelebrated(tripId: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(celebrationKey(tripId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markCelebrated(tripId: string): void {
+  try {
+    window.localStorage.setItem(celebrationKey(tripId), "1");
+  } catch {
+    // fail silently
+  }
+}
+
+// ── Confetti ──────────────────────────────────────────────────────────────────
+
+const CONFETTI_COLORS = [
+  "#f59e0b", "#10b981", "#6366f1", "#ec4899", "#3b82f6", "#f97316",
+  "#a3e635", "#e879f9", "#38bdf8", "#fb7185",
+];
+
+function ConfettiLayer() {
+  const pieces = useRef(
+    Array.from({ length: 24 }, (_, i) => ({
+      key:   i,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      left:  `${Math.random() * 100}%`,
+      delay: `${(Math.random() * 0.4).toFixed(2)}s`,
+      size:  Math.random() > 0.5 ? "6px" : "8px",
+    })),
+  ).current;
+
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 h-20 overflow-hidden"
+      style={{ zIndex: 10 }}
+    >
+      {pieces.map((p) => (
+        <span
+          key={p.key}
+          className="confetti-piece"
+          style={{
+            left:            p.left,
+            top:             "-8px",
+            width:           p.size,
+            height:          p.size,
+            background:      p.color,
+            animationDelay:  p.delay,
+            animationDuration: "0.9s",
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -361,6 +426,8 @@ export function TripChecklist({ tripId, locale, readOnly = false }: TripChecklis
   });
   const [confirmReset, setConfirmReset]           = useState(false);
   const [confirmChangeTemplate, setConfirmChangeTemplate] = useState(false);
+  const [showConfetti, setShowConfetti]           = useState(false);
+  const prevAllDoneRef = useRef(false);
 
   // Persist whenever items or tripType change (only when a template is selected)
   useEffect(() => {
@@ -376,7 +443,26 @@ export function TripChecklist({ tripId, locale, readOnly = false }: TripChecklis
     setItems(payload?.items ?? []);
     setConfirmReset(false);
     setConfirmChangeTemplate(false);
+    prevAllDoneRef.current = false;
   }, [tripId]);
+
+  // Confetti celebration when all items are checked
+  useEffect(() => {
+    if (items.length === 0) return;
+    const { checked, total } = countChecked(items);
+    const allDone = checked === total;
+
+    if (allDone && !prevAllDoneRef.current && !hasCelebrated(tripId)) {
+      prevAllDoneRef.current = true;
+      markCelebrated(tripId);
+      haptics.impact();
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 3000);
+      return () => clearTimeout(timer);
+    } else if (!allDone) {
+      prevAllDoneRef.current = false;
+    }
+  }, [items, tripId]);
 
   const handleSelectTemplate = useCallback((type: TripType) => {
     const newItems = getChecklistForTripType(type);
@@ -412,7 +498,10 @@ export function TripChecklist({ tripId, locale, readOnly = false }: TripChecklis
       setItems(getChecklistForTripType(tripType));
     }
     setConfirmReset(false);
-  }, [confirmReset, tripType]);
+    setShowConfetti(false);
+    prevAllDoneRef.current = false;
+    try { window.localStorage.removeItem(celebrationKey(tripId)); } catch { /* silent */ }
+  }, [confirmReset, tripId, tripType]);
 
   const handleChangeTemplate = useCallback(() => {
     if (!confirmChangeTemplate) {
@@ -435,7 +524,12 @@ export function TripChecklist({ tripId, locale, readOnly = false }: TripChecklis
   const progressPct = total === 0 ? 0 : Math.round((checked / total) * 100);
 
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      {/* Confetti burst */}
+      <AnimatePresence>
+        {showConfetti && <ConfettiLayer />}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
@@ -486,6 +580,22 @@ export function TripChecklist({ tripId, locale, readOnly = false }: TripChecklis
             transition={{ duration: 0.4, ease: "easeOut" }}
           />
         </div>
+
+        {/* Celebration message */}
+        <AnimatePresence>
+          {showConfetti && (
+            <motion.div
+              key="celebration"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3 }}
+              className="animate-success-flash flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold text-emerald-400"
+            >
+              {locale === "es" ? "🎉 ¡Lista completa!" : "🎉 All done!"}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Category sections */}

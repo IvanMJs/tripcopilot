@@ -199,7 +199,10 @@ function ExpandedPanel({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function DelayPredictionBadge({ prediction, locale, compact = true }: Props) {
-  const [expanded, setExpanded] = useState(false);
+  const riskLevel = prediction.riskLevel;
+  const [expanded, setExpanded] = useState(() =>
+    riskLevel === "high" || riskLevel === "very_high"
+  );
   const cfg = RISK_CONFIG[prediction.riskLevel];
 
   if (compact && !expanded) {

@@ -568,7 +568,12 @@ export function FlightCardBody({
               </LinkButton>
             </div>
             {/* Destination weather */}
-            <WeatherWidget airportIata={flight.destinationCode} isoDate={flight.isoDate} locale={locale} />
+            <WeatherWidget
+              airportIata={flight.destinationCode}
+              isoDate={flight.isoDate}
+              locale={locale}
+              defaultExpanded={daysUntil <= 7}
+            />
             {/* Exchange rate */}
             <ExchangeRateRow destinationCode={flight.destinationCode} />
           </div>
