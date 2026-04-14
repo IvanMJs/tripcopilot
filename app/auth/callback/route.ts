@@ -6,6 +6,8 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/app";
+  // Check if the login flow was initiated from an invite link
+  const inviteToken = searchParams.get("invite");
 
   if (code) {
     const cookieStore = await cookies();
@@ -26,6 +28,10 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // If the auth flow started from an invite link, redirect back to it
+      if (inviteToken) {
+        return NextResponse.redirect(`${origin}/invite?token=${inviteToken}`);
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

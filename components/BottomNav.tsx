@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plane, Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass, BarChart2 } from "lucide-react";
-import { TripTab } from "@/lib/types";
+import { Plane, Plus, Pencil, X, Map, MapPin, Trash2, ChevronUp, CalendarDays, Compass, BarChart2, Users } from "lucide-react";
+import { TripTab, TripFlight } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 
 interface Props {
@@ -19,6 +19,21 @@ interface Props {
   onDeleteTrip: (id: string) => void;
   onRenameTrip: (id: string, name: string) => void;
   onRenameDraft: (name: string) => void;
+}
+
+function getNextFlightDate(flights: TripFlight[], locale: "es" | "en"): string | null {
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = [...flights]
+    .filter((f) => f.isoDate >= today)
+    .sort((a, b) => {
+      const d = a.isoDate.localeCompare(b.isoDate);
+      return d !== 0 ? d : (a.departureTime ?? "").localeCompare(b.departureTime ?? "");
+    });
+  if (upcoming.length === 0) return null;
+  const next = upcoming[0];
+  const d = new Date(next.isoDate + "T00:00:00");
+  const formatted = d.toLocaleDateString(locale === "en" ? "en-US" : "es-AR", { day: "numeric", month: "short" });
+  return locale === "es" ? `Próximo: ${formatted}` : `Next: ${formatted}`;
 }
 
 export function BottomNav({
@@ -177,15 +192,22 @@ export function BottomNav({
                   onClick={() => { onNavigate(trip.id); setShowTripPicker(false); setRenameInPickerId(null); }}
                   className="flex-1 min-w-0 text-left"
                 >
-                  <p className={`text-sm font-semibold truncate ${activeTab === trip.id ? "text-violet-400" : "text-white"}`}>
-                    {trip.name}
+                  <p className={`text-sm font-semibold truncate flex items-center gap-1.5 ${activeTab === trip.id ? "text-violet-400" : "text-white"}`}>
+                    <span className="truncate">{trip.name}</span>
+                    {trip.isShared && (
+                      <Users className="h-3 w-3 shrink-0 text-violet-400" aria-label={locale === "es" ? "Compartido" : "Shared"} />
+                    )}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {trip.flights.length === 0
                       ? (locale === "es" ? "Sin vuelos" : "No flights")
-                      : locale === "es"
-                      ? `${trip.flights.length} vuelo${trip.flights.length !== 1 ? "s" : ""}`
-                      : `${trip.flights.length} flight${trip.flights.length !== 1 ? "s" : ""}`}
+                      : (() => {
+                          const nextDate = getNextFlightDate(trip.flights, locale);
+                          if (nextDate) return nextDate;
+                          return locale === "es"
+                            ? `${trip.flights.length} vuelo${trip.flights.length !== 1 ? "s" : ""}`
+                            : `${trip.flights.length} flight${trip.flights.length !== 1 ? "s" : ""}`;
+                        })()}
                   </p>
                 </button>
               )}

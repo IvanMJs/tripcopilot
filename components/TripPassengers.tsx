@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { UserPlus, Trash2, User, Loader2, AlertTriangle, XCircle } from "lucide-react";
+import { UserPlus, Trash2, User, Loader2, AlertTriangle, XCircle, BookUser, BookmarkPlus } from "lucide-react";
 import { usePassengers, NewPassengerData, Passenger } from "@/hooks/usePassengers";
+import { ContactPicker } from "@/components/ContactPicker";
+import { PassengerContact, saveContact } from "@/lib/passengerContacts";
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 
@@ -11,6 +13,8 @@ const LABELS = {
   es: {
     title:                  "Pasajeros",
     addBtn:                 "Agregar",
+    contactsBtn:            "Contactos",
+    saveContactBtn:         "Guardar contacto",
     newPassenger:           "Nuevo pasajero",
     name:                   "Nombre",
     email:                  "Email",
@@ -29,11 +33,14 @@ const LABELS = {
     toastRemoved:           (name: string) => `${name} eliminado`,
     toastAddError:          "No se pudo agregar el pasajero",
     toastRemoveError:       "No se pudo eliminar el pasajero",
+    toastContactSaved:      "Contacto guardado",
     nameRequired:           "El nombre es obligatorio",
   },
   en: {
     title:                  "Passengers",
     addBtn:                 "Add",
+    contactsBtn:            "Contacts",
+    saveContactBtn:         "Save contact",
     newPassenger:           "New passenger",
     name:                   "Name",
     email:                  "Email",
@@ -52,6 +59,7 @@ const LABELS = {
     toastRemoved:           (name: string) => `${name} removed`,
     toastAddError:          "Could not add passenger",
     toastRemoveError:       "Could not remove passenger",
+    toastContactSaved:      "Contact saved",
     nameRequired:           "Name is required",
   },
 } as const;
@@ -77,6 +85,7 @@ function getExpiryStatus(passportExpiry: string | undefined): ExpiryStatus {
 interface Props {
   tripId: string;
   locale?: "es" | "en";
+  readOnly?: boolean;
 }
 
 interface FormState {
@@ -119,7 +128,7 @@ function PassportExpiryBadge({
   return null;
 }
 
-export function TripPassengers({ tripId, locale = "es" }: Props) {
+export function TripPassengers({ tripId, locale = "es", readOnly = false }: Props) {
   const L = LABELS[locale];
 
   const { passengers, loading, error, addPassenger, removePassenger } =
@@ -128,6 +137,7 @@ export function TripPassengers({ tripId, locale = "es" }: Props) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showContacts, setShowContacts] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,6 +158,13 @@ export function TripPassengers({ tripId, locale = "es" }: Props) {
         passportExpiry:  form.passportExpiry || undefined,
       };
       await addPassenger(data);
+      // Auto-save as contact after successfully adding
+      saveContact({
+        name:           trimmedName,
+        email:          form.email.trim() || undefined,
+        passportNumber: form.passportNumber.trim() || undefined,
+        passportExpiry: form.passportExpiry || undefined,
+      });
       setForm(EMPTY_FORM);
       setShowForm(false);
       toast.success(L.toastAdded);
@@ -156,6 +173,30 @@ export function TripPassengers({ tripId, locale = "es" }: Props) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleContactSelect = (contact: PassengerContact) => {
+    setForm({
+      name:           contact.name,
+      email:          contact.email ?? "",
+      passportNumber: contact.passportNumber ?? "",
+      passportExpiry: contact.passportExpiry ?? "",
+    });
+    setShowForm(true);
+  };
+
+  const handleSaveExistingAsContact = (p: Passenger) => {
+    saveContact({
+      name:           p.name,
+      email:          p.email,
+      passportNumber: p.passportNumber,
+      passportExpiry: p.passportExpiry,
+      nationality:    p.nationality,
+      dateOfBirth:    p.dateOfBirth,
+      seatPreference: p.seatPreference,
+      mealPreference: p.mealPreference,
+    });
+    toast.success(L.toastContactSaved);
   };
 
   const handleRemove = async (id: string, name: string) => {
@@ -170,21 +211,32 @@ export function TripPassengers({ tripId, locale = "es" }: Props) {
   return (
     <div className="space-y-4 px-1">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
           {L.title}
         </h3>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
-        >
-          <UserPlus className="h-3.5 w-3.5" />
-          {L.addBtn}
-        </button>
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowContacts(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-slate-500 hover:text-slate-100 transition-colors"
+            >
+              <BookUser className="h-3.5 w-3.5" />
+              {L.contactsBtn}
+            </button>
+            <button
+              onClick={() => setShowForm((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              {L.addBtn}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Add passenger form */}
-      {showForm && (
+      {/* Add passenger form — hidden for read-only (viewer) role */}
+      {!readOnly && showForm && (
         <form
           onSubmit={(e) => { void handleSubmit(e); }}
           className="rounded-xl border border-slate-700 bg-slate-800/60 p-4 space-y-3"
@@ -308,6 +360,14 @@ export function TripPassengers({ tripId, locale = "es" }: Props) {
         </div>
       )}
 
+      {/* Contact picker modal */}
+      <ContactPicker
+        isOpen={showContacts}
+        onSelect={handleContactSelect}
+        onClose={() => setShowContacts(false)}
+        locale={locale}
+      />
+
       {/* Passenger cards */}
       {!loading && passengers.length > 0 && (
         <ul className="space-y-2">
@@ -341,13 +401,25 @@ export function TripPassengers({ tripId, locale = "es" }: Props) {
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => { void handleRemove(p.id, p.name); }}
-                  className="mt-0.5 shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                  aria-label={L.deleteAriaLabel(p.name)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="mt-0.5 flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => handleSaveExistingAsContact(p)}
+                    className="rounded-lg p-1.5 text-slate-500 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+                    aria-label={L.saveContactBtn}
+                    title={L.saveContactBtn}
+                  >
+                    <BookmarkPlus className="h-4 w-4" />
+                  </button>
+                  {!readOnly && (
+                    <button
+                      onClick={() => { void handleRemove(p.id, p.name); }}
+                      className="rounded-lg p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                      aria-label={L.deleteAriaLabel(p.name)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </li>
             );
           })}

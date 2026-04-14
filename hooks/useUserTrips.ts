@@ -233,23 +233,64 @@ export function useUserTrips() {
         .select("id, name, passengers, flights(*), accommodations(*)")
         .order("created_at", { ascending: true });
 
-      if (!error && data) {
-        const userTrips: TripTab[] = data.map((t) => ({
-          id:   t.id,
-          name: t.name,
-          flights: [...(t.flights as DbFlight[])]
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map(toTripFlight),
-          accommodations: (t.accommodations as DbAccommodation[])
-            .sort((a, b) => (a.check_in_date ?? "").localeCompare(b.check_in_date ?? ""))
-            .map(toAccommodation),
-          passengers: (t.passengers as Passenger[] | null) ?? [],
-        }));
-        const sorted = sortTripsByUrgency(userTrips);
-        setTrips(sorted);
-        // Update the offline cache in the background
-        cacheTrips(sorted).catch(() => {/* best-effort */});
+      const ownedTrips: TripTab[] = (!error && data)
+        ? data.map((t) => ({
+            id:   t.id,
+            name: t.name,
+            flights: [...(t.flights as DbFlight[])]
+              .sort((a, b) => a.sort_order - b.sort_order)
+              .map(toTripFlight),
+            accommodations: (t.accommodations as DbAccommodation[])
+              .sort((a, b) => (a.check_in_date ?? "").localeCompare(b.check_in_date ?? ""))
+              .map(toAccommodation),
+            passengers: (t.passengers as Passenger[] | null) ?? [],
+            collaboratorRole: "owner" as const,
+          }))
+        : [];
+
+      // Fetch trips shared with the current user as an accepted collaborator
+      const { data: { user } } = await supabase.auth.getUser();
+      let sharedTrips: TripTab[] = [];
+
+      if (user) {
+        const { data: collabRows } = await supabase
+          .from("trip_collaborators")
+          .select("trip_id, role")
+          .eq("invitee_id", user.id)
+          .eq("status", "accepted");
+
+        if (collabRows && collabRows.length > 0) {
+          const sharedIds = collabRows.map((c) => c.trip_id as string);
+          const roleMap = new Map(collabRows.map((c) => [c.trip_id as string, c.role as "viewer" | "editor"]));
+
+          const { data: sharedData } = await supabase
+            .from("trips")
+            .select("id, name, passengers, flights(*), accommodations(*)")
+            .in("id", sharedIds);
+
+          if (sharedData) {
+            sharedTrips = sharedData.map((t) => ({
+              id:   t.id,
+              name: t.name,
+              flights: [...(t.flights as DbFlight[])]
+                .sort((a, b) => a.sort_order - b.sort_order)
+                .map(toTripFlight),
+              accommodations: (t.accommodations as DbAccommodation[])
+                .sort((a, b) => (a.check_in_date ?? "").localeCompare(b.check_in_date ?? ""))
+                .map(toAccommodation),
+              passengers: (t.passengers as Passenger[] | null) ?? [],
+              isShared: true,
+              collaboratorRole: roleMap.get(t.id) ?? "viewer",
+            }));
+          }
+        }
       }
+
+      const allTrips = [...ownedTrips, ...sharedTrips];
+      const sorted = sortTripsByUrgency(allTrips);
+      setTrips(sorted);
+      // Update the offline cache in the background
+      cacheTrips(sorted).catch(() => {/* best-effort */});
 
       setLoading(false);
     }

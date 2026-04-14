@@ -130,6 +130,11 @@ export default function LandingPage() {
   const [subscribeLoading, setSubscribeLoading] = useState<"explorer" | "pilot" | null>(null);
   const loginRef = useRef<HTMLDivElement>(null);
 
+  // Read invite token from URL — present when redirected from /invite?token=X
+  const inviteToken = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("invite")
+    : null;
+
   useEffect(() => {
     fetch("/api/ars-price")
       .then((r) => r.json())
@@ -144,9 +149,12 @@ export default function LandingPage() {
   async function handleGoogle() {
     setLoading(true);
     const supabase = createClient();
+    const callbackUrl = inviteToken
+      ? `${location.origin}/auth/callback?invite=${inviteToken}`
+      : `${location.origin}/auth/callback?next=/app`;
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback?next=/app` },
+      options: { redirectTo: callbackUrl },
     });
   }
 
@@ -176,9 +184,12 @@ export default function LandingPage() {
     setLoading(true);
     setError("");
     const supabase = createClient();
+    const callbackUrl = inviteToken
+      ? `${location.origin}/auth/callback?invite=${inviteToken}`
+      : `${location.origin}/auth/callback?next=/app`;
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${location.origin}/auth/callback?next=/app` },
+      options: { emailRedirectTo: callbackUrl },
     });
     setLoading(false);
     if (error) setError(error.message);

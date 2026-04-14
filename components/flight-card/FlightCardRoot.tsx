@@ -25,7 +25,7 @@ export interface FlightCardProps {
   statusMap: AirportStatusMap;
   weatherMap: Record<string, WeatherData>;
   locale: "es" | "en";
-  onRemove: () => void;
+  onRemove?: () => void;
   idx: number;
   connectionToNext?: ConnectionAnalysis;
   nextDestination?: string;
@@ -33,9 +33,9 @@ export interface FlightCardProps {
   tafData?: TafData;
   activeSigmets?: SigmetFeature[];
   accommodation?: Accommodation | null;
-  onAddAccommodation: (data: { name: string; checkInTime?: string; checkOutTime?: string; confirmationCode?: string; address?: string }) => void;
-  onRemoveAccommodation: () => void;
-  onEditAccommodation: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
+  onAddAccommodation?: (data: { name: string; checkInTime?: string; checkOutTime?: string; confirmationCode?: string; address?: string }) => void;
+  onRemoveAccommodation?: () => void;
+  onEditAccommodation?: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
   isNextFlight?: boolean;
   showDeviceTz?: boolean;
   deviceTz?: string;
@@ -235,27 +235,29 @@ export function FlightCard({
       } ${removing ? "opacity-0 -translate-x-6 scale-95" : "opacity-100 translate-x-0 scale-100"}`}
       style={{ animationDelay: `${idx * 0.08}s` }}
     >
-      {/* Swipe-to-delete: delete button revealed behind card */}
-      <button
-        onClick={handleDeleteTap}
-        aria-label={locale === "es" ? "Eliminar vuelo" : "Delete flight"}
-        className="absolute inset-y-0 right-0 bg-red-600 flex items-center px-4 rounded-r-xl z-0 transition-opacity"
-        style={{
-          opacity: swipeOffset >= 80 ? 1 : swipeOffset / 80,
-          pointerEvents: swipeOffset >= 40 ? "auto" : "none",
-          visibility: swipeOffset > 0 ? "visible" : "hidden",
-        }}
-      >
-        <Trash2 className="h-5 w-5 text-white" />
-      </button>
+      {/* Swipe-to-delete: delete button revealed behind card — only when onRemove is provided */}
+      {onRemove && (
+        <button
+          onClick={handleDeleteTap}
+          aria-label={locale === "es" ? "Eliminar vuelo" : "Delete flight"}
+          className="absolute inset-y-0 right-0 bg-red-600 flex items-center px-4 rounded-r-xl z-0 transition-opacity"
+          style={{
+            opacity: swipeOffset >= 80 ? 1 : swipeOffset / 80,
+            pointerEvents: swipeOffset >= 40 ? "auto" : "none",
+            visibility: swipeOffset > 0 ? "visible" : "hidden",
+          }}
+        >
+          <Trash2 className="h-5 w-5 text-white" />
+        </button>
+      )}
 
       {/* Card content — slides left on swipe */}
       <div
         className="relative z-10 transition-transform duration-150"
         style={{ transform: `translateX(-${swipeOffset}px)` }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={onRemove ? handleTouchStart : undefined}
+        onTouchMove={onRemove ? handleTouchMove : undefined}
+        onTouchEnd={onRemove ? handleTouchEnd : undefined}
       >
         <FlightCardHeader
           flight={flight}

@@ -19,9 +19,10 @@ const CURRENCIES = ["ARS", "USD", "EUR", "GBP", "BRL", "UYU"];
 interface TripExpensesProps {
   tripId: string;
   locale: "es" | "en";
+  readOnly?: boolean;
 }
 
-export function TripExpenses({ tripId, locale }: TripExpensesProps) {
+export function TripExpenses({ tripId, locale, readOnly = false }: TripExpensesProps) {
   const { expenses, loading, error, addExpense, removeExpense, totalByCurrency } = useTripExpenses(tripId);
   const [expanded, setExpanded] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -127,13 +128,15 @@ export function TripExpenses({ tripId, locale }: TripExpensesProps) {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => removeExpense(e.id)}
-                    aria-label={locale === "es" ? "Eliminar gasto" : "Remove expense"}
-                    className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+                  {!readOnly && (
+                    <button
+                      onClick={() => removeExpense(e.id)}
+                      aria-label={locale === "es" ? "Eliminar gasto" : "Remove expense"}
+                      className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -143,8 +146,8 @@ export function TripExpenses({ tripId, locale }: TripExpensesProps) {
             </p>
           )}
 
-          {/* Add expense form */}
-          {showForm ? (
+          {/* Add expense form — hidden for read-only (viewer) role */}
+          {!readOnly && showForm ? (
             <div className="space-y-2 pt-1 border-t border-white/5">
               <div className="flex gap-2">
                 <input
@@ -214,7 +217,7 @@ export function TripExpenses({ tripId, locale }: TripExpensesProps) {
                 </p>
               )}
             </div>
-          ) : (
+          ) : !readOnly ? (
             <button
               onClick={() => setShowForm(true)}
               className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] py-2 text-xs font-semibold text-gray-400 hover:text-white transition-all"
@@ -222,7 +225,7 @@ export function TripExpenses({ tripId, locale }: TripExpensesProps) {
               <Plus className="h-3.5 w-3.5" />
               {locale === "es" ? "Agregar gasto" : "Add expense"}
             </button>
-          )}
+          ) : null}
         </div>
       )}
     </div>

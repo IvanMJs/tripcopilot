@@ -115,6 +115,8 @@ export interface TripTab {
   flights: TripFlight[];
   accommodations: Accommodation[];
   passengers?: Passenger[];
+  isShared?: boolean;
+  collaboratorRole?: "owner" | "viewer" | "editor";
 }
 
 // ── FAA XML types ─────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import {
   Plane, Bell, Trash2, Pencil, Copy, Check,
   Save, ChevronRight,
   Sparkles, Loader2, List, GitBranch,
+  Eye, Users,
 } from "lucide-react";
 import { AirportStatusMap, TripFlight, TripTab, Accommodation, Passenger } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
@@ -114,6 +115,12 @@ export function TripPanel({
 }: TripPanelProps) {
   const { locale } = useLanguage();
   const L = TRIP_PANEL_LABELS[locale];
+
+  // Role-based access: viewers can read but not write
+  const canEdit = trip.collaboratorRole !== "viewer";
+  // Owners can also delete/rename/manage collaborators
+  const isOwner = !trip.isShared || trip.collaboratorRole === "owner";
+
   const [copied, setCopied]             = useState(false);
   const [waCopied, setWaCopied]         = useState(false);
   const [showGcal, setShowGcal]         = useState(false);
@@ -329,6 +336,22 @@ export function TripPanel({
           <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-0.5">
             {locale === "es" ? "Viaje" : "Trip"}
           </p>
+          {trip.isShared && (
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-violet-900/30 border border-violet-700/40 text-violet-300">
+                <Users className="h-3 w-3" />
+                {locale === "es" ? "Viaje compartido" : "Shared trip"}
+              </span>
+              {trip.collaboratorRole && trip.collaboratorRole !== "owner" && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-400">
+                  {trip.collaboratorRole === "viewer"
+                    ? <><Eye className="h-3 w-3" />{locale === "es" ? "Lector" : "Viewer"}</>
+                    : <><Pencil className="h-3 w-3" />{locale === "es" ? "Editor" : "Editor"}</>
+                  }
+                </span>
+              )}
+            </div>
+          )}
           {isRenamingTrip ? (
             <input
               autoFocus
@@ -351,7 +374,7 @@ export function TripPanel({
           ) : (
             <div className="flex items-center gap-2">
               <h2 className="text-base font-black text-white truncate">{trip.name}</h2>
-              {onRenameTrip && (
+              {onRenameTrip && isOwner && (
                 <button
                   onClick={() => { setRenamingTripName(trip.name); setIsRenamingTrip(true); }}
                   title={locale === "es" ? "Renombrar viaje" : "Rename trip"}
@@ -366,15 +389,17 @@ export function TripPanel({
         </div>
         {!isRenamingTrip && !isDraft && (
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowShareModal(true)}
-              title={locale === "es" ? "Compartir viaje" : "Share trip"}
-              aria-label={locale === "es" ? "Compartir viaje" : "Share trip"}
-              className="shrink-0 p-2 rounded-xl border border-white/[0.08] bg-white/[0.03] text-gray-400 hover:text-white hover:border-white/20 transition-colors"
-            >
-              <Share2 className="h-3.5 w-3.5" />
-            </button>
-            {onDuplicateTrip && (
+            {isOwner && (
+              <button
+                onClick={() => setShowShareModal(true)}
+                title={locale === "es" ? "Compartir viaje" : "Share trip"}
+                aria-label={locale === "es" ? "Compartir viaje" : "Share trip"}
+                className="shrink-0 p-2 rounded-xl border border-white/[0.08] bg-white/[0.03] text-gray-400 hover:text-white hover:border-white/20 transition-colors"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onDuplicateTrip && isOwner && (
               <button
                 onClick={onDuplicateTrip}
                 title={locale === "es" ? "Duplicar viaje" : "Duplicate trip"}
@@ -385,7 +410,7 @@ export function TripPanel({
                 <span className="hidden sm:inline">{locale === "es" ? "Duplicar" : "Duplicate"}</span>
               </button>
             )}
-            {onDeleteTrip && (
+            {onDeleteTrip && isOwner && (
               <button
                 onClick={() => { haptics.delete(); onDeleteTrip(); }}
                 title={locale === "es" ? "Eliminar viaje" : "Delete trip"}
@@ -501,7 +526,7 @@ export function TripPanel({
       {panelTab === "expenses" && !isDraft && (
         <>
           <TripBudgetCard trip={trip} locale={locale} />
-          <TripExpenses tripId={trip.id} locale={locale} />
+          <TripExpenses tripId={trip.id} locale={locale} readOnly={!canEdit} />
         </>
       )}
 
@@ -532,12 +557,12 @@ export function TripPanel({
 
       {/* Passengers tab */}
       {panelTab === "passengers" && !isDraft && (
-        <TripPassengers tripId={trip.id} locale={locale} />
+        <TripPassengers tripId={trip.id} locale={locale} readOnly={!canEdit} />
       )}
 
       {/* Checklist tab */}
       {panelTab === "checklist" && !isDraft && (
-        <TripChecklist tripId={trip.id} locale={locale} />
+        <TripChecklist tripId={trip.id} locale={locale} readOnly={!canEdit} />
       )}
 
       {/* Departure time widget — shown when a flight departs within 24 hours */}
@@ -617,7 +642,7 @@ export function TripPanel({
                         weatherMap={weatherMap}
                         locale={locale}
                         isNextFlight={flight.id === nextFlightId}
-                        onRemove={() => onRemoveFlight(trip.id, flight.id)}
+                        onRemove={canEdit ? () => onRemoveFlight(trip.id, flight.id) : undefined}
                         idx={globalIdx}
                         connectionToNext={connAnalysis}
                         nextDestination={sorted[globalIdx + 1]?.destinationCode}
@@ -625,7 +650,7 @@ export function TripPanel({
                         tafData={tafMap[flight.originCode]}
                         activeSigmets={sigmetsByFlight.get(flight.id)}
                         accommodation={acc}
-                        onAddAccommodation={(data) =>
+                        onAddAccommodation={canEdit ? (data) =>
                           onAddAccommodation(trip.id, {
                             flightId:         flight.id,
                             name:             data.name,
@@ -635,12 +660,11 @@ export function TripPanel({
                             checkOutTime:     data.checkOutTime,
                             confirmationCode: data.confirmationCode,
                             address:          data.address,
-                          })
-                        }
-                        onRemoveAccommodation={() => acc && onRemoveAccommodation(trip.id, acc.id)}
-                        onEditAccommodation={(name, checkInTime, checkOutTime, confirmationCode, address) =>
+                          }) : undefined}
+                        onRemoveAccommodation={canEdit ? () => acc && onRemoveAccommodation(trip.id, acc.id) : undefined}
+                        onEditAccommodation={canEdit ? (name, checkInTime, checkOutTime, confirmationCode, address) =>
                           acc && onUpdateAccommodation(trip.id, acc.id, { name, checkInTime, checkOutTime, confirmationCode, address })
-                        }
+                        : undefined}
                         showDeviceTz={showDeviceTz}
                         deviceTz={deviceTz}
                         onToggleDeviceTz={onToggleDeviceTz}
@@ -851,8 +875,8 @@ export function TripPanel({
       {/* Trip guide */}
       {(panelTab === "flights" || isDraft) && sorted.length > 0 && <TripAdvisor flights={advisorFlights} locale={locale} />}
 
-      {/* Add flight */}
-      {(panelTab === "flights" || isDraft) && sorted.length > 0 && !showAddForm && (
+      {/* Add flight — hidden for viewer role */}
+      {canEdit && (panelTab === "flights" || isDraft) && sorted.length > 0 && !showAddForm && (
         <button
           onClick={() => setShowAddForm(true)}
           className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] py-3 text-sm font-semibold text-gray-400 hover:text-white transition-all"
@@ -862,7 +886,7 @@ export function TripPanel({
         </button>
       )}
 
-      {(panelTab === "flights" || isDraft) && (sorted.length === 0 || showAddForm) && (
+      {canEdit && (panelTab === "flights" || isDraft) && (sorted.length === 0 || showAddForm) && (
         <div>
           {showAddForm && sorted.length > 0 && (
             <div className="flex items-center justify-between mb-2">
@@ -887,7 +911,7 @@ export function TripPanel({
         </div>
       )}
 
-      {showImport && (
+      {showImport && canEdit && (
         <ItineraryImportModal
           isOpen={showImport}
           onImport={handleImportFlights}
@@ -897,7 +921,7 @@ export function TripPanel({
         />
       )}
 
-      {showShareModal && !isDraft && (
+      {showShareModal && !isDraft && isOwner && (
         <TripShareModal
           tripId={trip.id}
           tripName={trip.name}

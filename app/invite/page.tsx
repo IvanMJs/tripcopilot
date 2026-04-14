@@ -12,8 +12,16 @@ type State =
 function InviteContent() {
   const params    = useSearchParams();
   const router    = useRouter();
-  const token     = params.get("token");
+  const token     = params.get("token") ?? (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("pendingInviteToken") : null);
   const [state, setState] = useState<State>({ phase: "loading" });
+
+  // Clear the sessionStorage token once we have a token to use
+  useEffect(() => {
+    if (token && typeof sessionStorage !== "undefined") {
+      const stored = sessionStorage.getItem("pendingInviteToken");
+      if (stored) sessionStorage.removeItem("pendingInviteToken");
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -91,12 +99,17 @@ function InviteContent() {
             </div>
             <a
               href={`/?invite=${token}#empezar`}
+              onClick={() => {
+                if (token && typeof sessionStorage !== "undefined") {
+                  sessionStorage.setItem("pendingInviteToken", token);
+                }
+              }}
               className="block w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 text-sm font-bold text-white transition-colors"
             >
               Ingresar / Crear cuenta
             </a>
             <p className="text-xs text-gray-600">
-              Después de ingresar, volvé a este enlace para aceptar la invitación.
+              Después de ingresar, la invitación se aceptará automáticamente.
             </p>
           </>
         )}

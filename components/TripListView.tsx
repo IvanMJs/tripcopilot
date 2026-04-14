@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plane, ChevronRight, Trash2, Plus, MapPin, X, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Plane, ChevronRight, Trash2, Plus, MapPin, X, Clock, ChevronDown, ChevronUp, Eye, Pencil as PencilIcon } from "lucide-react";
 import { TripTab } from "@/lib/types";
 import { AirportStatusMap } from "@/lib/types";
 import { calculateTripRiskScore } from "@/lib/tripRiskScore";
@@ -285,10 +285,17 @@ export function TripListView({
         const today = new Date().toISOString().slice(0, 10);
         const isDepartureDay = trip.flights.some((f) => f.isoDate === today);
 
+        const isShared = trip.isShared === true;
+        const collabRole = trip.collaboratorRole;
+
         return (
           <div
             key={trip.id}
-            className={`rounded-2xl border border-white/[0.07] overflow-hidden transition-all hover:border-white/[0.14] ${isDepartureDay ? "animate-pulse-aura" : ""}`}
+            className={`rounded-2xl border overflow-hidden transition-all ${
+              isShared
+                ? "border-violet-700/40 hover:border-violet-600/60"
+                : "border-white/[0.07] hover:border-white/[0.14]"
+            } ${isDepartureDay ? "animate-pulse-aura" : ""}`}
             style={{ background: "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)" }}
           >
             <div className="flex items-center gap-2 pr-3">
@@ -299,6 +306,19 @@ export function TripListView({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-base font-bold text-white truncate">{trip.name}</span>
+                    {isShared && (
+                      <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-violet-900/30 border border-violet-700/40 text-violet-300">
+                        {locale === "es" ? "Compartido" : "Shared"}
+                      </span>
+                    )}
+                    {isShared && collabRole && collabRole !== "owner" && (
+                      <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-gray-400">
+                        {collabRole === "viewer"
+                          ? <><Eye className="h-3 w-3" />{locale === "es" ? "Lector" : "Viewer"}</>
+                          : <><PencilIcon className="h-3 w-3" />{locale === "es" ? "Editor" : "Editor"}</>
+                        }
+                      </span>
+                    )}
                     {riskStyle && (
                       <span className={`flex items-center gap-1 text-xs font-semibold shrink-0 ${riskStyle.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${riskStyle.dot}`} />

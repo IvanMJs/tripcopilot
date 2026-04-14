@@ -84,8 +84,8 @@ export function AccommodationInline({
   checkInDate: string;
   checkOutDate?: string;
   locale: "es" | "en";
-  onRemove: () => void;
-  onEdit: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
+  onRemove?: () => void;
+  onEdit?: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
   L: AccommodationLabels;
 }) {
   const [editing, setEditing] = useState(false);
@@ -101,7 +101,7 @@ export function AccommodationInline({
   void locale;
 
   function saveEdit() {
-    onEdit(editName.trim(), editCheckIn || undefined, editCheckOut || undefined, editConfCode || undefined, editAddress || undefined);
+    onEdit?.(editName.trim(), editCheckIn || undefined, editCheckOut || undefined, editConfCode || undefined, editAddress || undefined);
     setEditing(false);
   }
 
@@ -172,14 +172,18 @@ export function AccommodationInline({
             </p>
           )}
         </div>
-        <button onClick={() => setEditing(true)} title={L.accEdit}
-          className="shrink-0 p-1 rounded-md text-gray-600 hover:text-blue-400 transition-colors flex items-center justify-center">
-          <Pencil className="h-3 w-3" />
-        </button>
-        <button onClick={onRemove} title={L.accRemove}
-          className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors flex items-center justify-center">
-          <Trash2 className="h-3 w-3" />
-        </button>
+        {onEdit && (
+          <button onClick={() => setEditing(true)} title={L.accEdit}
+            className="shrink-0 p-1 rounded-md text-gray-600 hover:text-blue-400 transition-colors flex items-center justify-center">
+            <Pencil className="h-3 w-3" />
+          </button>
+        )}
+        {onRemove && (
+          <button onClick={onRemove} title={L.accRemove}
+            className="shrink-0 p-1 rounded-md text-gray-600 hover:text-red-400 transition-colors flex items-center justify-center">
+            <Trash2 className="h-3 w-3" />
+          </button>
+        )}
       </div>
 
       {/* Time blocks grid */}

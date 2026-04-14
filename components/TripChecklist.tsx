@@ -183,9 +183,10 @@ interface CategorySectionProps {
   locale: "es" | "en";
   onToggle: (id: string) => void;
   onAddCustom: (category: ChecklistCategory["id"], label: string) => void;
+  readOnly?: boolean;
 }
 
-function CategorySection({ category, items, locale, onToggle, onAddCustom }: CategorySectionProps) {
+function CategorySection({ category, items, locale, onToggle, onAddCustom, readOnly = false }: CategorySectionProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { checked, total } = countChecked(items);
   const allDone = total > 0 && checked === total;
@@ -275,11 +276,13 @@ function CategorySection({ category, items, locale, onToggle, onAddCustom }: Cat
                 </motion.button>
               ))}
 
-              {/* Add custom item */}
-              <AddItemRow
-                locale={locale}
-                onAdd={(label) => onAddCustom(category.id, label)}
-              />
+              {/* Add custom item — hidden for read-only (viewer) role */}
+              {!readOnly && (
+                <AddItemRow
+                  locale={locale}
+                  onAdd={(label) => onAddCustom(category.id, label)}
+                />
+              )}
             </div>
           </motion.div>
         )}
@@ -341,9 +344,10 @@ function TemplatePicker({ locale, onSelect }: TemplatePickerProps) {
 interface TripChecklistProps {
   tripId: string;
   locale: "es" | "en";
+  readOnly?: boolean;
 }
 
-export function TripChecklist({ tripId, locale }: TripChecklistProps) {
+export function TripChecklist({ tripId, locale, readOnly = false }: TripChecklistProps) {
   const L = LABELS[locale];
 
   // null tripType means "not yet selected" — show the template picker
@@ -421,8 +425,9 @@ export function TripChecklist({ tripId, locale }: TripChecklistProps) {
     setConfirmChangeTemplate(false);
   }, [confirmChangeTemplate, tripId]);
 
-  // Template not yet chosen — show picker
+  // Template not yet chosen — show picker (hidden for read-only viewers)
   if (!tripType) {
+    if (readOnly) return null;
     return <TemplatePicker locale={locale} onSelect={handleSelectTemplate} />;
   }
 
@@ -436,31 +441,33 @@ export function TripChecklist({ tripId, locale }: TripChecklistProps) {
         <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
           {L.title}
         </h3>
-        <div className="flex items-center gap-2">
-          {/* Change template button */}
-          <button
-            onClick={handleChangeTemplate}
-            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-              confirmChangeTemplate
-                ? "border-amber-500/50 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
-                : "border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/20"
-            }`}
-          >
-            {confirmChangeTemplate ? L.templateChangeConfirm : L.templateChangeCta}
-          </button>
-          {/* Reset button */}
-          <button
-            onClick={handleReset}
-            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-              confirmReset
-                ? "border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                : "border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/20"
-            }`}
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            {confirmReset ? L.resetConfirm : L.resetBtn}
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            {/* Change template button */}
+            <button
+              onClick={handleChangeTemplate}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                confirmChangeTemplate
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                  : "border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/20"
+              }`}
+            >
+              {confirmChangeTemplate ? L.templateChangeConfirm : L.templateChangeCta}
+            </button>
+            {/* Reset button */}
+            <button
+              onClick={handleReset}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                confirmReset
+                  ? "border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                  : "border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/20"
+              }`}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              {confirmReset ? L.resetConfirm : L.resetBtn}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Progress bar */}
@@ -491,6 +498,7 @@ export function TripChecklist({ tripId, locale }: TripChecklistProps) {
             locale={locale}
             onToggle={handleToggle}
             onAddCustom={handleAddCustom}
+            readOnly={readOnly}
           />
         ))}
       </div>

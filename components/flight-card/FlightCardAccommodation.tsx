@@ -15,9 +15,9 @@ export interface FlightCardAccommodationProps {
   destName: string;
   locale: "es" | "en";
   L: TripPanelLabels;
-  onAddAccommodation: (data: { name: string; checkInTime?: string; checkOutTime?: string; confirmationCode?: string; address?: string }) => void;
-  onRemoveAccommodation: () => void;
-  onEditAccommodation: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
+  onAddAccommodation?: (data: { name: string; checkInTime?: string; checkOutTime?: string; confirmationCode?: string; address?: string }) => void;
+  onRemoveAccommodation?: () => void;
+  onEditAccommodation?: (name: string, checkInTime?: string, checkOutTime?: string, confirmationCode?: string, address?: string) => void;
 }
 
 export function FlightCardAccommodation({
@@ -50,7 +50,7 @@ export function FlightCardAccommodation({
           onRemove={onRemoveAccommodation}
           onEdit={onEditAccommodation}
         />
-      ) : showHotelForm ? (
+      ) : showHotelForm && onAddAccommodation ? (
         <AddAccommodationInlineForm
           destCity={destName}
           locale={locale}
@@ -58,7 +58,7 @@ export function FlightCardAccommodation({
           onAdd={onAddAccommodation}
           onClose={() => setShowHotelForm(false)}
         />
-      ) : (
+      ) : onAddAccommodation ? (
         <button
           onClick={() => setShowHotelForm(true)}
           className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/[0.08] py-2 text-[11px] text-gray-600 hover:text-gray-400 hover:border-white/[0.15] transition-colors"
@@ -66,7 +66,7 @@ export function FlightCardAccommodation({
           <Hotel className="h-3 w-3" />
           {locale === "es" ? `+ Hotel en ${destName}` : `+ Hotel in ${destName}`}
         </button>
-      )}
+      ) : null}
     </div>
   );
 }
