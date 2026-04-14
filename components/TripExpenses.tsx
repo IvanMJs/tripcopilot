@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, ChevronDown, Wallet } from "lucide-react";
+import { Plus, X, ChevronDown, Wallet, Download } from "lucide-react";
 import { useTripExpenses } from "@/hooks/useTripExpenses";
 import { TripExpense } from "@/lib/types";
+import { exportExpensesCSV } from "@/lib/dataExport";
 
 const CATEGORIES: { value: TripExpense["category"]; labelEs: string; labelEn: string; emoji: string }[] = [
   { value: "flight",    labelEs: "Vuelo",       labelEn: "Flight",    emoji: "✈️" },
@@ -20,12 +21,13 @@ const HINT_KEY = "tc-quickexpense-hint-seen";
 
 interface TripExpensesProps {
   tripId: string;
+  tripName?: string;
   locale: "es" | "en";
   readOnly?: boolean;
   onQuickAdd?: () => void;
 }
 
-export function TripExpenses({ tripId, locale, readOnly = false, onQuickAdd }: TripExpensesProps) {
+export function TripExpenses({ tripId, tripName = "trip", locale, readOnly = false, onQuickAdd }: TripExpensesProps) {
   const { expenses, loading, error, addExpense, removeExpense, totalByCurrency } = useTripExpenses(tripId);
   const [expanded, setExpanded] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -243,6 +245,18 @@ export function TripExpenses({ tripId, locale, readOnly = false, onQuickAdd }: T
             <p className="text-xs text-gray-600 text-center py-1">
               {locale === "es" ? "Sin gastos registrados." : "No expenses yet."}
             </p>
+          )}
+
+          {/* Export CSV button — shown when there are expenses */}
+          {expenses.length > 0 && (
+            <button
+              onClick={() => exportExpensesCSV(expenses, tripName)}
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] py-2 text-xs font-semibold text-gray-400 hover:text-white transition-all"
+              aria-label={locale === "es" ? "Exportar gastos como CSV" : "Export expenses as CSV"}
+            >
+              <Download className="h-3.5 w-3.5" />
+              {locale === "es" ? "Exportar CSV" : "Export CSV"}
+            </button>
           )}
 
           {/* Add expense form — hidden for read-only (viewer) role */}

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
-import { Bell, Gem, HelpCircle, LogOut, Settings } from "lucide-react";
+import { Bell, Gem, HelpCircle, LogOut, Settings, Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAirportStatus } from "@/hooks/useAirportStatus";
 import { AirportCard } from "@/components/AirportCard";
@@ -14,7 +14,8 @@ import { GlobalStatusBar } from "@/components/GlobalStatusBar";
 import { RefreshCountdown } from "@/components/RefreshCountdown";
 import { MyFlightsPanel } from "@/components/MyFlightsPanel";
 import { FlightSearch } from "@/components/FlightSearch";
-import { TripPanel } from "@/components/TripPanel";
+// TripPanel lazy-loaded — only rendered when a trip is selected
+const TripPanel = lazy(() => import("@/components/TripPanel").then((m) => ({ default: m.TripPanel })));
 import { TripListView } from "@/components/TripListView";
 import { HelpPanel } from "@/components/HelpPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -25,6 +26,7 @@ import { TripTabBar } from "@/components/TripTabBar";
 import { BottomNav } from "@/components/BottomNav";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { TripPanelSkeleton } from "@/components/TripPanelSkeleton";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { AirportStatusMap, DelayStatus, TripFlight, Accommodation } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -53,12 +55,17 @@ import { DepartureBoard } from "@/components/DepartureBoard";
 import { SmartAlertsPanel } from "@/components/SmartAlertsPanel";
 import { useSmartAlerts } from "@/hooks/useSmartAlerts";
 import { useConnectionAlerts } from "@/hooks/useConnectionAlerts";
-import { DiscoverView } from "@/components/DiscoverView";
-import { MyProfileView } from "@/components/MyProfileView";
+// Lazy-loaded tab views — only rendered when their respective tab is active
+const DiscoverView = lazy(() => import("@/components/DiscoverView").then((m) => ({ default: m.DiscoverView })));
+const MyProfileView = lazy(() => import("@/components/MyProfileView").then((m) => ({ default: m.MyProfileView })));
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { NotificationSettings } from "@/components/NotificationSettings";
-import { SettingsView } from "@/components/SettingsView";
+const SettingsView = lazy(() => import("@/components/SettingsView").then((m) => ({ default: m.SettingsView })));
 import { PLANS } from "@/lib/mercadopago";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
+import { exportAllTripsJSON } from "@/lib/dataExport";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 const TripAssistant = dynamic(() => import("@/components/TripAssistant").then((m) => ({ default: m.TripAssistant })), { ssr: false });
 const TripDebriefModal = dynamic(() => import("@/components/TripDebriefModal").then((m) => ({ default: m.TripDebriefModal })), { ssr: false });
@@ -84,6 +91,7 @@ export default function HomePage() {
   const router = useRouter();
   const [showNotifSheet, setShowNotifSheet] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
   // Initialize with a fixed default to avoid hydration mismatch.
   // A useEffect below checks localStorage and redirects first-time users to "trips".
@@ -119,7 +127,7 @@ export default function HomePage() {
   } = useUserTrips();
 
   // All navigable tab IDs in display order for directional slide
-  const allTabIds = ["airports", "today", "flights", "profile", "discover", "trips", ...userTrips.map((t) => t.id), DRAFT_ID, EXAMPLE_ID, "help", "settings"];
+  const allTabIds = ["today", "trips", "discover", "profile", "airports", "flights", ...userTrips.map((t) => t.id), DRAFT_ID, EXAMPLE_ID, "help", "settings"];
 
   function setActiveTab(newTab: string) {
     const prevIdx = allTabIds.indexOf(prevTabRef.current);
@@ -130,6 +138,9 @@ export default function HomePage() {
     prevTabRef.current = newTab;
     setActiveTabRaw(newTab);
   }
+
+  // Keyboard shortcuts help overlay
+  const [showKbdHelp, setShowKbdHelp] = useState(false);
 
   // Create trip modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -290,6 +301,15 @@ export default function HomePage() {
       .flatMap((t) => t.flights)
       .filter((f) => f.isoDate >= todayIso)
       .sort((a, b) => a.isoDate.localeCompare(b.isoDate) || (a.departureTime ?? "").localeCompare(b.departureTime ?? ""))[0]?.id ?? null;
+  })();
+
+  const hasUpcomingFlight = (() => {
+    const nowMs = Date.now();
+    const fortyEightHoursMs = 48 * 60 * 60 * 1000;
+    return userTrips.flatMap((t) => t.flights).some((f) => {
+      const flightMs = new Date(f.isoDate + "T00:00:00").getTime();
+      return flightMs >= nowMs && flightMs - nowMs <= fortyEightHoursMs;
+    });
   })();
 
   const {
@@ -530,6 +550,38 @@ export default function HomePage() {
       .map((t) => t.id);
   }, [userTrips, today]);
 
+  // ── Global search keyboard shortcut (Ctrl+K / Cmd+K) ─────────────────────
+  useEffect(() => {
+    function handleSearchShortcut(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setShowGlobalSearch((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", handleSearchShortcut);
+    return () => window.removeEventListener("keydown", handleSearchShortcut);
+  }, []);
+
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
+  const kbdTabMap = ["today", "trips", "discover", "profile"];
+  useKeyboardShortcuts({
+    onNewTrip: openCreateTripModal,
+    onSwitchTab: (index) => {
+      const tab = kbdTabMap[index];
+      if (tab) navigateAway(tab);
+    },
+    onEscape: () => {
+      setShowKbdHelp(false);
+      setShowCreateModal(false);
+      setShowUpgradeModal(false);
+      setShowNotifSheet(false);
+      setShowNotifSettings(false);
+      setShowOnboarding(false);
+      setShowGlobalSearch(false);
+    },
+    onHelp: () => setShowKbdHelp((v) => !v),
+  });
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -551,6 +603,12 @@ export default function HomePage() {
         containerStyle={{ top: 16 }}
       />
 
+      <KeyboardShortcutsHelp
+        open={showKbdHelp}
+        onClose={() => setShowKbdHelp(false)}
+        locale={locale}
+      />
+
       {showOnboarding && (
         <OnboardingModal
           locale={locale}
@@ -563,6 +621,16 @@ export default function HomePage() {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         locale={locale}
+      />
+
+      {/* Global search overlay */}
+      <GlobalSearch
+        locale={locale}
+        userTrips={userTrips}
+        isOpen={showGlobalSearch}
+        onClose={() => setShowGlobalSearch(false)}
+        onSelectTrip={(id) => { navigateAway(id); }}
+        onWatchAirport={(iata) => { addAirportDB(iata); navigateAway("airports"); }}
       />
 
       <NotificationSetupSheet
@@ -645,6 +713,18 @@ export default function HomePage() {
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+              {/* Global search button */}
+              {mounted && (
+                <button
+                  onClick={() => setShowGlobalSearch(true)}
+                  title={locale === "es" ? "Buscar (Ctrl+K)" : "Search (Ctrl+K)"}
+                  aria-label={locale === "es" ? "Buscar" : "Search"}
+                  className="flex items-center justify-center rounded-md border border-gray-700 bg-gray-900 p-1.5 text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                </button>
+              )}
+
               {/* Theme toggle */}
               <ThemeToggle />
 
@@ -868,17 +948,21 @@ export default function HomePage() {
             )}
 
             {activeTab === "profile" && (
-              <MyProfileView
-                trips={userTrips}
-                locale={locale}
-                userPlan={userPlan}
-                userId={userId}
-                onUpgrade={() => setShowUpgradeModal(true)}
-              />
+              <Suspense fallback={<LoadingSkeleton />}>
+                <MyProfileView
+                  trips={userTrips}
+                  locale={locale}
+                  userPlan={userPlan}
+                  userId={userId}
+                  onUpgrade={() => setShowUpgradeModal(true)}
+                />
+              </Suspense>
             )}
 
             {activeTab === "discover" && (
-              <DiscoverView trips={userTrips} locale={locale} />
+              <Suspense fallback={<LoadingSkeleton />}>
+                <DiscoverView trips={userTrips} locale={locale} />
+              </Suspense>
             )}
 
             {activeTab === "help" && (
@@ -886,13 +970,16 @@ export default function HomePage() {
             )}
 
             {activeTab === "settings" && (
-              <SettingsView
-                locale={locale}
-                userPlan={userPlan}
-                onOpenNotifSettings={() => setShowNotifSettings(true)}
-                onSignOut={handleLogout}
-                onUpgrade={() => setShowUpgradeModal(true)}
-              />
+              <Suspense fallback={<LoadingSkeleton />}>
+                <SettingsView
+                  locale={locale}
+                  userPlan={userPlan}
+                  onOpenNotifSettings={() => setShowNotifSettings(true)}
+                  onSignOut={handleLogout}
+                  onUpgrade={() => setShowUpgradeModal(true)}
+                  onExportAllData={() => exportAllTripsJSON(userTrips)}
+                />
+              </Suspense>
             )}
 
             {activeTab === "trips" && (
@@ -939,25 +1026,27 @@ export default function HomePage() {
 
             {/* Draft trip panel */}
             {!tripsLoading && draftTrip && activeTab === DRAFT_ID && (
-              <TripPanel
-                key={DRAFT_ID}
-                trip={{ id: DRAFT_ID, name: draftTrip.name, flights: draftTrip.flights, accommodations: draftTrip.accommodations }}
-                statusMap={statusMap}
-                weatherMap={weatherMap}
-                onAddFlight={addFlightToDraft}
-                onRemoveFlight={removeFlightFromDraft}
-                onAddAccommodation={addAccommodationToDraft}
-                onRemoveAccommodation={removeAccommodationFromDraft}
-                onUpdateAccommodation={() => {}}
-                onDeleteTrip={discardDraft}
-                onRenameTrip={(name) => renameTripFromPanel(DRAFT_ID, name)}
-                isDraft={true}
-                onSave={saveDraftTrip}
-                showDeviceTz={showDeviceTz}
-                deviceTz={deviceTz}
-                onToggleDeviceTz={handleToggleDeviceTz}
-                geoPosition={userPosition}
-              />
+              <Suspense fallback={<TripPanelSkeleton />}>
+                <TripPanel
+                  key={DRAFT_ID}
+                  trip={{ id: DRAFT_ID, name: draftTrip.name, flights: draftTrip.flights, accommodations: draftTrip.accommodations }}
+                  statusMap={statusMap}
+                  weatherMap={weatherMap}
+                  onAddFlight={addFlightToDraft}
+                  onRemoveFlight={removeFlightFromDraft}
+                  onAddAccommodation={addAccommodationToDraft}
+                  onRemoveAccommodation={removeAccommodationFromDraft}
+                  onUpdateAccommodation={() => {}}
+                  onDeleteTrip={discardDraft}
+                  onRenameTrip={(name) => renameTripFromPanel(DRAFT_ID, name)}
+                  isDraft={true}
+                  onSave={saveDraftTrip}
+                  showDeviceTz={showDeviceTz}
+                  deviceTz={deviceTz}
+                  onToggleDeviceTz={handleToggleDeviceTz}
+                  geoPosition={userPosition}
+                />
+              </Suspense>
             )}
 
             {/* Example trip panel */}
@@ -989,61 +1078,64 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
-                <TripPanel
-                  key={EXAMPLE_ID}
-                  trip={exampleTrip}
-                  statusMap={statusMap}
-                  weatherMap={weatherMap}
-                  onAddFlight={() => {}}
-                  onRemoveFlight={() => {}}
-                  onAddAccommodation={() => {}}
-                  onRemoveAccommodation={() => {}}
-                  onUpdateAccommodation={() => {}}
-                  showDeviceTz={showDeviceTz}
-                  deviceTz={deviceTz}
-                  onToggleDeviceTz={handleToggleDeviceTz}
-                  geoPosition={userPosition}
-                />
+                <Suspense fallback={<TripPanelSkeleton />}>
+                  <TripPanel
+                    key={EXAMPLE_ID}
+                    trip={exampleTrip}
+                    statusMap={statusMap}
+                    weatherMap={weatherMap}
+                    onAddFlight={() => {}}
+                    onRemoveFlight={() => {}}
+                    onAddAccommodation={() => {}}
+                    onRemoveAccommodation={() => {}}
+                    onUpdateAccommodation={() => {}}
+                    showDeviceTz={showDeviceTz}
+                    deviceTz={deviceTz}
+                    onToggleDeviceTz={handleToggleDeviceTz}
+                    geoPosition={userPosition}
+                  />
+                </Suspense>
               </div>
             )}
 
             {/* Saved trip panels */}
             {!tripsLoading && userTrips.map((trip) =>
               activeTab === trip.id ? (
-                <TripPanel
-                  key={trip.id}
-                  trip={trip}
-                  statusMap={statusMap}
-                  weatherMap={weatherMap}
-                  globalNextFlightId={globalNextFlightId}
-                  onAddFlight={(_, flight) => {
-                    const duplicate = trip.flights.some(
-                      (f) => f.flightCode === flight.flightCode && f.isoDate === flight.isoDate,
-                    );
-                    if (duplicate) {
-                      toast.error(
-                        locale === "es"
-                          ? `${flight.flightCode} ya está en este viaje`
-                          : `${flight.flightCode} already in this trip`,
+                <Suspense key={trip.id} fallback={<TripPanelSkeleton />}>
+                  <TripPanel
+                    trip={trip}
+                    statusMap={statusMap}
+                    weatherMap={weatherMap}
+                    globalNextFlightId={globalNextFlightId}
+                    onAddFlight={(_, flight) => {
+                      const duplicate = trip.flights.some(
+                        (f) => f.flightCode === flight.flightCode && f.isoDate === flight.isoDate,
                       );
-                      return;
-                    }
-                    addFlightDB(trip.id, flight);
-                  }}
-                  onRemoveFlight={(_, flightId) => removeFlightDB(trip.id, flightId)}
-                  onAddAccommodation={(_, acc) => addAccommodationDB(trip.id, acc)}
-                  onRemoveAccommodation={(_, accId) => removeAccommodationDB(trip.id, accId)}
-                  onUpdateAccommodation={(_, accId, updates) => updateAccommodationDB(trip.id, accId, updates)}
-                  onDuplicateTrip={() => handleDuplicateTrip(trip.id)}
-                  onDeleteTrip={() => deleteTrip(trip.id)}
-                  onRenameTrip={(name) => renameTripFromPanel(trip.id, name)}
-                  showDeviceTz={showDeviceTz}
-                  deviceTz={deviceTz}
-                  onToggleDeviceTz={handleToggleDeviceTz}
-                  geoPosition={userPosition}
-                  userPlan={userPlan}
-                  onUpgrade={() => setShowUpgradeModal(true)}
-                />
+                      if (duplicate) {
+                        toast.error(
+                          locale === "es"
+                            ? `${flight.flightCode} ya está en este viaje`
+                            : `${flight.flightCode} already in this trip`,
+                        );
+                        return;
+                      }
+                      addFlightDB(trip.id, flight);
+                    }}
+                    onRemoveFlight={(_, flightId) => removeFlightDB(trip.id, flightId)}
+                    onAddAccommodation={(_, acc) => addAccommodationDB(trip.id, acc)}
+                    onRemoveAccommodation={(_, accId) => removeAccommodationDB(trip.id, accId)}
+                    onUpdateAccommodation={(_, accId, updates) => updateAccommodationDB(trip.id, accId, updates)}
+                    onDuplicateTrip={() => handleDuplicateTrip(trip.id)}
+                    onDeleteTrip={() => deleteTrip(trip.id)}
+                    onRenameTrip={(name) => renameTripFromPanel(trip.id, name)}
+                    showDeviceTz={showDeviceTz}
+                    deviceTz={deviceTz}
+                    onToggleDeviceTz={handleToggleDeviceTz}
+                    geoPosition={userPosition}
+                    userPlan={userPlan}
+                    onUpgrade={() => setShowUpgradeModal(true)}
+                  />
+                </Suspense>
               ) : null
             )}
             </motion.div>
@@ -1102,6 +1194,7 @@ export default function HomePage() {
           userPlan={userPlan}
           tripCount={userTrips.length}
           onUpgrade={() => setShowUpgradeModal(true)}
+          hasUpcomingFlight={hasUpcomingFlight}
         />
       )}
 

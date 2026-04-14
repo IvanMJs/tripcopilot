@@ -170,6 +170,15 @@ export type PushSubRow = {
   auth: string;
 };
 
+export interface TripChatMessage {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  user_email: string;
+  body: string;
+  created_at: string;
+}
+
 export type AeroDataBoxFlightLeg = {
   status?: string;
   departure?: {

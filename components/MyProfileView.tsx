@@ -2,17 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, type Easing } from "framer-motion";
-import { TrendingUp, Globe, Plane, MapPin, Zap, Award, Share2, Check, ImageIcon, Download, X } from "lucide-react";
+import { TrendingUp, Globe, Plane, MapPin, Zap, Award, X } from "lucide-react";
 import { WorldMapView } from "@/components/WorldMapView";
 import { TripTab } from "@/lib/types";
 import { computeTripStats } from "@/lib/tripStats";
 import { PLANS } from "@/lib/mercadopago";
-import { generateWrappedImage } from "@/lib/wrappedImage";
 import { AIRPORTS } from "@/lib/airports";
+import { TravelWrappedCard } from "@/components/TravelWrappedCard";
 import { TravelPersonality } from "@/components/TravelPersonality";
 import { TravelStreaks } from "@/components/TravelStreaks";
 import { TravelChallenges } from "@/components/TravelChallenges";
 import { ReferralCard } from "@/components/ReferralCard";
+import { AchievementBadges } from "@/components/AchievementBadges";
 
 interface MyProfileViewProps {
   trips: TripTab[];
@@ -325,14 +326,26 @@ interface AirportStampData {
 
 export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: MyProfileViewProps) {
   const L = LABELS[locale];
-  const [wrappedCopied, setWrappedCopied] = useState(false);
-  const [wrappedImageLoading, setWrappedImageLoading] = useState(false);
   const [selectedIata, setSelectedIata] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const allFlights = trips.flatMap((t) => t.flights);
     const merged: TripTab = { id: "global", name: "Global", flights: allFlights, accommodations: [] };
     return computeTripStats(merged);
+  }, [trips]);
+
+  // Count unique timezones across all visited airports
+  const timezonesCount = useMemo(() => {
+    const tzSet = new Set<string>();
+    for (const trip of trips) {
+      for (const flight of trip.flights) {
+        for (const code of [flight.originCode, flight.destinationCode]) {
+          const tz = AIRPORTS[code]?.timezone;
+          if (tz) tzSet.add(tz);
+        }
+      }
+    }
+    return tzSet.size;
   }, [trips]);
 
   // Per-airport stamp data: first visit date + visit count
@@ -681,138 +694,28 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: My
 
       {/* Section 5b — Travel Wrapped shareable card */}
       {stats.totalFlights >= 1 && (
-        <motion.div {...fadeUp(0.22)} className="px-4 pb-4">
-          {/* Visual card */}
-          <div className="rounded-2xl overflow-hidden border border-violet-700/30 bg-gradient-to-br from-violet-900/50 via-blue-900/30 to-indigo-950/60 p-5">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-violet-300/60 mb-1">
-                  {L.wrapped.title}
-                </p>
-                <p className="text-3xl font-black text-white leading-none">
-                  {stats.totalFlights}
-                  <span className="text-lg text-violet-300/80 font-bold ml-1">
-                    {locale === "es" ? "vuelos" : "flights"}
-                  </span>
-                </p>
-              </div>
-              <span className="text-4xl" aria-hidden>✈️</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              <div className="text-center">
-                <p className="text-xl font-black text-white leading-none">
-                  {stats.totalDistanceKm >= 1000
-                    ? `${Math.round(stats.totalDistanceKm / 1000)}k`
-                    : stats.totalDistanceKm}
-                </p>
-                <p className="text-[10px] text-violet-300/60 mt-0.5 font-medium">km</p>
-              </div>
-              <div className="text-center border-x border-violet-700/30">
-                <p className="text-xl font-black text-white leading-none">{stats.countriesVisited.length}</p>
-                <p className="text-[10px] text-violet-300/60 mt-0.5 font-medium">
-                  {locale === "es" ? "países" : "countries"}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xl font-black text-white leading-none">{stats.totalDurationHours}h</p>
-                <p className="text-[10px] text-violet-300/60 mt-0.5 font-medium">
-                  {locale === "es" ? "en vuelo" : "airborne"}
-                </p>
-              </div>
-            </div>
-
-            {stats.timesAroundEarth >= 0.1 && (
-              <p className="text-xs text-violet-200/60 mb-4 leading-relaxed">
-                🌍 {L.aroundEarth(stats.timesAroundEarth)}
-              </p>
-            )}
-
-            <div className="flex gap-2">
-              {/* Text share */}
-              <button
-                onClick={async () => {
-                  const text = L.wrapped.tagline(
-                    stats.totalFlights,
-                    stats.totalDistanceKm,
-                    stats.countriesVisited.length,
-                  );
-                  try {
-                    if (navigator.share) {
-                      await navigator.share({ text, title: "TripCopilot" });
-                    } else {
-                      await navigator.clipboard.writeText(text);
-                      setWrappedCopied(true);
-                      setTimeout(() => setWrappedCopied(false), 2000);
-                    }
-                  } catch {
-                    // cancelled or unavailable
-                  }
-                }}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/[0.15] active:scale-95 border border-white/[0.12] text-white text-sm font-bold py-2.5 transition-all"
-              >
-                {wrappedCopied ? (
-                  <>
-                    <Check className="h-4 w-4 text-emerald-400" />
-                    {L.wrapped.copied}
-                  </>
-                ) : (
-                  <>
-                    <Share2 className="h-4 w-4" />
-                    {L.wrapped.share}
-                  </>
-                )}
-              </button>
-
-              {/* Image share */}
-              <button
-                disabled={wrappedImageLoading}
-                onClick={async () => {
-                  setWrappedImageLoading(true);
-                  try {
-                    const blob = await generateWrappedImage({
-                      totalFlights: stats.totalFlights,
-                      totalKm: stats.totalDistanceKm,
-                      countries: stats.countriesVisited.length,
-                      destinations: stats.uniqueDestinations.length,
-                      airborneHours: stats.totalDurationHours,
-                      favoriteRoute: stats.mostFrequentRoute ?? undefined,
-                    });
-                    const file = new File([blob], "travel-wrapped.png", { type: "image/png" });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                      await navigator.share({ files: [file], title: "TripCopilot Travel Wrapped" });
-                    } else {
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = "travel-wrapped.png";
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }
-                  } catch {
-                    // cancelled or unavailable
-                  } finally {
-                    setWrappedImageLoading(false);
-                  }
-                }}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 active:scale-95 border border-violet-500/30 text-violet-200 text-sm font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
-              >
-                {wrappedImageLoading ? (
-                  <>
-                    <Download className="h-4 w-4 animate-bounce" />
-                    {L.wrapped.generatingImage}
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="h-4 w-4" />
-                    {L.wrapped.shareImage}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+        <motion.div {...fadeUp(0.22)}>
+          <TravelWrappedCard
+            totalFlights={stats.totalFlights}
+            totalKm={stats.totalDistanceKm}
+            countries={stats.countriesVisited.length}
+            airports={stats.airportsVisited.length}
+            airborneHours={stats.totalDurationHours}
+            favoriteAirline={stats.mostUsedAirline}
+            favoriteRoute={stats.mostFrequentRoute}
+            timezonesCount={timezonesCount}
+            year={new Date().getFullYear()}
+            locale={locale}
+            userPlan={userPlan}
+            onUpgrade={onUpgrade}
+          />
         </motion.div>
       )}
+
+      {/* Section 5b — Achievement Badges */}
+      <motion.div {...fadeUp(0.22)}>
+        <AchievementBadges trips={trips} locale={locale} />
+      </motion.div>
 
       {/* Section 6 — Plan status */}
       <motion.div {...fadeUp(0.25)} className="px-4 pb-6">

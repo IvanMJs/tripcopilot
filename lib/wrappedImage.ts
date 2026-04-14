@@ -5,9 +5,15 @@ export interface WrappedData {
   destinations: number;
   airborneHours: number;
   favoriteRoute?: string;
+  favoriteAirline?: string;
+  timezonesCount?: number;
+  year?: number;
 }
 
-export async function generateWrappedImage(data: WrappedData): Promise<Blob> {
+export async function generateWrappedImage(
+  data: WrappedData,
+  mode: "full" | "teaser" = "full",
+): Promise<Blob> {
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
   canvas.height = 1920; // Instagram story ratio (9:16)
@@ -35,22 +41,25 @@ export async function generateWrappedImage(data: WrappedData): Promise<Blob> {
   }
 
   // Title
+  const yearLabel = data.year ? ` ${data.year}` : "";
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 64px system-ui, -apple-system, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Mi Travel Wrapped", 540, 280);
+  ctx.fillText(`Mi Travel Wrapped${yearLabel}`, 540, 280);
 
   // Divider line
   ctx.fillStyle = "rgba(139, 92, 246, 0.3)";
   ctx.fillRect(340, 320, 400, 2);
 
   // Stats — large numbers
-  const stats: { value: string; label: string; y: number; emoji: string }[] = [
+  const allStats: { value: string; label: string; y: number; emoji: string }[] = [
     { value: data.totalFlights.toString(), label: "Vuelos", y: 500, emoji: "✈️" },
     { value: `${data.totalKm.toLocaleString()} km`, label: "Kilómetros volados", y: 720, emoji: "🌍" },
     { value: data.countries.toString(), label: "Países visitados", y: 940, emoji: "🏳️" },
     { value: data.destinations.toString(), label: "Destinos únicos", y: 1160, emoji: "📍" },
   ];
+
+  const stats = mode === "teaser" ? allStats.slice(0, 1) : allStats;
 
   for (const stat of stats) {
     // Emoji
@@ -70,18 +79,32 @@ export async function generateWrappedImage(data: WrappedData): Promise<Blob> {
     ctx.fillText(stat.label, 540, stat.y + 80);
   }
 
-  // Airborne hours
-  if (data.airborneHours > 0) {
+  // Airborne hours (full mode only)
+  if (mode === "full" && data.airborneHours > 0) {
     ctx.font = "24px system-ui";
     ctx.fillStyle = "rgba(139, 92, 246, 0.8)";
     ctx.fillText(`${Math.round(data.airborneHours)}h en el aire`, 540, 1400);
   }
 
+  // Favorite airline (full mode only)
+  if (mode === "full" && data.favoriteAirline) {
+    ctx.font = "bold 26px system-ui, -apple-system, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillText(`Aerolínea: ${data.favoriteAirline}`, 540, 1450);
+  }
+
+  // Timezones (full mode only)
+  if (mode === "full" && data.timezonesCount && data.timezonesCount > 1) {
+    ctx.font = "22px system-ui";
+    ctx.fillStyle = "rgba(139, 92, 246, 0.7)";
+    ctx.fillText(`${data.timezonesCount} zonas horarias cruzadas`, 540, 1500);
+  }
+
   // Favorite route
-  if (data.favoriteRoute) {
+  if (mode === "full" && data.favoriteRoute) {
     ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
     ctx.fillStyle = "rgba(255,255,255,0.35)";
-    ctx.fillText(data.favoriteRoute, 540, 1460);
+    ctx.fillText(data.favoriteRoute, 540, 1560);
   }
 
   // Branding
