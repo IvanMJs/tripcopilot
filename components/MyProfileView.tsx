@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, type Easing } from "framer-motion";
-import { TrendingUp, Globe, Plane, MapPin, Zap, Award, X } from "lucide-react";
+import { TrendingUp, Globe, Plane, MapPin, Zap, Award, X, BarChart3, Trophy, Gift, Users } from "lucide-react";
 import { WorldMapView } from "@/components/WorldMapView";
 import { TripTab } from "@/lib/types";
 import { computeTripStats } from "@/lib/tripStats";
@@ -109,6 +109,15 @@ const LABELS = {
 } as const;
 
 const EASE_OUT: Easing = "easeOut";
+
+const PROFILE_TABS = [
+  { id: "stats",        labelEs: "Estadísticas", labelEn: "Stats",         icon: BarChart3 },
+  { id: "achievements", labelEs: "Logros",       labelEn: "Achievements",  icon: Trophy   },
+  { id: "wrapped",      labelEs: "Wrapped",      labelEn: "Wrapped",       icon: Gift     },
+  { id: "social",       labelEs: "Social",       labelEn: "Social",        icon: Users    },
+] as const;
+
+type ProfileTabId = typeof PROFILE_TABS[number]["id"];
 
 function useCountUp(target: number, duration = 800, delay = 0): number {
   const [current, setCurrent] = useState(0);
@@ -327,6 +336,7 @@ interface AirportStampData {
 export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: MyProfileViewProps) {
   const L = LABELS[locale];
   const [selectedIata, setSelectedIata] = useState<string | null>(null);
+  const [activeProfileTab, setActiveProfileTab] = useState<ProfileTabId>("stats");
 
   const stats = useMemo(() => {
     const allFlights = trips.flatMap((t) => t.flights);
@@ -481,9 +491,9 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: My
   ] as const;
 
   return (
-    <div className="min-h-screen pb-24 bg-[#07070f]">
+    <div className="min-h-screen pb-24 bg-surface-overlay">
 
-      {/* Section 1 — Header */}
+      {/* ── User header — always visible ───────────────────────────────────── */}
       <motion.div {...fadeUp(0)} className="px-4 pt-6 pb-4">
         <div className="flex items-center gap-3 mb-1">
           <span className="text-4xl" aria-hidden>✈️</span>
@@ -492,266 +502,406 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: My
             <p className="text-sm text-gray-500 mt-0.5">{L.subtitle(trips.length)}</p>
           </div>
         </div>
-      </motion.div>
 
-      {/* Section 1b — Travel Streaks */}
-      <motion.div {...fadeUp(0.03)}>
-        <TravelStreaks trips={trips} locale={locale} />
-      </motion.div>
-
-      {/* Section 2 — Big stats grid */}
-      <motion.div {...fadeUp(0.05)} className="px-4 pb-4">
-        <div className="grid grid-cols-2 gap-3">
-          {/* Total flights */}
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-violet-500/15 p-1.5">
-                <Plane className="h-4 w-4 text-violet-400" />
-              </div>
-            </div>
-            <p className="text-3xl font-black text-white leading-none tabular-nums">{animFlights}</p>
-            <p className="text-xs text-gray-500 font-medium">{L.totalFlights}</p>
-          </div>
-
-          {/* Countries visited */}
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-blue-500/15 p-1.5">
-                <Globe className="h-4 w-4 text-blue-400" />
-              </div>
-            </div>
-            <p className="text-3xl font-black text-white leading-none tabular-nums">{animCountries}</p>
-            <p className="text-xs text-gray-500 font-medium">{L.countries}</p>
-          </div>
-
-          {/* Total km */}
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-emerald-500/15 p-1.5">
-                <TrendingUp className="h-4 w-4 text-emerald-400" />
-              </div>
-            </div>
-            <p className="text-3xl font-black text-white leading-none tabular-nums">
-              {animKm.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500 font-medium">{L.totalKm}</p>
-          </div>
-
-          {/* Unique destinations */}
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-amber-500/15 p-1.5">
-                <MapPin className="h-4 w-4 text-amber-400" />
-              </div>
-            </div>
-            <p className="text-3xl font-black text-white leading-none tabular-nums">{animDestinations}</p>
-            <p className="text-xs text-gray-500 font-medium">{L.destinations}</p>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Section 3 — Around the Earth highlight */}
-      {stats.timesAroundEarth >= 0.1 && (
-        <motion.div {...fadeUp(0.1)} className="px-4 pb-4">
-          <div className="rounded-2xl bg-gradient-to-r from-violet-900/60 to-blue-900/60 border border-violet-700/30 p-4">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl" aria-hidden>🌏</span>
-              <div>
-                <p className="text-xs text-violet-300/70 font-semibold uppercase tracking-widest mb-0.5">
-                  {locale === "es" ? "Vuelta al planeta" : "Around the planet"}
-                </p>
-                <p className="text-white font-black text-lg leading-tight">
-                  {L.aroundEarth(stats.timesAroundEarth)}
-                </p>
-              </div>
-              <div className="ml-auto">
-                <span className="text-4xl font-black text-white/20 select-none">
-                  {stats.timesAroundEarth}×
-                </span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Section 3b — World Map with country stamp collection */}
-      {stats.totalFlights >= 1 && (
-        <motion.div {...fadeUp(0.12)} className="px-4 pb-4">
-          {/* Countries counter */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-blue-400" />
-              <span className="text-sm font-bold text-gray-300">
-                {L.stamp.countriesVisited}
-              </span>
-            </div>
-            <span className="text-sm font-black text-white tabular-nums">
-              {stats.countriesVisited.length}
-              <span className="text-gray-500 font-normal text-xs ml-1">
-                {L.stamp.of} 195
-              </span>
-            </span>
-          </div>
-
-          <WorldMapView
-            trips={trips}
-            locale={locale}
-            onAirportClick={(iata) => setSelectedIata((prev) => prev === iata ? null : iata)}
-          />
-
-          {/* Stamp popup */}
-          <AnimatePresence>
-            {selectedIata && stampDataMap[selectedIata] && (
-              <StampCard
-                data={stampDataMap[selectedIata]}
-                locale={locale}
-                onClose={() => setSelectedIata(null)}
-              />
-            )}
-          </AnimatePresence>
-        </motion.div>
-      )}
-
-      {/* Section 3c — Travel Personality (AI-generated) */}
-      {userId && (
-        <motion.div {...fadeUp(0.13)}>
-          <TravelPersonality trips={trips} userId={userId} locale={locale} />
-        </motion.div>
-      )}
-
-      {/* Section 3d — Travel Challenges */}
-      <motion.div {...fadeUp(0.14)}>
-        <TravelChallenges trips={trips} stats={stats} locale={locale} />
-      </motion.div>
-
-      {/* Section 3e — Referral Card */}
-      {userId !== null && (
-        <motion.div {...fadeUp(0.145)}>
-          <ReferralCard locale={locale} />
-        </motion.div>
-      )}
-
-      {/* Section 4 — Achievements */}
-      <motion.div {...fadeUp(0.15)} className="px-4 pb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Award className="h-4 w-4 text-amber-400" />
-          <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest">{L.achievements}</h2>
-        </div>
-
-        {stats.totalFlights === 0 && stats.totalDistanceKm === 0 ? (
-          <p className="text-sm text-gray-600 italic">{L.emptyAchievements}</p>
-        ) : (
-          <div className="grid grid-cols-3 gap-2">
-            {badges.map((badge, i) => {
-              const progressPct = badge.target > 0
-                ? Math.round((badge.current / badge.target) * 100)
-                : 0;
-              const isNew = newlyUnlocked.has(badge.label);
-              const colorClass = badgePillColors[i % badgePillColors.length];
-              return (
-                <div
-                  key={badge.label}
-                  className={`flex flex-col items-center rounded-2xl border p-3 gap-1 text-center ${colorClass} ${isNew && badge.unlocked ? "animate-pulse" : ""}`}
-                >
-                  <span className="text-2xl leading-none" aria-hidden>{badge.emoji}</span>
-                  <p className="text-xs font-bold leading-tight">{badge.label}</p>
-                  {badge.unlocked ? (
-                    <span className="text-[10px] text-emerald-400">
-                      {locale === "es" ? "✓ Desbloqueado" : "✓ Unlocked"}
-                    </span>
-                  ) : (
-                    <div className="w-full">
-                      <div className="h-1 w-full rounded-full bg-white/[0.06] mt-1">
-                        <div
-                          className="h-full rounded-full bg-violet-500"
-                          style={{ width: `${progressPct}%` }}
-                        />
-                      </div>
-                      <span className="text-[10px] text-gray-500">
-                        {badge.current.toLocaleString()}/{badge.target.toLocaleString()} {badge.unit}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </motion.div>
-
-      {/* Section 5 — Top route */}
-      {stats.mostFrequentRoute != null && (
-        <motion.div {...fadeUp(0.2)} className="px-4 pb-4">
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="h-3.5 w-3.5 text-amber-400" />
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">{L.favoriteRoute}</p>
-            </div>
-            <p className="font-mono text-2xl font-black text-white">{stats.mostFrequentRoute}</p>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Section 5b — Travel Wrapped shareable card */}
-      {stats.totalFlights >= 1 && (
-        <motion.div {...fadeUp(0.22)}>
-          <TravelWrappedCard
-            totalFlights={stats.totalFlights}
-            totalKm={stats.totalDistanceKm}
-            countries={stats.countriesVisited.length}
-            airports={stats.airportsVisited.length}
-            airborneHours={stats.totalDurationHours}
-            favoriteAirline={stats.mostUsedAirline}
-            favoriteRoute={stats.mostFrequentRoute}
-            timezonesCount={timezonesCount}
-            year={new Date().getFullYear()}
-            locale={locale}
-            userPlan={userPlan}
-            onUpgrade={onUpgrade}
-          />
-        </motion.div>
-      )}
-
-      {/* Section 5b — Achievement Badges */}
-      <motion.div {...fadeUp(0.22)}>
-        <AchievementBadges trips={trips} locale={locale} />
-      </motion.div>
-
-      {/* Section 6 — Plan status */}
-      <motion.div {...fadeUp(0.25)} className="px-4 pb-6">
-        {(userPlan === "explorer" || userPlan === "pilot") ? (
-          <div className="rounded-2xl border border-amber-600/40 bg-gradient-to-br from-amber-950/40 to-[#07070f] p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest text-amber-500/70">
-                {locale === "es" ? "Tu plan" : "Your plan"}
-              </span>
-            </div>
-            <p className="text-lg font-black text-white">
+        {/* Plan badge */}
+        <div className="mt-3">
+          {(userPlan === "explorer" || userPlan === "pilot") ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-600/40 bg-amber-950/30 px-3 py-1 text-xs font-semibold text-amber-400">
               {userPlan === "pilot"
                 ? (locale === "es" ? "Plan Pilot ✈️" : "Pilot Plan ✈️")
                 : (locale === "es" ? "Plan Explorer ⭐" : "Explorer Plan ⭐")}
-            </p>
-            <p className="text-sm text-amber-400/80 mt-0.5">{L.premiumPerks}</p>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                {locale === "es" ? "Tu plan" : "Your plan"}
-              </span>
-            </div>
-            <p className="text-lg font-black text-white mb-0.5">{L.freePlan}</p>
-            <p className="text-sm text-gray-500 mb-4">{L.freeLimits}</p>
+            </span>
+          ) : (
             <button
               onClick={onUpgrade}
-              className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 active:scale-95 text-white text-sm font-bold py-3 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 transition-colors"
             >
-              {L.upgradeBtn}
+              {L.freePlan} · {L.upgradeBtn}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </motion.div>
 
+      {/* ── Tab bar ────────────────────────────────────────────────────────── */}
+      <motion.div {...fadeUp(0.04)} className="px-4 pb-4">
+        <div
+          role="tablist"
+          className="flex gap-1 overflow-x-auto scrollbar-none rounded-2xl border border-white/[0.07] bg-white/[0.03] p-1"
+        >
+          {PROFILE_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const label = locale === "es" ? tab.labelEs : tab.labelEn;
+            const isActive = activeProfileTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveProfileTab(tab.id)}
+                className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+                  isActive ? "text-white" : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="profile-tab-pill"
+                    className="absolute inset-0 rounded-xl bg-white/10"
+                    layout
+                    transition={{ type: "spring", stiffness: 420, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      {/* ── Tab content ────────────────────────────────────────────────────── */}
+      <AnimatePresence mode="wait">
+
+        {/* ── STATS TAB ──────────────────────────────────────────────────── */}
+        {activeProfileTab === "stats" && (
+          <motion.div
+            key="stats"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+          >
+            {/* Travel Streaks */}
+            <motion.div {...fadeUp(0.03)}>
+              <TravelStreaks trips={trips} locale={locale} />
+            </motion.div>
+
+            {/* Big stats grid */}
+            <motion.div {...fadeUp(0.05)} className="px-4 pb-4">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Total flights */}
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-violet-500/15 p-1.5">
+                      <Plane className="h-4 w-4 text-violet-400" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-black text-white leading-none tabular-nums">{animFlights}</p>
+                  <p className="text-xs text-gray-500 font-medium">{L.totalFlights}</p>
+                </div>
+
+                {/* Countries visited */}
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-blue-500/15 p-1.5">
+                      <Globe className="h-4 w-4 text-blue-400" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-black text-white leading-none tabular-nums">{animCountries}</p>
+                  <p className="text-xs text-gray-500 font-medium">{L.countries}</p>
+                </div>
+
+                {/* Total km */}
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-emerald-500/15 p-1.5">
+                      <TrendingUp className="h-4 w-4 text-emerald-400" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-black text-white leading-none tabular-nums">
+                    {animKm.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium">{L.totalKm}</p>
+                </div>
+
+                {/* Unique destinations */}
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-amber-500/15 p-1.5">
+                      <MapPin className="h-4 w-4 text-amber-400" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-black text-white leading-none tabular-nums">{animDestinations}</p>
+                  <p className="text-xs text-gray-500 font-medium">{L.destinations}</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Around the Earth highlight */}
+            {stats.timesAroundEarth >= 0.1 && (
+              <motion.div {...fadeUp(0.1)} className="px-4 pb-4">
+                <div className="rounded-2xl bg-gradient-to-r from-violet-900/60 to-blue-900/60 border border-violet-700/30 p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl" aria-hidden>🌏</span>
+                    <div>
+                      <p className="text-xs text-violet-300/70 font-semibold uppercase tracking-widest mb-0.5">
+                        {locale === "es" ? "Vuelta al planeta" : "Around the planet"}
+                      </p>
+                      <p className="text-white font-black text-lg leading-tight">
+                        {L.aroundEarth(stats.timesAroundEarth)}
+                      </p>
+                    </div>
+                    <div className="ml-auto">
+                      <span className="text-4xl font-black text-white/20 select-none">
+                        {stats.timesAroundEarth}×
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* World Map with country stamp collection */}
+            {stats.totalFlights >= 1 && (
+              <motion.div {...fadeUp(0.12)} className="px-4 pb-4">
+                {/* Countries counter */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-blue-400" />
+                    <span className="text-sm font-bold text-gray-300">
+                      {L.stamp.countriesVisited}
+                    </span>
+                  </div>
+                  <span className="text-sm font-black text-white tabular-nums">
+                    {stats.countriesVisited.length}
+                    <span className="text-gray-500 font-normal text-xs ml-1">
+                      {L.stamp.of} 195
+                    </span>
+                  </span>
+                </div>
+
+                <WorldMapView
+                  trips={trips}
+                  locale={locale}
+                  onAirportClick={(iata) => setSelectedIata((prev) => prev === iata ? null : iata)}
+                />
+
+                {/* Stamp popup */}
+                <AnimatePresence>
+                  {selectedIata && stampDataMap[selectedIata] && (
+                    <StampCard
+                      data={stampDataMap[selectedIata]}
+                      locale={locale}
+                      onClose={() => setSelectedIata(null)}
+                    />
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* Top route */}
+            {stats.mostFrequentRoute != null && (
+              <motion.div {...fadeUp(0.2)} className="px-4 pb-4">
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="h-3.5 w-3.5 text-amber-400" />
+                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">{L.favoriteRoute}</p>
+                  </div>
+                  <p className="font-mono text-2xl font-black text-white">{stats.mostFrequentRoute}</p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Plan status */}
+            <motion.div {...fadeUp(0.25)} className="px-4 pb-6">
+              {(userPlan === "explorer" || userPlan === "pilot") ? (
+                <div className="rounded-2xl border border-amber-600/40 bg-gradient-to-br from-amber-950/40 to-surface-overlay p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-amber-500/70">
+                      {locale === "es" ? "Tu plan" : "Your plan"}
+                    </span>
+                  </div>
+                  <p className="text-lg font-black text-white">
+                    {userPlan === "pilot"
+                      ? (locale === "es" ? "Plan Pilot ✈️" : "Pilot Plan ✈️")
+                      : (locale === "es" ? "Plan Explorer ⭐" : "Explorer Plan ⭐")}
+                  </p>
+                  <p className="text-sm text-amber-400/80 mt-0.5">{L.premiumPerks}</p>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                      {locale === "es" ? "Tu plan" : "Your plan"}
+                    </span>
+                  </div>
+                  <p className="text-lg font-black text-white mb-0.5">{L.freePlan}</p>
+                  <p className="text-sm text-gray-500 mb-4">{L.freeLimits}</p>
+                  <button
+                    onClick={onUpgrade}
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 active:scale-95 text-white text-sm font-bold py-3 transition-all"
+                  >
+                    {L.upgradeBtn}
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ── ACHIEVEMENTS TAB ───────────────────────────────────────────── */}
+        {activeProfileTab === "achievements" && (
+          <motion.div
+            key="achievements"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+          >
+            {/* Achievement badges section */}
+            <motion.div {...fadeUp(0.05)} className="px-4 pb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Award className="h-4 w-4 text-amber-400" />
+                <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest">{L.achievements}</h2>
+              </div>
+
+              {stats.totalFlights === 0 && stats.totalDistanceKm === 0 ? (
+                <p className="text-sm text-gray-600 italic">{L.emptyAchievements}</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {badges.map((badge, i) => {
+                    const progressPct = badge.target > 0
+                      ? Math.round((badge.current / badge.target) * 100)
+                      : 0;
+                    const isNew = newlyUnlocked.has(badge.label);
+                    const colorClass = badgePillColors[i % badgePillColors.length];
+                    return (
+                      <div
+                        key={badge.label}
+                        className={`flex flex-col items-center rounded-2xl border p-3 gap-1 text-center ${colorClass} ${isNew && badge.unlocked ? "animate-pulse" : ""}`}
+                      >
+                        <span className="text-2xl leading-none" aria-hidden>{badge.emoji}</span>
+                        <p className="text-xs font-bold leading-tight">{badge.label}</p>
+                        {badge.unlocked ? (
+                          <span className="text-[10px] text-emerald-400">
+                            {locale === "es" ? "✓ Desbloqueado" : "✓ Unlocked"}
+                          </span>
+                        ) : (
+                          <div className="w-full">
+                            <div className="h-1 w-full rounded-full bg-white/[0.06] mt-1">
+                              <div
+                                className="h-full rounded-full bg-violet-500"
+                                style={{ width: `${progressPct}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-gray-500">
+                              {badge.current.toLocaleString()}/{badge.target.toLocaleString()} {badge.unit}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
+
+            {/* AchievementBadges component */}
+            <motion.div {...fadeUp(0.1)}>
+              <AchievementBadges trips={trips} locale={locale} />
+            </motion.div>
+
+            {/* Travel Streaks */}
+            <motion.div {...fadeUp(0.15)}>
+              <TravelStreaks trips={trips} locale={locale} />
+            </motion.div>
+
+            {/* Travel Challenges */}
+            <motion.div {...fadeUp(0.2)}>
+              <TravelChallenges trips={trips} stats={stats} locale={locale} />
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ── WRAPPED TAB ────────────────────────────────────────────────── */}
+        {activeProfileTab === "wrapped" && (
+          <motion.div
+            key="wrapped"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+          >
+            {/* Travel Wrapped shareable card */}
+            {stats.totalFlights >= 1 ? (
+              <motion.div {...fadeUp(0.05)}>
+                <TravelWrappedCard
+                  totalFlights={stats.totalFlights}
+                  totalKm={stats.totalDistanceKm}
+                  countries={stats.countriesVisited.length}
+                  airports={stats.airportsVisited.length}
+                  airborneHours={stats.totalDurationHours}
+                  favoriteAirline={stats.mostUsedAirline}
+                  favoriteRoute={stats.mostFrequentRoute}
+                  timezonesCount={timezonesCount}
+                  year={new Date().getFullYear()}
+                  locale={locale}
+                  userPlan={userPlan}
+                  onUpgrade={onUpgrade}
+                />
+              </motion.div>
+            ) : (
+              <motion.div {...fadeUp(0.05)} className="px-4 py-12 text-center">
+                <p className="text-4xl mb-4">🌍</p>
+                <p className="text-sm text-gray-500">
+                  {locale === "es"
+                    ? "Guardá tus vuelos para ver tu Travel Wrapped"
+                    : "Save your flights to see your Travel Wrapped"}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Travel Personality */}
+            {userId && (
+              <motion.div {...fadeUp(0.1)}>
+                <TravelPersonality trips={trips} userId={userId} locale={locale} />
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── SOCIAL TAB ─────────────────────────────────────────────────── */}
+        {activeProfileTab === "social" && (
+          <motion.div
+            key="social"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+          >
+            {/* Referral Card */}
+            {userId !== null && (
+              <motion.div {...fadeUp(0.05)}>
+                <ReferralCard locale={locale} />
+              </motion.div>
+            )}
+
+            {/* Plan upgrade CTA for social sharing */}
+            {userPlan === "free" && (
+              <motion.div {...fadeUp(0.1)} className="px-4 pb-6">
+                <div className="rounded-2xl border border-violet-700/30 bg-gradient-to-br from-violet-950/40 to-surface-overlay p-4 text-center">
+                  <p className="text-sm font-semibold text-white/80 mb-1">
+                    {locale === "es" ? "Compartí más con Premium" : "Share more with Premium"}
+                  </p>
+                  <p className="text-xs text-gray-500 mb-3">
+                    {locale === "es"
+                      ? "Accedé a tarjetas de viaje, estadísticas avanzadas y más."
+                      : "Access travel cards, advanced stats and more."}
+                  </p>
+                  <button
+                    onClick={onUpgrade}
+                    className="rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 active:scale-95 text-white text-sm font-bold px-6 py-2.5 transition-all"
+                  >
+                    {L.upgradeBtn}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+
+      </AnimatePresence>
     </div>
   );
 }

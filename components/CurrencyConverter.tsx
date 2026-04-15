@@ -200,7 +200,7 @@ export function CurrencyConverter({ locale, tripFlights }: CurrencyConverterProp
             aria-label={locale === "es" ? "Moneda origen" : "From currency"}
           >
             {TOP_CURRENCIES.map((c) => (
-              <option key={c} value={c} className="bg-[#0e0e20] text-white">{c}</option>
+              <option key={c} value={c} className="bg-surface-elevated text-white">{c}</option>
             ))}
           </select>
         </div>
@@ -257,7 +257,7 @@ export function CurrencyConverter({ locale, tripFlights }: CurrencyConverterProp
             aria-label={locale === "es" ? "Moneda destino" : "To currency"}
           >
             {TOP_CURRENCIES.map((c) => (
-              <option key={c} value={c} className="bg-[#0e0e20] text-white">{c}</option>
+              <option key={c} value={c} className="bg-surface-elevated text-white">{c}</option>
             ))}
           </select>
         </div>

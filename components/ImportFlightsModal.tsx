@@ -233,7 +233,7 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
         role="dialog"
         aria-modal="true"
         aria-labelledby="import-flights-modal-title"
-        className="relative w-full max-w-2xl rounded-2xl border border-white/8 bg-[#0f0f17] shadow-2xl animate-fade-in-up max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-2xl rounded-2xl border border-white/[0.07] bg-surface-card shadow-2xl animate-fade-in-up max-h-[90vh] flex flex-col"
       >
 
         {/* Confetti burst on successful import */}
@@ -307,7 +307,7 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
                   onChange={(e) => setText(e.target.value)}
                   placeholder={t.textPlaceholder}
                   rows={9}
-                  className="w-full rounded-xl border border-white/8 bg-[#080810] px-4 py-3 text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-500/60 resize-none font-mono leading-relaxed"
+                  className="w-full rounded-xl border border-white/[0.07] bg-surface-darker px-4 py-3 text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-500/60 resize-none font-mono leading-relaxed"
                 />
               )}
 
@@ -317,7 +317,7 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
                   role="button"
                   tabIndex={0}
                   aria-label={locale === "es" ? "Zona para soltar imagen" : "Image drop zone"}
-                  className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-[#080810] p-6 cursor-pointer hover:border-violet-500/40 transition-colors"
+                  className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-surface-darker p-6 cursor-pointer hover:border-violet-500/40 transition-colors"
                   onClick={() => fileRef.current?.click()}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -514,17 +514,17 @@ function FlightEditCard({
 }) {
   const isMissing = (field: string) => flight.missing.includes(field);
   const fieldCls = (field: string) =>
-    `w-full rounded-lg border px-2.5 py-1.5 text-xs text-gray-200 bg-[#080810] focus:outline-none focus:ring-1 transition-colors ${
+    `w-full rounded-lg border px-2.5 py-1.5 text-xs text-gray-200 bg-surface-darker focus:outline-none focus:ring-1 transition-colors ${
       isMissing(field)
         ? "border-orange-600/60 focus:ring-orange-500/50 placeholder-orange-800"
-        : "border-white/8 focus:ring-violet-500/40 placeholder-gray-700"
+        : "border-white/[0.07] focus:ring-violet-500/40 placeholder-gray-700"
     }`;
 
   return (
     <div className={`rounded-xl border transition-all ${
       flight.selected
         ? "border-violet-600/30 bg-violet-950/10"
-        : "border-white/6 bg-[#080810] opacity-50"
+        : "border-white/[0.07] bg-surface-darker opacity-50"
     }`}>
       {/* Card header with checkbox + route summary */}
       <div

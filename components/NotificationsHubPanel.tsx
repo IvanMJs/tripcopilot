@@ -169,7 +169,7 @@ export function NotificationsHubPanel({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 340, damping: 32 }}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[80vh] flex flex-col rounded-t-3xl bg-[#0e0e1a] border-t border-white/[0.08] overflow-hidden"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[80vh] flex flex-col rounded-t-3xl bg-surface-elevated border-t border-white/[0.07] overflow-hidden"
             role="dialog"
             aria-modal
             aria-label={L.title}

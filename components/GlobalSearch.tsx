@@ -179,7 +179,7 @@ export function GlobalSearch({
             aria-label={locale === "es" ? "Búsqueda global" : "Global search"}
             className="fixed top-[10%] left-1/2 -translate-x-1/2 z-[61] w-full max-w-lg px-4"
           >
-            <div className="rounded-2xl border border-white/[0.12] bg-[#0e0e1c] shadow-2xl overflow-hidden">
+            <div className="rounded-2xl border border-white/10 bg-surface-elevated shadow-2xl overflow-hidden">
               {/* Input row */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07]">
                 <Search className="h-4 w-4 text-gray-500 shrink-0" />

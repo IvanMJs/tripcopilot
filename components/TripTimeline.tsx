@@ -162,7 +162,7 @@ export function TripTimeline({
           onPointerEnter={cancelClose}
           onPointerLeave={scheduleClose}
         >
-          <div className="rounded-xl border border-white/10 bg-[#0f0f17] shadow-2xl px-3.5 py-2.5 whitespace-nowrap text-left"
+          <div className="rounded-xl border border-white/10 bg-surface-card shadow-2xl px-3.5 py-2.5 whitespace-nowrap text-left"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
             <p className="text-xs font-bold text-white mb-1">
               {activeNode.code} · {AIRPORTS[activeNode.code]?.city ?? activeNode.code}

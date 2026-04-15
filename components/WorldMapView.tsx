@@ -125,7 +125,7 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="bg-[#07070f] rounded-2xl overflow-hidden border border-white/[0.06]"
+      className="bg-surface-overlay rounded-2xl overflow-hidden border border-white/[0.07]"
     >
       {/* Map area */}
       <div className="relative w-full" style={{ aspectRatio: "2 / 1" }}>

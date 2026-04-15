@@ -142,7 +142,7 @@ function SuggestionCard({
 
       {/* Upgrade overlay for blurred cards */}
       {blurred && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#080810]/60 backdrop-blur-[2px] p-4">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-darker/60 backdrop-blur-[2px] p-4">
           <Lock className="h-5 w-5 text-violet-400/80" />
           <p className="text-[11px] text-gray-400 font-medium text-center leading-tight">
             {L.upgradeHint}

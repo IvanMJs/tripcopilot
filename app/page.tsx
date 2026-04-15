@@ -562,7 +562,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Floating badge — TripCopilot */}
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-violet-700/50 bg-[#0d0d1a] px-3 py-1.5 shadow-lg whitespace-nowrap">
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-violet-700/50 bg-surface-elevated px-3 py-1.5 shadow-lg whitespace-nowrap">
                   <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-4 w-4" />
                   <span className="text-[11px] text-violet-300 font-bold">TripCopilot lo hace solo</span>
                 </div>
@@ -802,7 +802,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(featuresExpanded ? features : features.slice(0, 6)).map((f) => {
+            {features.slice(0, 4).map((f) => {
               const Icon = f.icon;
               return (
                 <div key={f.title}
@@ -815,9 +815,30 @@ export default function LandingPage() {
                 </div>
               );
             })}
+            <AnimatePresence>
+              {featuresExpanded && features.slice(4).map((f) => {
+                const Icon = f.icon;
+                return (
+                  <motion.div
+                    key={f.title}
+                    initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className={`rounded-2xl border ${f.border} ${f.bg} p-5 space-y-3 flex flex-col items-center text-center`}
+                  >
+                    <div className={`flex items-center justify-center h-9 w-9 rounded-xl ${f.bg} border ${f.border}`}>
+                      <Icon className={`h-4 w-4 ${f.color}`} />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">{f.title}</h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">{f.desc}</p>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
 
-          {features.length > 6 && (
+          {features.length > 4 && (
             <div className="mt-6 text-center">
               <button
                 onClick={() => setFeaturesExpanded((v) => !v)}
@@ -825,7 +846,7 @@ export default function LandingPage() {
               >
                 {featuresExpanded
                   ? (lang === "en" ? "Show less" : "Ver menos")
-                  : (lang === "en" ? `See all features (+${features.length - 6} more)` : `Ver todas las funciones (+${features.length - 6} más)`)}
+                  : (lang === "en" ? `See all features (+${features.length - 4} more)` : `Ver más features (+${features.length - 4} más)`)}
                 <motion.span
                   animate={{ rotate: featuresExpanded ? 180 : 0 }}
                   transition={{ duration: 0.25 }}
@@ -1360,7 +1381,7 @@ export default function LandingPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="tu@email.com"
                       required
-                      className="w-full rounded-xl border border-white/[0.12] bg-[#080810] pl-10 pr-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-white/[0.12] bg-surface-darker pl-10 pr-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
 
