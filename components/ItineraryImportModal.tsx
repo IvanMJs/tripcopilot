@@ -286,7 +286,7 @@ export function ItineraryImportModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="itinerary-import-modal-title"
-            className="relative w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl border border-white/8 bg-[#0f0f17] shadow-2xl max-h-[92dvh] flex flex-col"
+            className="relative w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl border border-white/[0.07] bg-surface-card shadow-2xl max-h-[92dvh] flex flex-col"
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
@@ -370,7 +370,7 @@ export function ItineraryImportModal({
                         onChange={(e) => setText(e.target.value)}
                         placeholder={t.textPlaceholder}
                         rows={9}
-                        className="w-full rounded-xl border border-white/8 bg-[#080810] px-4 py-3 text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-500/60 resize-none font-mono leading-relaxed"
+                        className="w-full rounded-xl border border-white/[0.07] bg-surface-darker px-4 py-3 text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-500/60 resize-none font-mono leading-relaxed"
                       />
                     )}
 
@@ -380,7 +380,7 @@ export function ItineraryImportModal({
                         role="button"
                         tabIndex={0}
                         aria-label={locale === "es" ? "Zona para soltar imagen" : "Image drop zone"}
-                        className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-[#080810] p-6 cursor-pointer hover:border-violet-500/40 transition-colors"
+                        className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-surface-darker p-6 cursor-pointer hover:border-violet-500/40 transition-colors"
                         onClick={() => fileRef.current?.click()}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
@@ -433,7 +433,7 @@ export function ItineraryImportModal({
 
                     {/* Camera tab */}
                     {tab === "camera" && (
-                      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-white/10 bg-[#080810] p-8">
+                      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-white/10 bg-surface-darker p-8">
                         {imagePreview ? (
                           <img
                             src={imagePreview}
@@ -642,10 +642,10 @@ function FlightReviewCard({
   const [expanded, setExpanded] = useState(true);
   const isMissing = (field: string) => flight.missing.includes(field);
   const fieldCls  = (field: string) =>
-    `w-full rounded-lg border px-2.5 py-1.5 text-xs text-gray-200 bg-[#080810] focus:outline-none focus:ring-1 transition-colors ${
+    `w-full rounded-lg border px-2.5 py-1.5 text-xs text-gray-200 bg-surface-darker focus:outline-none focus:ring-1 transition-colors ${
       isMissing(field)
         ? "border-orange-600/60 focus:ring-orange-500/50 placeholder-orange-800"
-        : "border-white/8 focus:ring-violet-500/40 placeholder-gray-700"
+        : "border-white/[0.07] focus:ring-violet-500/40 placeholder-gray-700"
     }`;
 
   const confidenceColor: Record<string, string> = {

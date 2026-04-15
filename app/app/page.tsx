@@ -728,7 +728,7 @@ export default function HomePage() {
 
       {/* Trip history view — full-screen overlay */}
       {showTripHistory && (
-        <div className="fixed inset-0 z-50 bg-[#080810] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-surface-darker overflow-y-auto">
           <TripHistoryView
             trips={userTrips}
             locale={locale}

@@ -116,7 +116,7 @@ export function AirportSearchInput({
   }, [value]);
 
   const inputClass =
-    "w-full rounded-xl border border-white/[0.12] bg-[#080810] px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500/70";
+    "w-full rounded-xl border border-white/10 bg-surface-darker px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500/70";
 
   const noResultsLabel = locale === "es" ? "Sin resultados" : "No results";
 
@@ -141,7 +141,7 @@ export function AirportSearchInput({
       {open && (
         <ul
           id="airport-search-listbox"
-          className="absolute z-50 mt-1 w-full rounded-xl border border-white/[0.10] bg-[#0e0e1a] shadow-2xl overflow-hidden"
+          className="absolute z-50 mt-1 w-full rounded-xl border border-white/[0.07] bg-surface-elevated shadow-2xl overflow-hidden"
           role="listbox"
         >
           {results.length === 0 ? (

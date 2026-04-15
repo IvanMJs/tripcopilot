@@ -154,7 +154,7 @@ export function SmartPackingList({
 
       {/* Sheet */}
       <motion.div
-        className="relative z-10 w-full max-w-lg bg-[#0f0f1a] border border-white/[0.1] rounded-t-2xl sm:rounded-2xl flex flex-col"
+        className="relative z-10 w-full max-w-lg bg-surface-card border border-white/[0.07] rounded-t-2xl sm:rounded-2xl flex flex-col"
         style={{ maxHeight: "90dvh" }}
         initial={{ opacity: 0, y: 60 }}
         animate={{ opacity: 1, y: 0 }}

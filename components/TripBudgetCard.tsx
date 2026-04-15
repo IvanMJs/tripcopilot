@@ -223,7 +223,7 @@ export function TripBudgetCard({ trip, locale }: TripBudgetCardProps) {
             className="w-full rounded-lg bg-white/[0.06] border border-white/[0.08] px-3 py-1.5 text-xs text-gray-300 outline-none focus:border-blue-500/50"
           >
             {EXPENSE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat} className="bg-[#0f0f17]">
+              <option key={cat} value={cat} className="bg-surface-card">
                 {L.categories[cat]}
               </option>
             ))}

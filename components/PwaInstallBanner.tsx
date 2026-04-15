@@ -54,7 +54,7 @@ export function PwaInstallBanner({ hasTrip }: PwaInstallBannerProps) {
 
   return (
     <div className="fixed bottom-16 left-0 right-0 z-50 px-4 pb-2 pointer-events-none">
-      <div className="pointer-events-auto mx-auto max-w-lg flex items-center justify-between gap-3 rounded-2xl border border-violet-700/40 bg-[#0e0e1a] px-4 py-3 shadow-lg shadow-black/60">
+      <div className="pointer-events-auto mx-auto max-w-lg flex items-center justify-between gap-3 rounded-2xl border border-violet-700/40 bg-surface-elevated px-4 py-3 shadow-lg shadow-black/60">
         <span className="text-sm text-gray-300 font-medium leading-snug">
           📲 Instalá la app para acceso rápido
         </span>

@@ -9,6 +9,7 @@ import {
   Save, ChevronRight,
   Sparkles, Loader2, List, GitBranch,
   Eye, Users, Lock, Download,
+  Info, Receipt, StickyNote,
 } from "lucide-react";
 import { AirportStatusMap, TripFlight, TripTab, Accommodation, Passenger } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
@@ -148,7 +149,7 @@ export function TripPanel({
   const [renamingTripName, setRenamingTripName] = useState("");
   const [saving, setSaving]             = useState(false);
   const [viewMode, setViewMode]         = useState<"list" | "timeline">("list");
-  const [panelTab, setPanelTab]         = useState<"flights" | "expenses" | "alerts" | "passengers" | "checklist" | "notes">("flights");
+  const [activeSection, setActiveSection] = useState<"flights" | "info" | "expenses" | "notes">("flights");
   const [showQuickExpense, setShowQuickExpense] = useState(false);
   const [tripCardLoading, setTripCardLoading] = useState(false);
   const [arcAnimation, setArcAnimation] = useState<{ origin: string; dest: string } | null>(null);
@@ -524,8 +525,76 @@ export function TripPanel({
         </div>
       )}
 
+      {/* Smart alerts — always visible when there are active alerts */}
+      {!isDraft && sorted.length > 0 && (() => {
+        const flightAirports = sorted.flatMap((f) => [f.originCode, f.destinationCode]);
+        const hasDelayedAirport = flightAirports.some((code) => {
+          const s = statusMap[code];
+          return s && s.status !== "ok" && s.status !== "unknown";
+        });
+        const hasConnectionRisk = Array.from(connectionMap.values()).some(
+          (a) => a.risk === "tight" || a.risk === "at_risk" || a.risk === "missed",
+        );
+        if (!hasDelayedAirport && !hasConnectionRisk) return null;
+        return (
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-950/40 border border-amber-700/40">
+            <Bell className="h-4 w-4 text-amber-400 shrink-0" />
+            <p className="text-xs font-semibold text-amber-300">
+              {locale === "es"
+                ? "Hay alertas activas en tu viaje"
+                : "There are active alerts for your trip"}
+            </p>
+          </div>
+        );
+      })()}
+
+      {/* Tab bar — 4 tabs: Vuelos, Info, Gastos, Notas */}
+      {!isDraft && (
+        <div
+          role="tablist"
+          aria-label={locale === "es" ? "Secciones del viaje" : "Trip sections"}
+          className="flex items-center bg-white/5 rounded-xl p-0.5 gap-0.5 overflow-x-auto scrollbar-none"
+        >
+          {(
+            [
+              { id: "flights",  labelEs: "Vuelos",  labelEn: "Flights",  Icon: Plane },
+              { id: "info",     labelEs: "Info",    labelEn: "Info",     Icon: Info },
+              { id: "expenses", labelEs: "Gastos",  labelEn: "Expenses", Icon: Receipt },
+              { id: "notes",    labelEs: "Notas",   labelEn: "Notes",    Icon: StickyNote },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={activeSection === tab.id}
+              aria-controls={`trip-tabpanel-${tab.id}`}
+              id={`trip-tab-${tab.id}`}
+              onClick={() => { haptics.impact(); setActiveSection(tab.id); }}
+              className={`relative flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
+                activeSection === tab.id ? "text-white" : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              {activeSection === tab.id && (
+                <motion.span
+                  layoutId="trip-section-pill"
+                  className="absolute inset-0 rounded-lg bg-white/10"
+                  layout
+                  transition={{ type: "spring", stiffness: 420, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-1.5">
+                <tab.Icon className="h-3.5 w-3.5" />
+                {locale === "es" ? tab.labelEs : tab.labelEn}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Tab: Vuelos ─────────────────────────────────────────── */}
+
       {/* Countdown Widget — shown when first flight is in the future */}
-      {countdownData && (
+      {(activeSection === "flights" || isDraft) && countdownData && (
         <TripCountdownWidget
           destination={countdownData.destination}
           daysLeft={countdownData.daysLeft}
@@ -536,123 +605,17 @@ export function TripPanel({
       )}
 
       {/* Flight Countdown Badge */}
-      {nextFlight && (
+      {(activeSection === "flights" || isDraft) && nextFlight && (
         <FlightCountdownBadge flight={nextFlight} locale={locale} />
       )}
 
       {/* Trip Risk Score */}
-      {sorted.length > 0 && <TripRiskBadge risk={riskScore} locale={locale} />}
-
-      {/* Trip Stats */}
-      {!isDraft && trip.flights.length > 0 && <TripStatsCard trip={trip} locale={locale} />}
-
-      {/* Trip Weather Summary — shown when trip has 2+ flights */}
-      {!isDraft && sorted.length >= 2 && (
-        <TripWeatherSummary flights={sorted} locale={locale} />
-      )}
-
-      {/* Panel tab switcher */}
-      {!isDraft && (
-        <div
-          role="tablist"
-          aria-label={locale === "es" ? "Secciones del viaje" : "Trip sections"}
-          className="flex items-center bg-white/5 rounded-xl p-0.5 gap-0.5"
-        >
-          {(
-            [
-              { id: "flights",    label: locale === "es" ? "Vuelos"    : "Flights",    icon: <Plane className="h-3.5 w-3.5" /> },
-              { id: "expenses",   label: locale === "es" ? "Gastos"    : "Expenses",   icon: "💰" },
-              { id: "alerts",     label: locale === "es" ? "Alertas"   : "Alerts",     icon: "🔔" },
-              { id: "passengers", label: locale === "es" ? "Pasajeros" : "Passengers", icon: "👥" },
-              { id: "checklist",  label: locale === "es" ? "Lista"     : "Checklist",  icon: "✅" },
-              { id: "notes",      label: locale === "es" ? "Notas"     : "Notes",      icon: "📝" },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={panelTab === tab.id}
-              aria-controls={`panel-tabpanel-${tab.id}`}
-              id={`panel-tab-${tab.id}`}
-              onClick={() => { haptics.impact(); setPanelTab(tab.id); }}
-              className={`relative flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                panelTab === tab.id ? "text-white" : "text-gray-500 hover:text-gray-300"
-              }`}
-            >
-              {panelTab === tab.id && (
-                <motion.span
-                  layoutId="panel-tab-pill"
-                  className="absolute inset-0 rounded-lg bg-white/10"
-                  layout
-                  transition={{ type: "spring", stiffness: 420, damping: 30 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                {tab.icon}
-                {tab.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Expenses tab */}
-      {panelTab === "expenses" && !isDraft && (
-        <>
-          <TripBudgetCard trip={trip} locale={locale} />
-          <CurrencyConverter locale={locale} tripFlights={trip.flights} />
-          <TripExpenses
-            tripId={trip.id}
-            tripName={trip.name}
-            locale={locale}
-            readOnly={!canEdit}
-            onQuickAdd={canEdit ? () => setShowQuickExpense(true) : undefined}
-          />
-        </>
-      )}
-
-      {/* Alerts tab */}
-      {panelTab === "alerts" && !isDraft && (() => {
-        const flightAirports = sorted.flatMap((f) => [f.originCode, f.destinationCode]);
-        const hasDelayedAirport = flightAirports.some((code) => {
-          const s = statusMap[code];
-          return s && s.status !== "ok" && s.status !== "unknown";
-        });
-        const hasConnectionRisk = Array.from(connectionMap.values()).some(
-          (a) => a.risk === "tight" || a.risk === "at_risk" || a.risk === "missed",
-        );
-        const hasActiveAlerts = hasDelayedAirport || hasConnectionRisk;
-        return (
-          <>
-            {!hasActiveAlerts && (
-              <EmptyState
-                icon={<Bell className="w-8 h-8" />}
-                title={locale === "es" ? "Todo en orden" : "All clear"}
-                description={locale === "es" ? "No hay alertas activas para este viaje" : "No active alerts for this trip"}
-              />
-            )}
-            <PriceAlerts locale={locale} />
-          </>
-        );
-      })()}
-
-      {/* Passengers tab */}
-      {panelTab === "passengers" && !isDraft && (
-        <TripPassengers tripId={trip.id} locale={locale} readOnly={!canEdit} />
-      )}
-
-      {/* Checklist tab */}
-      {panelTab === "checklist" && !isDraft && (
-        <TripChecklist tripId={trip.id} locale={locale} readOnly={!canEdit} />
-      )}
-
-      {/* Notes tab */}
-      {panelTab === "notes" && !isDraft && (
-        <TripNotes tripId={trip.id} locale={locale} />
+      {(activeSection === "flights" || isDraft) && sorted.length > 0 && (
+        <TripRiskBadge risk={riskScore} locale={locale} />
       )}
 
       {/* Departure time widget — shown when a flight departs within 24 hours */}
-      {(panelTab === "flights" || isDraft) && nextFlight && (
+      {(activeSection === "flights" || isDraft) && nextFlight && (
         <DepartureTimeWidget
           flight={nextFlight}
           geoPosition={geoPosition}
@@ -663,7 +626,7 @@ export function TripPanel({
       )}
 
       {/* Flight cards */}
-      {(panelTab === "flights" || isDraft) && (sorted.length === 0 ? (
+      {(activeSection === "flights" || isDraft) && (sorted.length === 0 ? (
         <EmptyState
           icon={<Plane className="w-8 h-8" />}
           title={locale === "es" ? "Agrega vuelos a tu viaje" : "Add flights to your trip"}
@@ -855,80 +818,12 @@ export function TripPanel({
       ))}
 
       {/* Carbon footprint — shown in flights tab when there are flights */}
-      {(panelTab === "flights" || isDraft) && sorted.length > 0 && (
+      {(activeSection === "flights" || isDraft) && sorted.length > 0 && (
         <CarbonFootprint flights={sorted} locale={locale} />
       )}
 
-      {/* Flight price alert teaser — shown in flights tab when there are flights */}
-      {panelTab === "flights" && !isDraft && sorted.length > 0 && (() => {
-        const firstFlight = sorted[0];
-        const lastFlight = sorted[sorted.length - 1];
-        const origin = firstFlight.originCode;
-        const destination = lastFlight.destinationCode;
-        return (
-          <FlightPriceAlertTeaser
-            origin={origin}
-            destination={destination}
-            locale={locale}
-            planType={userPlan ?? "free"}
-            onUpgrade={onUpgrade}
-          />
-        );
-      })()}
-
-      {/* Premium teaser cards — free users only, flights tab */}
-      {panelTab === "flights" && !isDraft && sorted.length > 0 && userPlan === "free" && (
-        <div className="space-y-3">
-          {/* Teaser 1: AI Health Check */}
-          <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 overflow-hidden">
-            <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 z-10 flex flex-col items-center justify-center">
-              <Lock className="h-5 w-5 text-violet-400 mb-2" />
-              <p className="text-sm font-bold text-white">AI Health Check</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {locale === "es" ? "Disponible en Explorer" : "Available in Explorer"}
-              </p>
-              <button
-                onClick={onUpgrade}
-                className="mt-3 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
-              >
-                {locale === "es" ? "Mejorar plan →" : "Upgrade plan →"}
-              </button>
-            </div>
-            <div className="space-y-2" aria-hidden>
-              <div className="h-4 w-3/4 rounded bg-white/[0.05]" />
-              <div className="h-4 w-1/2 rounded bg-white/[0.05]" />
-              <div className="h-8 w-full rounded bg-white/[0.05]" />
-            </div>
-          </div>
-
-          {/* Teaser 2: Price Alerts */}
-          <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 overflow-hidden">
-            <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 z-10 flex flex-col items-center justify-center">
-              <Lock className="h-5 w-5 text-violet-400 mb-2" />
-              <p className="text-sm font-bold text-white">
-                {locale === "es" ? "Alertas de precio" : "Price alerts"}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                {locale === "es" ? "Disponible en Explorer" : "Available in Explorer"}
-              </p>
-              <button
-                onClick={onUpgrade}
-                className="mt-3 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
-              >
-                {locale === "es" ? "Mejorar plan →" : "Upgrade plan →"}
-              </button>
-            </div>
-            <div className="space-y-2" aria-hidden>
-              <div className="h-4 w-2/3 rounded bg-white/[0.05]" />
-              <div className="h-4 w-5/6 rounded bg-white/[0.05]" />
-              <div className="h-6 w-1/3 rounded bg-white/[0.05]" />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Action bar */}
-      {(panelTab === "flights" || isDraft) && trip.flights.length > 0 && (
+      {(activeSection === "flights" || isDraft) && trip.flights.length > 0 && (
         <div className="space-y-2">
           {/* Primary actions */}
           <div className="grid grid-cols-2 gap-2">
@@ -980,7 +875,7 @@ export function TripPanel({
                 Google Cal
               </button>
               {showGcal && (
-                <div className="absolute top-full mt-1 left-0 z-20 min-w-[220px] rounded-xl border border-white/8 bg-[#0f0f17] shadow-2xl py-1">
+                <div className="absolute top-full mt-1 left-0 z-20 min-w-[220px] rounded-xl border border-white/8 bg-surface-card shadow-2xl py-1">
                   {calFlights.map((cf, i) => (
                     <a
                       key={i}
@@ -1142,16 +1037,6 @@ export function TripPanel({
               Instagram
             </button>
 
-            {/* Packing list button */}
-            {!isDraft && (
-              <button
-                onClick={() => setShowPackingList(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-emerald-800/40 bg-emerald-950/15 px-3 py-1.5 text-xs text-emerald-400 hover:bg-emerald-950/35 transition-colors"
-              >
-                <span aria-hidden="true" className="text-sm leading-none">🧳</span>
-                {locale === "es" ? "Lista de equipaje" : "Packing list"}
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -1184,22 +1069,11 @@ export function TripPanel({
         })()}
       </AnimatePresence>
 
-      {/* Trip guide */}
-      {(panelTab === "flights" || isDraft) && sorted.length > 0 && <TripAdvisor flights={advisorFlights} locale={locale} />}
-
-      {/* Collaborative trip chat — shown in flights tab for non-draft trips with collaborators */}
-      {panelTab === "flights" && !isDraft && (
-        <TripChatPanel
-          tripId={trip.id}
-          locale={locale}
-          planType={userPlan ?? "free"}
-          hasCollaborators={!!trip.isShared}
-          onUpgrade={onUpgrade}
-        />
-      )}
+      {/* Trip guide (AI) — Vuelos tab */}
+      {(activeSection === "flights" || isDraft) && sorted.length > 0 && <TripAdvisor flights={advisorFlights} locale={locale} />}
 
       {/* Add flight — hidden for viewer role */}
-      {canEdit && (panelTab === "flights" || isDraft) && sorted.length > 0 && !showAddForm && (
+      {canEdit && (activeSection === "flights" || isDraft) && sorted.length > 0 && !showAddForm && (
         <button
           onClick={() => setShowAddForm(true)}
           className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] py-3 text-sm font-semibold text-gray-400 hover:text-white transition-all"
@@ -1209,7 +1083,7 @@ export function TripPanel({
         </button>
       )}
 
-      {canEdit && (panelTab === "flights" || isDraft) && (sorted.length === 0 || showAddForm) && (
+      {canEdit && (activeSection === "flights" || isDraft) && (sorted.length === 0 || showAddForm) && (
         <div>
           {showAddForm && sorted.length > 0 && (
             <div className="flex items-center justify-between mb-2">
@@ -1236,6 +1110,133 @@ export function TripPanel({
             L={L}
           />
         </div>
+      )}
+
+      {/* ── Tab: Info ────────────────────────────────────────────── */}
+
+      {activeSection === "info" && !isDraft && (
+        <>
+          {/* Trip stats */}
+          {trip.flights.length > 0 && <TripStatsCard trip={trip} locale={locale} />}
+
+          {/* Weather summary */}
+          {sorted.length >= 2 && (
+            <TripWeatherSummary flights={sorted} locale={locale} />
+          )}
+
+          {/* Currency converter */}
+          <CurrencyConverter locale={locale} tripFlights={trip.flights} />
+
+          {/* Flight price alert teaser */}
+          {sorted.length > 0 && (() => {
+            const firstFlight = sorted[0];
+            const lastFlight = sorted[sorted.length - 1];
+            return (
+              <FlightPriceAlertTeaser
+                origin={firstFlight.originCode}
+                destination={lastFlight.destinationCode}
+                locale={locale}
+                planType={userPlan ?? "free"}
+                onUpgrade={onUpgrade}
+              />
+            );
+          })()}
+
+          {/* Premium teaser cards — free users only */}
+          {sorted.length > 0 && userPlan === "free" && (
+            <div className="space-y-3">
+              {/* Teaser 1: AI Health Check */}
+              <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 overflow-hidden">
+                <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 z-10 flex flex-col items-center justify-center">
+                  <Lock className="h-5 w-5 text-violet-400 mb-2" />
+                  <p className="text-sm font-bold text-white">AI Health Check</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {locale === "es" ? "Disponible en Explorer" : "Available in Explorer"}
+                  </p>
+                  <button
+                    onClick={onUpgrade}
+                    className="mt-3 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
+                  >
+                    {locale === "es" ? "Mejorar plan →" : "Upgrade plan →"}
+                  </button>
+                </div>
+                <div className="space-y-2" aria-hidden>
+                  <div className="h-4 w-3/4 rounded bg-white/[0.05]" />
+                  <div className="h-4 w-1/2 rounded bg-white/[0.05]" />
+                  <div className="h-8 w-full rounded bg-white/[0.05]" />
+                </div>
+              </div>
+
+              {/* Teaser 2: Price Alerts */}
+              <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 overflow-hidden">
+                <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 z-10 flex flex-col items-center justify-center">
+                  <Lock className="h-5 w-5 text-violet-400 mb-2" />
+                  <p className="text-sm font-bold text-white">
+                    {locale === "es" ? "Alertas de precio" : "Price alerts"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {locale === "es" ? "Disponible en Explorer" : "Available in Explorer"}
+                  </p>
+                  <button
+                    onClick={onUpgrade}
+                    className="mt-3 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
+                  >
+                    {locale === "es" ? "Mejorar plan →" : "Upgrade plan →"}
+                  </button>
+                </div>
+                <div className="space-y-2" aria-hidden>
+                  <div className="h-4 w-2/3 rounded bg-white/[0.05]" />
+                  <div className="h-4 w-5/6 rounded bg-white/[0.05]" />
+                  <div className="h-6 w-1/3 rounded bg-white/[0.05]" />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Tab: Gastos ──────────────────────────────────────────── */}
+
+      {activeSection === "expenses" && !isDraft && (
+        <>
+          <TripBudgetCard trip={trip} locale={locale} />
+          <TripExpenses
+            tripId={trip.id}
+            tripName={trip.name}
+            locale={locale}
+            readOnly={!canEdit}
+            onQuickAdd={canEdit ? () => setShowQuickExpense(true) : undefined}
+          />
+
+          {/* Packing list button */}
+          {sorted.length > 0 && (
+            <button
+              onClick={() => setShowPackingList(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-800/40 bg-emerald-950/15 py-3 text-sm font-semibold text-emerald-400 hover:bg-emerald-950/35 transition-colors"
+            >
+              <span aria-hidden="true" className="text-base leading-none">🧳</span>
+              {locale === "es" ? "Lista de equipaje" : "Packing list"}
+            </button>
+          )}
+        </>
+      )}
+
+      {/* ── Tab: Notas ───────────────────────────────────────────── */}
+
+      {activeSection === "notes" && !isDraft && (
+        <>
+          <TripNotes tripId={trip.id} locale={locale} />
+          <TripPassengers tripId={trip.id} locale={locale} readOnly={!canEdit} />
+          <TripChecklist tripId={trip.id} locale={locale} readOnly={!canEdit} />
+          <PriceAlerts locale={locale} />
+          <TripChatPanel
+            tripId={trip.id}
+            locale={locale}
+            planType={userPlan ?? "free"}
+            hasCollaborators={!!trip.isShared}
+            onUpgrade={onUpgrade}
+          />
+        </>
       )}
 
       {showImport && canEdit && (

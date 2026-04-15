@@ -149,7 +149,7 @@ function SectionHeader({ label }: { label: string }) {
 
 function SettingsCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] overflow-hidden divide-y divide-white/[0.06]">
+    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] overflow-hidden divide-y divide-white/[0.06]">
       {children}
     </div>
   );
@@ -173,7 +173,7 @@ function SegmentControl<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex rounded-lg border border-white/[0.08] overflow-hidden text-xs font-semibold shrink-0">
+    <div className="flex rounded-lg border border-white/[0.07] overflow-hidden text-xs font-semibold shrink-0">
       {options.map((opt) => (
         <button
           key={opt.value}
@@ -340,7 +340,7 @@ export function SettingsView({
   ];
 
   return (
-    <div className="min-h-screen pb-24 bg-[#07070f]">
+    <div className="min-h-screen pb-24 bg-surface-overlay">
       <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
 
         {/* Page title */}
@@ -362,7 +362,7 @@ export function SettingsView({
                 <img
                   src={userAvatar}
                   alt={userDisplayName ?? userEmail ?? ""}
-                  className="h-10 w-10 rounded-full object-cover border border-white/[0.12]"
+                  className="h-10 w-10 rounded-full object-cover border border-white/10"
                 />
               ) : (
                 <div className="h-10 w-10 rounded-full bg-violet-900/60 border border-violet-700/40 flex items-center justify-center">
@@ -447,7 +447,7 @@ export function SettingsView({
               <Palette className="h-4 w-4 text-violet-400" />
             </div>
             <span className="flex-1 text-sm text-gray-300">{L.theme}</span>
-            <div className="flex rounded-lg border border-white/[0.08] overflow-hidden text-xs font-semibold shrink-0">
+            <div className="flex rounded-lg border border-white/[0.07] overflow-hidden text-xs font-semibold shrink-0">
               {themeOptions.map(({ value, labelEs, labelEn, icon }) => (
                 <button
                   key={value}
@@ -553,7 +553,7 @@ export function SettingsView({
             </div>
             <button
               onClick={onOpenNotifSettings}
-              className="shrink-0 flex items-center gap-1 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors"
+              className="shrink-0 flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors"
             >
               {locale === "es" ? "Configurar" : "Configure"}
               <ChevronRight className="h-3.5 w-3.5" />
@@ -562,7 +562,7 @@ export function SettingsView({
 
           {/* Push permission status */}
           <SettingsRow>
-            <div className="h-8 w-8 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center shrink-0">
               <Shield className="h-4 w-4 text-gray-400" />
             </div>
             <div className="flex-1 min-w-0">
@@ -593,7 +593,7 @@ export function SettingsView({
               className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors ${
                 cacheCleared
                   ? "border-emerald-700/50 bg-emerald-950/30 text-emerald-400"
-                  : "border-white/[0.08] bg-white/[0.04] hover:bg-red-950/30 hover:border-red-800/40 hover:text-red-400 text-gray-300"
+                  : "border-white/[0.07] bg-white/[0.04] hover:bg-red-950/30 hover:border-red-800/40 hover:text-red-400 text-gray-300"
               }`}
             >
               {cacheCleared ? (locale === "es" ? "✓ Limpiado" : "✓ Cleared") : (locale === "es" ? "Limpiar" : "Clear")}
@@ -611,12 +611,12 @@ export function SettingsView({
             {onExportAllData ? (
               <button
                 onClick={onExportAllData}
-                className="shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-blue-950/30 hover:border-blue-800/40 hover:text-blue-400 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors"
+                className="shrink-0 rounded-xl border border-white/[0.07] bg-white/[0.04] hover:bg-blue-950/30 hover:border-blue-800/40 hover:text-blue-400 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors"
               >
                 {locale === "es" ? "Exportar" : "Export"}
               </button>
             ) : (
-              <span className="shrink-0 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-gray-600 uppercase tracking-wider">
+              <span className="shrink-0 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-gray-600 uppercase tracking-wider">
                 {L.exportComingSoon}
               </span>
             )}
@@ -624,7 +624,7 @@ export function SettingsView({
 
           {/* App version */}
           <SettingsRow>
-            <div className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.07] flex items-center justify-center shrink-0">
               <Info className="h-4 w-4 text-gray-600" />
             </div>
             <span className="flex-1 text-sm text-gray-500">{L.appVersion}</span>
@@ -637,7 +637,7 @@ export function SettingsView({
         <SettingsCard>
           {/* Privacy policy */}
           <SettingsRow>
-            <div className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.07] flex items-center justify-center shrink-0">
               <Shield className="h-4 w-4 text-gray-500" />
             </div>
             <a
@@ -651,7 +651,7 @@ export function SettingsView({
 
           {/* Terms */}
           <SettingsRow>
-            <div className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.07] flex items-center justify-center shrink-0">
               <Info className="h-4 w-4 text-gray-500" />
             </div>
             <a

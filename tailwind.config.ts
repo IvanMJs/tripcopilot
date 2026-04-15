@@ -29,6 +29,12 @@ const config: Config = {
         "border-subtle":  "rgb(var(--tw-border-subtle) / 0.05)",
         "border-default": "rgb(var(--tw-border-default) / 0.08)",
         "border-strong":  "rgb(var(--tw-border-strong) / 0.15)",
+        // Surface palette — matches CSS variables in globals.css
+        "surface-darker":   "rgb(var(--surface-darker) / <alpha-value>)",
+        "surface-card":     "rgb(var(--surface-card) / <alpha-value>)",
+        "surface-input":    "rgb(var(--surface-input) / <alpha-value>)",
+        "surface-elevated": "rgb(var(--surface-elevated) / <alpha-value>)",
+        "surface-overlay":  "rgb(var(--surface-overlay) / <alpha-value>)",
       },
       animation: {
         // Existing

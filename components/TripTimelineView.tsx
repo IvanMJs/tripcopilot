@@ -355,7 +355,7 @@ export function TripTimelineView({ trip, locale, statusMap }: TripTimelineViewPr
               <div
                 className={`sticky top-0 z-10 flex items-center gap-3 py-2 mb-2 ${
                   isTodayDay
-                    ? "bg-[#0a0a14]/95 backdrop-blur-sm"
+                    ? "bg-surface-input/95 backdrop-blur-sm"
                     : "bg-transparent"
                 }`}
               >
