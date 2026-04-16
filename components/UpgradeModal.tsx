@@ -16,6 +16,10 @@ const LABELS = {
     goPilot: "Ir a Pilot →",
     footerNote: "Pago seguro por MercadoPago · Cancelá cuando quieras",
     errorCheckout: "Error al iniciar el pago. Intentá de nuevo.",
+    explorerPrice: "$5.000 ARS/mes",
+    explorerPriceUsd: "USD ~$5/mes",
+    pilotPrice: "$10.000 ARS/mes",
+    pilotPriceUsd: "USD ~$10/mes",
     freeFeatures: ["2 viajes", "3 vuelos por viaje", "Alertas básicas de check-in"],
     explorerFeatures: [
       "10 viajes · 15 vuelos c/u",
@@ -45,6 +49,10 @@ const LABELS = {
     goPilot: "Go Pilot →",
     footerNote: "Secure payment via MercadoPago · Cancel anytime",
     errorCheckout: "Payment failed to start. Please try again.",
+    explorerPrice: "ARS $5,000/mo",
+    explorerPriceUsd: "USD ~$5/mo",
+    pilotPrice: "ARS $10,000/mo",
+    pilotPriceUsd: "USD ~$10/mo",
     freeFeatures: ["2 trips", "3 flights per trip", "Basic check-in alerts"],
     explorerFeatures: [
       "10 trips · 15 flights each",
