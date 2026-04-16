@@ -21,6 +21,7 @@ interface MyProfileViewProps {
   userPlan: "free" | "explorer" | "pilot" | null;
   userId: string | null;
   onUpgrade: () => void;
+  onDiscover?: () => void;
 }
 
 const LABELS = {
@@ -333,7 +334,7 @@ interface AirportStampData {
   visitCount: number;
 }
 
-export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: MyProfileViewProps) {
+export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDiscover }: MyProfileViewProps) {
   const L = LABELS[locale];
   const [selectedIata, setSelectedIata] = useState<string | null>(null);
   const [activeProfileTab, setActiveProfileTab] = useState<ProfileTabId>("stats");
@@ -735,6 +736,27 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade }: My
                     {L.upgradeBtn}
                   </button>
                 </div>
+              )}
+              {onDiscover && (
+                <button
+                  onClick={onDiscover}
+                  className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] active:scale-95 px-4 py-4 flex items-center gap-3 transition-all"
+                >
+                  <div className="h-10 w-10 rounded-xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center shrink-0">
+                    <Globe className="h-5 w-5 text-violet-400" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-bold text-white">
+                      {locale === "es" ? "Explorar destinos" : "Explore destinations"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {locale === "es" ? "Inspiración para tu próximo viaje" : "Inspiration for your next trip"}
+                    </p>
+                  </div>
+                  <svg className="h-4 w-4 text-gray-600 shrink-0 ml-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
               )}
             </motion.div>
           </motion.div>

@@ -15,6 +15,11 @@ const LABELS = {
     goExplorer: "Ir a Explorer →",
     goPilot: "Ir a Pilot →",
     footerNote: "Pago seguro por MercadoPago · Cancelá cuando quieras",
+    errorCheckout: "Error al iniciar el pago. Intentá de nuevo.",
+    explorerPrice: "$5.000 ARS/mes",
+    explorerPriceUsd: "USD ~$5/mes",
+    pilotPrice: "$10.000 ARS/mes",
+    pilotPriceUsd: "USD ~$10/mes",
     freeFeatures: ["2 viajes", "3 vuelos por viaje", "Alertas básicas de check-in"],
     explorerFeatures: [
       "10 viajes · 15 vuelos c/u",
@@ -43,6 +48,11 @@ const LABELS = {
     goExplorer: "Go Explorer →",
     goPilot: "Go Pilot →",
     footerNote: "Secure payment via MercadoPago · Cancel anytime",
+    errorCheckout: "Payment failed to start. Please try again.",
+    explorerPrice: "ARS $5,000/mo",
+    explorerPriceUsd: "USD ~$5/mo",
+    pilotPrice: "ARS $10,000/mo",
+    pilotPriceUsd: "USD ~$10/mo",
     freeFeatures: ["2 trips", "3 flights per trip", "Basic check-in alerts"],
     explorerFeatures: [
       "10 trips · 15 flights each",
@@ -76,12 +86,14 @@ interface UpgradeModalProps {
 
 export function UpgradeModal({ isOpen, onClose, locale = "es" }: UpgradeModalProps) {
   const [loading, setLoading] = useState<"explorer" | "pilot" | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const L = LABELS[locale];
 
   if (!isOpen) return null;
 
   async function handleUpgrade(planId: "explorer" | "pilot") {
     setLoading(planId);
+    setCheckoutError(null);
     try {
       const successUrl = `${window.location.origin}/app?upgrade=success`;
       const cancelUrl  = `${window.location.origin}/app?upgrade=cancel`;
@@ -101,7 +113,7 @@ export function UpgradeModal({ isOpen, onClose, locale = "es" }: UpgradeModalPro
         window.location.href = data.url;
       }
     } catch {
-      // fail silently — user stays on modal and can retry
+      setCheckoutError(L.errorCheckout);
     } finally {
       setLoading(null);
     }
@@ -133,6 +145,19 @@ export function UpgradeModal({ isOpen, onClose, locale = "es" }: UpgradeModalPro
 
         {/* Scrollable content */}
         <div className="overflow-y-auto px-6 pb-6">
+
+          {/* Error banner */}
+          {checkoutError && (
+            <div className="mb-4 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-red-400 shrink-0">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="text-sm text-red-300">{checkoutError}</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
           {/* Free card */}
@@ -164,7 +189,8 @@ export function UpgradeModal({ isOpen, onClose, locale = "es" }: UpgradeModalPro
                 EXPLORER
               </span>
               <p className="text-xl font-black text-white">{PLANS.explorer.name}</p>
-              <p className="text-sm text-sky-400/80 mt-0.5">$5.000 ARS/mes</p>
+              <p className="text-sm text-sky-400/80 mt-0.5">{L.explorerPrice}</p>
+              <p className="text-xs text-sky-400/50 mt-0.5">{L.explorerPriceUsd}</p>
             </div>
             <ul className="space-y-2 flex-1">
               {L.explorerFeatures.map((feat) => (
@@ -198,7 +224,8 @@ export function UpgradeModal({ isOpen, onClose, locale = "es" }: UpgradeModalPro
                 PILOT
               </span>
               <p className="text-xl font-black text-white">{PLANS.pilot.name}</p>
-              <p className="text-sm text-amber-400/80 mt-0.5">$10.000 ARS/mes</p>
+              <p className="text-sm text-amber-400/80 mt-0.5">{L.pilotPrice}</p>
+              <p className="text-xs text-amber-400/50 mt-0.5">{L.pilotPriceUsd}</p>
             </div>
             <ul className="space-y-2 flex-1">
               {L.pilotFeatures.map((feat) => (
