@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Trash2 } from "lucide-react";
 import { AirportStatusMap, TripFlight, Accommodation } from "@/lib/types";
 import { AIRPORTS } from "@/lib/airports";
@@ -72,10 +73,35 @@ export function FlightCard({
 
   // Removal animation state
   const [removing, setRemoving] = useState(false);
+
+  // Undo toast state — pendingDelete means the user confirmed, but we haven't called onRemove yet
+  const [pendingDelete, setPendingDelete] = useState(false);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleRemove = useCallback(() => {
-    setRemoving(true);
-    setTimeout(() => onRemove?.(), 280);
+    // Start the 4-second undo window instead of removing immediately
+    setPendingDelete(true);
+    undoTimerRef.current = setTimeout(() => {
+      setPendingDelete(false);
+      setRemoving(true);
+      setTimeout(() => onRemove?.(), 280);
+    }, 4000);
   }, [onRemove]);
+
+  function handleUndoDelete() {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+    setPendingDelete(false);
+  }
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
 
   // Confirm-delete state
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -189,8 +215,8 @@ export function FlightCard({
     }
   })();
 
-  const showBoardingPassButton =
-    hoursUntilDep !== null && hoursUntilDep < 4 && hoursUntilDep > -1;
+  // Always show boarding pass button regardless of departure window
+  const showBoardingPassButton = true;
 
   const originStatus = statusMap[flight.originCode];
   const status       = originStatus?.status ?? "unknown";
@@ -349,6 +375,27 @@ export function FlightCard({
           locale={locale}
         />
       </div>
+
+      {/* Undo toast — rendered in a portal so it escapes card stacking contexts */}
+      {pendingDelete && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-x-4 z-[60] flex items-center justify-between gap-3 rounded-2xl bg-gray-800 border border-white/10 px-4 py-3 shadow-2xl"
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 80px)" }}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="text-sm text-gray-200 font-medium">
+            {locale === "es" ? "Vuelo eliminado" : "Flight removed"}
+          </span>
+          <button
+            onClick={handleUndoDelete}
+            className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors shrink-0"
+          >
+            {locale === "es" ? "Deshacer" : "Undo"}
+          </button>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
