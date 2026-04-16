@@ -18,6 +18,8 @@ import { FlightSearch } from "@/components/FlightSearch";
 const TripPanel = lazy(() => import("@/components/TripPanel").then((m) => ({ default: m.TripPanel })));
 import { TripListView } from "@/components/TripListView";
 import { TripEmptyState } from "@/components/TripEmptyState";
+import { ItineraryImportModal } from "@/components/ItineraryImportModal";
+import { ParsedFlight } from "@/lib/importFlights";
 import { HelpPanel } from "@/components/HelpPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CreateTripModal } from "@/components/CreateTripModal";
@@ -148,6 +150,9 @@ export default function HomePage() {
 
   // Create trip modal
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Global import modal — lets users import flights before a trip exists
+  const [showGlobalImport, setShowGlobalImport] = useState(false);
 
   // Upgrade modal (shown when free-plan user hits trip limit)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -479,6 +484,23 @@ export default function HomePage() {
     setPrefillDestination(undefined);
   }
 
+  function handleGlobalImport(flights: ParsedFlight[]) {
+    if (flights.length === 0) return;
+    // Derive a trip name from the first flight's route and date
+    const first = flights[0];
+    const tripName = locale === "es"
+      ? `Viaje ${first.originCode}–${first.destinationCode}`
+      : `Trip ${first.originCode}–${first.destinationCode}`;
+    const tripFlights = flights.map((f) => ({
+      ...f,
+      id: `draft-${crypto.randomUUID()}`,
+      arrivalBuffer: f.arrivalBuffer ?? 2,
+    }));
+    setDraftTrip({ name: tripName, flights: tripFlights, accommodations: [] });
+    setShowGlobalImport(false);
+    setActiveTab(DRAFT_ID);
+  }
+
   async function saveDraftTrip() {
     if (!draftTrip) return;
     // Single atomic PostgreSQL transaction via RPC — no partial saves
@@ -687,6 +709,16 @@ export default function HomePage() {
           onClose={() => { setShowCreateModal(false); setPrefillDestination(undefined); }}
           onConfirm={confirmCreateTrip}
           prefillDestination={prefillDestination}
+        />
+      )}
+
+      {showGlobalImport && (
+        <ItineraryImportModal
+          isOpen={showGlobalImport}
+          onClose={() => setShowGlobalImport(false)}
+          onImport={handleGlobalImport}
+          locale={locale}
+          tripId={DRAFT_ID}
         />
       )}
 
@@ -1057,6 +1089,7 @@ export default function HomePage() {
                   <TripEmptyState
                     locale={locale}
                     onCreateTrip={openCreateTripModal}
+                    onImport={() => setShowGlobalImport(true)}
                   />
                 ) : (
                 <TripListView
