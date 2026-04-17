@@ -7,7 +7,6 @@ import { localToUTC, localHourInTimezone, dateInTimezone, CRON_LABELS, CronLocal
 import { analyzeConnection } from "@/lib/connectionRisk";
 import { TripFlight, AirportStatusMap, DelayStatus, FlightRow, AccommodationRow, PushSubRow, AeroDataBoxFlightLeg } from "@/lib/types";
 import { sendInBatches } from "@/lib/retry";
-import { fetchFlightStatusFromFlightAware } from "@/lib/flightaware";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -1211,19 +1210,8 @@ async function fetchFlightStatus(
   scheduledUnix: number,
   originIcao: string | null,
 ): Promise<FlightStatusResult | null> {
-  // FlightAware first — most accurate real-time data
-  const fa = await fetchFlightStatusFromFlightAware(flightCode, isoDate);
-  if (fa !== null) {
-    return {
-      delayMinutes: fa.delayMinutes,
-      estimatedDeparture: fa.estimatedDeparture,
-      gate: fa.gate,
-      cancelled: fa.cancelled || fa.diverted,
-      landed: fa.landed,
-    };
-  }
-
-  // Try AeroDataBox second (better delay data); fall back to AviationStack
+  // FlightAware is NOT polled here — real-time events arrive via webhook (push model).
+  // Polling FlightAware per-flight on every cron run would burn API credits unnecessarily.
   const adb = rapidApiKey ? await fetchFlightStatusFromAeroDataBox(flightCode, isoDate, rapidApiKey) : null;
   if (adb !== null) return adb;
 
