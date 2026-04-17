@@ -88,6 +88,9 @@ export const TRIP_PANEL_LABELS = {
     gateCheckApp:   "Verificar en app de la aerolínea o panel del aeropuerto",
     gateLiveStatus: "Estado en vivo",
     airlineApp:     "App aerolínea",
+    sectionSeat:    "Selección de asiento",
+    seatNote:       "Elegí tu asiento directamente en la web de la aerolínea",
+    seatAction:     "Seleccionar asiento →",
     connectionRisk: {
       at_risk: (airport: string, mins: number) =>
         `⚠️ Conexión en riesgo en ${airport}${mins > 0 ? ` (+${mins}min demora)` : ""}`,
@@ -186,6 +189,9 @@ export const TRIP_PANEL_LABELS = {
     gateCheckApp:   "Check airline app or airport departure board",
     gateLiveStatus: "Live status",
     airlineApp:     "Airline app",
+    sectionSeat:    "Seat selection",
+    seatNote:       "Choose your seat directly on the airline's website",
+    seatAction:     "Select seat →",
     connectionRisk: {
       at_risk: (airport: string, mins: number) =>
         `⚠️ Connection at risk at ${airport}${mins > 0 ? ` (+${mins}min delay)` : ""}`,
@@ -295,6 +301,46 @@ export const AIRLINE_CHECKIN_URLS: Record<string, string> = {
   TG: "https://www.thaiairways.com/en/flying-with-thai/before-you-fly/check-in.page",
   OZ: "https://us.flyasiana.com/C/en/us/index.html",
   JJ: "https://www.latamairlines.com/us/en/check-in",
+};
+
+export const AIRLINE_SEAT_URLS: Record<string, string> = {
+  AA: "https://www.aa.com/reservation/view/find-your-reservation",
+  UA: "https://www.united.com/en/us/manageres/seats",
+  DL: "https://www.delta.com/us/en/seat-selection/overview",
+  B6: "https://www.jetblue.com/manage-trips/seats",
+  AS: "https://www.alaskaair.com/booking/select-seats",
+  LA: "https://www.latamairlines.com/us/en/manage-your-trip/choose-seats",
+  AR: "https://www.aerolineas.com.ar/es-ar/seleccion-de-asientos",
+  NK: "https://www.spirit.com/manage-trips",
+  F9: "https://www.flyfrontier.com/travel/my-trips/seat-selection/",
+  G4: "https://www.allegiantair.com/manage-travel",
+  AM: "https://www.aeromexico.com/en-us/check-in/online/select-seat",
+  CM: "https://www.copaair.com/en/web/us/seat-selection",
+  AV: "https://www.avianca.com/us/en/manage-your-trip/change-seat/",
+  AC: "https://www.aircanada.com/us/en/aco/home/fly/reservations/seat-selection.html",
+  IB: "https://www.iberia.com/us/seat-selection/",
+  BA: "https://www.britishairways.com/travel/seatselection/execclub/_en_gb",
+  LH: "https://www.lufthansa.com/us/en/seat-reservation",
+  AF: "https://wwws.airfrance.us/reservation/seat-selection",
+  KL: "https://www.klm.com/us/en/reserve-seats",
+  EK: "https://www.emirates.com/us/english/manage-booking/seat-selection/",
+  QR: "https://www.qatarairways.com/en/seat-selection.html",
+  TK: "https://www.turkishairlines.com/en-us/flights/manage-booking/seat-selection/",
+  TP: "https://www.flytap.com/en-us/seat-selection",
+  AZ: "https://www.ita-airways.com/en_us/fly-with-us/before-departure/seat-choice.html",
+  SK: "https://www.flysas.com/en/travel-info/seats/",
+  OS: "https://www.austrian.com/us/en/seat-reservation",
+  LX: "https://www.swiss.com/us/en/prepare/before-the-flight/select-seat",
+  SN: "https://www.brusselsairlines.com/en/seat-reservation",
+  SQ: "https://www.singaporeair.com/en_UK/sg/plan-travel/manage-your-booking/change-seat/",
+  QF: "https://www.qantas.com/us/en/manage-booking/seat-selection.html",
+  CX: "https://www.cathaypacific.com/cx/en_US/manage-booking/change-seat.html",
+  NH: "https://www.ana.co.jp/en/us/travel-information/check-in/seat-selection/",
+  JL: "https://www.jal.co.jp/en/inter/seat/",
+  EI: "https://www.aerlingus.com/travel-information/seats/",
+  ET: "https://www.ethiopianairlines.com/aa/manage/seat-selection",
+  MH: "https://www.malaysiaairlines.com/us/en/plan-and-book/manage-my-booking.html",
+  OZ: "https://us.flyasiana.com/C/en/us/index.html",
 };
 
 export const AIRLINE_UPGRADE_URLS: Record<string, string> = {

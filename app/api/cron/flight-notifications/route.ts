@@ -7,6 +7,7 @@ import { localToUTC, localHourInTimezone, dateInTimezone, CRON_LABELS, CronLocal
 import { analyzeConnection } from "@/lib/connectionRisk";
 import { TripFlight, AirportStatusMap, DelayStatus, FlightRow, AccommodationRow, PushSubRow, AeroDataBoxFlightLeg } from "@/lib/types";
 import { sendInBatches } from "@/lib/retry";
+import { registerFlightAlert } from "@/lib/flightaware";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -85,6 +86,29 @@ export async function GET(request: Request) {
   }
 
   const flightRows = flights as unknown as FlightRow[];
+
+  // Retry FA alert registration for flights that failed at add-time
+  // (transient network error, FA briefly down, etc.)
+  {
+    const WEBHOOK_URL = "https://tripcopilot.app/api/webhooks/flightaware";
+    const { data: unregistered } = await supabase
+      .from("flights")
+      .select("id, flight_code, iso_date")
+      .gte("iso_date", todayISO)
+      .lte("iso_date", threeDaysISO)
+      .is("fa_alert_id", null);
+
+    if (unregistered?.length) {
+      await Promise.allSettled(
+        unregistered.map(async (f) => {
+          const alert = await registerFlightAlert(f.flight_code, f.iso_date, WEBHOOK_URL);
+          if (alert?.alert_id) {
+            await supabase.from("flights").update({ fa_alert_id: alert.alert_id }).eq("id", f.id);
+          }
+        }),
+      );
+    }
+  }
 
   // Collect unique origin airports
   const uniqueAirports = Array.from(

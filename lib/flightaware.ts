@@ -179,6 +179,16 @@ export async function registerFlightAlert(
   if (!apiKey) return null;
 
   try {
+    // Use a 36-hour window centered on the flight date to handle all timezones
+    // (UTC-12 to UTC+14). A strict 00:00–23:59 UTC window misses late-night
+    // local departures that cross midnight in UTC.
+    const prevDay = new Date(isoDate + "T12:00:00Z");
+    prevDay.setUTCDate(prevDay.getUTCDate() - 1);
+    const nextDay = new Date(isoDate + "T12:00:00Z");
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    const start_time = prevDay.toISOString().slice(0, 10) + "T12:00:00Z";
+    const end_time   = nextDay.toISOString().slice(0, 10) + "T12:00:00Z";
+
     const res = await fetch(`${BASE_URL}/alerts`, {
       method: "POST",
       headers: {
@@ -187,10 +197,8 @@ export async function registerFlightAlert(
       },
       body: JSON.stringify({
         ident: flightCode,
-        origin_iata: undefined,
-        destination_iata: undefined,
-        start_time: `${isoDate}T00:00:00Z`,
-        end_time: `${isoDate}T23:59:59Z`,
+        start_time,
+        end_time,
         channels: "callback",
         callback_url: callbackUrl,
         events: {

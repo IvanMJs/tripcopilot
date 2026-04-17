@@ -17,55 +17,63 @@ import { TrustBadges } from "@/components/TrustBadges";
 
 const FAQ_ITEMS_ES = [
   {
+    q: "¿Cuándo empiezan las alertas de mi vuelo?",
+    a: "24 horas antes de cada vuelo, TripCopilot empieza a monitorear automáticamente. No tenés que hacer nada ni abrir la app. Si cambia la puerta de embarque, hay una demora o el vuelo se cancela, te llega una notificación al celular en menos de 2 minutos — incluso si el teléfono está en el bolsillo.",
+  },
+  {
     q: "¿Cuánto cuesta?",
-    a: "El plan Free es gratuito para siempre: 2 viajes y 3 vuelos por viaje. Explorer (~$5.000 ARS/mes) desbloquea 10 viajes, todas las alertas push y todas las funciones IA. Pilot (~$10.000 ARS/mes) es ilimitado y agrega AI Health Check, Morning Briefing y próximamente viajes compartidos.",
+    a: "El plan gratuito no vence nunca. Los planes de pago (desde ~$5 USD/mes) desbloquean más viajes, todas las alertas automáticas y funciones de inteligencia artificial para preparar y resumir tus viajes.",
   },
   {
-    q: "¿Cuál es la diferencia entre Explorer y Pilot?",
-    a: "Explorer es ideal para viajeros frecuentes: 10 viajes, 15 vuelos c/u, todas las notificaciones y AI TripAdvisor. Pilot es para quienes no quieren límites: viajes y vuelos ilimitados, AI Health Check 48h antes, Morning Briefing semanal y soporte prioritario.",
+    q: "¿Sirve para cualquier aerolínea y destino?",
+    a: "Sí. TripCopilot cubre vuelos de todo el mundo: aerolíneas internacionales, regionales y de bajo costo. Si el vuelo existe, TripCopilot lo puede rastrear.",
   },
   {
-    q: "¿Qué aeropuertos cubre?",
-    a: "Todos los aeropuertos de USA vía FAA + aeropuertos internacionales vía AeroDataBox. En constante expansión.",
+    q: "¿Necesito tener la app abierta para recibir alertas?",
+    a: "No. Las notificaciones llegan al celular aunque la app esté cerrada, igual que un mensaje de WhatsApp. Solo necesitás haber aceptado las notificaciones la primera vez que la instalaste.",
   },
   {
-    q: "¿Funciona offline?",
-    a: "Sí. TripCopilot es una PWA instalable. Tus viajes y vuelos están disponibles sin conexión.",
+    q: "¿Es seguro subir mi boarding pass o confirmación de vuelo?",
+    a: "Sí. TripCopilot usa inteligencia artificial para leer los datos de tu reserva y cargarlos automáticamente. Las imágenes no se guardan en nuestros servidores.",
   },
   {
-    q: "¿Es seguro subir mi boarding pass?",
-    a: "Sí. Las imágenes se analizan con IA y no se almacenan en nuestros servidores.",
+    q: "¿Funciona sin internet en el aeropuerto?",
+    a: "Sí. Una vez que instalás TripCopilot en tu celular, tus viajes y vuelos están disponibles aunque no tengas señal — útil cuando estás en la manga de embarque o en zona de roaming.",
   },
   {
-    q: "¿Cómo se detectan las demoras?",
-    a: "Consultamos los datos de la FAA cada 5 minutos y AeroDataBox para vuelos internacionales.",
+    q: "¿Para quién es TripCopilot?",
+    a: "Para cualquier persona que viaje en avión: el que viaja una vez al año, el viajero frecuente de negocios, y también para agencias de viajes que quieren dar un servicio más completo a sus clientes.",
   },
 ];
 
 const FAQ_ITEMS_EN = [
   {
+    q: "When do flight alerts start?",
+    a: "24 hours before each flight, TripCopilot starts monitoring automatically. You don't have to do anything or open the app. If the gate changes, there's a delay or the flight is cancelled, you get a notification on your phone in under 2 minutes — even if it's in your pocket.",
+  },
+  {
     q: "How much does it cost?",
-    a: "The Free plan is free forever: 2 trips and 3 flights per trip. Explorer (~$5 USD/month) unlocks 10 trips, all push alerts and all AI features. Pilot (~$10 USD/month) is unlimited and adds AI Health Check, Morning Briefing and soon shared trips.",
+    a: "The free plan never expires. Paid plans (from ~$5 USD/month) unlock more trips, all automatic alerts and AI features to prepare and recap your trips.",
   },
   {
-    q: "What's the difference between Explorer and Pilot?",
-    a: "Explorer is perfect for frequent travellers: 10 trips, 15 flights each, all notifications and AI TripAdvisor. Pilot is for those who want no limits: unlimited trips and flights, AI Health Check 48h before departure, weekly Morning Briefing and priority support.",
+    q: "Does it work for any airline and destination?",
+    a: "Yes. TripCopilot covers flights worldwide: international, regional and low-cost carriers. If the flight exists, TripCopilot can track it.",
   },
   {
-    q: "Which airports are covered?",
-    a: "All US airports via FAA + international airports via AeroDataBox. Constantly expanding.",
+    q: "Do I need the app open to receive alerts?",
+    a: "No. Notifications arrive on your phone even when the app is closed, just like a WhatsApp message. You only need to have allowed notifications when you first installed it.",
   },
   {
-    q: "Does it work offline?",
-    a: "Yes. TripCopilot is an installable PWA. Your trips and flights are available without a connection.",
+    q: "Is it safe to upload my boarding pass or booking confirmation?",
+    a: "Yes. TripCopilot uses AI to read your booking data and load it automatically. Images are not stored on our servers.",
   },
   {
-    q: "Is uploading my boarding pass safe?",
-    a: "Yes. Images are analysed by AI and are not stored on our servers.",
+    q: "Does it work without internet at the airport?",
+    a: "Yes. Once you install TripCopilot on your phone, your trips and flights are available even without signal — useful when you're at the gate or in a roaming zone.",
   },
   {
-    q: "How are delays detected?",
-    a: "We query FAA data every 5 minutes and AeroDataBox for international flights.",
+    q: "Who is TripCopilot for?",
+    a: "Anyone who travels by plane: the once-a-year traveller, the frequent business flyer, and travel agencies who want to offer their clients a more complete service.",
   },
 ];
 
@@ -243,8 +251,10 @@ export default function LandingPage() {
       color: "text-blue-400",
       bg: "bg-blue-950/40",
       border: "border-blue-800/30",
-      title: "Estado FAA en tiempo real",
-      desc: "Alertas de demoras, ground stops y cierres de aeropuertos directamente de la FAA oficial, actualizadas cada 5 minutos.",
+      title: lang === "en" ? "Airport status in real time" : "Estado del aeropuerto en tiempo real",
+      desc: lang === "en"
+        ? "Know if your departure airport has delays, closures or ground holds before you leave home. Updated continuously."
+        : "Sabé si tu aeropuerto de salida tiene demoras, cierres o retenciones antes de salir de tu casa. Actualizado de forma continua.",
     },
     {
       icon: Brain,
@@ -267,8 +277,10 @@ export default function LandingPage() {
       color: "text-emerald-400",
       bg: "bg-emerald-950/40",
       border: "border-emerald-800/30",
-      title: "Alertas push",
-      desc: "Notificaciones de check-in y cambios de estado directamente en tu dispositivo, sin tener que abrir la app.",
+      title: lang === "en" ? "Notifications that actually matter" : "Notificaciones que importan",
+      desc: lang === "en"
+        ? "Check-in open, gate assigned, delay, cancellation — each notification arrives at the right moment, without you having to check anything."
+        : "Check-in abierto, puerta asignada, demora, cancelación — cada aviso llega en el momento justo, sin que tengas que consultar nada.",
     },
     {
       icon: Calendar,
@@ -299,8 +311,10 @@ export default function LandingPage() {
       color: "text-red-400",
       bg: "bg-red-950/40",
       border: "border-red-800/30",
-      title: "Alertas en tiempo real",
-      desc: "2-4 horas antes del despegue, TripCopilot consulta el estado real de tu vuelo. Si fue cancelado o tiene demora, te llega al toque.",
+      title: lang === "en" ? "Alerts before anyone else" : "Te avisamos antes que nadie",
+      desc: lang === "en"
+        ? "From 24 hours before your flight, TripCopilot watches it for you. Gate change, delay or cancellation — you get a notification in under 2 minutes, even with the app closed."
+        : "Desde 24 horas antes de tu vuelo, TripCopilot lo mira por vos. Cambio de puerta, demora o cancelación — te llega la notificación en menos de 2 minutos, aunque la app esté cerrada.",
     },
     {
       icon: MapPin,
@@ -364,7 +378,7 @@ export default function LandingPage() {
     {
       emoji: "😰",
       problem: lang === "en" ? "You find out about delays too late" : "Te enterás tarde de las demoras",
-      solution: lang === "en" ? "TripCopilot monitors the FAA 24/7 and notifies you instantly" : "TripCopilot monitorea la FAA las 24hs y te notifica al instante",
+      solution: lang === "en" ? "TripCopilot notifies you before the airport display does" : "TripCopilot te avisa antes que el panel del aeropuerto",
     },
     {
       emoji: "😓",
@@ -392,7 +406,7 @@ export default function LandingPage() {
     {
       num: "03",
       title: "Volás tranquilo",
-      desc: "Monitoreo en tiempo real, alertas automáticas y guía IA disponible siempre.",
+      desc: "TripCopilot te avisa si algo cambia. Vos solo te subís al avión.",
     },
   ];
 

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   ExternalLink, Clock, MapPin, Plane,
   AlertTriangle, Globe, Zap, DoorOpen,
-  Bell, Pencil, CalendarPlus, ChevronDown, Radar,
+  Bell, Pencil, CalendarPlus, ChevronDown, Radar, Armchair,
 } from "lucide-react";
 import { useNotificationLog } from "@/hooks/useNotificationLog";
 import { useFlightNotes } from "@/hooks/useFlightNotes";
@@ -21,7 +21,7 @@ import { buildGoogleCalendarUrl } from "@/lib/exportGoogleCalendar";
 import { ConnectionAnalysis } from "@/lib/connectionRisk";
 import { FlightStatusBadge } from "@/components/FlightStatusBadge";
 import { TsaAirportData } from "@/hooks/useTsaWait";
-import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, AIRLINE_UPGRADE_URLS, TripPanelLabels } from "@/components/TripPanelLabels";
+import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, AIRLINE_SEAT_URLS, AIRLINE_UPGRADE_URLS, TripPanelLabels } from "@/components/TripPanelLabels";
 import { DaysCountdown, ExchangeRateRow } from "./helpers";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { AirportInfoCard } from "@/components/AirportInfoCard";
@@ -179,6 +179,7 @@ export function FlightCardBody({
 
   const isToday = daysUntil === 0;
   const airlineAppUrl = AIRLINE_APP_URLS[flight.airlineCode] ?? null;
+  const seatUrl       = AIRLINE_SEAT_URLS[flight.airlineCode] ?? null;
 
   const deviceOffsetHours = -new Date().getTimezoneOffset() / 60;
   const airportOffsetHours = parseTzOffset(displayTzAbbr ?? tzAbbr);
@@ -655,6 +656,20 @@ export function FlightCardBody({
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Seat selection */}
+            {daysUntil >= 0 && daysUntil <= 30 && seatUrl && (
+              <div className="px-4 py-3 border-b border-white/5">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1.5">
+                  <Armchair className="h-3 w-3" />
+                  {L.sectionSeat}
+                </p>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-gray-500">{L.seatNote}</p>
+                  <LinkButton href={seatUrl} variant="default">{L.seatAction}</LinkButton>
+                </div>
               </div>
             )}
 
