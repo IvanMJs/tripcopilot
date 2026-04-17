@@ -23,6 +23,7 @@ import { FlightStatusBadge } from "@/components/FlightStatusBadge";
 import { TsaAirportData } from "@/hooks/useTsaWait";
 import { TRIP_PANEL_LABELS, AIRLINE_APP_URLS, AIRLINE_SEAT_URLS, AIRLINE_UPGRADE_URLS, TripPanelLabels } from "@/components/TripPanelLabels";
 import { DaysCountdown, ExchangeRateRow } from "./helpers";
+import { estimateFlightDuration } from "@/lib/flightUtils";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { AirportInfoCard } from "@/components/AirportInfoCard";
 import { LiveFlightTracker } from "@/components/LiveFlightTracker";
@@ -373,6 +374,21 @@ export function FlightCardBody({
             {/* Time details */}
             {flight.departureTime && (
               <div className="flex items-center gap-4 flex-wrap text-xs">
+                {(() => {
+                  const o = AIRPORTS[flight.originCode];
+                  const d = AIRPORTS[flight.destinationCode];
+                  if (o?.lat && o?.lng && d?.lat && d?.lng) {
+                    const dur = estimateFlightDuration(o.lat, o.lng, d.lat, d.lng);
+                    return (
+                      <span className="flex items-center gap-1.5 text-gray-400">
+                        <Plane className="h-3.5 w-3.5 text-gray-600" />
+                        ~{dur}
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
+
                 <span className="flex items-center gap-1.5 text-gray-400">
                   <Clock className="h-3.5 w-3.5 text-gray-600" />
                   {L.departs}{" "}

@@ -156,3 +156,27 @@ export function buildArrivalNote(buffer: number, locale: "es" | "en"): string {
   const str = Number.isInteger(buffer) ? `${buffer}` : `${buffer}`;
   return locale === "es" ? `${str} hs antes` : `${str} hrs before`;
 }
+
+/**
+ * Estimate flight duration from great-circle distance between two airports.
+ * Returns a string like "13h 15min" or "1h 50min", or null if coords unavailable.
+ */
+export function estimateFlightDuration(
+  originLat: number, originLng: number,
+  destLat: number, destLng: number,
+): string {
+  const R = 6371;
+  const dLat = (destLat - originLat) * (Math.PI / 180);
+  const dLon = (destLng - originLng) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(originLat * (Math.PI / 180)) *
+    Math.cos(destLat * (Math.PI / 180)) *
+    Math.sin(dLon / 2) ** 2;
+  const distanceKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  // 850 km/h effective speed (accounts for climb/descent and average headwinds)
+  const totalMins = Math.round((distanceKm / 850) * 60);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
