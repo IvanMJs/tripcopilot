@@ -18,12 +18,18 @@ export async function POST(request: Request) {
   // RLS ensures the flight belongs to this user
   const { data: flight } = await supabase
     .from("flights")
-    .select("flight_code, iso_date")
+    .select("flight_code, iso_date, fa_alert_id")
     .eq("id", body.flightId)
     .single();
 
   if (!flight) {
     return Response.json({ ok: true }); // not found or not owned — silent no-op
+  }
+
+  // Idempotency: skip if this flight already has a FlightAware alert registered.
+  // Prevents duplicate alerts and wasted API calls on client retries.
+  if (flight.fa_alert_id) {
+    return Response.json({ ok: true, alreadyRegistered: true });
   }
 
   const alert = await registerFlightAlert(flight.flight_code, flight.iso_date, WEBHOOK_URL);
