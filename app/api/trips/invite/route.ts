@@ -34,6 +34,11 @@ export async function POST(req: NextRequest) {
 
   const { tripId, email, role } = parsed.data;
 
+  // Prevent self-invitation
+  if (user.email && user.email.toLowerCase() === email.toLowerCase()) {
+    return NextResponse.json({ error: "No podés invitarte a vos mismo" }, { status: 400 });
+  }
+
   // Verify the trip belongs to the requesting user + get trip name
   const { data: tripRow, error: tripErr } = await supabase
     .from("trips")

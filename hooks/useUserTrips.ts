@@ -286,7 +286,10 @@ export function useUserTrips() {
         }
       }
 
-      const allTrips = [...ownedTrips, ...sharedTrips];
+      // Exclude shared trips the user also owns (e.g. self-invited) to prevent duplicates
+      const ownedIds = new Set(ownedTrips.map((t) => t.id));
+      const dedupedShared = sharedTrips.filter((t) => !ownedIds.has(t.id));
+      const allTrips = [...ownedTrips, ...dedupedShared];
       const sorted = sortTripsByUrgency(allTrips);
       setTrips(sorted);
       // Update the offline cache in the background
@@ -326,11 +329,30 @@ export function useUserTrips() {
 
   const deleteTrip = useCallback(async (id: string) => {
     const snapshot = trips;
+    const trip = trips.find((t) => t.id === id);
     setTrips((prev) => prev.filter((t) => t.id !== id));
 
     haptics.delete();
     const supabase = createClient();
-    // Flights cascade on delete via FK
+
+    if (trip?.isShared) {
+      // For shared trips: remove the collaborator row (leave the trip), don't delete it
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setTrips(snapshot); return; }
+      const { error } = await supabase
+        .from("trip_collaborators")
+        .delete()
+        .eq("trip_id", id)
+        .eq("invitee_id", user.id);
+      if (error) {
+        setTrips(snapshot);
+        haptics.error();
+        toast.error("No se pudo salir del viaje / Could not leave trip");
+      }
+      return;
+    }
+
+    // For owned trips: delete the trip (flights cascade via FK)
     const { error } = await supabase.from("trips").delete().eq("id", id);
     if (error) {
       setTrips(snapshot);
