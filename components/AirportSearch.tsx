@@ -4,23 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { AIRPORTS } from "@/lib/airports";
 import { Plus, Search } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-const COUNTRY_FLAGS: Record<string, string> = {
-  "Argentina":      "🇦🇷",
-  "Brazil":         "🇧🇷",
-  "Chile":          "🇨🇱",
-  "Colombia":       "🇨🇴",
-  "Peru":           "🇵🇪",
-  "Uruguay":        "🇺🇾",
-  "Panama":         "🇵🇦",
-  "Mexico":         "🇲🇽",
-  "Bahamas":        "🇧🇸",
-  "Antigua":        "🇦🇬",
-  "Ecuador":        "🇪🇨",
-  "Bolivia":        "🇧🇴",
-  "Cayman Islands": "🇰🇾",
-  "USA":            "🇺🇸",
-};
+import { countryFlag } from "@/lib/countryFlags";
 
 const AIRPORT_FLAGS: Record<string, string> = {
   EZE: "🇦🇷", AEP: "🇦🇷", COR: "🇦🇷", MDZ: "🇦🇷", BRC: "🇦🇷",
@@ -149,7 +133,7 @@ export function AirportSearch({ watchedAirports, onAdd }: AirportSearchProps) {
                     : "border-gray-600 text-gray-400 hover:border-gray-400 hover:text-gray-200"
                 }`}
               >
-                <span>{COUNTRY_FLAGS[country] ?? "🌐"}</span>
+                <span>{countryFlag(country)}</span>
                 {country}
               </button>
             ))}
@@ -201,7 +185,7 @@ export function AirportSearch({ watchedAirports, onAdd }: AirportSearchProps) {
                     <br />
                     <span className="text-gray-500">
                       {info.country
-                        ? `${COUNTRY_FLAGS[info.country] ?? "🌐"} ${info.city}`
+                        ? `${countryFlag(info.country)} ${info.city}`
                         : `🇺🇸 ${info.city}, ${info.state}`}
                     </span>
                   </span>

@@ -14,6 +14,8 @@ import { TravelStreaks } from "@/components/TravelStreaks";
 import { TravelChallenges } from "@/components/TravelChallenges";
 import { ReferralCard } from "@/components/ReferralCard";
 import { AchievementBadges } from "@/components/AchievementBadges";
+import { countryFlag } from "@/lib/countryFlags";
+import { PlacesTab } from "@/components/PlacesTab";
 
 interface MyProfileViewProps {
   trips: TripTab[];
@@ -116,6 +118,7 @@ const PROFILE_TABS = [
   { id: "achievements", labelEs: "Logros",       labelEn: "Achievements",  icon: Trophy   },
   { id: "wrapped",      labelEs: "Wrapped",      labelEn: "Wrapped",       icon: Gift     },
   { id: "social",       labelEs: "Social",       labelEn: "Social",        icon: Users    },
+  { id: "places",       labelEs: "Lugares",      labelEn: "Places",        icon: MapPin   },
 ] as const;
 
 type ProfileTabId = typeof PROFILE_TABS[number]["id"];
@@ -157,65 +160,7 @@ const fadeUp = (delay: number) => ({
   transition: { duration: 0.35, ease: EASE_OUT, delay },
 });
 
-// ── Country flag helper ───────────────────────────────────────────────────────
-
-const COUNTRY_FLAGS: Record<string, string> = {
-  Argentina:          "🇦🇷",
-  Brazil:             "🇧🇷",
-  Chile:              "🇨🇱",
-  Colombia:           "🇨🇴",
-  Peru:               "🇵🇪",
-  Uruguay:            "🇺🇾",
-  Bolivia:            "🇧🇴",
-  Ecuador:            "🇪🇨",
-  Panama:             "🇵🇦",
-  Mexico:             "🇲🇽",
-  Cuba:               "🇨🇺",
-  "Dominican Republic": "🇩🇴",
-  "Puerto Rico":      "🇵🇷",
-  Bahamas:            "🇧🇸",
-  Jamaica:            "🇯🇲",
-  Barbados:           "🇧🇧",
-  Curaçao:            "🇨🇼",
-  Aruba:              "🇦🇼",
-  Antigua:            "🇦🇬",
-  "Trinidad & Tobago":"🇹🇹",
-  "Costa Rica":       "🇨🇷",
-  Guatemala:          "🇬🇹",
-  "El Salvador":      "🇸🇻",
-  "Cayman Islands":   "🇰🇾",
-  "United Kingdom":   "🇬🇧",
-  France:             "🇫🇷",
-  Spain:              "🇪🇸",
-  Italy:              "🇮🇹",
-  Germany:            "🇩🇪",
-  Netherlands:        "🇳🇱",
-  Portugal:           "🇵🇹",
-  Switzerland:        "🇨🇭",
-  Austria:            "🇦🇹",
-  Belgium:            "🇧🇪",
-  Greece:             "🇬🇷",
-  Turkey:             "🇹🇷",
-  Norway:             "🇳🇴",
-  Sweden:             "🇸🇪",
-  Denmark:            "🇩🇰",
-  Finland:            "🇫🇮",
-  Poland:             "🇵🇱",
-  Japan:              "🇯🇵",
-  China:              "🇨🇳",
-  "South Korea":      "🇰🇷",
-  India:              "🇮🇳",
-  Thailand:           "🇹🇭",
-  Singapore:          "🇸🇬",
-  Australia:          "🇦🇺",
-  "New Zealand":      "🇳🇿",
-  Canada:             "🇨🇦",
-  USA:                "🇺🇸",
-};
-
-function countryFlag(country: string): string {
-  return COUNTRY_FLAGS[country] ?? "🌍";
-}
+// ── Country flag helper is imported from @/lib/countryFlags ──────────────────
 
 function formatStampDate(isoDate: string, locale: "es" | "en"): string {
   if (!isoDate) return "";
@@ -933,6 +878,19 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                 </div>
               </motion.div>
             )}
+          </motion.div>
+        )}
+
+        {/* ── PLACES TAB ─────────────────────────────────────────────────── */}
+        {activeProfileTab === "places" && (
+          <motion.div
+            key="places"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+          >
+            <PlacesTab trips={trips} locale={locale} />
           </motion.div>
         )}
 
