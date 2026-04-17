@@ -51,6 +51,7 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { GlobalAlertBar } from "@/components/GlobalAlertBar";
 import { useDeviceTimezone } from "@/hooks/useDeviceTimezone";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { isInTravelWindow } from "@/lib/travelWindow";
 import { TimezoneBanner } from "@/components/TimezoneBanner";
 import dynamic from "next/dynamic";
 import { DepartureBoard } from "@/components/DepartureBoard";
@@ -74,6 +75,7 @@ import { getUnreadCount } from "@/lib/notificationsHub";
 
 const TripAssistant = dynamic(() => import("@/components/TripAssistant").then((m) => ({ default: m.TripAssistant })), { ssr: false });
 const TripDebriefModal = dynamic(() => import("@/components/TripDebriefModal").then((m) => ({ default: m.TripDebriefModal })), { ssr: false });
+const DestinationSpotlight = dynamic(() => import("@/components/DestinationSpotlight").then((m) => ({ default: m.DestinationSpotlight })), { ssr: false });
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -169,6 +171,9 @@ export default function HomePage() {
 
   // Trip history view
   const [showTripHistory, setShowTripHistory] = useState(false);
+
+  // Destination Spotlight — triggered by ?explore=1 push notification deep-link
+  const [showSpotlight, setShowSpotlight] = useState(false);
 
   // Prefill destination for CreateTripModal (used by "Create similar")
   const [prefillDestination, setPrefillDestination] = useState<string | undefined>(undefined);
@@ -312,6 +317,18 @@ export default function HomePage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, userTrips]);
+
+  // Open Destination Spotlight when navigated via ?explore=1 push notification
+  useEffect(() => {
+    if (tripsLoading) return;
+    if (typeof window === "undefined") return;
+    const explore = new URL(window.location.href).searchParams.get("explore");
+    if (explore === "1" && isInTravelWindow(userTrips)) {
+      setShowSpotlight(true);
+    }
+    window.history.replaceState({}, "", "/app");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripsLoading]);
 
   // Aggregate trip airports
   const tripAirports = userTrips.flatMap((t) =>
@@ -1315,6 +1332,17 @@ export default function HomePage() {
           onSelectTrip={(id) => setActiveTab(id)}
         />
       )}
+
+      {/* ── Destination Spotlight — triggered by ?explore=1 push notification ── */}
+      <AnimatePresence>
+        {showSpotlight && (
+          <DestinationSpotlight
+            position={userPosition}
+            locale={locale}
+            onClose={() => setShowSpotlight(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── AI Trip Assistant FAB — shown for active saved trips only ── */}
       {mounted && (() => {

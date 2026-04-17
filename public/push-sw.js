@@ -23,8 +23,12 @@ self.addEventListener("notificationclick", function (event) {
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then(function (clients) {
+        // Find an existing /app window to navigate
         for (var i = 0; i < clients.length; i++) {
           if (clients[i].url.indexOf("/app") !== -1 && "focus" in clients[i]) {
+            if ("navigate" in clients[i]) {
+              return clients[i].navigate(url).then(function (c) { return c ? c.focus() : null; });
+            }
             return clients[i].focus();
           }
         }

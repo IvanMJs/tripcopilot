@@ -1096,6 +1096,93 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── Travel window explore push ─────────────────────────────────────────────
+  // For users currently mid-trip (today falls within their trip date range),
+  // send a daily push inviting them to explore their current destination.
+  {
+    const travelTodayISO = now.toISOString().slice(0, 10);
+    const travelExploreType = `explore_daily_${travelTodayISO}`;
+
+    // Find trips where min(iso_date) <= today AND max(iso_date) >= today
+    // We use the flights table with the wider todayISO/threeDaysISO window
+    // already fetched, plus we need flights whose trip spans today.
+    // Query trips active today by finding all flights for any iso_date in a
+    // wide window and filtering per-trip in memory using the already-fetched
+    // flightRows which cover today through 3 days ahead. We need a broader
+    // set to find trip min dates, so query trips table directly.
+    const { data: travelFlightRows } = await supabase
+      .from("flights")
+      .select("trip_id, iso_date, trips!inner(user_id)")
+      .gte("iso_date", new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
+      .lte("iso_date", new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+
+    if (travelFlightRows?.length) {
+      type TravelFlightRow = { trip_id: string; iso_date: string; trips: { user_id: string } };
+
+      // Build per-trip date ranges
+      const tripRanges = new Map<string, { userId: string; min: string; max: string }>();
+      for (const row of travelFlightRows as unknown as TravelFlightRow[]) {
+        const existing = tripRanges.get(row.trip_id);
+        const userId = row.trips.user_id;
+        if (!existing) {
+          tripRanges.set(row.trip_id, { userId, min: row.iso_date, max: row.iso_date });
+        } else {
+          if (row.iso_date < existing.min) existing.min = row.iso_date;
+          if (row.iso_date > existing.max) existing.max = row.iso_date;
+        }
+      }
+
+      // Collect users whose trip window covers today
+      const travelUserIds = new Set<string>();
+      for (const range of Array.from(tripRanges.values())) {
+        if (travelTodayISO >= range.min && travelTodayISO <= range.max) {
+          travelUserIds.add(range.userId);
+        }
+      }
+
+      for (const travelUserId of Array.from(travelUserIds)) {
+        // Dedup: one explore push per user per day
+        const { data: existingLog } = await supabase
+          .from("notification_log")
+          .select("id")
+          .eq("user_id", travelUserId)
+          .eq("type", travelExploreType)
+          .limit(1)
+          .maybeSingle();
+        if (existingLog) continue;
+
+        const { data: travelSubs } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", travelUserId);
+        if (!travelSubs?.length) continue;
+
+        const travelLocale = await getUserLocale(travelUserId);
+        const travelTitle = travelLocale === "en"
+          ? "What's there to do where you are? 👀"
+          : "¿Qué hay para hacer donde estás ahora? 👀";
+        const travelFailed = await pushToAll(
+          travelSubs,
+          supabase,
+          {
+            title: travelTitle,
+            body: "",
+            url: "/app?explore=1",
+          },
+          "explore",
+        );
+        notificationsFailed += travelFailed;
+        if (travelFailed < travelSubs.length) notificationsSent++;
+
+        await supabase.from("notification_log").insert({
+          user_id: travelUserId,
+          type: travelExploreType,
+          sent_at: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
   await supabase.from("cron_runs").insert({
     flights_processed: flights.length,
     notifications_sent: notificationsSent,
