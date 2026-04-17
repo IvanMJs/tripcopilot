@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ComposableMap,
@@ -11,6 +11,8 @@ import {
 } from "react-simple-maps";
 import { AIRPORTS } from "@/lib/airports";
 import { TripTab } from "@/lib/types";
+import { createClient } from "@/utils/supabase/client";
+import { fetchDBPlaces, VisitedPlace } from "@/lib/visitedPlaces";
 
 interface WorldMapViewProps {
   trips: TripTab[];
@@ -21,7 +23,6 @@ interface WorldMapViewProps {
 const GEO_URL = "/world-110m.json";
 const WORLD_COUNTRIES = 195;
 
-// Normalize airport country names to match TopoJSON property names
 const COUNTRY_NAME_MAP: Record<string, string> = {
   USA: "United States of America",
   UAE: "United Arab Emirates",
@@ -32,18 +33,32 @@ const COUNTRY_NAME_MAP: Record<string, string> = {
 
 const LABELS = {
   es: {
-    countries: (n: number) => `${n} país${n !== 1 ? "es" : ""}`,
-    airports:  (n: number) => `${n} aeropuerto${n !== 1 ? "s" : ""}`,
-    world:     (pct: number) => `${pct}% del mundo`,
+    countries:  (n: number) => `${n} país${n !== 1 ? "es" : ""}`,
+    airports:   (n: number) => `${n} aeropuerto${n !== 1 ? "s" : ""}`,
+    places:     (n: number) => `${n} lugar${n !== 1 ? "es" : ""} visitado${n !== 1 ? "s" : ""}`,
+    world:      (pct: number) => `${pct}% del mundo`,
     emptyState: "Guardá tus vuelos para ver tu mapa",
   },
   en: {
-    countries: (n: number) => `${n} countr${n !== 1 ? "ies" : "y"}`,
-    airports:  (n: number) => `${n} airport${n !== 1 ? "s" : ""}`,
-    world:     (pct: number) => `${pct}% of world`,
+    countries:  (n: number) => `${n} countr${n !== 1 ? "ies" : "y"}`,
+    airports:   (n: number) => `${n} airport${n !== 1 ? "s" : ""}`,
+    places:     (n: number) => `${n} place${n !== 1 ? "s" : ""} visited`,
+    world:      (pct: number) => `${pct}% of world`,
     emptyState: "Save your flights to see your map",
   },
 } as const;
+
+// Precomputed city → [lng, lat] from AIRPORTS (computed once at module load)
+const CITY_COORDS = (() => {
+  const map = new Map<string, [number, number]>();
+  for (const a of Object.values(AIRPORTS)) {
+    if (!a.city || typeof a.lat !== "number" || typeof a.lng !== "number") continue;
+    const country = a.country ?? "USA";
+    const key = `${a.city.toLowerCase()}|${country.toLowerCase()}`;
+    if (!map.has(key)) map.set(key, [a.lng, a.lat]);
+  }
+  return map;
+})();
 
 interface ZoomPosition {
   coordinates: [number, number];
@@ -52,10 +67,19 @@ interface ZoomPosition {
 
 export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProps) {
   const L = LABELS[locale];
+  const supabase = createClient();
+
   const [tooltip, setTooltip] = useState<string | null>(null);
   const [position, setPosition] = useState<ZoomPosition>({ coordinates: [0, 0], zoom: 1 });
+  const [visitedPlaces, setVisitedPlaces] = useState<VisitedPlace[]>([]);
 
-  const { visitedCodes, visitedTopoNames, countriesSet } = useMemo(() => {
+  useEffect(() => {
+    fetchDBPlaces(supabase).then(setVisitedPlaces);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Flight airport data ──────────────────────────────────────────────────
+  const { visitedCodes, flightTopoNames, flightCountries } = useMemo(() => {
     const codes = new Set<string>();
     const countries = new Set<string>();
     const topoNames = new Set<string>();
@@ -66,7 +90,6 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
         codes.add(flight.destinationCode);
       }
     }
-
     for (const code of Array.from(codes)) {
       const airport = AIRPORTS[code];
       if (airport) {
@@ -75,10 +98,30 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
         topoNames.add(COUNTRY_NAME_MAP[country] ?? country);
       }
     }
-
-    return { visitedCodes: codes, visitedTopoNames: topoNames, countriesSet: countries };
+    return { visitedCodes: codes, flightTopoNames: topoNames, flightCountries: countries };
   }, [trips]);
 
+  // ── Visited-place data ───────────────────────────────────────────────────
+  const plottableVisitedPlaces = useMemo(() => {
+    return visitedPlaces
+      .filter((p) => p.source === "manual")
+      .map((p) => {
+        const key = `${p.city.toLowerCase()}|${p.country.toLowerCase()}`;
+        const coords = CITY_COORDS.get(key);
+        return coords ? { ...p, coords } : null;
+      })
+      .filter((p): p is VisitedPlace & { coords: [number, number] } => p !== null);
+  }, [visitedPlaces]);
+
+  const placeTopoNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const p of visitedPlaces) {
+      names.add(COUNTRY_NAME_MAP[p.country] ?? p.country);
+    }
+    return names;
+  }, [visitedPlaces]);
+
+  // ── Plottable airports ───────────────────────────────────────────────────
   const plottableAirports = useMemo(
     () =>
       Array.from(visitedCodes).filter((code) => {
@@ -88,16 +131,23 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
     [visitedCodes],
   );
 
-  const worldPct = useMemo(() => {
-    if (countriesSet.size === 0) return 0;
-    return Math.round((countriesSet.size / WORLD_COUNTRIES) * 100);
-  }, [countriesSet]);
+  // ── Stats ────────────────────────────────────────────────────────────────
+  const totalCountries = useMemo(() => {
+    const all = new Set(Array.from(flightCountries));
+    for (const p of visitedPlaces) all.add(p.country);
+    return all.size;
+  }, [flightCountries, visitedPlaces]);
 
-  const isEmpty = plottableAirports.length === 0;
+  const worldPct = useMemo(
+    () => (totalCountries === 0 ? 0 : Math.round((totalCountries / WORLD_COUNTRIES) * 100)),
+    [totalCountries],
+  );
 
-  const handleMoveEnd = useCallback((pos: ZoomPosition) => {
-    setPosition(pos);
-  }, []);
+  const isEmpty = plottableAirports.length === 0 && plottableVisitedPlaces.length === 0;
+
+  const handleMoveEnd = useCallback((pos: ZoomPosition) => setPosition(pos), []);
+
+  const emojiSize = Math.max(6, 14 / position.zoom);
 
   return (
     <motion.div
@@ -106,9 +156,7 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
       transition={{ duration: 0.4 }}
       className="bg-surface-overlay rounded-2xl overflow-hidden border border-white/[0.07]"
     >
-      {/* Map area */}
       <div className="relative w-full bg-[#080814]" style={{ aspectRatio: "2 / 1" }}>
-        {/* Hover tooltip */}
         {tooltip && (
           <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 rounded-md bg-black/75 border border-white/10 text-white text-xs pointer-events-none whitespace-nowrap">
             {tooltip}
@@ -120,8 +168,8 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
           style={{ width: "100%", height: "100%" }}
           aria-label={
             locale === "es"
-              ? "Mapa mundial de aeropuertos visitados"
-              : "World map of visited airports"
+              ? "Mapa mundial de aeropuertos y lugares visitados"
+              : "World map of airports and visited places"
           }
         >
           <ZoomableGroup
@@ -130,11 +178,13 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
             onMoveEnd={handleMoveEnd}
             maxZoom={8}
           >
+            {/* Country fills */}
             <Geographies geography={GEO_URL}>
               {({ geographies }) =>
                 geographies.map((geo) => {
                   const name = geo.properties.name as string;
-                  const visited = visitedTopoNames.has(name);
+                  const isFlight = flightTopoNames.has(name);
+                  const isPlace  = !isFlight && placeTopoNames.has(name);
                   return (
                     <Geography
                       key={geo.rsmKey}
@@ -143,19 +193,23 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
                       onMouseLeave={() => setTooltip(null)}
                       style={{
                         default: {
-                          fill: visited ? "rgba(139,92,246,0.70)" : "#131326",
+                          fill: isFlight
+                            ? "rgba(139,92,246,0.70)"   // full violet for flights
+                            : isPlace
+                            ? "rgba(139,92,246,0.30)"   // muted violet for surface visits
+                            : "#131326",
                           stroke: "rgba(255,255,255,0.07)",
                           strokeWidth: 0.5,
                           outline: "none",
                         },
                         hover: {
-                          fill: visited ? "rgba(167,139,250,0.90)" : "#1e1e3a",
+                          fill: isFlight || isPlace ? "rgba(167,139,250,0.90)" : "#1e1e3a",
                           stroke: "rgba(255,255,255,0.15)",
                           strokeWidth: 0.5,
                           outline: "none",
                         },
                         pressed: {
-                          fill: visited ? "rgba(139,92,246,0.95)" : "#1e1e3a",
+                          fill: isFlight || isPlace ? "rgba(139,92,246,0.95)" : "#1e1e3a",
                           outline: "none",
                         },
                       }}
@@ -165,39 +219,56 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
               }
             </Geographies>
 
-            {/* Airport markers */}
+            {/* ✈️ Flight airport markers */}
             {plottableAirports.map((code) => {
               const airport = AIRPORTS[code];
-              if (
-                !airport ||
-                typeof airport.lat !== "number" ||
-                typeof airport.lng !== "number"
-              )
+              if (!airport || typeof airport.lat !== "number" || typeof airport.lng !== "number")
                 return null;
               const label = airport.city ?? code;
               const isClickable = !!onAirportClick;
               return (
                 <Marker key={code} coordinates={[airport.lng, airport.lat]}>
                   {isClickable && (
-                    <circle r={8} fill="transparent" style={{ cursor: "pointer" }} />
+                    <circle
+                      r={8 / position.zoom}
+                      fill="transparent"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => onAirportClick(code)}
+                    />
                   )}
-                  <circle
-                    r={3 / position.zoom}
-                    fill="rgba(216,180,254,0.95)"
-                    stroke="rgba(139,92,246,0.7)"
-                    strokeWidth={0.8 / position.zoom}
-                    style={{ cursor: isClickable ? "pointer" : "default" }}
+                  <text
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={emojiSize}
+                    style={{ userSelect: "none", cursor: isClickable ? "pointer" : "default" }}
                     onClick={isClickable ? () => onAirportClick(code) : undefined}
-                    onMouseEnter={() => setTooltip(label)}
+                    onMouseEnter={() => setTooltip(`✈️ ${label}`)}
                     onMouseLeave={() => setTooltip(null)}
-                  />
+                  >
+                    ✈️
+                  </text>
                 </Marker>
               );
             })}
+
+            {/* 📍 Visited place markers */}
+            {plottableVisitedPlaces.map((place) => (
+              <Marker key={place.id} coordinates={place.coords}>
+                <text
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={emojiSize}
+                  style={{ userSelect: "none" }}
+                  onMouseEnter={() => setTooltip(`📍 ${place.city}`)}
+                  onMouseLeave={() => setTooltip(null)}
+                >
+                  📍
+                </text>
+              </Marker>
+            ))}
           </ZoomableGroup>
         </ComposableMap>
 
-        {/* Empty state */}
         {isEmpty && (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-white/30 text-sm">{L.emptyState}</span>
@@ -210,12 +281,18 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
         <div className="px-4 py-3 flex flex-wrap gap-2 border-t border-white/[0.06]">
           <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/[0.08] px-2.5 py-1 text-xs font-semibold text-gray-300">
             <span aria-hidden>🗺️</span>
-            {L.countries(countriesSet.size)}
+            {L.countries(totalCountries)}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/[0.08] px-2.5 py-1 text-xs font-semibold text-gray-300">
             <span aria-hidden>✈️</span>
             {L.airports(visitedCodes.size)}
           </span>
+          {visitedPlaces.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/[0.08] px-2.5 py-1 text-xs font-semibold text-gray-300">
+              <span aria-hidden>📍</span>
+              {L.places(visitedPlaces.length)}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1 rounded-full bg-violet-950/40 border border-violet-800/30 px-2.5 py-1 text-xs font-semibold text-violet-300">
             <span aria-hidden>🌍</span>
             {L.world(worldPct)}
