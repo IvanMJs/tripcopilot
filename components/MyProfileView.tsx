@@ -14,7 +14,8 @@ import { TravelStreaks } from "@/components/TravelStreaks";
 import { TravelChallenges } from "@/components/TravelChallenges";
 import { ReferralCard } from "@/components/ReferralCard";
 import { AchievementBadges } from "@/components/AchievementBadges";
-import { COUNTRY_FLAGS, countryFlag } from "@/lib/countryFlags";
+import { countryFlag } from "@/lib/countryFlags";
+import { PlacesTab } from "@/components/PlacesTab";
 
 interface MyProfileViewProps {
   trips: TripTab[];
@@ -117,6 +118,7 @@ const PROFILE_TABS = [
   { id: "achievements", labelEs: "Logros",       labelEn: "Achievements",  icon: Trophy   },
   { id: "wrapped",      labelEs: "Wrapped",      labelEn: "Wrapped",       icon: Gift     },
   { id: "social",       labelEs: "Social",       labelEn: "Social",        icon: Users    },
+  { id: "places",       labelEs: "Lugares",      labelEn: "Places",        icon: MapPin   },
 ] as const;
 
 type ProfileTabId = typeof PROFILE_TABS[number]["id"];
@@ -876,6 +878,19 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                 </div>
               </motion.div>
             )}
+          </motion.div>
+        )}
+
+        {/* ── PLACES TAB ─────────────────────────────────────────────────── */}
+        {activeProfileTab === "places" && (
+          <motion.div
+            key="places"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+          >
+            <PlacesTab trips={trips} locale={locale} />
           </motion.div>
         )}
 

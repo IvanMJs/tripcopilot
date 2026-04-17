@@ -68,7 +68,15 @@ export function loadManualPlaces(): VisitedPlace[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as VisitedPlace[];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (p): p is VisitedPlace =>
+        typeof p?.city === "string" &&
+        typeof p?.country === "string" &&
+        typeof p?.dateVisited === "string" &&
+        (p?.source === "inferred" || p?.source === "manual"),
+    );
   } catch {
     return [];
   }
