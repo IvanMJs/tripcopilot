@@ -14,6 +14,7 @@ import { AIRPORTS } from "@/lib/airports";
 import { TripTab } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 import { fetchDBPlaces, VisitedPlace } from "@/lib/visitedPlaces";
+import { countryFlag } from "@/lib/countryFlags";
 
 interface WorldMapViewProps {
   trips: TripTab[];
@@ -85,10 +86,11 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
   const L = LABELS[locale];
   const supabase = createClient();
 
-  const [tooltip, setTooltip]         = useState<string | null>(null);
-  const [position, setPosition]       = useState<ZoomPosition>(DEFAULT_POSITION);
+  const [tooltip, setTooltip]           = useState<string | null>(null);
+  const [position, setPosition]         = useState<ZoomPosition>(DEFAULT_POSITION);
   const [visitedPlaces, setVisitedPlaces] = useState<VisitedPlace[]>([]);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<VisitedPlace | null>(null);
 
   useEffect(() => {
     fetchDBPlaces(supabase).then(setVisitedPlaces);
@@ -271,7 +273,8 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize={emojiSize}
-              style={{ userSelect: "none" }}
+              style={{ userSelect: "none", cursor: "pointer" }}
+              onClick={() => setSelectedPlace(place)}
               onMouseEnter={() => setTooltip(`📍 ${place.city}`)}
               onMouseLeave={() => setTooltip(null)}
             >
@@ -348,6 +351,87 @@ export function WorldMapView({ trips, locale, onAirportClick }: WorldMapViewProp
 
         {statsBar}
       </motion.div>
+
+      {/* ── Place stamp card overlay ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {selectedPlace && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+            onClick={() => setSelectedPlace(null)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, rotate: -4 }}
+                animate={{ opacity: 1, scale: 1, rotate: -1.5 }}
+                exit={{ opacity: 0, scale: 0.8, rotate: 3 }}
+                transition={{ type: "spring", stiffness: 360, damping: 22 }}
+                className="relative w-full rounded-2xl p-6"
+                style={{
+                  background: "linear-gradient(135deg,#fdf8f0 0%,#f5ede0 50%,#faf4ec 100%)",
+                  border: "2px dashed #7c3aed",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(124,58,237,0.12)",
+                  filter: "sepia(0.08)",
+                }}
+              >
+                {/* Watermark */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden rounded-2xl"
+                  aria-hidden
+                >
+                  <span
+                    className="text-[72px] font-black text-violet-400/10 tracking-widest rotate-[-20deg]"
+                    style={{ fontFamily: "serif" }}
+                  >
+                    VISITED
+                  </span>
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedPlace(null)}
+                  className="absolute top-3 right-3 flex items-center justify-center h-7 w-7 rounded-full bg-black/[0.08] hover:bg-black/[0.15] transition-colors"
+                >
+                  <X className="h-3.5 w-3.5 text-gray-600" />
+                </button>
+
+                {/* Header label */}
+                <p className="text-[10px] font-black tracking-[0.25em] text-violet-500 uppercase mb-3 text-center">
+                  {locale === "es" ? "Lugar Visitado" : "Visited Place"}
+                </p>
+
+                {/* Flag + city */}
+                <div className="flex flex-col items-center gap-1 mb-4">
+                  <span className="text-5xl" role="img" aria-label={selectedPlace.country}>
+                    {countryFlag(selectedPlace.country)}
+                  </span>
+                  <p className="text-2xl font-black text-gray-800 text-center leading-tight">
+                    {selectedPlace.city}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-500 text-center tracking-wide">
+                    {selectedPlace.country}
+                  </p>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-dashed border-violet-300 my-3" />
+
+                {/* Date */}
+                <p className="text-center text-xs font-semibold text-gray-500 tracking-widest uppercase">
+                  {new Date(selectedPlace.dateVisited + "T12:00:00").toLocaleDateString(
+                    locale === "es" ? "es-ES" : "en-US",
+                    { year: "numeric", month: "long", day: "numeric" },
+                  )}
+                </p>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Full-screen modal ─────────────────────────────────────────────── */}
       <AnimatePresence>
