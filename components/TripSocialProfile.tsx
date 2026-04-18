@@ -156,6 +156,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
   }
 
   const showTrips =
+    !!profile.friendData &&
     (profile.social_settings.showTrips ?? true) &&
     profile.trips &&
     profile.trips.length > 0;
