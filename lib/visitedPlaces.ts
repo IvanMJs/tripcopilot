@@ -62,6 +62,38 @@ export function inferVisitedPlaces(trips: TripTab[]): VisitedPlace[] {
   }).sort((a, b) => b.dateVisited.localeCompare(a.dateVisited));
 }
 
+// ── Inference from all flight cities (destinations + origins) ─────────────────
+
+export function inferFromAllFlightCities(trips: TripTab[]): VisitedPlace[] {
+  const earliest: Record<string, string> = {};
+
+  for (const trip of trips) {
+    for (const flight of trip.flights) {
+      for (const code of [flight.destinationCode, flight.originCode]) {
+        const airport = AIRPORTS[code];
+        if (!airport) continue;
+        const city = airport.city ?? code;
+        const country = airport.country ?? "USA";
+        const key = `${city}|${country}`;
+        if (!earliest[key] || flight.isoDate < earliest[key]) {
+          earliest[key] = flight.isoDate;
+        }
+      }
+    }
+  }
+
+  return Object.entries(earliest).map(([key, date]) => {
+    const [city, country] = key.split("|");
+    return {
+      id: key.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      city,
+      country,
+      dateVisited: date,
+      source: "inferred",
+    } satisfies VisitedPlace;
+  }).sort((a, b) => b.dateVisited.localeCompare(a.dateVisited));
+}
+
 // ── Supabase DB helpers ───────────────────────────────────────────────────────
 
 interface DBRow {
