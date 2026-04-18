@@ -56,4 +56,21 @@ export interface PublicProfileData {
     countryCount: number;
     airportCount: number;
   };
+  friendData?: {
+    sharedDestinations: Array<{
+      destinationCode: string;
+      destinationName: string | null;
+    }>;
+    onlyTheirCountries: string[];
+    upcomingDestinations: Array<{
+      destinationCode: string;
+      destinationName: string | null;
+      isoDate: string;
+    }>;
+    tripReactions: Array<{
+      tripId: string;
+      reactions: Array<{ emoji: string; count: number }>;
+    }>;
+    viewerCountries: string[];
+  };
 }

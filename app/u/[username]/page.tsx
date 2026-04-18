@@ -180,6 +180,135 @@ export default async function PublicProfilePage({
       })
     : undefined;
 
+  // Get current user (may be null for unauthenticated visitors)
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Check friendship and build friend-specific data
+  let friendData: PublicProfileData["friendData"] | undefined;
+  if (user && user.id !== profile.id) {
+    const { data: fs } = await admin
+      .from("friendships")
+      .select("id")
+      .or(
+        `and(requester_id.eq.${user.id},addressee_id.eq.${profile.id}),and(requester_id.eq.${profile.id},addressee_id.eq.${user.id})`
+      )
+      .eq("status", "accepted")
+      .maybeSingle();
+
+    if (fs) {
+      // 1. Fetch viewer's trips
+      const { data: viewerTripData } = await admin
+        .from("trips")
+        .select("id")
+        .eq("user_id", user.id);
+      const viewerTripIds = ((viewerTripData ?? []) as { id: string }[]).map((t) => t.id);
+
+      // 2. Fetch viewer's flights
+      let viewerFlights: FlightRow[] = [];
+      if (viewerTripIds.length > 0) {
+        const { data: vfData } = await admin
+          .from("flights")
+          .select("trip_id, destination_code, origin_code, iso_date")
+          .in("trip_id", viewerTripIds);
+        viewerFlights = (vfData ?? []) as FlightRow[];
+      }
+
+      // 3. Build viewer's country set (same logic as profile owner)
+      const viewerCountrySet = new Set<string>();
+      for (const f of viewerFlights) {
+        for (const code of [f.destination_code, f.origin_code]) {
+          if (!code) continue;
+          const airport = AIRPORTS[code];
+          if (!airport) continue;
+          const isoCode = airport.country ? (airport.state ?? null) : "US";
+          if (isoCode) viewerCountrySet.add(isoCode);
+        }
+      }
+      const { data: viewerVP } = await admin
+        .from("visited_places")
+        .select("country")
+        .eq("user_id", user.id);
+      for (const row of (viewerVP ?? []) as { country: string }[]) {
+        if (row.country) viewerCountrySet.add(row.country);
+      }
+
+      // 4. Shared destinations (intersection of destination codes)
+      const profileDestCodes = new Set(
+        flights.filter((f) => f.destination_code).map((f) => f.destination_code)
+      );
+      const viewerDestCodes = new Set(
+        viewerFlights.filter((f) => f.destination_code).map((f) => f.destination_code)
+      );
+      const sharedDestinations = Array.from(profileDestCodes)
+        .filter((code) => viewerDestCodes.has(code))
+        .map((code) => ({
+          destinationCode: code,
+          destinationName: AIRPORTS[code]?.city ?? null,
+        }));
+
+      // 5. Countries profile visited but viewer didn't
+      const onlyTheirCountries = Array.from(countrySet).filter(
+        (c) => !viewerCountrySet.has(c)
+      );
+
+      // 6. Upcoming destinations (profile owner's future flights)
+      const today = new Date().toISOString().slice(0, 10);
+      const profileTripIds = trips.map((t) => t.id);
+      let upcomingDestinations: Array<{
+        destinationCode: string;
+        destinationName: string | null;
+        isoDate: string;
+      }> = [];
+      if (profileTripIds.length > 0) {
+        const { data: upcomingData } = await admin
+          .from("flights")
+          .select("destination_code, iso_date")
+          .in("trip_id", profileTripIds)
+          .gt("iso_date", today)
+          .order("iso_date", { ascending: true })
+          .limit(10);
+        upcomingDestinations = (
+          (upcomingData ?? []) as { destination_code: string; iso_date: string }[]
+        ).map((f) => ({
+          destinationCode: f.destination_code ?? "",
+          destinationName: AIRPORTS[f.destination_code ?? ""]?.city ?? null,
+          isoDate: f.iso_date ?? "",
+        }));
+      }
+
+      // 7. Reaction counts for profile's trips
+      type TripReactionEntry = NonNullable<PublicProfileData["friendData"]>["tripReactions"][number];
+      let tripReactions: TripReactionEntry[] = [];
+      if (profileTripIds.length > 0) {
+        const { data: reactData } = await admin
+          .from("trip_social_reactions")
+          .select("trip_id, emoji")
+          .in("trip_id", profileTripIds);
+        const reactionMap = new Map<string, Map<string, number>>();
+        for (const r of (reactData ?? []) as { trip_id: string; emoji: string }[]) {
+          if (!reactionMap.has(r.trip_id)) reactionMap.set(r.trip_id, new Map());
+          const emojiMap = reactionMap.get(r.trip_id)!;
+          emojiMap.set(r.emoji, (emojiMap.get(r.emoji) ?? 0) + 1);
+        }
+        tripReactions = Array.from(reactionMap.entries()).map(([tripId, emojiMap]) => ({
+          tripId,
+          reactions: Array.from(emojiMap.entries()).map(([emoji, count]) => ({ emoji, count })),
+        }));
+      }
+
+      friendData = {
+        sharedDestinations,
+        onlyTheirCountries,
+        upcomingDestinations,
+        tripReactions,
+        viewerCountries: Array.from(viewerCountrySet),
+      };
+    }
+  }
+
   const profileResponse: PublicProfileData = {
     userId: profile.id,
     username: profile.username,
@@ -196,13 +325,8 @@ export default async function PublicProfilePage({
     trips: publicTrips,
     visitedCountries,
     stats,
+    friendData,
   };
-
-  // Get current user (may be null for unauthenticated visitors)
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   return (
     <main className="min-h-screen bg-[#060610] p-4 max-w-lg mx-auto">
