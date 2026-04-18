@@ -303,7 +303,7 @@ export function TripSocialView({ locale, userId }: Props) {
                   <button
                     onClick={() => {
                       setSearchOpen(false);
-                      router.push(`/app/u/${result.username}`);
+                      router.push(`/u/${result.username}`);
                     }}
                     className="shrink-0 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors ml-3"
                   >
@@ -394,7 +394,7 @@ export function TripSocialView({ locale, userId }: Props) {
                   key={friend.friendshipId}
                   disabled={!canNav}
                   onClick={() => {
-                    if (canNav) router.push(`/app/u/${friend.username!}`);
+                    if (canNav) router.push(`/u/${friend.username!}`);
                   }}
                   className="w-full flex items-center gap-3 text-left disabled:cursor-default hover:enabled:bg-white/[0.04] rounded-xl px-1 py-1 transition-colors"
                 >

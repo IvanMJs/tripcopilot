@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import type { PublicProfileData } from "@/lib/friends";
 
@@ -94,11 +94,10 @@ function TripReactionBar({ tripId, disabled }: TripReactionBarProps) {
 }
 
 export function TripSocialProfile({ profile, currentUserId }: Props) {
-  // Detect locale from browser if available, fall back to "es"
-  const locale: "es" | "en" =
-    typeof navigator !== "undefined" && navigator.language.startsWith("en")
-      ? "en"
-      : "es";
+  const [locale, setLocale] = useState<"es" | "en">("es");
+  useEffect(() => {
+    if (navigator.language.startsWith("en")) setLocale("en");
+  }, []);
   const L = LABELS[locale];
 
   const isOwnProfile = currentUserId === profile.userId;
@@ -224,7 +223,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
           <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">
             {L.trips}
           </p>
-          {profile.trips!.map((trip) => {
+          {profile.trips?.map((trip) => {
             const dateStr = trip.isoDate
               ? new Date(trip.isoDate + "T00:00:00").toLocaleDateString(
                   locale === "en" ? "en-US" : "es-AR",
