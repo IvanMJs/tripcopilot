@@ -1,5 +1,8 @@
 export const dynamic = "force-dynamic";
 
+import { NextRequest } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { getFlightData } from "@/lib/flightDataFetcher";
 import type { FlightData } from "@/lib/flightDataProvider";
 
@@ -52,7 +55,13 @@ function toLegacyRecord(fd: FlightData): LegacyFlightRecord {
   };
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user && !(await checkUserRateLimit(supabase, user.id, "flight-status", 20))) {
+    return rateLimitResponse();
+  }
+
   const url = new URL(req.url);
   const flightIata = url.searchParams.get("flight_iata") ?? "";
   const flightDate = url.searchParams.get("flight_date") ?? "";
