@@ -271,12 +271,12 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
             {visibleCountries.map((code) => (
               <div
                 key={code}
-                className="flex items-center gap-1 rounded-lg bg-white/[0.06] border border-white/[0.07] px-2 py-1"
+                title={code}
+                className="flex items-center rounded-lg bg-white/[0.06] border border-white/[0.07] px-1.5 py-1"
               >
-                <span className="text-base leading-none">
+                <span className="text-xl leading-none">
                   {countryCodeToFlag(code)}
                 </span>
-                <span className="text-xs font-medium text-gray-300">{code}</span>
               </div>
             ))}
             {extraCountries > 0 && (

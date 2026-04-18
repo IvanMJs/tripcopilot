@@ -129,7 +129,11 @@ export default async function PublicProfilePage({
       if (!code) continue;
       airportSet.add(code);
       const airport = AIRPORTS[code];
-      if (airport?.country) countrySet.add(airport.country);
+      if (!airport) continue;
+      // Non-US airports: state = ISO country code (AR, NL, GB…)
+      // US airports: no country field → use "US"
+      const isoCode = airport.country ? (airport.state ?? null) : "US";
+      if (isoCode) countrySet.add(isoCode);
     }
   }
 
