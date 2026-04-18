@@ -11,6 +11,7 @@ export interface NotificationPreferences {
   morningBriefing: boolean;
   weeklyRecap: boolean;
   reEngagement: boolean;
+  friendRequests: boolean;
 }
 
 export const DEFAULT_PREFS: Omit<NotificationPreferences, "userId"> = {
@@ -23,6 +24,7 @@ export const DEFAULT_PREFS: Omit<NotificationPreferences, "userId"> = {
   morningBriefing: true,
   weeklyRecap: true,
   reEngagement: true,
+  friendRequests: true,
 };
 
 export async function getNotificationPrefs(
@@ -57,6 +59,7 @@ export async function getNotificationPrefs(
     morningBriefing:   typeof stored.morningBriefing   === "boolean" ? stored.morningBriefing   : DEFAULT_PREFS.morningBriefing,
     weeklyRecap:       typeof stored.weeklyRecap       === "boolean" ? stored.weeklyRecap       : DEFAULT_PREFS.weeklyRecap,
     reEngagement:      typeof stored.reEngagement      === "boolean" ? stored.reEngagement      : DEFAULT_PREFS.reEngagement,
+    friendRequests:    typeof stored.friendRequests    === "boolean" ? stored.friendRequests    : DEFAULT_PREFS.friendRequests,
   };
 }
 

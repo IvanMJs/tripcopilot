@@ -13,6 +13,7 @@ import {
   MailCheck,
   Sunrise,
   BarChart2,
+  UserPlus,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
@@ -112,6 +113,14 @@ const PREF_ROWS: PrefRow[] = [
     labelEn: "Re-engagement",
     descEs: "Recordatorio de viajes próximos",
     descEn: "Upcoming trip reminders",
+  },
+  {
+    key: "friendRequests",
+    icon: <UserPlus className="h-4 w-4" />,
+    labelEs: "Solicitudes de amistad",
+    labelEn: "Friend requests",
+    descEs: "Push cuando alguien te agrega en TripSocial",
+    descEn: "Push when someone adds you on TripSocial",
   },
 ];
 

@@ -4,6 +4,8 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { Resend } from "resend";
+import { getNotificationPrefs } from "@/lib/notificationPreferences";
+import webpush from "web-push";
 import type { User } from "@supabase/auth-js";
 
 const PostBodySchema = z
@@ -160,7 +162,66 @@ export async function POST(req: NextRequest) {
       });
   }
 
+  // Send push notification to addressee if they have friendRequests pref enabled
+  void sendFriendRequestPush(addresseeId, user).catch(() => {});
+
   return NextResponse.json({ ok: true, friendshipId: friendship.id }, { status: 201 });
+}
+
+async function sendFriendRequestPush(addresseeId: string, requester: User) {
+  try {
+    const admin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    // Check addressee's notification preference
+    const prefs = await getNotificationPrefs(admin, addresseeId);
+    if (!prefs.friendRequests) return;
+
+    // Get addressee's push subscriptions
+    const { data: subs } = await admin
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("user_id", addresseeId);
+    if (!subs?.length) return;
+
+    webpush.setVapidDetails(
+      "mailto:support@tripcopilot.app",
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+      process.env.VAPID_PRIVATE_KEY!,
+    );
+
+    const senderName = requester.user_metadata?.display_name
+      ?? requester.user_metadata?.username
+      ?? requester.email?.split("@")[0]
+      ?? "Alguien";
+
+    const payload = JSON.stringify({
+      title: "Nueva solicitud de amistad ✈️",
+      body: `${senderName} te quiere agregar en TripSocial`,
+      tag: "friend-request",
+      url: "/app?tab=social",
+    });
+
+    await Promise.allSettled(
+      subs.map(async (sub) => {
+        try {
+          await webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            payload,
+          );
+        } catch (e: unknown) {
+          const err = e as { statusCode?: number };
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            await admin.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+          }
+        }
+      }),
+    );
+  } catch {
+    // Non-blocking — friendship is created regardless
+  }
 }
 
 function buildFriendRequestEmail({
