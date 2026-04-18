@@ -10,7 +10,7 @@ import { countryFlag } from "@/lib/countryFlags";
 import { createClient } from "@/utils/supabase/client";
 import {
   VisitedPlace,
-  inferVisitedPlaces,
+  inferFromAllFlightCities,
   fetchDBPlaces,
   addDBPlace,
   removeDBPlace,
@@ -32,7 +32,7 @@ const LABELS = {
     dateLabel: "Fecha de visita",
     confirm: "Guardar",
     cancel: "Cancelar",
-    inferred: "Detectado de tus vuelos",
+    inferred: "De tus vuelos",
     manual: "Agregado manualmente",
     firstVisit: "Primera visita",
   },
@@ -46,7 +46,7 @@ const LABELS = {
     dateLabel: "Date visited",
     confirm: "Save",
     cancel: "Cancel",
-    inferred: "Detected from your flights",
+    inferred: "From your flights",
     manual: "Added manually",
     firstVisit: "First visit",
   },
@@ -101,7 +101,7 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const inferredPlaces = useMemo(() => inferVisitedPlaces(trips), [trips]);
+  const inferredPlaces = useMemo(() => inferFromAllFlightCities(trips), [trips]);
 
   // Merge: inferred takes priority over manual DB entries with same city+country
   const allPlaces = useMemo<VisitedPlace[]>(() => {
