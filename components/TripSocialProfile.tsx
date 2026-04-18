@@ -50,6 +50,15 @@ function getInitials(displayName: string | null, username: string): string {
   return (source[0] ?? "?").toUpperCase();
 }
 
+const MONTHS_ES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const MONTHS_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function formatTripDate(isoDate: string, locale: "es" | "en"): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const months = locale === "en" ? MONTHS_EN : MONTHS_ES;
+  return `${d} ${months[(m ?? 1) - 1]} ${y}`;
+}
+
 interface TripReactionBarProps {
   tripId: string;
   disabled: boolean;
@@ -224,12 +233,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
             {L.trips}
           </p>
           {profile.trips?.map((trip) => {
-            const dateStr = trip.isoDate
-              ? new Date(trip.isoDate + "T00:00:00").toLocaleDateString(
-                  locale === "en" ? "en-US" : "es-AR",
-                  { day: "numeric", month: "short", year: "numeric" },
-                )
-              : null;
+            const dateStr = trip.isoDate ? formatTripDate(trip.isoDate, locale) : null;
             return (
               <div key={trip.id} className="space-y-1">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
