@@ -251,52 +251,124 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
         )}
       </motion.div>
 
-      {/* ── Trips list ──────────────────────────────────────────────────────── */}
+      {/* ── Trips timeline (friends only) ──────────────────────────────────── */}
       {showTrips && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, delay: 0.08 }}
-          className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-4"
+          className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4"
         >
-          <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-4">
             {L.trips}
           </p>
-          {profile.trips?.map((trip) => {
-            const dateStr = trip.isoDate ? formatTripDate(trip.isoDate, locale) : null;
-            const tripReactions = reactionsByTrip.get(trip.id);
+          {(() => {
+            type TripEntry = NonNullable<typeof profile.trips>[number];
+            const MONTH_COLORS = [
+              "text-sky-400 border-sky-500/30 bg-sky-600/10",
+              "text-pink-400 border-pink-500/30 bg-pink-600/10",
+              "text-emerald-400 border-emerald-500/30 bg-emerald-600/10",
+              "text-amber-400 border-amber-500/30 bg-amber-600/10",
+              "text-violet-400 border-violet-500/30 bg-violet-600/10",
+              "text-rose-400 border-rose-500/30 bg-rose-600/10",
+              "text-cyan-400 border-cyan-500/30 bg-cyan-600/10",
+              "text-orange-400 border-orange-500/30 bg-orange-600/10",
+              "text-teal-400 border-teal-500/30 bg-teal-600/10",
+              "text-purple-400 border-purple-500/30 bg-purple-600/10",
+              "text-indigo-400 border-indigo-500/30 bg-indigo-600/10",
+              "text-lime-400 border-lime-500/30 bg-lime-600/10",
+            ];
+            const byYearMonth = new Map<number, Map<number, TripEntry[]>>();
+            for (const trip of profile.trips ?? []) {
+              const parts = (trip.isoDate ?? "").split("-");
+              const year = parseInt(parts[0] ?? "0");
+              const month = parseInt(parts[1] ?? "1");
+              if (!byYearMonth.has(year)) byYearMonth.set(year, new Map());
+              const byMonth = byYearMonth.get(year)!;
+              if (!byMonth.has(month)) byMonth.set(month, []);
+              byMonth.get(month)!.push(trip);
+            }
+            const years = Array.from(byYearMonth.keys()).sort((a, b) => b - a);
+            const monthNames = locale === "es" ? MONTHS_ES : MONTHS_EN;
             return (
-              <div key={trip.id} className="space-y-1">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-white/90">
-                    {trip.destinationName ?? trip.destinationCode}
-                  </p>
-                  {dateStr && (
-                    <span className="text-xs font-medium text-gray-500 bg-white/[0.06] rounded-full px-2.5 py-0.5">
-                      {dateStr}
-                    </span>
-                  )}
-                </div>
-                {tripReactions && tripReactions.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-1">
-                    {tripReactions.map(({ emoji, count }) => (
-                      <span
-                        key={emoji}
-                        className="inline-flex items-center gap-1 rounded-lg bg-white/[0.06] border border-white/[0.07] px-2 py-0.5 text-xs text-white/70 font-medium"
-                      >
-                        {emoji}
-                        <span className="tabular-nums">{count}</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <TripReactionBar
-                  tripId={trip.id}
-                  disabled={currentUserId === null}
-                />
+              <div className="space-y-6">
+                {years.map((year) => {
+                  const byMonth = byYearMonth.get(year)!;
+                  const months = Array.from(byMonth.keys()).sort((a, b) => b - a);
+                  return (
+                    <div key={year}>
+                      {/* Year header */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-2xl font-black text-white/20 tabular-nums leading-none">
+                          {year || "—"}
+                        </span>
+                        <div className="flex-1 h-px bg-white/[0.06]" />
+                      </div>
+                      {/* Months */}
+                      <div className="space-y-4 pl-3 border-l border-white/[0.07]">
+                        {months.map((month) => {
+                          const color = MONTH_COLORS[(month - 1) % 12];
+                          const label = monthNames[(month - 1) % 12];
+                          const monthTrips = byMonth.get(month)!;
+                          return (
+                            <div key={month} className="relative pl-4">
+                              {/* Dot on timeline */}
+                              <div className="absolute -left-[5px] top-[8px] w-2 h-2 rounded-full bg-white/20" />
+                              {/* Month pill */}
+                              <span className={`inline-flex items-center gap-1 text-[11px] font-bold border rounded-full px-2.5 py-0.5 mb-2 ${color}`}>
+                                ✈️ {label}
+                              </span>
+                              {/* Trips */}
+                              <div className="space-y-2">
+                                {monthTrips.map((trip) => {
+                                  const dateStr = trip.isoDate ? formatTripDate(trip.isoDate, locale) : null;
+                                  const tripReactions = reactionsByTrip.get(trip.id);
+                                  return (
+                                    <div
+                                      key={trip.id}
+                                      className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 space-y-2"
+                                    >
+                                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <p className="text-sm font-bold text-white">
+                                          {trip.destinationName ?? trip.destinationCode}
+                                        </p>
+                                        {dateStr && (
+                                          <span className="text-[11px] font-medium text-gray-600 shrink-0">
+                                            {dateStr}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {tripReactions && tripReactions.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {tripReactions.map(({ emoji, count }) => (
+                                            <span
+                                              key={emoji}
+                                              className="inline-flex items-center gap-1 rounded-lg bg-white/[0.06] border border-white/[0.07] px-2 py-0.5 text-xs text-white/70 font-medium"
+                                            >
+                                              {emoji}
+                                              <span className="tabular-nums">{count}</span>
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                      <TripReactionBar
+                                        tripId={trip.id}
+                                        disabled={currentUserId === null}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             );
-          })}
+          })()}
         </motion.div>
       )}
 
@@ -426,47 +498,6 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
               ))}
             </div>
           )}
-        </motion.div>
-      )}
-
-      {/* ── Section 4: Reactions summary ────────────────────────────────────── */}
-      {profile.friendData && profile.friendData.tripReactions.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.48 }}
-          className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4"
-        >
-          <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">
-            {L.reactions}
-          </p>
-          <div className="space-y-3">
-            {profile.friendData.tripReactions.map((entry) => {
-              const matchingTrip = profile.trips?.find((t) => t.id === entry.tripId);
-              return (
-                <div key={entry.tripId} className="space-y-1.5">
-                  {matchingTrip && (
-                    <p className="text-xs font-medium text-white/50">
-                      {matchingTrip.destinationName ?? matchingTrip.destinationCode}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-1.5">
-                    {entry.reactions.map(({ emoji, count }) => (
-                      <span
-                        key={emoji}
-                        className="inline-flex items-center gap-1 rounded-lg bg-white/[0.06] border border-white/[0.07] px-2.5 py-1 text-sm"
-                      >
-                        {emoji}
-                        <span className="text-xs font-semibold text-white/70 tabular-nums">
-                          {count}
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </motion.div>
       )}
 

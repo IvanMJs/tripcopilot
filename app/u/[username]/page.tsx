@@ -165,21 +165,29 @@ export default async function PublicProfilePage({
     : undefined;
 
   // Build trip list for display (last destination + first date of each trip)
+  const deduped = new Set<string>();
   const publicTrips: PublicProfileData["trips"] = showTrips
-    ? trips.map((trip) => {
-        const tripFlights = flightsByTrip.get(trip.id) ?? [];
-        const lastFlight = tripFlights[tripFlights.length - 1];
-        const firstFlight = tripFlights[0];
-        const destCode = lastFlight?.destination_code ?? "";
-        const airport = destCode ? AIRPORTS[destCode] : null;
-        return {
-          id: trip.id,
-          destinationCode: destCode,
-          destinationName: airport?.city ?? trip.name ?? null,
-          isoDate: firstFlight?.iso_date ?? "",
-          coverPhotoUrl: null,
-        };
-      })
+    ? trips
+        .map((trip) => {
+          const tripFlights = flightsByTrip.get(trip.id) ?? [];
+          const lastFlight = tripFlights[tripFlights.length - 1];
+          const firstFlight = tripFlights[0];
+          const destCode = lastFlight?.destination_code ?? "";
+          const airport = destCode ? AIRPORTS[destCode] : null;
+          return {
+            id: trip.id,
+            destinationCode: destCode,
+            destinationName: airport?.city ?? trip.name ?? null,
+            isoDate: firstFlight?.iso_date ?? "",
+            coverPhotoUrl: null,
+          };
+        })
+        .filter((trip) => {
+          const key = `${trip.destinationCode}|${trip.isoDate}`;
+          if (deduped.has(key)) return false;
+          deduped.add(key);
+          return true;
+        })
     : undefined;
 
   // Get current user (may be null for unauthenticated visitors)
