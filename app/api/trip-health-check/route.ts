@@ -81,7 +81,7 @@ Keep each body under 60 characters. Use ${locale === "es" ? "Spanish" : "English
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-sonnet-4-6",
       max_tokens: 1200,
       system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],

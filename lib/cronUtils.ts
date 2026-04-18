@@ -101,6 +101,8 @@ export const CRON_LABELS = {
       ({ title: `🏨 Check-out ahora — ${name}`, body: `Hora de check-out: ${time}. ¡Buen viaje!` }),
     gateChange: (code: string, newGate: string, oldGate: string | null, origin: string, dest: string) =>
       ({ title: `🚪 Cambio de puerta · ${code}`, body: `Nueva puerta: ${newGate} · ${origin}→${dest}${oldGate !== null ? ` (antes ${oldGate})` : ""}` }),
+    anniversary: (years: number, city: string) =>
+      ({ title: `Hoy hace ${years} año${years !== 1 ? "s" : ""} llegaste a ${city} ✈️`, body: `¿Lo recordás?` }),
   },
   en: {
     statusLabel: {
@@ -138,6 +140,8 @@ export const CRON_LABELS = {
       ({ title: `🏨 Check-out now — ${name}`, body: `Check-out time: ${time}. Safe travels!` }),
     gateChange: (code: string, newGate: string, oldGate: string | null, origin: string, dest: string) =>
       ({ title: `🚪 Gate change · ${code}`, body: `New gate: ${newGate} · ${origin}→${dest}${oldGate !== null ? ` (was ${oldGate})` : ""}` }),
+    anniversary: (years: number, city: string) =>
+      ({ title: `${years} year${years !== 1 ? "s" : ""} ago today you landed in ${city} ✈️`, body: `Remember that trip?` }),
   },
 } as const;
 

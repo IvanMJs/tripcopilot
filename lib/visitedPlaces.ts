@@ -7,7 +7,7 @@ export interface VisitedPlace {
   city: string;
   country: string;
   dateVisited: string;  // "YYYY-MM-DD"
-  source: "inferred" | "manual";
+  source: "inferred" | "manual" | "detected";
 }
 
 // ── Inference from flights ────────────────────────────────────────────────────
@@ -73,12 +73,16 @@ interface DBRow {
 }
 
 function rowToPlace(row: DBRow): VisitedPlace {
+  const source: VisitedPlace["source"] =
+    row.source === "inferred" ? "inferred"
+    : row.source === "detected" ? "detected"
+    : "manual";
   return {
     id: row.id,
     city: row.city,
     country: row.country,
     dateVisited: row.date_visited,
-    source: row.source === "inferred" ? "inferred" : "manual",
+    source,
   };
 }
 
@@ -112,6 +116,31 @@ export async function addDBPlace(
     .single();
 
   if (error || !data) return null;
+  return rowToPlace(data as DBRow);
+}
+
+export async function addDetectedPlace(
+  supabase: SupabaseClient,
+  place: { city: string; country: string; dateVisited: string },
+): Promise<VisitedPlace | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("visited_places")
+    .insert({
+      user_id: user.id,
+      city: place.city,
+      country: place.country,
+      date_visited: place.dateVisited,
+      source: "detected",
+    })
+    .select("id, city, country, date_visited, source")
+    .single();
+
+  // Gracefully ignore conflict (unique constraint violation)
+  if (error) return null;
+  if (!data) return null;
   return rowToPlace(data as DBRow);
 }
 

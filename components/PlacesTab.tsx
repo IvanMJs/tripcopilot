@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { CountryCelebration } from "@/components/CountryCelebration";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plane, MapPin, Plus, X, Check } from "lucide-react";
 import { TripTab } from "@/lib/types";
@@ -90,6 +91,7 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
   const [selectedCity, setSelectedCity] = useState<{ city: string; country: string } | null>(null);
   const [dateValue, setDateValue] = useState("");
   const [saving, setSaving] = useState(false);
+  const [celebration, setCelebration] = useState<{ country: string; flag: string; total: number } | null>(null);
 
   useEffect(() => {
     fetchDBPlaces(supabase).then((places) => {
@@ -126,6 +128,8 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
     });
     if (saved) {
       setDbPlaces((prev) => [saved, ...prev]);
+      const newTotal = allPlaces.length + 1;
+      setCelebration({ country: selectedCity.country, flag: countryFlag(selectedCity.country), total: newTotal });
     }
     setSaving(false);
     setShowAdd(false);
@@ -268,6 +272,16 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
             />
           ))}
         </div>
+      )}
+
+      {celebration && (
+        <CountryCelebration
+          country={celebration.country}
+          flag={celebration.flag}
+          totalCountries={celebration.total}
+          locale={locale}
+          onDone={() => setCelebration(null)}
+        />
       )}
     </div>
   );

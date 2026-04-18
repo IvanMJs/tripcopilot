@@ -119,7 +119,7 @@ ${SCHEMA_HINT}`;
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-sonnet-4-6",
       max_tokens: 1800,
       system: locale === "es"
         ? "Eres un asistente de viaje. DEBES responder ÚNICAMENTE con JSON válido en español. Sin explicaciones, sin markdown, sin texto fuera del objeto JSON."

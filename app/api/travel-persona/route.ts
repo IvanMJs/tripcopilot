@@ -107,7 +107,7 @@ Be creative, positive, and specific to the stats. Max 40 chars per title, 200 pe
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-sonnet-4-6",
       max_tokens: 400,
       system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],
