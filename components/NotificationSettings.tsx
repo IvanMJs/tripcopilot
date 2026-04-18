@@ -122,6 +122,14 @@ const PREF_ROWS: PrefRow[] = [
     descEs: "Push cuando alguien te agrega en TripSocial",
     descEn: "Push when someone adds you on TripSocial",
   },
+  {
+    key: "newFollower",
+    icon: <UserPlus className="h-4 w-4" />,
+    labelEs: "Nuevo seguidor",
+    labelEn: "New follower",
+    descEs: "Push cuando alguien empieza a seguirte",
+    descEn: "Push when someone starts following you",
+  },
 ];
 
 export function NotificationSettings({ open, onClose, locale }: Props) {

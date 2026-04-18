@@ -12,6 +12,7 @@ export interface NotificationPreferences {
   weeklyRecap: boolean;
   reEngagement: boolean;
   friendRequests: boolean;
+  newFollower: boolean;
 }
 
 export const DEFAULT_PREFS: Omit<NotificationPreferences, "userId"> = {
@@ -25,6 +26,7 @@ export const DEFAULT_PREFS: Omit<NotificationPreferences, "userId"> = {
   weeklyRecap: true,
   reEngagement: true,
   friendRequests: true,
+  newFollower: true,
 };
 
 export async function getNotificationPrefs(
@@ -60,6 +62,7 @@ export async function getNotificationPrefs(
     weeklyRecap:       typeof stored.weeklyRecap       === "boolean" ? stored.weeklyRecap       : DEFAULT_PREFS.weeklyRecap,
     reEngagement:      typeof stored.reEngagement      === "boolean" ? stored.reEngagement      : DEFAULT_PREFS.reEngagement,
     friendRequests:    typeof stored.friendRequests    === "boolean" ? stored.friendRequests    : DEFAULT_PREFS.friendRequests,
+    newFollower:       typeof stored.newFollower       === "boolean" ? stored.newFollower       : DEFAULT_PREFS.newFollower,
   };
 }
 
