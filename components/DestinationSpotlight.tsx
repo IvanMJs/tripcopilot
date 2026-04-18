@@ -8,6 +8,7 @@ import { reverseGeocode, GeoPlace } from "@/lib/reverseGeocode";
 import { fetchDBPlaces, addDetectedPlace, VisitedPlace } from "@/lib/visitedPlaces";
 import { createClient } from "@/utils/supabase/client";
 import { ExploreData } from "@/app/api/explore/tip/route";
+import { CountryCelebration } from "@/components/CountryCelebration";
 
 // ── WMO weather code → emoji ──────────────────────────────────────────────────
 
@@ -98,6 +99,7 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [addingPlace, setAddingPlace] = useState(false);
   const [placeAdded, setPlaceAdded] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // Fetch visited places from DB
   useEffect(() => {
@@ -192,6 +194,7 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
     });
     setAddingPlace(false);
     setPlaceAdded(true);
+    setShowCelebration(true);
     setShowVisitedBanner(false);
   }
 
@@ -265,6 +268,7 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
   // ── Main card ─────────────────────────────────────────────────────────────
 
   const flag = countryFlag(geoPlace.country);
+  const celebrationTotal = visitedPlaces.length + 1;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-6 bg-black/60 backdrop-blur-sm">
@@ -419,6 +423,15 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
           </div>
         </motion.div>
       </div>
+      {showCelebration && geoPlace && (
+        <CountryCelebration
+          country={geoPlace.country}
+          flag={countryFlag(geoPlace.country)}
+          totalCountries={celebrationTotal}
+          locale={locale}
+          onDone={() => setShowCelebration(false)}
+        />
+      )}
     </div>
   );
 }

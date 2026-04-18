@@ -1183,6 +1183,71 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── Travel anniversary push ────────────────────────────────────────────────
+  {
+    const todayMD = now.toISOString().slice(5, 10); // "MM-DD"
+    const oneYearAgoISO = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const { data: anniversaryRows } = await supabase
+      .from("flights")
+      .select("id, trip_id, origin_code, destination_code, iso_date, trips!inner(user_id)")
+      .like("iso_date", `%-${todayMD}`)
+      .lte("iso_date", oneYearAgoISO);
+
+    if (anniversaryRows?.length) {
+      type AnniversaryRow = { id: string; trip_id: string; origin_code: string; destination_code: string; iso_date: string; trips: { user_id: string } };
+
+      const processAnniversary = async (row: AnniversaryRow): Promise<void> => {
+        try {
+          const originCountry = AIRPORTS[row.origin_code]?.country ?? "USA";
+          const destCountry = AIRPORTS[row.destination_code]?.country ?? "USA";
+          if (originCountry === destCountry) return; // skip domestic
+
+          const years = now.getUTCFullYear() - parseInt(row.iso_date.slice(0, 4), 10);
+          if (years < 1) return;
+
+          const destCity = AIRPORTS[row.destination_code]?.city ?? row.destination_code;
+          const userId = row.trips.user_id;
+          const anniversaryTag = `anniversary_${row.iso_date}_${row.id}`;
+
+          const { data: existingLog } = await supabase
+            .from("notification_log")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("type", anniversaryTag)
+            .limit(1)
+            .maybeSingle();
+          if (existingLog) return;
+
+          const { data: annivSubs } = await supabase
+            .from("push_subscriptions")
+            .select("endpoint, p256dh, auth")
+            .eq("user_id", userId);
+          if (!annivSubs?.length) return;
+
+          const annivLocale = await getUserLocale(userId);
+          const L = CRON_LABELS[annivLocale];
+          const { title, body } = L.anniversary(years, destCity);
+
+          const annivFailed = await pushToAll(annivSubs, supabase, { title, body, url: "/app" }, anniversaryTag);
+          notificationsFailed += annivFailed;
+          if (annivFailed < annivSubs.length) notificationsSent++;
+
+          await supabase.from("notification_log").insert({
+            user_id: userId,
+            flight_id: row.id,
+            type: anniversaryTag,
+            sent_at: new Date().toISOString(),
+          });
+        } catch (err) {
+          cronErrors.push(`processAnniversary ${row.id}: ${String(err)}`);
+        }
+      }
+
+      await sendInBatches(anniversaryRows as unknown as AnniversaryRow[], processAnniversary, 10);
+    }
+  }
+
   await supabase.from("cron_runs").insert({
     flights_processed: flights.length,
     notifications_sent: notificationsSent,
