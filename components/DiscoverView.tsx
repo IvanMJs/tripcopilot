@@ -7,6 +7,7 @@ import { TripTab } from "@/lib/types";
 import { ExploreMap } from "@/components/ExploreMap";
 import { SmartTripSuggestions } from "@/components/SmartTripSuggestions";
 import { DreamTripPlanner } from "@/components/DreamTripPlanner";
+import { TripSocialView } from "@/components/TripSocialView";
 
 // Gradient + emoji visuals keyed by IATA code
 const DESTINATION_VISUALS: Record<string, { gradient: string; emoji: string }> = {
@@ -305,9 +306,10 @@ interface Props {
   onCreateTrip?: (destIata: string, destName: string) => void;
   userPlan?: string | null;
   onUpgrade?: () => void;
+  userId?: string | null;
 }
 
-export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade }: Props) {
+export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade, userId }: Props) {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [date, setDate] = useState("");
@@ -353,6 +355,9 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade 
 
   return (
     <div className="space-y-8 pb-6">
+
+      {/* TripSocial — traveler network */}
+      <TripSocialView locale={locale} userId={userId ?? null} />
 
       {/* Dream Trip Planner — AI travel planning */}
       <DreamTripPlanner

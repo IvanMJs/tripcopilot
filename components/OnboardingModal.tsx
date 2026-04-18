@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
 interface OnboardingModalProps {
@@ -9,25 +9,70 @@ interface OnboardingModalProps {
   onStartFresh: () => void;
 }
 
-const STEP_COUNT = 4;
+const STEP_COUNT = 5;
 
 export function OnboardingModal({ locale, onSeeExample, onStartFresh }: OnboardingModalProps) {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const es = locale === "es";
   const isLast = step === STEP_COUNT - 1;
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (username.length < 3) {
+      setUsernameStatus("idle");
+      return;
+    }
+    setUsernameStatus("checking");
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/profile/check-username?u=${encodeURIComponent(username)}`);
+        if (res.ok) {
+          const data = (await res.json()) as { available?: boolean };
+          setUsernameStatus(data.available ? "available" : "taken");
+        } else {
+          setUsernameStatus("invalid");
+        }
+      } catch {
+        setUsernameStatus("invalid");
+      }
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [username]);
 
   const goTo = useCallback((next: number) => {
     setDirection(next > step ? "forward" : "back");
     setStep(next);
   }, [step]);
 
-  function handleNext() {
+  async function handleNext() {
     if (isLast) {
       onStartFresh();
-    } else {
-      goTo(step + 1);
+      return;
     }
+    if (step === 3) {
+      if (username.length > 0 && usernameStatus !== "available") {
+        return;
+      }
+      if (username.length >= 3 && usernameStatus === "available") {
+        try {
+          await fetch("/api/profile/setup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, displayName }),
+          });
+        } catch {
+          // non-blocking — proceed even if setup fails
+        }
+      }
+    }
+    goTo(step + 1);
   }
 
   function handleBack() {
@@ -183,10 +228,85 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
             </div>
           )}
 
-          {/* Step 3: Discover tab + AI suggestions + travel stats */}
+          {/* Step 3: TripSocial username setup */}
           {step === 3 && (
             <div
               key="step-3"
+              className={`absolute inset-0 px-6 pt-8 pb-4 flex flex-col items-center justify-center text-center gap-4 ${
+                direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
+              }`}
+            >
+              {/* Icon */}
+              <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
+                <div className="absolute inset-0 rounded-2xl bg-pink-600/20 border border-pink-600/30" />
+                <svg
+                  className="h-8 w-8 text-pink-400 relative z-10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white mb-2">
+                  {es ? "Elegí tu @username" : "Choose your @username"}
+                </h2>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
+                  {es
+                    ? "Así te van a encontrar tus amigos en TripSocial"
+                    : "This is how friends will find you on TripSocial"}
+                </p>
+              </div>
+              {/* Username input */}
+              <div className="w-full max-w-xs space-y-2">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@</span>
+                  <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                    placeholder="tunombre"
+                    maxLength={30}
+                    className="w-full pl-7 pr-10 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-violet-500/50"
+                  />
+                  {usernameStatus === "checking" && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">...</span>
+                  )}
+                  {usernameStatus === "available" && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-green-400">&#x2713;</span>
+                  )}
+                  {usernameStatus === "taken" && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400">
+                      {es ? "Tomado" : "Taken"}
+                    </span>
+                  )}
+                </div>
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value.slice(0, 40))}
+                  placeholder={es ? "Tu nombre completo (opcional)" : "Your full name (optional)"}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-violet-500/50"
+                />
+                <button
+                  onClick={() => goTo(step + 1)}
+                  className="text-xs text-gray-600 hover:text-gray-400 mt-1 block mx-auto"
+                >
+                  {es ? "Saltar por ahora →" : "Skip for now →"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Discover tab + AI suggestions + travel stats */}
+          {step === 4 && (
+            <div
+              key="step-4"
               className={`absolute inset-0 px-6 pt-8 pb-4 flex flex-col items-center justify-center text-center gap-4 ${
                 direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
               }`}

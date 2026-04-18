@@ -826,24 +826,6 @@ export default function HomePage() {
                 </button>
               )}
 
-              {/* Theme toggle */}
-              <ThemeToggle />
-
-              {/* Language toggle */}
-              <div className="flex rounded-lg border border-gray-700 overflow-hidden text-xs font-semibold">
-                {(["es", "en"] as Locale[]).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLocale(l)}
-                    className={`px-2.5 py-1.5 md:px-3 transition-colors ${
-                      locale === l ? "bg-blue-600 text-white" : "bg-gray-900 text-gray-400 hover:text-gray-200"
-                    }`}
-                  >
-                    {l.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
               {/* Settings gear — opens settings tab */}
               {mounted && (
                 <button
@@ -1082,6 +1064,7 @@ export default function HomePage() {
                   locale={locale}
                   userPlan={userPlan}
                   onUpgrade={() => setShowUpgradeModal(true)}
+                  userId={userId}
                 />
               </Suspense>
             )}

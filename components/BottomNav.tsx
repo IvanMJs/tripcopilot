@@ -326,7 +326,6 @@ export function BottomNav({
                 <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-violet-500 ring-2 ring-[#0a0a14]" aria-label={locale === "es" ? "Vuelo próximo" : "Upcoming flight"} />
               )}
             </div>
-            <span className={`text-xs leading-none ${activeTab === "today" ? "font-bold" : "font-semibold"}`}>{locale === "es" ? "Hoy" : "Today"}</span>
           </button>
 
           {/* Mi viaje / Mis viajes */}
@@ -349,16 +348,15 @@ export function BottomNav({
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-0.5">
-              <span className={`text-xs leading-none ${tripsActive ? "font-bold" : "font-semibold"}`}>{tripsLabel}</span>
-              {totalTrips > 1 && (
-                <ChevronUp className={`h-3 w-3 transition-transform ${showTripPicker ? "rotate-180" : ""}`} />
-              )}
-            </div>
+            {totalTrips > 1 && (
+              <div className="flex items-center justify-center">
+                <ChevronUp className={`h-3 w-3 transition-transform text-gray-500 ${showTripPicker ? "rotate-180" : ""}`} />
+              </div>
+            )}
           </button>
 
-          {/* FAB spacer — center slot */}
-          <div className="flex-1" aria-hidden="true" />
+          {/* FAB spacer — center slot, fixed width so 5 real tabs share remaining space equally */}
+          <div className="w-14 shrink-0" aria-hidden="true" />
 
           {/* Descubrir */}
           <button
@@ -373,9 +371,6 @@ export function BottomNav({
               )}
               <Compass className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "discover" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "discover" ? 2.5 : 1.5} />
             </motion.div>
-            <span className={`text-xs leading-none ${activeTab === "discover" ? "font-bold" : "font-semibold"}`}>
-              {locale === "es" ? "Descubrir" : "Discover"}
-            </span>
           </button>
 
           {/* Perfil */}
@@ -391,26 +386,7 @@ export function BottomNav({
               )}
               <User className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "profile" ? 2.5 : 1.5} />
             </motion.div>
-            <span className={`text-xs leading-none ${activeTab === "profile" ? "font-bold" : "font-semibold"}`}>{tabLabels.profile}</span>
           </button>
-
-          {/* Bell — notifications hub, subtle button at the far right */}
-          {onNotificationsOpen && (
-            <button
-              onClick={() => { haptics.impact(); onNotificationsOpen(); }}
-              aria-label={locale === "es" ? "Notificaciones" : "Notifications"}
-              className="flex flex-col items-center justify-center gap-0.5 px-2 relative tap-scale transition-colors text-gray-500 hover:text-gray-300"
-            >
-              <div className="relative flex items-center justify-center w-8 h-8">
-                <Bell className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                {(unreadCount ?? 0) > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none ring-2 ring-[#0a0a14]">
-                    {(unreadCount ?? 0) > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </div>
-            </button>
-          )}
 
         </div>
       </div>

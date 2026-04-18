@@ -352,6 +352,25 @@ export function SettingsView({
           <h1 className="text-xl font-black text-white">{L.title}</h1>
         </div>
 
+        {/* ── Section: Language ────────────────────────────────────────────── */}
+        <SectionHeader label={locale === "es" ? "Idioma" : "Language"} />
+        <SettingsCard>
+          <SettingsRow>
+            <span className="flex-1 text-sm text-gray-300">{locale === "es" ? "Idioma de la app" : "App language"}</span>
+            <div className="flex rounded-lg border border-white/[0.07] overflow-hidden text-xs font-semibold shrink-0">
+              {(["es", "en"] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLocale(l)}
+                  className={`px-3 py-1.5 transition-colors ${locale === l ? "bg-blue-600 text-white" : "bg-transparent text-gray-400 hover:text-gray-200"}`}
+                >
+                  {l === "es" ? "Español" : "English"}
+                </button>
+              ))}
+            </div>
+          </SettingsRow>
+        </SettingsCard>
+
         {/* ── Section: Profile ─────────────────────────────────────────────── */}
         <SectionHeader label={L.sectionProfile} />
         <SettingsCard>

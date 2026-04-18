@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/utils/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { Resend } from "resend";
 import type { User } from "@supabase/auth-js";
 
-const PostBodySchema = z.object({
-  email: z.string().email().max(254),
-});
+const PostBodySchema = z
+  .object({
+    email: z.string().email().optional(),
+    username: z.string().min(3).max(20).optional(),
+  })
+  .refine((d) => d.email || d.username, { message: "email or username required" })
+  .refine((d) => !(d.email && d.username), { message: "provide only one of email or username" });
 
 const APP_URL = "https://tripcopilot.app";
 
@@ -32,45 +37,78 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { email } = parsed.data;
+  const { email, username } = parsed.data;
 
-  // Prevent self-request
-  if (user.email && user.email.toLowerCase() === email.toLowerCase()) {
-    return NextResponse.json(
-      { error: "No podés enviarte una solicitud a vos mismo" },
-      { status: 400 },
+  let addresseeId: string;
+
+  if (username && !email) {
+    // Username path: look up via user_profiles using service-role client
+    const admin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
     );
-  }
 
-  // Look up addressee by email via GoTrue Admin REST API (direct single-user lookup)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const lookupRes = await fetch(
-    `${supabaseUrl}/auth/v1/admin/users?email=${encodeURIComponent(email)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${serviceRoleKey}`,
-        apikey: serviceRoleKey,
+    const { data: profile } = await admin
+      .from("user_profiles")
+      .select("id")
+      .ilike("username", username)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    addresseeId = profile.id;
+
+    // Prevent self-request
+    if (addresseeId === user.id) {
+      return NextResponse.json(
+        { error: "No podés enviarte una solicitud a vos mismo" },
+        { status: 400 },
+      );
+    }
+  } else {
+    // Email path: keep existing GoTrue Admin REST API lookup unchanged
+    const targetEmail = email!;
+
+    // Prevent self-request
+    if (user.email && user.email.toLowerCase() === targetEmail.toLowerCase()) {
+      return NextResponse.json(
+        { error: "No podés enviarte una solicitud a vos mismo" },
+        { status: 400 },
+      );
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const lookupRes = await fetch(
+      `${supabaseUrl}/auth/v1/admin/users?email=${encodeURIComponent(targetEmail)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+        },
       },
-    },
-  ).catch(() => null);
+    ).catch(() => null);
 
-  let addressee: User | null = null;
-  if (lookupRes?.ok) {
-    const body = (await lookupRes.json().catch(() => null)) as {
-      users?: User[];
-    } | null;
-    addressee = body?.users?.[0] ?? null;
+    let addressee: User | null = null;
+    if (lookupRes?.ok) {
+      const body = (await lookupRes.json().catch(() => null)) as {
+        users?: User[];
+      } | null;
+      addressee = body?.users?.[0] ?? null;
+    }
+
+    if (!addressee) {
+      return NextResponse.json(
+        { error: "No existe ningún usuario con ese email" },
+        { status: 404 },
+      );
+    }
+
+    addresseeId = addressee.id;
   }
-
-  if (!addressee) {
-    return NextResponse.json(
-      { error: "No existe ningún usuario con ese email" },
-      { status: 404 },
-    );
-  }
-
-  const addresseeId = addressee.id;
 
   // Prevent duplicate: check if friendship already exists (non-declined)
   const { data: existing } = await supabase
@@ -104,8 +142,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No se pudo crear la solicitud" }, { status: 500 });
   }
 
-  // Send invitation email (non-blocking)
-  if (process.env.RESEND_API_KEY) {
+  // Send invitation email (non-blocking, only when addressee was found by email)
+  if (process.env.RESEND_API_KEY && email) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const requesterName = user.email ?? "Tu amigo/a";
     const connectUrl = `${APP_URL}/app?tab=social`;
