@@ -484,7 +484,7 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveProfileTab(tab.id)}
-                className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={`relative shrink-0 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
                   isActive ? "text-white" : "text-gray-500 hover:text-gray-300"
                 }`}
               >

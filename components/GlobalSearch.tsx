@@ -177,7 +177,7 @@ export function GlobalSearch({
             role="dialog"
             aria-modal="true"
             aria-label={locale === "es" ? "Búsqueda global" : "Global search"}
-            className="fixed top-[10%] left-1/2 -translate-x-1/2 z-[61] w-full max-w-lg px-4"
+            className="fixed top-4 inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-[61] sm:w-full sm:max-w-lg"
           >
             <div className="rounded-2xl border border-white/10 bg-surface-elevated shadow-2xl overflow-hidden">
               {/* Input row */}
@@ -214,7 +214,7 @@ export function GlobalSearch({
 
               {/* Results */}
               <div
-                className="max-h-[60vh] overflow-y-auto py-2"
+                className="max-h-[min(60vh,calc(100dvh-8rem))] overflow-y-auto py-2"
                 role="listbox"
                 aria-label={locale === "es" ? "Resultados de búsqueda" : "Search results"}
               >
