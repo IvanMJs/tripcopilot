@@ -58,12 +58,20 @@ const LABELS = {
 const REACTION_EMOJIS = ["❤️", "🔥", "😍", "✈️", "🌟"] as const;
 type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
 
-function countryCodeToFlag(countryCode: string): string {
-  const upper = countryCode.toUpperCase();
-  return upper
-    .split("")
-    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
-    .join("");
+function FlagImg({ code }: { code: string }) {
+  const lower = code.toLowerCase();
+  if (!/^[a-z]{2}$/.test(lower)) return null;
+  return (
+    <img
+      src={`https://flagcdn.com/w20/${lower}.png`}
+      srcSet={`https://flagcdn.com/w40/${lower}.png 2x`}
+      alt={code}
+      width={20}
+      height={15}
+      className="rounded-sm object-cover"
+      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+    />
+  );
 }
 
 function getInitials(displayName: string | null, username: string): string {
@@ -349,7 +357,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
                 title={code}
                 className="flex items-center rounded-lg bg-white/[0.06] border border-white/[0.07] px-1.5 py-1"
               >
-                <span className="text-xl leading-none">{countryCodeToFlag(code)}</span>
+                <FlagImg code={code} />
               </div>
             ))}
             {extraCountries > 0 && (
@@ -411,9 +419,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
                 title={code}
                 className="flex items-center rounded-lg bg-amber-600/15 border border-amber-500/30 px-1.5 py-1"
               >
-                <span className="text-xl leading-none">
-                  {countryCodeToFlag(code)}
-                </span>
+                <FlagImg code={code} />
               </div>
             ))}
           </div>
@@ -503,7 +509,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
                     : "border-white/[0.07] bg-white/[0.06]";
                   return (
                     <div key={code} title={code} className={`flex items-center rounded-lg border px-1.5 py-1 ${cls}`}>
-                      <span className="text-xl leading-none">{countryCodeToFlag(code)}</span>
+                      <FlagImg code={code} />
                     </div>
                   );
                 })}
