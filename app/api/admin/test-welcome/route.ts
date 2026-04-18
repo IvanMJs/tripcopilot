@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { buildWelcomeEmail } from "@/app/api/auth/welcome/route";
+import { buildWelcomeEmail } from "@/lib/welcomeEmail";
 
 const TEST_RECIPIENTS = [
   "ivanmeyer1991@gmail.com",
