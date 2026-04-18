@@ -14,7 +14,6 @@ import { TravelStreaks } from "@/components/TravelStreaks";
 import { TravelChallenges } from "@/components/TravelChallenges";
 import { ReferralCard } from "@/components/ReferralCard";
 import { FriendsTravelSection } from "@/components/FriendsTravelSection";
-import type { FriendWithLocation } from "@/lib/friends";
 import { AchievementBadges } from "@/components/AchievementBadges";
 import { countryFlag } from "@/lib/countryFlags";
 import { PlacesTab } from "@/components/PlacesTab";
@@ -284,14 +283,6 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
   const L = LABELS[locale];
   const [selectedIata, setSelectedIata] = useState<string | null>(null);
   const [activeProfileTab, setActiveProfileTab] = useState<ProfileTabId>("stats");
-  const [friendLocations, setFriendLocations] = useState<FriendWithLocation[]>([]);
-
-  useEffect(() => {
-    fetch("/api/friends")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.friends) setFriendLocations(d.friends); })
-      .catch(() => null);
-  }, []);
 
   const stats = useMemo(() => {
     const allFlights = trips.flatMap((t) => t.flights);
@@ -629,7 +620,6 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                 <WorldMapView
                   trips={trips}
                   locale={locale}
-                  friendLocations={friendLocations}
                   onAirportClick={(iata) => setSelectedIata((prev) => prev === iata ? null : iata)}
                 />
 
