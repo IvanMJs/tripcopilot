@@ -232,70 +232,89 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
           {step === 3 && (
             <div
               key="step-3"
-              className={`absolute inset-0 px-6 pt-8 pb-4 flex flex-col items-center justify-center text-center gap-4 ${
+              className={`absolute inset-0 px-5 pt-6 pb-4 flex flex-col items-center justify-start text-center gap-3 overflow-y-auto ${
                 direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left"
               }`}
             >
               {/* Icon */}
-              <div className="relative h-16 w-16 flex items-center justify-center shrink-0">
+              <div className="relative h-14 w-14 flex items-center justify-center shrink-0 mt-2">
                 <div className="absolute inset-0 rounded-2xl bg-pink-600/20 border border-pink-600/30" />
-                <svg
-                  className="h-8 w-8 text-pink-400 relative z-10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg className="h-7 w-7 text-pink-400 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </div>
+
+              {/* Headline */}
               <div>
-                <h2 className="text-xl font-black text-white mb-2">
-                  {es ? "Elegí tu @username" : "Choose your @username"}
+                <h2 className="text-xl font-black text-white mb-1">
+                  {es ? "Creá tu identidad viajera" : "Create your traveler identity"}
                 </h2>
                 <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">
                   {es
-                    ? "Así te van a encontrar tus amigos en TripSocial"
-                    : "This is how friends will find you on TripSocial"}
+                    ? "Tu @username te conecta con otros viajeros y le da vida a tu perfil."
+                    : "Your @username connects you with other travelers and brings your profile to life."}
                 </p>
               </div>
-              {/* Username input */}
+
+              {/* Value props mini-cards */}
+              <div className="w-full max-w-xs space-y-1.5">
+                {[
+                  { icon: "✈️", text: es ? "Tus vuelos y viajes en un perfil público" : "Your flights & trips on a public profile" },
+                  { icon: "👫", text: es ? "Seguí a amigos y vé dónde están viajando" : "Follow friends and see where they're flying" },
+                  { icon: "🌍", text: es ? "Descubrí viajeros con los mismos destinos" : "Discover travelers with the same destinations" },
+                ].map((vp) => (
+                  <div key={vp.icon} className="flex items-center gap-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-left">
+                    <span className="text-base shrink-0">{vp.icon}</span>
+                    <span className="text-xs text-gray-300 leading-snug">{vp.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Inputs */}
               <div className="w-full max-w-xs space-y-2">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">@</span>
                   <input
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                    placeholder="tunombre"
-                    maxLength={30}
-                    className="w-full pl-7 pr-10 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-violet-500/50"
+                    placeholder={es ? "tunombre" : "yourname"}
+                    maxLength={20}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    className="w-full pl-7 pr-10 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-violet-500/50 transition-colors"
                   />
                   {usernameStatus === "checking" && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">...</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">{es ? "..." : "..."}</span>
                   )}
                   {usernameStatus === "available" && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-green-400">&#x2713;</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-green-400 font-bold">✓</span>
                   )}
                   {usernameStatus === "taken" && (
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400">
                       {es ? "Tomado" : "Taken"}
                     </span>
                   )}
+                  {usernameStatus === "invalid" && username.length > 0 && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-amber-400">
+                      {es ? "Inválido" : "Invalid"}
+                    </span>
+                  )}
                 </div>
                 <input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value.slice(0, 40))}
-                  placeholder={es ? "Tu nombre completo (opcional)" : "Your full name (optional)"}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-violet-500/50"
+                  placeholder={es ? "Tu nombre (ej: María G.)" : "Your name (e.g. Maria G.)"}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-violet-500/50 transition-colors"
                 />
+                <p className="text-[11px] text-gray-600 text-center">
+                  {es ? "Solo letras minúsculas, números y _ · 3–20 caracteres" : "Lowercase letters, numbers and _ · 3–20 chars"}
+                </p>
                 <button
                   onClick={() => goTo(step + 1)}
-                  className="text-xs text-gray-600 hover:text-gray-400 mt-1 block mx-auto"
+                  className="text-xs text-gray-600 hover:text-gray-400 transition-colors block mx-auto"
                 >
                   {es ? "Saltar por ahora →" : "Skip for now →"}
                 </button>
