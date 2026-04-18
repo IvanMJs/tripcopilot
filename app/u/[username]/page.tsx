@@ -5,6 +5,8 @@ import { TripSocialProfile } from "@/components/TripSocialProfile";
 import { AIRPORTS } from "@/lib/airports";
 import type { PublicProfileData } from "@/lib/friends";
 
+export const dynamic = "force-dynamic";
+
 interface SocialSettings {
   profileVisible?: "friends" | "nobody";
   showMap?: boolean;
