@@ -26,10 +26,14 @@ interface UserProfileRow {
 
 interface TripRow {
   id: string;
-  destination_code: string | null;
-  destination_name: string | null;
-  iso_date: string | null;
-  cover_photo_url: string | null;
+  name: string;
+}
+
+interface FlightRow {
+  trip_id: string;
+  destination_code: string;
+  origin_code: string;
+  iso_date: string;
 }
 
 export async function generateMetadata({
@@ -84,73 +88,94 @@ export default async function PublicProfilePage({
   const showMap = settings.showMap ?? true;
   const showTrips = settings.showTrips ?? true;
 
-  let trips: TripRow[] | undefined;
+  let trips: TripRow[] = [];
+  let flights: FlightRow[] = [];
+
   if (showStats || showMap || showTrips) {
     const { data: tripData } = await admin
       .from("trips")
-      .select("id, destination_code, destination_name, iso_date, cover_photo_url")
+      .select("id, name")
       .eq("user_id", profile.id)
-      .order("iso_date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(20);
 
     trips = (tripData ?? []) as TripRow[];
+
+    if (trips.length > 0) {
+      const tripIds = trips.map((t) => t.id);
+      const { data: flightData } = await admin
+        .from("flights")
+        .select("trip_id, destination_code, origin_code, iso_date")
+        .in("trip_id", tripIds)
+        .order("iso_date", { ascending: true });
+
+      flights = (flightData ?? []) as FlightRow[];
+    }
   }
 
-  // Fetch visited_places from the dedicated table (columns: country = ISO code, city)
-  let visitedCountryCodes: string[] = [];
+  // Group flights by trip → last destination + first date per trip
+  const flightsByTrip = new Map<string, FlightRow[]>();
+  for (const f of flights) {
+    if (!flightsByTrip.has(f.trip_id)) flightsByTrip.set(f.trip_id, []);
+    flightsByTrip.get(f.trip_id)!.push(f);
+  }
+
+  // Build visited countries + airports from flights
+  const airportSet = new Set<string>();
+  const countrySet = new Set<string>();
+
+  for (const f of flights) {
+    for (const code of [f.destination_code, f.origin_code]) {
+      if (!code) continue;
+      airportSet.add(code);
+      const airport = AIRPORTS[code];
+      if (airport?.country) countrySet.add(airport.country);
+    }
+  }
+
+  // Supplement countries from visited_places table
   if (showMap || showStats) {
     const { data: vpData } = await admin
       .from("visited_places")
       .select("country")
       .eq("user_id", profile.id);
-    visitedCountryCodes = (vpData ?? [])
-      .map((r: { country: string }) => r.country)
-      .filter(Boolean);
-  }
-
-  // Build visitedCountries from visited_places table + trip fallback
-  let visitedCountries: string[] | undefined;
-  if (showMap) {
-    const countrySet = new Set<string>(visitedCountryCodes);
-
-    if (countrySet.size === 0 && trips) {
-      for (const trip of trips) {
-        if (trip.destination_code) {
-          const airport = AIRPORTS[trip.destination_code];
-          if (airport) countrySet.add(airport.country ?? "US");
-        }
+    for (const row of vpData ?? []) {
+      if ((row as { country: string }).country) {
+        countrySet.add((row as { country: string }).country);
       }
     }
-
-    visitedCountries = Array.from(countrySet);
   }
 
-  // Build stats
-  let stats: PublicProfileData["stats"] | undefined;
-  if (showStats && trips !== undefined) {
-    const airportSet = new Set<string>();
-    const countrySetForStats = new Set<string>(visitedCountryCodes);
-
-    if (trips) {
-      for (const trip of trips) {
-        if (trip.destination_code) {
-          airportSet.add(trip.destination_code);
-          if (countrySetForStats.size === 0) {
-            const airport = AIRPORTS[trip.destination_code];
-            if (airport) countrySetForStats.add(airport.country ?? "US");
-          }
-        }
+  const stats: PublicProfileData["stats"] | undefined = showStats
+    ? {
+        tripCount: trips.length,
+        countryCount: countrySet.size,
+        airportCount: airportSet.size,
       }
-    }
+    : undefined;
 
-    stats = {
-      tripCount: trips.length,
-      countryCount: countrySetForStats.size,
-      airportCount: airportSet.size,
-    };
-  }
+  const visitedCountries: string[] | undefined = showMap
+    ? Array.from(countrySet)
+    : undefined;
 
-  // Build the PublicProfileData object
+  // Build trip list for display (last destination + first date of each trip)
+  const publicTrips: PublicProfileData["trips"] = showTrips
+    ? trips.map((trip) => {
+        const tripFlights = flightsByTrip.get(trip.id) ?? [];
+        const lastFlight = tripFlights[tripFlights.length - 1];
+        const firstFlight = tripFlights[0];
+        const destCode = lastFlight?.destination_code ?? "";
+        const airport = destCode ? AIRPORTS[destCode] : null;
+        return {
+          id: trip.id,
+          destinationCode: destCode,
+          destinationName: airport?.city ?? trip.name ?? null,
+          isoDate: firstFlight?.iso_date ?? "",
+          coverPhotoUrl: null,
+        };
+      })
+    : undefined;
+
   const profileResponse: PublicProfileData = {
     userId: profile.id,
     username: profile.username,
@@ -164,15 +189,7 @@ export default async function PublicProfilePage({
       showCurrentLocation: settings.showCurrentLocation,
       acceptRequests: settings.acceptRequests,
     },
-    trips: showTrips && trips
-      ? trips.map((t) => ({
-          id: t.id,
-          destinationCode: t.destination_code ?? "",
-          destinationName: t.destination_name,
-          isoDate: t.iso_date ?? "",
-          coverPhotoUrl: t.cover_photo_url,
-        }))
-      : undefined,
+    trips: publicTrips,
     visitedCountries,
     stats,
   };
