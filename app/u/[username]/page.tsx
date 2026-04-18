@@ -5,6 +5,8 @@ import { TripSocialProfile } from "@/components/TripSocialProfile";
 import { AIRPORTS } from "@/lib/airports";
 import type { PublicProfileData } from "@/lib/friends";
 
+export const dynamic = "force-dynamic";
+
 interface SocialSettings {
   profileVisible?: "friends" | "nobody";
   showMap?: boolean;
@@ -62,13 +64,18 @@ export default async function PublicProfilePage({
   );
 
   // Fetch user profile
-  const { data: profileData } = await admin
+  const { data: profileData, error: profileError } = await admin
     .from("user_profiles")
     .select("id, username, display_name, social_settings, visited_places")
     .ilike("username", username)
     .maybeSingle();
 
+  if (profileError) {
+    console.error("[/u/[username]] Supabase error:", profileError.message, "username:", username);
+  }
+
   if (!profileData) {
+    console.error("[/u/[username]] Profile not found for username:", username);
     notFound();
   }
 
