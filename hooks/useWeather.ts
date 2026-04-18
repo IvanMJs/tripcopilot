@@ -54,6 +54,8 @@ export function useWeather(airportCodes: string[], locale: "es" | "en") {
   const [rawMap, setRawMap] = useState<Record<string, { temperature: number; weatherCode: number }>>({});
   const cacheRef = useRef<Record<string, RawCacheEntry>>({});
 
+  const airportCodesKey = airportCodes.join(",");
+
   useEffect(() => {
     if (airportCodes.length === 0) return;
 
@@ -118,7 +120,7 @@ export function useWeather(airportCodes: string[], locale: "es" | "en") {
     fetchWeather();
 
     return () => { cancelled = true; };
-  }, [airportCodes.join(",")]);
+  }, [airportCodesKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const weatherMap = useMemo(() => {
     const map: Record<string, WeatherData> = {};

@@ -130,19 +130,18 @@ export function useMetar(airportCodes: string[]): Record<string, MetarData> {
         );
         if (!res.ok) return;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const json = await res.json() as any[];
+        const json = await res.json() as unknown[];
         if (!Array.isArray(json) || cancelled) return;
 
         const newCache = { ...cacheRef.current };
 
-        for (const item of json) {
+        for (const item of json as Record<string, unknown>[]) {
           const icao  = String(item.icaoId ?? "");
           const iata  = toFetch.find((c) => AIRPORTS[c]?.icao === icao);
           if (!iata) continue;
 
           const visib   = parseVisibility(item.visib);
-          const ceiling = findCeiling(item.sky);
+          const ceiling = findCeiling(item.sky as Parameters<typeof findCeiling>[0]);
           const isVRB   = String(item.wdir ?? "").toUpperCase() === "VRB";
 
           const metar: MetarData = {

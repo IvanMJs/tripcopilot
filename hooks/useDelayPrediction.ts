@@ -121,7 +121,6 @@ export function useDelayPrediction({
     destinationCode,
     originCode,
     locale,
-    isoDate,
   ]);
 
   const isLoading =

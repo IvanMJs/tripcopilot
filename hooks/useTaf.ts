@@ -147,24 +147,22 @@ export function useTaf(airportCodes: string[]): Record<string, TafData> {
         );
         if (!res.ok) return;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const json = await res.json() as any[];
+        const json = await res.json() as unknown[];
         if (!Array.isArray(json) || cancelled) return;
 
         const newCache = { ...cacheRef.current };
 
-        for (const item of json) {
-          const icao = String(item.icaoId ?? "");
+        for (const item of json as Record<string, unknown>[]) {
+          const icao = String((item as Record<string, unknown>).icaoId ?? "");
           const iata = toFetch.find((c) => AIRPORTS[c]?.icao === icao);
           if (!iata) continue;
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const rawFcsts: any[] = Array.isArray(item.fcsts) ? item.fcsts : [];
+          const rawFcsts: Record<string, unknown>[] = Array.isArray(item.fcsts) ? item.fcsts as Record<string, unknown>[] : [];
 
           const periods: TafPeriod[] = rawFcsts.map((f) => {
             const isVRB  = String(f.wdir ?? "").toUpperCase() === "VRB";
             const visib  = parseVisibility(f.visib);
-            const ceiling = findCeiling(f.sky);
+            const ceiling = findCeiling(f.sky as Parameters<typeof findCeiling>[0]);
 
             const period: TafPeriod = {
               timeFrom:       Number(f.timeFrom ?? 0),
