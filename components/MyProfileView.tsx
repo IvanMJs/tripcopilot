@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, type Easing } from "framer-motion";
-import { TrendingUp, Globe, Plane, MapPin, Zap, Award, X, BarChart3, Trophy, Gift, Users } from "lucide-react";
+import { TrendingUp, Globe, Plane, MapPin, Zap, Award, X, BarChart3, Trophy, Gift, Users, Share2 } from "lucide-react";
 import { WorldMapView } from "@/components/WorldMapView";
 import { TripTab } from "@/lib/types";
 import { computeTripStats } from "@/lib/tripStats";
@@ -277,6 +277,56 @@ interface AirportStampData {
   country: string;
   firstVisitDate: string;
   visitCount: number;
+}
+
+function ShareAppCard({ locale }: { locale: "es" | "en" }) {
+  const [copied, setCopied] = useState(false);
+  const APP_URL = "https://tripcopilot.app";
+  const shareText = locale === "es"
+    ? "Mirá TripCopilot — la app para seguir todos tus vuelos y viajes en tiempo real 🛫"
+    : "Check out TripCopilot — the app to track all your flights and trips in real time 🛫";
+
+  async function handleShare() {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "TripCopilot", text: shareText, url: APP_URL });
+        return;
+      } catch {
+        // user cancelled or not supported — fall through
+      }
+    }
+    await navigator.clipboard.writeText(`${shareText}\n${APP_URL}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="rounded-2xl border border-sky-700/30 bg-gradient-to-br from-sky-950/40 via-blue-950/30 to-indigo-950/40 p-4">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-9 h-9 rounded-xl bg-sky-500/20 flex items-center justify-center shrink-0">
+          <Share2 className="w-4 h-4 text-sky-400" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-white/90">
+            {locale === "es" ? "Compartí la app" : "Share the app"}
+          </p>
+          <p className="text-xs text-gray-400">
+            {locale === "es" ? "Invitá a tus amigos a unirse" : "Invite your friends to join"}
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={handleShare}
+        className="w-full rounded-xl bg-sky-600/80 hover:bg-sky-500/80 active:scale-95 text-white text-sm font-semibold py-2.5 transition-all flex items-center justify-center gap-2"
+      >
+        {copied ? (
+          <>{locale === "es" ? "¡Link copiado!" : "Link copied!"}</>
+        ) : (
+          <><Share2 className="w-4 h-4" />{locale === "es" ? "Compartir TripCopilot" : "Share TripCopilot"}</>
+        )}
+      </button>
+    </div>
+  );
 }
 
 export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDiscover }: MyProfileViewProps) {
@@ -862,6 +912,11 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                 <ReferralCard locale={locale} />
               </motion.div>
             )}
+
+            {/* Share App */}
+            <motion.div {...fadeUp(0.08)} className="px-4 pb-2">
+              <ShareAppCard locale={locale} />
+            </motion.div>
 
             {/* Plan upgrade CTA for social sharing */}
             {userPlan === "free" && (

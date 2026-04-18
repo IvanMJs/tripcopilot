@@ -285,26 +285,30 @@ export function WorldMapView({ trips, locale, onAirportClick, friendLocations }:
           </Marker>
         ))}
 
-        {/* 🟡 Friend location markers */}
+        {/* Friend location pulse markers */}
         {(friendLocations ?? [])
           .filter((f) => f.currentLocation !== null)
           .map((f) => {
             const loc = f.currentLocation!;
-            const displayName = f.email.split("@")[0];
+            const displayName = (f.displayName ?? f.username ?? f.email.split("@")[0]);
+            const r = Math.max(2, 5 / position.zoom);
             return (
               <Marker key={f.userId} coordinates={[loc.lng, loc.lat]}>
-                <text
-                  textAnchor="middle"
-                  style={{ fontSize: emojiSize, cursor: "default", userSelect: "none" }}
+                <g
+                  style={{ cursor: "default" }}
                   onMouseEnter={() =>
                     setTooltip(
-                      `🟡 ${displayName} ${locale === "es" ? "está en" : "is in"} ${loc.city}`,
+                      `${displayName} ${locale === "es" ? "está en" : "is in"} ${loc.city}`,
                     )
                   }
                   onMouseLeave={() => setTooltip(null)}
                 >
-                  🟡
-                </text>
+                  <circle r={r * 2.8} fill="#FBBF24" fillOpacity="0" stroke="#FBBF24" strokeWidth={r * 0.4}>
+                    <animate attributeName="r" values={`${r};${r * 3.5};${r}`} dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                  <circle r={r} fill="#FBBF24" stroke="white" strokeWidth={r * 0.35} />
+                </g>
               </Marker>
             );
           })}

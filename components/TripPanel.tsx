@@ -65,6 +65,7 @@ import { openTripReportPrint } from "@/lib/tripReport";
 import { SmartPackingList } from "./SmartPackingList";
 import { TripCountdownWidget } from "./TripCountdownWidget";
 import { TripChatPanel } from "./TripChatPanel";
+import { TripDiary } from "./TripDiary";
 import { FlightPriceAlertTeaser } from "./FlightPriceAlertTeaser";
 
 // ── Connection Separator ──────────────────────────────────────────────────────
@@ -1225,6 +1226,7 @@ export function TripPanel({
 
       {activeSection === "notes" && !isDraft && (
         <>
+          <TripDiary trip={trip} locale={locale} />
           <TripNotes tripId={trip.id} locale={locale} />
           <TripPassengers tripId={trip.id} locale={locale} readOnly={!canEdit} />
           <TripChecklist tripId={trip.id} locale={locale} readOnly={!canEdit} />
