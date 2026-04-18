@@ -32,7 +32,6 @@ interface UserProfileRow {
   username: string;
   display_name: string | null;
   social_settings: SocialSettings | null;
-  visited_places: VisitedPlace[] | null;
 }
 
 export async function GET(
@@ -49,7 +48,7 @@ export async function GET(
 
   const { data: profileData } = await admin
     .from("user_profiles")
-    .select("id, username, display_name, social_settings, visited_places")
+    .select("id, username, display_name, social_settings")
     .ilike("username", username)
     .maybeSingle();
 
@@ -95,22 +94,8 @@ export async function GET(
   if (showMap && trips !== undefined) {
     const countrySet = new Set<string>();
 
-    // Try visited_places JSONB first
-    if (profile.visited_places && profile.visited_places.length > 0) {
-      for (const place of profile.visited_places) {
-        if (place.countryCode) {
-          countrySet.add(place.countryCode);
-        } else if (place.code) {
-          const airport = AIRPORTS[place.code];
-          if (airport) {
-            countrySet.add(airport.country ?? "US");
-          }
-        }
-      }
-    }
-
-    // Fall back to deriving from trips destination codes
-    if (countrySet.size === 0 && trips) {
+    // Derive countries from trips destination codes
+    if (trips) {
       for (const trip of trips) {
         if (trip.destination_code) {
           const airport = AIRPORTS[trip.destination_code];
@@ -139,20 +124,7 @@ export async function GET(
     const airportSet = new Set<string>();
     const countrySetForStats = new Set<string>();
 
-    if (profile.visited_places && profile.visited_places.length > 0) {
-      for (const place of profile.visited_places) {
-        if (place.code) {
-          airportSet.add(place.code);
-          const airport = AIRPORTS[place.code];
-          if (airport) {
-            countrySetForStats.add(airport.country ?? "US");
-          }
-        }
-        if (place.countryCode) {
-          countrySetForStats.add(place.countryCode);
-        }
-      }
-    } else if (trips) {
+    if (trips) {
       for (const trip of trips) {
         if (trip.destination_code) {
           airportSet.add(trip.destination_code);

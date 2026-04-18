@@ -17,11 +17,6 @@ interface SocialSettings {
   acceptRequests?: boolean;
 }
 
-interface VisitedPlace {
-  code?: string;
-  countryCode?: string;
-}
-
 interface UserProfileRow {
   id: string;
   username: string;
@@ -101,34 +96,22 @@ export default async function PublicProfilePage({
     trips = (tripData ?? []) as TripRow[];
   }
 
-  // Fetch visited_places from the dedicated table
-  let visitedPlaces: VisitedPlace[] = [];
+  // Fetch visited_places from the dedicated table (columns: country = ISO code, city)
+  let visitedCountryCodes: string[] = [];
   if (showMap || showStats) {
     const { data: vpData } = await admin
       .from("visited_places")
-      .select("code, country_code")
+      .select("country")
       .eq("user_id", profile.id);
-    visitedPlaces = (vpData ?? []).map((r: { code?: string; country_code?: string }) => ({
-      code: r.code,
-      countryCode: r.country_code,
-    }));
+    visitedCountryCodes = (vpData ?? [])
+      .map((r: { country: string }) => r.country)
+      .filter(Boolean);
   }
 
-  // Build visitedCountries
+  // Build visitedCountries from visited_places table + trip fallback
   let visitedCountries: string[] | undefined;
   if (showMap) {
-    const countrySet = new Set<string>();
-
-    if (visitedPlaces.length > 0) {
-      for (const place of visitedPlaces) {
-        if (place.countryCode) {
-          countrySet.add(place.countryCode);
-        } else if (place.code) {
-          const airport = AIRPORTS[place.code];
-          if (airport) countrySet.add(airport.country ?? "US");
-        }
-      }
-    }
+    const countrySet = new Set<string>(visitedCountryCodes);
 
     if (countrySet.size === 0 && trips) {
       for (const trip of trips) {
@@ -146,25 +129,16 @@ export default async function PublicProfilePage({
   let stats: PublicProfileData["stats"] | undefined;
   if (showStats && trips !== undefined) {
     const airportSet = new Set<string>();
-    const countrySetForStats = new Set<string>();
+    const countrySetForStats = new Set<string>(visitedCountryCodes);
 
-    if (visitedPlaces.length > 0) {
-      for (const place of visitedPlaces) {
-        if (place.code) {
-          airportSet.add(place.code);
-          const airport = AIRPORTS[place.code];
-          if (airport) countrySetForStats.add(airport.country ?? "US");
-        }
-        if (place.countryCode) {
-          countrySetForStats.add(place.countryCode);
-        }
-      }
-    } else if (trips) {
+    if (trips) {
       for (const trip of trips) {
         if (trip.destination_code) {
           airportSet.add(trip.destination_code);
-          const airport = AIRPORTS[trip.destination_code];
-          if (airport) countrySetForStats.add(airport.country ?? "US");
+          if (countrySetForStats.size === 0) {
+            const airport = AIRPORTS[trip.destination_code];
+            if (airport) countrySetForStats.add(airport.country ?? "US");
+          }
         }
       }
     }
