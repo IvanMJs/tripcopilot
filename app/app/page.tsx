@@ -17,7 +17,6 @@ import { FlightSearch } from "@/components/FlightSearch";
 // TripPanel lazy-loaded — only rendered when a trip is selected
 const TripPanel = lazy(() => import("@/components/TripPanel").then((m) => ({ default: m.TripPanel })));
 import { TripListView } from "@/components/TripListView";
-import { TripEmptyState } from "@/components/TripEmptyState";
 import { ItineraryImportModal } from "@/components/ItineraryImportModal";
 import { ParsedFlight } from "@/lib/importFlights";
 import { HelpPanel } from "@/components/HelpPanel";
@@ -101,17 +100,11 @@ export default function HomePage() {
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
   // Initialize with a fixed default to avoid hydration mismatch.
-  // A useEffect below checks localStorage and redirects first-time users to "trips".
+  // On mount, both setMounted and the first-time tab redirect fire in the same
+  // React 18 batch → single re-render, no visible airports→trips flash.
   const [activeTab, setActiveTabRaw] = useState<string>("airports");
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef<string>("airports");
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("tc-onboarded")) {
-      setActiveTabRaw("trips");
-      prevTabRef.current = "trips";
-    }
-  }, []);
   const [mounted, setMounted] = useState(false);
   const [userPlan, setUserPlan] = useState<"free" | "explorer" | "pilot" | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -252,6 +245,10 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true);
+    if (!localStorage.getItem("tc-onboarded")) {
+      setActiveTabRaw("trips");
+      prevTabRef.current = "trips";
+    }
   }, []);
 
   // Compute unread notification count on mount (client-only)
@@ -1089,13 +1086,6 @@ export default function HomePage() {
 
             {activeTab === "trips" && (
               <>
-                {!tripsLoading && userTrips.length === 0 && !draftTrip ? (
-                  <TripEmptyState
-                    locale={locale}
-                    onCreateTrip={openCreateTripModal}
-                    onImport={() => setShowGlobalImport(true)}
-                  />
-                ) : (
                 <TripListView
                   trips={userTrips}
                   statusMap={statusMap}
@@ -1109,8 +1099,9 @@ export default function HomePage() {
                   onDismissExample={handleDismissExample}
                   onCreateSimilar={handleCreateSimilar}
                   onViewArchivedTrip={() => setShowTripHistory(true)}
+                  onAIImport={() => setShowGlobalImport(true)}
+                  onSwitchTab={(tab) => navigateAway(tab)}
                 />
-                )}
                 {!tripsLoading && userTrips.length >= PLANS.free.maxTrips && (
                   <div className="mx-4 mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 flex items-center justify-between gap-3">
                     <div className="min-w-0">
@@ -1189,7 +1180,7 @@ export default function HomePage() {
                       onClick={handleDismissExample}
                       className="rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 text-xs px-2 py-1.5 transition-colors"
                     >
-                      {locale === "es" ? "Descartar" : "Dismiss"}
+                      {locale === "es" ? "← Mis viajes" : "← My trips"}
                     </button>
                   </div>
                 </div>
