@@ -36,6 +36,18 @@ function getStatusInfo(raw: string | undefined, locale: "es" | "en"): { icon: st
   return { icon: "⚠️", label: locale === "es" ? "demoras activas" : "active delays" };
 }
 
+function getImplication(raw: string | undefined, locale: "es" | "en"): string {
+  const es = locale === "es";
+  if (raw === "ok") return es ? "No necesitás salir antes de lo planeado." : "No need to leave earlier than planned.";
+  if (raw === "delay_minor") return es ? "Demoras leves — tu vuelo podría salir un poco tarde." : "Minor delays — your flight may depart slightly late.";
+  if (raw === "delay_moderate") return es ? "Demoras moderadas — revisá si tenés conexión ajustada." : "Moderate delays — check if you have a tight connection.";
+  if (raw === "delay_severe") return es ? "Demoras severas — llegá temprano y confirmá tu vuelo." : "Severe delays — arrive early and confirm your flight.";
+  if (raw === "ground_delay") return es ? "Retención en tierra — tu vuelo puede salir tarde." : "Ground delay — your flight may depart late.";
+  if (raw === "ground_stop") return es ? "Sin salidas por ahora — monitoreá antes de ir al aeropuerto." : "No departures right now — monitor before heading to the airport.";
+  if (raw === "closure") return es ? "Aeropuerto cerrado — verificá tu vuelo con la aerolínea." : "Airport closed — verify your flight with the airline.";
+  return es ? "Sin datos por ahora — volvé a revisar en unos minutos." : "No data yet — check back in a few minutes.";
+}
+
 export function NewUserWelcomeView({ statusMap, locale, onAddFlight }: NewUserWelcomeViewProps) {
   const [view, setView] = useState<FtueView>("list");
   const [selectedIata, setSelectedIata] = useState("");
@@ -125,7 +137,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight }: NewUserWe
                 onClick={() => setView("picker")}
                 className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
               >
-                {es ? "Ver mi aeropuerto →" : "See my airport →"}
+                {es ? "Ver el estado de tu aeropuerto en tiempo real →" : "See your airport's live status →"}
               </button>
               <p className="text-xs text-gray-600 text-center mt-2">
                 {es
@@ -238,29 +250,39 @@ function HeroCard({
   locale: "es" | "en";
 }) {
   const { icon, label } = getStatusInfo(entry?.status, locale);
+  const implication = getImplication(entry?.status, locale);
   return (
-    <div className="rounded-2xl border border-white/[0.12] bg-white/[0.04] px-6 py-6 flex items-start justify-between gap-4">
-      <div>
-        <p className="text-5xl font-black text-white leading-none">{iata}</p>
-        <p className="text-sm text-gray-500 mt-2">
-          {AIRPORT_DB[iata]?.city ?? iata}
-        </p>
+    <div className="rounded-2xl border border-white/[0.12] bg-white/[0.04] px-6 py-6 flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-5xl font-black text-white leading-none">{iata}</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {AIRPORT_DB[iata]?.city ?? iata}
+          </p>
+        </div>
+
+        {entry ? (
+          <div className="flex flex-col items-end gap-1 pt-1 shrink-0">
+            <span className="text-3xl">{icon}</span>
+            <span className="text-sm text-gray-400 text-right">{label}</span>
+            <span className="text-[11px] text-gray-600">
+              {formatLastChecked(entry.lastChecked, locale)}
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-end gap-2 pt-1 shrink-0">
+            <div className="h-8 w-8 rounded-lg bg-white/[0.07] animate-pulse" />
+            <div className="h-4 w-20 rounded-md bg-white/[0.07] animate-pulse" />
+            <div className="h-3 w-16 rounded-md bg-white/[0.04] animate-pulse" />
+          </div>
+        )}
       </div>
 
-      {entry ? (
-        <div className="flex flex-col items-end gap-1 pt-1 shrink-0">
-          <span className="text-3xl">{icon}</span>
-          <span className="text-sm text-gray-400 text-right">{label}</span>
-          <span className="text-[11px] text-gray-600">
-            {formatLastChecked(entry.lastChecked, locale)}
-          </span>
-        </div>
-      ) : (
-        <div className="flex flex-col items-end gap-2 pt-1 shrink-0">
-          <div className="h-8 w-8 rounded-lg bg-white/[0.07] animate-pulse" />
-          <div className="h-4 w-20 rounded-md bg-white/[0.07] animate-pulse" />
-          <div className="h-3 w-16 rounded-md bg-white/[0.04] animate-pulse" />
-        </div>
+      {/* Implication — what this status means for the user */}
+      {entry && (
+        <p className="text-sm text-gray-400 border-t border-white/[0.06] pt-3 leading-relaxed">
+          {implication}
+        </p>
       )}
     </div>
   );
