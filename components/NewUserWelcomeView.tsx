@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 
 interface NewUserWelcomeViewProps {
-  statusMap: Record<string, { status: string; lastChecked?: Date }>;
+  statusMap: Record<string, { status: string; lastChecked: Date }>;
   locale: "es" | "en";
   onAddFlight: () => void;
 }
@@ -40,6 +40,7 @@ function getStatusInfo(raw: string | undefined, locale: "es" | "en"): { icon: st
 
 export function NewUserWelcomeView({ statusMap, locale, onAddFlight }: NewUserWelcomeViewProps) {
   const staggerDelays = [0, 0.06, 0.12, 0.18];
+  const hasData = AIRPORTS.some((iata) => statusMap[iata] !== undefined);
 
   return (
     <div className="flex flex-col gap-3">
@@ -59,30 +60,45 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight }: NewUserWe
 
       {/* Airport cards */}
       <div className="flex flex-col gap-2">
-        {AIRPORTS.map((iata, index) => {
-          const { icon, label } = getStatusInfo(statusMap[iata]?.status, locale);
-          return (
-            <motion.div
-              key={iata}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: staggerDelays[index], duration: 0.2 }}
-              className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 flex items-center justify-between"
-            >
-              <span className="font-bold text-white">{iata}</span>
-              <div className="flex flex-col items-end gap-0.5">
-                <span className="flex items-center gap-1.5 text-sm text-gray-400">
-                  <span>{icon}</span>
-                  <span>{label}</span>
-                </span>
-                <span className="text-[11px] text-gray-600">
-                  {formatLastChecked(statusMap[iata]?.lastChecked, locale)}
-                </span>
+        {AIRPORTS.map((iata, index) => (
+          <motion.div
+            key={iata}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: staggerDelays[index], duration: 0.2 }}
+            className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 flex items-center justify-between"
+          >
+            <span className="font-bold text-white">{iata}</span>
+            {hasData ? (
+              (() => {
+                const { icon, label } = getStatusInfo(statusMap[iata]?.status, locale);
+                return (
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="flex items-center gap-1.5 text-sm text-gray-400">
+                      <span>{icon}</span>
+                      <span>{label}</span>
+                    </span>
+                    <span className="text-[11px] text-gray-600">
+                      {formatLastChecked(statusMap[iata]?.lastChecked, locale)}
+                    </span>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="flex flex-col items-end gap-1">
+                <div className="h-4 w-28 rounded-md bg-white/[0.07] animate-pulse" />
+                <div className="h-3 w-20 rounded-md bg-white/[0.04] animate-pulse" />
               </div>
-            </motion.div>
-          );
-        })}
+            )}
+          </motion.div>
+        ))}
       </div>
+
+      {!hasData && (
+        <p className="text-xs text-gray-600 text-center -mt-1">
+          {locale === "es" ? "Actualizando ahora..." : "Updating now..."}
+        </p>
+      )}
 
       {/* CTA */}
       <div className="mt-2 flex flex-col items-center gap-0">
