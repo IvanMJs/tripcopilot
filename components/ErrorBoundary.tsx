@@ -50,10 +50,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-red-800/50 bg-red-950/30 p-8 text-center">
           <div className="mb-3 text-3xl">✈️</div>
           <p className="mb-1 text-base font-semibold text-red-300">
-            TripCopilot encontró un problema
+            Algo salió mal / Something went wrong
           </p>
           <p className="mb-1 text-sm text-gray-400">
-            Something went wrong. Please retry or report the issue.
+            Intentá de nuevo o reportá el problema. / Please retry or report the issue.
           </p>
           {this.state.error?.message && (
             <p className="mb-4 max-w-sm truncate rounded bg-red-900/30 px-2 py-1 font-mono text-xs text-red-400">
@@ -73,7 +73,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               rel="noopener noreferrer"
               className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-gray-400 hover:text-white"
             >
-              Reportar problema
+              Reportar / Report
             </a>
           </div>
         </div>

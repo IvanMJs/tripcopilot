@@ -35,6 +35,7 @@ const LABELS = {
     following: "Siguiendo",
     followers: "seguidores",
     followingLabel: "siguiendo",
+    signUpToFollow: "Creá una cuenta para seguir",
   },
   en: {
     trips: "Trips",
@@ -60,6 +61,7 @@ const LABELS = {
     following: "Following",
     followers: "followers",
     followingLabel: "following",
+    signUpToFollow: "Create an account to follow",
   },
 } as const;
 
@@ -291,30 +293,44 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
         )}
 
         {/* Follow + Add friend buttons */}
-        {currentUserId && !isOwnProfile && (
+        {!isOwnProfile && (
           <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-2">
-              <button
-                onClick={() => void handleFollow()}
-                disabled={followLoading}
-                className={`rounded-xl text-sm font-bold px-5 py-2.5 transition-all active:scale-95 disabled:opacity-60 ${
-                  viewerFollows
-                    ? "bg-white/[0.08] border border-white/[0.15] text-white/70 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400"
-                    : "bg-violet-600 hover:bg-violet-500 text-white"
-                }`}
-              >
-                {followLoading ? "..." : viewerFollows ? L.following : L.follow}
-              </button>
-              <button
-                onClick={() => void handleAddFriend()}
-                disabled={addLoading || addSent}
-                className="rounded-xl bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] text-white/70 text-sm font-bold px-5 py-2.5 transition-all active:scale-95 disabled:opacity-60"
-              >
-                {addSent ? L.requestSent : addLoading ? "..." : L.addFriend}
-              </button>
-            </div>
-            {addError && (
-              <p className="text-xs text-red-400 font-medium">{addError}</p>
+            {currentUserId ? (
+              <>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => void handleFollow()}
+                    disabled={followLoading}
+                    className={`rounded-xl text-sm font-bold px-5 py-2.5 transition-all active:scale-95 disabled:opacity-60 ${
+                      viewerFollows
+                        ? "bg-white/[0.08] border border-white/[0.15] text-white/70 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400"
+                        : "bg-violet-600 hover:bg-violet-500 text-white"
+                    }`}
+                  >
+                    {followLoading ? "..." : viewerFollows ? L.following : L.follow}
+                  </button>
+                  <button
+                    onClick={() => void handleAddFriend()}
+                    disabled={addLoading || addSent}
+                    className="rounded-xl bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] text-white/70 text-sm font-bold px-5 py-2.5 transition-all active:scale-95 disabled:opacity-60"
+                  >
+                    {addSent ? L.requestSent : addLoading ? "..." : L.addFriend}
+                  </button>
+                </div>
+                {addError && (
+                  <p className="text-xs text-red-400 font-medium">{addError}</p>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-1.5">
+                <a
+                  href="/#empezar"
+                  className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold px-5 py-2.5 transition-all active:scale-95"
+                >
+                  {L.follow}
+                </a>
+                <p className="text-xs text-gray-500">{L.signUpToFollow}</p>
+              </div>
             )}
           </div>
         )}
@@ -576,6 +592,26 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
             </motion.div>
           );
         })()
+      )}
+
+      {/* Empty state — nothing to show yet */}
+      {!showTrips && !showMap && !profile.friendData && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.16 }}
+          className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-8 text-center"
+        >
+          <p className="text-4xl mb-3">✈️</p>
+          <p className="text-sm font-semibold text-white/60">
+            {locale === "es" ? "Aún sin viajes" : "No trips yet"}
+          </p>
+          <p className="text-xs text-gray-600 mt-1">
+            {locale === "es"
+              ? "Este viajero todavía no registró destinos."
+              : "This traveler hasn't logged any destinations yet."}
+          </p>
+        </motion.div>
       )}
     </div>
   );

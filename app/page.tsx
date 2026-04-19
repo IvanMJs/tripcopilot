@@ -687,8 +687,8 @@ export default function LandingPage() {
                   <span title="España">🇪🇸</span>
                 </div>
                 <p className="text-xs text-gray-400 leading-snug">
-                  <span className="font-bold text-white">{lang === "en" ? "1,200+ travellers" : "Más de 1.200 viajeros"}</span>{" "}
-                  {lang === "en" ? "trust TripCopilot" : "confían en TripCopilot"}
+                  <span className="font-bold text-white">{lang === "en" ? "Early access" : "Acceso anticipado"}</span>{" "}
+                  {lang === "en" ? "— join the first travelers" : "— unite a los primeros viajeros"}
                 </p>
               </div>
             </div>

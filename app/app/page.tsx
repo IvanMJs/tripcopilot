@@ -17,7 +17,6 @@ import { FlightSearch } from "@/components/FlightSearch";
 // TripPanel lazy-loaded — only rendered when a trip is selected
 const TripPanel = lazy(() => import("@/components/TripPanel").then((m) => ({ default: m.TripPanel })));
 import { TripListView } from "@/components/TripListView";
-import { TripEmptyState } from "@/components/TripEmptyState";
 import { ItineraryImportModal } from "@/components/ItineraryImportModal";
 import { ParsedFlight } from "@/lib/importFlights";
 import { HelpPanel } from "@/components/HelpPanel";
@@ -40,10 +39,8 @@ import { useServiceWorker } from "@/hooks/useServiceWorker";
 import { useWatchedAirports } from "@/hooks/useWatchedAirports";
 import { useUserTrips } from "@/hooks/useUserTrips";
 import { NotificationSetupSheet } from "@/components/NotificationSetupSheet";
-import { OnboardingModal } from "@/components/OnboardingModal";
 import { InstallBanner } from "@/components/InstallBanner";
 import { RatingNudge } from "@/components/RatingNudge";
-import { makeExampleTrip } from "@/lib/exampleTrip";
 import { analytics } from "@/lib/analytics";
 import { createClient } from "@/utils/supabase/client";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
@@ -72,6 +69,7 @@ import { GlobalSearch } from "@/components/GlobalSearch";
 import { NotificationsHubPanel } from "@/components/NotificationsHubPanel";
 import { TripHistoryView } from "@/components/TripHistoryView";
 import { getUnreadCount } from "@/lib/notificationsHub";
+import { NewUserWelcomeView } from "@/components/NewUserWelcomeView";
 
 const TripAssistant = dynamic(() => import("@/components/TripAssistant").then((m) => ({ default: m.TripAssistant })), { ssr: false });
 const TripDebriefModal = dynamic(() => import("@/components/TripDebriefModal").then((m) => ({ default: m.TripDebriefModal })), { ssr: false });
@@ -101,17 +99,11 @@ export default function HomePage() {
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
   // Initialize with a fixed default to avoid hydration mismatch.
-  // A useEffect below checks localStorage and redirects first-time users to "trips".
+  // On mount, both setMounted and the first-time tab redirect fire in the same
+  // React 18 batch → single re-render, no visible airports→trips flash.
   const [activeTab, setActiveTabRaw] = useState<string>("airports");
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef<string>("airports");
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("tc-onboarded")) {
-      setActiveTabRaw("trips");
-      prevTabRef.current = "trips";
-    }
-  }, []);
   const [mounted, setMounted] = useState(false);
   const [userPlan, setUserPlan] = useState<"free" | "explorer" | "pilot" | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -160,10 +152,6 @@ export default function HomePage() {
 
   // Draft trip — local only, not persisted until "Guardar viaje"
   const [draftTrip, setDraftTrip] = useState<{ name: string; flights: TripFlight[]; accommodations: Accommodation[] } | null>(null);
-
-  // Onboarding
-  const [showOnboarding, setShowOnboarding]   = useState(false);
-  const [exampleTrip,    setExampleTrip]       = useState<ReturnType<typeof makeExampleTrip> | null>(null);
 
   // Notifications hub
   const [showNotificationsHub, setShowNotificationsHub] = useState(false);
@@ -252,23 +240,20 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true);
+    // Migrate legacy key so returning users are not re-shown the welcome view
+    if (localStorage.getItem("tripcopilot-onboarded") && !localStorage.getItem("tc-onboarded")) {
+      localStorage.setItem("tc-onboarded", "true");
+    }
+    if (!localStorage.getItem("tc-onboarded")) {
+      setActiveTabRaw("trips");
+      prevTabRef.current = "trips";
+    }
   }, []);
 
   // Compute unread notification count on mount (client-only)
   useEffect(() => {
     setUnreadCount(getUnreadCount());
   }, []);
-
-  // Show onboarding only for new users: not flagged, 0 trips, and trips have finished loading
-  useEffect(() => {
-    if (tripsLoading) return;
-    if (!localStorage.getItem("tripcopilot-onboarded") && userTrips.length === 0) {
-      setShowOnboarding(true);
-      setExampleTrip(makeExampleTrip(locale));
-    }
-  // locale intentionally omitted — locale might not be hydrated yet, example trip handles it statically
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripsLoading]);
 
   // Check-in push notifications
   useEffect(() => {
@@ -441,30 +426,6 @@ export default function HomePage() {
   function markOnboarded() {
     localStorage.setItem("tripcopilot-onboarded", "true");
     localStorage.setItem("tc-onboarded", "true");
-  }
-
-  function handleOnboardingSeeExample() {
-    setShowOnboarding(false);
-    setActiveTab(EXAMPLE_ID);
-  }
-
-  function handleOnboardingStartFresh() {
-    setShowOnboarding(false);
-    markOnboarded();
-    setExampleTrip(null);
-    setShowCreateModal(true);
-  }
-
-  function handleDismissExample() {
-    markOnboarded();
-    setExampleTrip(null);
-    setActiveTab("trips");
-  }
-
-  function handleStartRealTrip() {
-    markOnboarded();
-    setExampleTrip(null);
-    setShowCreateModal(true);
   }
 
   // ── Trip management ───────────────────────────────────────────────────────
@@ -646,7 +607,6 @@ export default function HomePage() {
       setShowUpgradeModal(false);
       setShowNotifSheet(false);
       setShowNotifSettings(false);
-      setShowOnboarding(false);
       setShowGlobalSearch(false);
     },
     onHelp: () => setShowKbdHelp((v) => !v),
@@ -678,14 +638,6 @@ export default function HomePage() {
         onClose={() => setShowKbdHelp(false)}
         locale={locale}
       />
-
-      {showOnboarding && (
-        <OnboardingModal
-          locale={locale}
-          onSeeExample={handleOnboardingSeeExample}
-          onStartFresh={handleOnboardingStartFresh}
-        />
-      )}
 
       <UpgradeModal
         isOpen={showUpgradeModal}
@@ -1088,27 +1040,31 @@ export default function HomePage() {
 
             {activeTab === "trips" && (
               <>
-                {!tripsLoading && userTrips.length === 0 && !draftTrip ? (
-                  <TripEmptyState
+                {mounted && !tripsLoading && userTrips.length === 0 && !localStorage.getItem("tc-onboarded") ? (
+                  <NewUserWelcomeView
+                    statusMap={Object.fromEntries(
+                      Object.entries(statusMap).map(([k, v]) => [k, { status: v.status, lastChecked: v.lastChecked }])
+                    )}
                     locale={locale}
-                    onCreateTrip={openCreateTripModal}
-                    onImport={() => setShowGlobalImport(true)}
+                    onAddFlight={() => {
+                      markOnboarded();
+                      void openCreateTripModal();
+                    }}
                   />
                 ) : (
-                <TripListView
-                  trips={userTrips}
-                  statusMap={statusMap}
-                  locale={locale}
-                  loading={tripsLoading}
-                  onSelect={(id) => setActiveTab(id)}
-                  onCreateTrip={openCreateTripModal}
-                  onDeleteTrip={deleteTrip}
-                  exampleTrip={exampleTrip}
-                  onSelectExample={() => setActiveTab(EXAMPLE_ID)}
-                  onDismissExample={handleDismissExample}
-                  onCreateSimilar={handleCreateSimilar}
-                  onViewArchivedTrip={() => setShowTripHistory(true)}
-                />
+                  <TripListView
+                    trips={userTrips}
+                    statusMap={statusMap}
+                    locale={locale}
+                    loading={tripsLoading}
+                    onSelect={(id) => setActiveTab(id)}
+                    onCreateTrip={openCreateTripModal}
+                    onDeleteTrip={deleteTrip}
+                    onCreateSimilar={handleCreateSimilar}
+                    onViewArchivedTrip={() => setShowTripHistory(true)}
+                    onAIImport={() => setShowGlobalImport(true)}
+                    onSwitchTab={(tab) => navigateAway(tab)}
+                  />
                 )}
                 {!tripsLoading && userTrips.length >= PLANS.free.maxTrips && (
                   <div className="mx-4 mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 flex items-center justify-between gap-3">
@@ -1161,55 +1117,6 @@ export default function HomePage() {
                   geoPosition={userPosition}
                 />
               </Suspense>
-            )}
-
-            {/* Example trip panel */}
-            {!tripsLoading && exampleTrip && activeTab === EXAMPLE_ID && (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-dashed border-violet-600/40 bg-violet-950/15 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-                  <div>
-                    <p className="text-sm font-bold text-violet-300">
-                      {locale === "es" ? "🎯 Viaje de ejemplo" : "🎯 Example trip"}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {locale === "es"
-                        ? "Explorá las funciones — todo lo que ves es real"
-                        : "Explore the features — everything you see is real"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={handleStartRealTrip}
-                      className="rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 transition-colors"
-                    >
-                      {locale === "es" ? "Crear mi viaje" : "Create my trip"}
-                    </button>
-                    <button
-                      onClick={handleDismissExample}
-                      className="rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 text-xs px-2 py-1.5 transition-colors"
-                    >
-                      {locale === "es" ? "Descartar" : "Dismiss"}
-                    </button>
-                  </div>
-                </div>
-                <Suspense fallback={<TripPanelSkeleton />}>
-                  <TripPanel
-                    key={EXAMPLE_ID}
-                    trip={exampleTrip}
-                    statusMap={statusMap}
-                    weatherMap={weatherMap}
-                    onAddFlight={() => {}}
-                    onRemoveFlight={() => {}}
-                    onAddAccommodation={() => {}}
-                    onRemoveAccommodation={() => {}}
-                    onUpdateAccommodation={() => {}}
-                    showDeviceTz={showDeviceTz}
-                    deviceTz={deviceTz}
-                    onToggleDeviceTz={handleToggleDeviceTz}
-                    geoPosition={userPosition}
-                  />
-                </Suspense>
-              </div>
             )}
 
             {/* Saved trip panels */}
