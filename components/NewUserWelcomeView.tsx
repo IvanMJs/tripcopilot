@@ -10,9 +10,11 @@ interface NewUserWelcomeViewProps {
 
 const AIRPORTS = ["EZE", "JFK", "MIA", "GCM"] as const;
 
-function formatLastChecked(date: Date | undefined, locale: "es" | "en"): string {
+function formatLastChecked(date: Date | string | undefined, locale: "es" | "en"): string {
   if (!date) return locale === "es" ? "actualizando..." : "updating...";
-  const diffMs = Date.now() - date.getTime();
+  const d = date instanceof Date ? date : new Date(date as string);
+  if (isNaN(d.getTime())) return locale === "es" ? "actualizando..." : "updating...";
+  const diffMs = Date.now() - d.getTime();
   if (diffMs < 0) return locale === "es" ? "actualizado ahora" : "updated just now";
   const diffMin = Math.floor(diffMs / 60000);
   if (diffMin < 1) return locale === "es" ? "actualizado ahora" : "updated just now";

@@ -22,6 +22,13 @@ function readCache(): AirportStatusCache | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as AirportStatusCache;
     if (typeof parsed.ts !== "number" || !parsed.data) return null;
+    // JSON.parse turns Date objects into strings — revive them
+    for (const iata of Object.keys(parsed.data)) {
+      const entry = parsed.data[iata];
+      if (entry && typeof (entry.lastChecked as unknown) === "string") {
+        entry.lastChecked = new Date(entry.lastChecked as unknown as string);
+      }
+    }
     return parsed;
   } catch {
     return null;
