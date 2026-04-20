@@ -629,6 +629,10 @@ html.light .skeleton {
   from { stroke-dashoffset: 320; }
   to   { stroke-dashoffset: 0; }
 }
+@keyframes arcDrawNorm {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
 
 /* ── Confetti animation ────────────────────────────────────────────────────── */
 @keyframes confetti-fall {

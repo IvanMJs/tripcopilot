@@ -6,8 +6,8 @@ import { AIRPORTS } from "@/lib/airports";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const AUTO_DISMISS_MS = 3000;
-const ARC_DURATION = 2; // seconds
+const AUTO_DISMISS_MS = 2500;
+const ARC_DURATION = 1.8; // seconds
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -158,18 +158,28 @@ export function FlightArcAnimation({ originIata, destIata, onComplete }: FlightA
               fill="none"
             />
 
-            {/* Main arc — draws itself */}
+            {/* Invisible reference path — used only by getPointAtLength (no dash animation) */}
             <path
               ref={arcPathRef}
+              d="M 20 130 Q 160 10 300 130"
+              fill="none"
+              stroke="none"
+              strokeWidth={0}
+              visibility="hidden"
+            />
+
+            {/* Visual animated arc — pathLength=1 trick avoids getTotalLength issues */}
+            <path
               d="M 20 130 Q 160 10 300 130"
               stroke="url(#arcLoadGrad)"
               strokeWidth="2"
               fill="none"
               strokeLinecap="round"
-              strokeDasharray={320}
-              strokeDashoffset={320}
+              pathLength={1}
+              strokeDasharray={1}
+              strokeDashoffset={1}
               filter="url(#arcGlow)"
-              style={{ animation: `arcDraw ${ARC_DURATION}s ease-out forwards` }}
+              style={{ animation: `arcDrawNorm ${ARC_DURATION}s ease-out forwards` }}
             />
 
             {/* Origin pulse dot */}
@@ -228,10 +238,10 @@ export function FlightArcAnimation({ originIata, destIata, onComplete }: FlightA
           className="flex gap-2 flex-wrap justify-center"
         >
           {([
-            { label: "Estado vuelo",    delay: 0.5  },
-            { label: "Clima",           delay: 0.8  },
-            { label: "Riesgo conexión", delay: 1.2  },
-            { label: "Datos FAA",       delay: 1.6  },
+            { label: "Estado vuelo",    delay: 0.3  },
+            { label: "Clima",           delay: 0.6  },
+            { label: "Riesgo conexión", delay: 1.0  },
+            { label: "Datos FAA",       delay: 1.4  },
           ] as const).map(({ label, delay }) => (
             <ChipLoading key={label} label={label} delay={delay} />
           ))}
