@@ -4,9 +4,10 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AirportSearchInput } from "@/components/AirportSearchInput";
 import { AIRPORTS as AIRPORT_DB } from "@/lib/airports";
+import type { AirportStatus } from "@/lib/types";
 
 interface NewUserWelcomeViewProps {
-  statusMap: Record<string, { status: string; lastChecked: Date }>;
+  statusMap: Record<string, AirportStatus>;
   locale: "es" | "en";
   onAddFlight: () => void;
   userId?: string | null;
@@ -15,6 +16,7 @@ interface NewUserWelcomeViewProps {
 const FEATURED_AIRPORTS = ["EZE", "JFK", "MIA", "GCM"] as const;
 
 type FtueView = "list" | "picker" | "hero";
+type Tone = "ok" | "warn" | "danger" | "neutral";
 
 function formatLastChecked(date: Date | string | undefined, locale: "es" | "en"): string {
   if (!date) return locale === "es" ? "actualizando..." : "updating...";
@@ -49,6 +51,20 @@ function getImplication(raw: string | undefined, locale: "es" | "en"): string {
   return es ? "Sin datos por ahora — volvé a revisar en unos minutos." : "No data yet — check back in a few minutes.";
 }
 
+function toneFromStatus(raw: string | undefined): Tone {
+  if (raw === "ok") return "ok";
+  if (raw === "ground_stop" || raw === "closure" || raw === "delay_severe") return "danger";
+  if (raw === "delay_moderate" || raw === "delay_minor" || raw === "ground_delay") return "warn";
+  return "neutral";
+}
+
+function severeReason(entry: AirportStatus | undefined): string | null {
+  if (!entry) return null;
+  if (entry.status === "ground_stop") return entry.groundStop?.reason ?? null;
+  if (entry.status === "closure") return entry.closure?.reason ?? null;
+  return null;
+}
+
 export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: NewUserWelcomeViewProps) {
   const [view, setView] = useState<FtueView>("list");
   const [selectedIata, setSelectedIata] = useState("");
@@ -57,7 +73,6 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
   const staggerDelays = [0, 0.06, 0.12, 0.18];
   const es = locale === "es";
 
-  // All 4 must have data before flipping from skeleton — never show mixed state
   const hasData = FEATURED_AIRPORTS.every((iata) => statusMap[iata] !== undefined);
 
   function goToList() {
@@ -69,11 +84,9 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
 
   function handleActivateAlerts() {
     if (userId) {
-      // Logged in — save intent locally (real push subscription comes with trip creation)
       try { localStorage.setItem(`tc-alert-${selectedIata}`, "true"); } catch { /* ignore */ }
       setAlertsActivated(true);
     } else {
-      // Not logged in — surface soft signup nudge
       setShowSignupNudge(true);
     }
   }
@@ -156,9 +169,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
                 {es ? "Ver el estado de tu aeropuerto en tiempo real →" : "See your airport's live status →"}
               </button>
               <p className="text-xs text-gray-600 text-center mt-2">
-                {es
-                  ? "Seleccioná tu aeropuerto para ver el estado en tiempo real"
-                  : "Select your airport to see real-time status"}
+                {es ? "Seleccioná tu aeropuerto para ver el estado en tiempo real" : "Select your airport to see real-time status"}
               </p>
             </div>
           </motion.div>
@@ -174,10 +185,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
             transition={{ duration: 0.18 }}
             className="flex flex-col gap-4"
           >
-            <button
-              onClick={goToList}
-              className="text-xs text-gray-600 hover:text-gray-400 transition-colors self-start"
-            >
+            <button onClick={goToList} className="text-xs text-gray-600 hover:text-gray-400 transition-colors self-start">
               {es ? "← Volver" : "← Back"}
             </button>
 
@@ -185,17 +193,12 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
               <h2 className="text-xl font-black text-white mb-1">
                 {es ? "¿Desde dónde viajás?" : "Where are you flying from?"}
               </h2>
-              <p className="text-sm text-gray-500">
-                {es ? "Buscá tu aeropuerto" : "Search your airport"}
-              </p>
+              <p className="text-sm text-gray-500">{es ? "Buscá tu aeropuerto" : "Search your airport"}</p>
             </div>
 
             <AirportSearchInput
               value={selectedIata}
-              onChange={(iata) => {
-                setSelectedIata(iata);
-                if (iata) setView("hero");
-              }}
+              onChange={(iata) => { setSelectedIata(iata); if (iata) setView("hero"); }}
               placeholder={es ? "Buenos Aires, JFK, MIA..." : "New York, EZE, MIA..."}
               locale={locale}
             />
@@ -220,20 +223,12 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
             transition={{ duration: 0.18 }}
             className="flex flex-col gap-4"
           >
-            <button
-              onClick={goToList}
-              className="text-xs text-gray-600 hover:text-gray-400 transition-colors self-start"
-            >
+            <button onClick={goToList} className="text-xs text-gray-600 hover:text-gray-400 transition-colors self-start">
               {es ? "← Ver otros aeropuertos" : "← See other airports"}
             </button>
 
-            <HeroCard
-              iata={selectedIata}
-              entry={statusMap[selectedIata]}
-              locale={locale}
-            />
+            <HeroCard iata={selectedIata} entry={statusMap[selectedIata]} locale={locale} />
 
-            {/* Primary CTA: activate alerts */}
             <div className="flex flex-col gap-2">
               {alertsActivated ? (
                 <div className="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3.5 flex items-center justify-center gap-2">
@@ -244,19 +239,22 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
               ) : (
                 <button
                   onClick={handleActivateAlerts}
-                  className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
+                  className="relative overflow-hidden rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
                 >
-                  {es ? "Activar alertas para este aeropuerto ✈️" : "Activate alerts for this airport ✈️"}
+                  <span className="relative z-[1]">
+                    {es ? "Activar alertas para este aeropuerto ✈️" : "Activate alerts for this airport ✈️"}
+                  </span>
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmerOnce_1.2s_cubic-bezier(0.22,1,0.36,1)_0.25s_forwards] bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                  />
                 </button>
               )}
               <p className="text-xs text-gray-600 text-center">
-                {es
-                  ? "Te avisamos si hay demoras o cambios importantes."
-                  : "We'll notify you of delays or important changes."}
+                {es ? "Te avisamos si hay demoras o cambios importantes." : "We'll notify you of delays or important changes."}
               </p>
             </div>
 
-            {/* Soft signup nudge — only shown after intent click when not logged in */}
             <AnimatePresence>
               {showSignupNudge && (
                 <motion.div
@@ -271,9 +269,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
                       {es ? "Creá tu cuenta gratis" : "Create your free account"}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {es
-                        ? "Las alertas se guardan con tu cuenta. Es gratis y tarda 30 segundos."
-                        : "Alerts are saved with your account. Free, takes 30 seconds."}
+                      {es ? "Las alertas se guardan con tu cuenta. Es gratis y tarda 30 segundos." : "Alerts are saved with your account. Free, takes 30 seconds."}
                     </p>
                   </div>
                   <button
@@ -286,7 +282,6 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
               )}
             </AnimatePresence>
 
-            {/* Secondary CTA */}
             {!showSignupNudge && (
               <button
                 onClick={onAddFlight}
@@ -303,53 +298,121 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
   );
 }
 
-function HeroCard({
-  iata,
-  entry,
-  locale,
-}: {
-  iata: string;
-  entry: { status: string; lastChecked: Date } | undefined;
-  locale: "es" | "en";
-}) {
+/* HeroCard — status-as-feeling. Live-data vocabulary. */
+function HeroCard({ iata, entry, locale }: { iata: string; entry: AirportStatus | undefined; locale: "es" | "en"; }) {
   const { icon, label } = getStatusInfo(entry?.status, locale);
   const implication = getImplication(entry?.status, locale);
   const es = locale === "es";
+  const tone = toneFromStatus(entry?.status);
+  const reason = severeReason(entry);
+
+  const shadowByTone: Record<Tone, string> = {
+    ok: "shadow-glow-green", warn: "shadow-glow-orange", danger: "shadow-glow-red", neutral: "",
+  };
+  const haloByTone: Record<Tone, string> = {
+    ok:      "bg-[radial-gradient(circle,rgba(34,197,94,0.24),transparent_60%)]",
+    warn:    "bg-[radial-gradient(circle,rgba(251,146,60,0.26),transparent_60%)]",
+    danger:  "bg-[radial-gradient(circle,rgba(239,68,68,0.30),transparent_60%)]",
+    neutral: "",
+  };
+  const pulseByTone: Record<Tone, string> = {
+    ok: "bg-green-400", warn: "bg-orange-400", danger: "bg-red-500", neutral: "bg-gray-500",
+  };
+  const tileByTone: Record<Tone, string> = {
+    ok:      "bg-green-500/10 border-green-500/25",
+    warn:    "bg-orange-500/10 border-orange-500/25",
+    danger:  "bg-red-500/10 border-red-500/30",
+    neutral: "bg-white/[0.04] border-white/10",
+  };
+  const labelByTone: Record<Tone, string> = {
+    ok: "text-green-400", warn: "text-orange-300", danger: "text-red-300", neutral: "text-gray-500",
+  };
+
+  const firstBoundary = implication.indexOf(". ");
+  const decisionSentence = firstBoundary === -1 ? implication : implication.slice(0, firstBoundary + 1);
+  const supportingSentence = firstBoundary === -1 ? "" : implication.slice(firstBoundary + 2);
+
   return (
-    <div className="rounded-2xl border border-white/[0.12] bg-white/[0.04] px-6 py-6 flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">
+    <article className={["relative overflow-hidden rounded-2xl p-6 border border-white/[0.12] bg-white/[0.04]", shadowByTone[tone]].join(" ")}>
+      {tone !== "neutral" && (
+        <div
+          aria-hidden
+          className={["pointer-events-none absolute -top-20 -right-16 size-[260px] rounded-full blur-2xl animate-[radarSweep_4.5s_ease-in-out_infinite]", haloByTone[tone]].join(" ")}
+        />
+      )}
+
+      <div className="relative flex items-center gap-2 mb-4">
+        <span className="relative flex size-2">
+          <span
+            className={[
+              "absolute inline-flex size-full rounded-full opacity-60",
+              tone === "neutral" ? "animate-[radarPulse_3s_ease-out_infinite] opacity-40" : "animate-[radarPulse_2s_ease-out_infinite]",
+              pulseByTone[tone],
+            ].join(" ")}
+          />
+          <span className={`relative inline-flex size-2 rounded-full ${pulseByTone[tone]}`} />
+        </span>
+        <span className={`text-[10px] font-bold uppercase tracking-[0.14em] ${labelByTone[tone]}`}>
+          {tone === "neutral" ? (es ? "Buscando señal" : "Searching") : (es ? "En vivo" : "Live")}
+        </span>
+        <span className="text-[10px] text-gray-600 tabular-nums ml-auto">
+          {formatLastChecked(entry?.lastChecked, locale)}
+        </span>
+      </div>
+
+      <div className="relative flex items-start justify-between gap-5">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-500 mb-1.5">
             {es ? "Salida desde" : "Departing from"}
           </p>
-          <p className="text-5xl font-black text-white leading-none">{iata}</p>
-          <p className="text-sm text-gray-500 mt-1.5">
+          <p className={["text-[56px] font-black leading-none tracking-[-0.035em] tabular-nums", tone === "neutral" ? "text-gray-300" : "text-white"].join(" ")}>
+            {iata}
+          </p>
+          <p className="text-sm font-medium text-gray-400 mt-2 truncate">
             {AIRPORT_DB[iata]?.city ?? iata}
           </p>
         </div>
-
         {entry ? (
-          <div className="flex flex-col items-end gap-1 pt-1 shrink-0">
-            <span className="text-3xl">{icon}</span>
-            <span className="text-sm text-gray-400 text-right">{label}</span>
-            <span className="text-[11px] text-gray-600">
-              {formatLastChecked(entry.lastChecked, locale)}
+          <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
+            <div className={`grid place-items-center size-14 rounded-2xl border text-3xl ${tileByTone[tone]}`}>
+              {icon}
+            </div>
+            <span className={`text-xs font-semibold text-right leading-tight max-w-[110px] ${labelByTone[tone]}`}>
+              {label}
             </span>
           </div>
         ) : (
           <div className="flex flex-col items-end gap-2 pt-1 shrink-0">
-            <div className="h-8 w-8 rounded-lg bg-white/[0.07] animate-pulse" />
-            <div className="h-4 w-20 rounded-md bg-white/[0.07] animate-pulse" />
-            <div className="h-3 w-16 rounded-md bg-white/[0.04] animate-pulse" />
+            <div className="size-14 rounded-2xl bg-white/[0.07] animate-pulse" />
+            <div className="h-3 w-20 rounded-md bg-white/[0.07] animate-pulse" />
           </div>
         )}
       </div>
 
-      {entry && (
-        <p className="text-sm text-gray-400 border-t border-white/[0.06] pt-3 leading-relaxed">
-          {implication}
-        </p>
+      {reason && (
+        <div className="relative mt-5 flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/25 px-3 py-2">
+          <span aria-hidden className="shrink-0 text-red-400 text-sm leading-none">⚠</span>
+          <span className="text-[11px] font-semibold text-red-200">
+            FAA · {label} · {es ? "motivo" : "reason"}: {reason}
+          </span>
+        </div>
       )}
-    </div>
+
+      {entry ? (
+        <div className={`relative ${reason ? "mt-4 pt-4" : "mt-5 pt-5"} border-t border-white/[0.06]`}>
+          <p className="text-[15px] leading-relaxed text-gray-300">
+            <span className="text-white font-semibold">{decisionSentence}</span>
+            {supportingSentence && <> {supportingSentence}</>}
+          </p>
+        </div>
+      ) : (
+        <div className="relative mt-5 pt-5 border-t border-white/[0.06]">
+          <p className="text-[15px] leading-relaxed text-gray-400">
+            <span className="text-gray-200 font-semibold">{es ? "Sin datos por ahora." : "No data yet."}</span>{" "}
+            {es ? "Volvé a revisar en unos minutos — activamos alertas por si llegan novedades." : "Check back in a few minutes — we'll notify you if anything changes."}
+          </p>
+        </div>
+      )}
+    </article>
   );
 }

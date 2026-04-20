@@ -78,6 +78,20 @@ const config: Config = {
           "0%":   { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
+        "radarPulse": {
+          "0%":   { transform: "scale(0.85)", opacity: "0.7" },
+          "100%": { transform: "scale(2.4)",  opacity: "0"   },
+        },
+        "radarSweep": {
+          "0%,100%": { opacity: "0.35", transform: "scale(0.95)" },
+          "50%":     { opacity: "0.65", transform: "scale(1.05)" },
+        },
+        "shimmerOnce": {
+          "0%":   { transform: "translateX(-100%)", opacity: "0" },
+          "15%":  { opacity: "1" },
+          "85%":  { opacity: "1" },
+          "100%": { transform: "translateX(220%)",  opacity: "0" },
+        },
       },
       boxShadow: {
         "glow-blue":   "0 0 0 1px rgba(59,130,246,0.25), 0 0 24px rgba(59,130,246,0.1)",
