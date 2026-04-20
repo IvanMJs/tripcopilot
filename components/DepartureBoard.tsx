@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plane, Clock, MapPin, CloudSun } from "lucide-react";
 import { TripTab, AirportStatusMap, DelayStatus, TripFlight } from "@/lib/types";
+import { FlightsEmptyState } from "@/components/FlightsEmptyState";
 import { AIRPORTS } from "@/lib/airports";
 import { flightDepartureISO, minutesUntilISO } from "@/lib/flightTime";
 import { NextFlightHero } from "@/components/NextFlightHero";
@@ -21,6 +22,7 @@ interface DepartureBoardProps {
   geoPosition?: GeoPosition | null;
   userPlan?: string | null;
   onUpgrade?: () => void;
+  onCreateTrip?: () => void;
 }
 
 // ── Internal types ─────────────────────────────────────────────────────────
@@ -387,60 +389,6 @@ function CompactFlightRow({ flight, locale, index }: CompactRowProps) {
   );
 }
 
-// ── Empty state ────────────────────────────────────────────────────────────
-
-interface EmptyStateProps {
-  locale: "es" | "en";
-  nextFlight: BoardFlight | null;
-}
-
-function EmptyState({ locale, nextFlight }: EmptyStateProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className="rounded-2xl border border-white/[0.06] overflow-hidden"
-      style={{ background: "linear-gradient(150deg, rgba(12,12,22,0.97) 0%, rgba(8,8,16,0.99) 100%)" }}
-    >
-      <div className="px-6 py-12 flex flex-col items-center text-center gap-4">
-        <svg viewBox="0 0 120 80" className="w-32 h-20 opacity-40" fill="none">
-          <ellipse cx="30" cy="62" rx="26" ry="12" fill="rgba(139,92,246,0.15)" />
-          <ellipse cx="75" cy="57" rx="36" ry="16" fill="rgba(139,92,246,0.12)" />
-          <path d="M18 38 L54 26 L92 31 L76 40 L54 38 Z" fill="rgba(139,92,246,0.55)" />
-          <path d="M54 38 L57 56 L48 52 Z" fill="rgba(139,92,246,0.45)" />
-          <path d="M26 35 L38 28 L42 33 Z" fill="rgba(139,92,246,0.35)" />
-          <circle cx="100" cy="29" r="2.5" fill="rgba(139,92,246,0.3)" />
-          <circle cx="108" cy="26" r="1.8" fill="rgba(139,92,246,0.2)" />
-          <circle cx="114" cy="24" r="1.2" fill="rgba(139,92,246,0.1)" />
-        </svg>
-        <div>
-          <p className="text-base font-semibold text-gray-300 mb-1">
-            {locale === "es" ? "No tenés vuelos hoy. ¡Disfrutá el día!" : "No flights today. Enjoy your day!"}
-          </p>
-          {nextFlight && (
-            <p className="text-sm text-gray-500 mt-2">
-              {locale === "es" ? "Próximo vuelo: " : "Next flight: "}
-              <span className="font-semibold text-gray-400">
-                {cityName(nextFlight.destinationCode)}
-              </span>
-              {" · "}
-              <NextFlightRelativeDate isoDate={nextFlight.isoDate} locale={locale} />
-            </p>
-          )}
-          {!nextFlight && (
-            <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
-              {locale === "es"
-                ? "Cuando tengas vuelos programados para hoy, aparecerán acá"
-                : "When you have flights scheduled for today, they'll appear here"}
-            </p>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 function NextFlightRelativeDate({
   isoDate,
   locale,
@@ -480,6 +428,7 @@ export function DepartureBoard({
   geoPosition,
   userPlan,
   onUpgrade,
+  onCreateTrip,
 }: DepartureBoardProps) {
   const today = new Date().toISOString().slice(0, 10);
   const [warRoomDismissed, setWarRoomDismissed] = useState(false);
@@ -629,7 +578,7 @@ export function DepartureBoard({
 
           {/* Empty state */}
           {todayFlights.length === 0 && (
-            <EmptyState locale={locale} nextFlight={nextFlight} />
+            <FlightsEmptyState locale={locale} onCreateTrip={onCreateTrip ?? (() => {})} />
           )}
 
           {/* Hero card for the next flight */}

@@ -999,7 +999,7 @@ export default function HomePage() {
                     </button>
                   </div>
                 )}
-                <DepartureBoard trips={userTrips} statusMap={statusMap} locale={locale} geoPosition={userPosition} userPlan={userPlan ?? undefined} onUpgrade={() => setShowUpgradeModal(true)} />
+                <DepartureBoard trips={userTrips} statusMap={statusMap} locale={locale} geoPosition={userPosition} userPlan={userPlan ?? undefined} onUpgrade={() => setShowUpgradeModal(true)} onCreateTrip={openCreateTripModal} />
               </div>
             )}
 

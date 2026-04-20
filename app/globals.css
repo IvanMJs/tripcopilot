@@ -617,6 +617,13 @@ html.light .skeleton {
 }
 .animate-pulse-aura { animation: pulse-aura 2.5s ease-in-out infinite; }
 
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 8px 32px rgba(124,58,237,0.35); }
+  50%       { box-shadow: 0 8px 48px rgba(124,58,237,0.6); }
+}
+.animate-glow-pulse {
+  animation: glowPulse 2.5s ease-in-out infinite;
+}
 
 /* ── Confetti animation ────────────────────────────────────────────────────── */
 @keyframes confetti-fall {
