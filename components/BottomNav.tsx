@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, X, Map, Trash2, ChevronUp, CalendarDays, Compass, User, Users } from "lucide-react";
+import { Plus, Pencil, X, Map, Trash2, ChevronUp, CalendarDays, Compass, User, Users, Bell } from "lucide-react";
 import { TripTab, TripFlight } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 
@@ -44,66 +44,15 @@ function getNextFlightDate(flights: TripFlight[], locale: "es" | "en"): string |
   return locale === "es" ? `Próximo: ${formatted}` : `Next: ${formatted}`;
 }
 
-function NavTab({
-  active, onClick, ariaLabel, ariaCurrent, icon: Icon, badge, children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  ariaLabel: string;
-  ariaCurrent?: "page";
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
-  badge?: React.ReactNode;
-  children?: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={ariaLabel}
-      aria-current={ariaCurrent}
-      className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${
-        active ? "text-violet-300" : "text-gray-500"
-      }`}
-    >
-      <div className="relative">
-        <motion.div
-          whileTap={{ scale: 0.82 }}
-          className="relative flex items-center justify-center w-10 h-8"
-        >
-          {active && (
-            <>
-              <motion.span
-                layoutId="nav-halo"
-                className="absolute inset-[-6px] rounded-2xl bg-violet-500/15 blur-[6px]"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-              <motion.span
-                layoutId="nav-ring"
-                className="absolute inset-0 rounded-xl ring-1 ring-violet-400/30"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            </>
-          )}
-          <Icon
-            className={`relative w-[22px] h-[22px] transition-colors ${active ? "text-violet-300" : "text-gray-500"}`}
-            strokeWidth={active ? 2.25 : 1.5}
-          />
-        </motion.div>
-        {badge}
-      </div>
-      {children}
-    </button>
-  );
-}
-
 export function BottomNav({
   locale, activeTab, userTrips, draftTrip, draftId, tabLabels,
   onNavigate, onNewTrip, onDiscardDraft, onDeleteTrip, onRenameTrip, onRenameDraft,
-  userPlan, tripCount, onUpgrade, hasUpcomingFlight,
+  userPlan, tripCount, onUpgrade, hasUpcomingFlight, unreadCount, onNotificationsOpen,
 }: Props) {
   const [showTripPicker, setShowTripPicker]         = useState(false);
   const [renameInPickerId, setRenameInPickerId]     = useState<string | null>(null);
   const [renameInPickerName, setRenameInPickerName] = useState("");
-  const [bannerDismissed, setBannerDismissed]       = useState(true);
+  const [bannerDismissed, setBannerDismissed]       = useState(true); // default true, hydrate below
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -145,19 +94,22 @@ export function BottomNav({
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-50 md:hidden">
+
+      {/* FAB — floating above the nav bar, hidden when a draft is active */}
       {!draftTrip && (
         <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-10">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => { haptics.impact(); setShowTripPicker(false); onNewTrip(); }}
             aria-label={locale === "es" ? "Nuevo viaje" : "New trip"}
-            className="h-14 w-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 shadow-[0_8px_24px_rgba(124,58,237,0.45)] ring-4 ring-[#080810] flex items-center justify-center"
+            className="h-14 w-14 rounded-full bg-gradient-to-br from-violet-600 to-violet-800 shadow-lg shadow-violet-500/30 ring-4 ring-[#0a0a14] flex items-center justify-center"
           >
-            <Plus className="h-7 w-7 text-white" strokeWidth={2.5} />
+            <Plus className="h-7 w-7 text-white" strokeWidth={2} />
           </motion.button>
         </div>
       )}
 
+      {/* Upgrade micro-banner for free users at trip limit */}
       {showUpgradeBanner && (
         <div className="mx-3 mb-1.5">
           <div className="flex items-center justify-between gap-2 rounded-full border border-sky-500/30 bg-sky-950/70 backdrop-blur-sm px-3 py-1.5">
@@ -165,7 +117,10 @@ export function BottomNav({
               {locale === "es"
                 ? `${usedTrips}/${maxFreeTrips} viajes usados · `
                 : `${usedTrips}/${maxFreeTrips} trips used · `}
-              <button onClick={onUpgrade} className="underline underline-offset-2 text-sky-400 hover:text-sky-300">
+              <button
+                onClick={onUpgrade}
+                className="underline underline-offset-2 text-sky-400 hover:text-sky-300"
+              >
                 Upgrade →
               </button>
             </span>
@@ -187,17 +142,20 @@ export function BottomNav({
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="relative">
+
+          {/* Backdrop */}
           <div
             className={`fixed inset-0 z-40 transition-opacity duration-200 ${showTripPicker ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
             onClick={() => { setShowTripPicker(false); setRenameInPickerId(null); }}
           />
 
+          {/* Trip picker popup */}
           <div
             className={`absolute bottom-full left-0 right-0 z-50 mx-3 mb-2 rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden transition-all duration-200 ${showTripPicker ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}
             style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
           >
             <div className="px-4 py-3 border-b border-white/[0.06]">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 {locale === "es" ? "Mis viajes" : "My trips"}
               </p>
             </div>
@@ -208,6 +166,7 @@ export function BottomNav({
               </div>
             )}
 
+            {/* Draft entry */}
             {draftTrip && (
               <div className={`flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.04] ${activeTab === draftId ? "bg-white/[0.04]" : ""}`}>
                 {renameInPickerId === draftId ? (
@@ -235,18 +194,18 @@ export function BottomNav({
                     onClick={() => { onNavigate(draftId); setShowTripPicker(false); setRenameInPickerId(null); }}
                     className="flex-1 min-w-0 text-left"
                   >
-                    <p className={`text-sm font-semibold truncate ${activeTab === draftId ? "text-violet-300" : "text-white"}`}>
+                    <p className={`text-sm font-semibold truncate ${activeTab === draftId ? "text-violet-400" : "text-white"}`}>
                       {draftTrip.name}
-                      <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5">
+                      <span className="ml-2 text-[11px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-700/50 rounded px-1 py-0.5">
                         {locale === "es" ? "Borrador" : "Draft"}
                       </span>
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       {draftTrip.flights.length === 0
                         ? (locale === "es" ? "Sin vuelos" : "No flights")
                         : locale === "es"
-                          ? `${draftTrip.flights.length} vuelo${draftTrip.flights.length !== 1 ? "s" : ""}`
-                          : `${draftTrip.flights.length} flight${draftTrip.flights.length !== 1 ? "s" : ""}`}
+                        ? `${draftTrip.flights.length} vuelo${draftTrip.flights.length !== 1 ? "s" : ""}`
+                        : `${draftTrip.flights.length} flight${draftTrip.flights.length !== 1 ? "s" : ""}`}
                     </p>
                   </button>
                 )}
@@ -254,7 +213,6 @@ export function BottomNav({
                   <button
                     onClick={() => { setRenameInPickerId(draftId); setRenameInPickerName(draftTrip.name); }}
                     className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/[0.06] transition-colors"
-                    title={locale === "es" ? "Renombrar" : "Rename"}
                     aria-label={locale === "es" ? "Renombrar borrador" : "Rename draft"}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -264,7 +222,6 @@ export function BottomNav({
                   <button
                     onClick={onDiscardDraft}
                     className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
-                    title={locale === "es" ? "Descartar borrador" : "Discard draft"}
                     aria-label={locale === "es" ? "Descartar borrador" : "Discard draft"}
                   >
                     <X className="h-3.5 w-3.5" />
@@ -273,6 +230,7 @@ export function BottomNav({
               </div>
             )}
 
+            {/* Saved trips */}
             {userTrips.map((trip) => (
               <div
                 key={trip.id}
@@ -303,13 +261,13 @@ export function BottomNav({
                     onClick={() => { onNavigate(trip.id); setShowTripPicker(false); setRenameInPickerId(null); }}
                     className="flex-1 min-w-0 text-left"
                   >
-                    <p className={`text-sm font-semibold truncate flex items-center gap-1.5 ${activeTab === trip.id ? "text-violet-300" : "text-white"}`}>
+                    <p className={`text-sm font-semibold truncate flex items-center gap-1.5 ${activeTab === trip.id ? "text-violet-400" : "text-white"}`}>
                       <span className="truncate">{trip.name}</span>
                       {trip.isShared && (
                         <Users className="h-3 w-3 shrink-0 text-violet-400" aria-label={locale === "es" ? "Compartido" : "Shared"} />
                       )}
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       {trip.flights.length === 0
                         ? (locale === "es" ? "Sin vuelos" : "No flights")
                         : (() => {
@@ -327,7 +285,6 @@ export function BottomNav({
                     <button
                       onClick={() => { setRenameInPickerId(trip.id); setRenameInPickerName(trip.name); }}
                       className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/[0.06] transition-colors"
-                      title={locale === "es" ? "Renombrar" : "Rename"}
                       aria-label={locale === "es" ? `Renombrar viaje ${trip.name}` : `Rename trip ${trip.name}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -335,7 +292,6 @@ export function BottomNav({
                     <button
                       onClick={() => onDeleteTrip(trip.id)}
                       className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-colors"
-                      title={locale === "es" ? "Eliminar" : "Delete"}
                       aria-label={locale === "es" ? `Eliminar viaje ${trip.name}` : `Delete trip ${trip.name}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -347,54 +303,90 @@ export function BottomNav({
           </div>
 
           <div className="flex h-[60px]">
-            <NavTab
-              active={activeTab === "today"}
+
+            {/* Vuelos (today) */}
+            <button
               onClick={() => { haptics.impact(); onNavigate("today"); }}
-              ariaLabel={locale === "es" ? "Hoy" : "Today"}
-              ariaCurrent={activeTab === "today" ? "page" : undefined}
-              icon={CalendarDays}
-              badge={
-                hasUpcomingFlight && activeTab !== "today" ? (
-                  <span
-                    className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-violet-500 ring-2 ring-[#080810]"
-                    aria-label={locale === "es" ? "Vuelo próximo" : "Upcoming flight"}
-                  />
-                ) : null
-              }
-            />
-            <NavTab
-              active={tripsActive}
+              aria-label={locale === "es" ? "Vuelos" : "Flights"}
+              aria-current={activeTab === "today" ? "page" : undefined}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`}
+            >
+              <div className="relative">
+                <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
+                  {activeTab === "today" && (
+                    <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+                  )}
+                  <CalendarDays className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "today" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "today" ? 2.5 : 1.5} />
+                </motion.div>
+                {hasUpcomingFlight && activeTab !== "today" && (
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-violet-500 ring-2 ring-[#0a0a14]" aria-label={locale === "es" ? "Vuelo próximo" : "Upcoming flight"} />
+                )}
+              </div>
+              <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Vuelos" : "Flights"}</span>
+            </button>
+
+            {/* Viajes (trips) */}
+            <button
               onClick={handleTripNavTap}
-              ariaLabel={tripsLabel}
-              ariaCurrent={tripsActive ? "page" : undefined}
-              icon={Map}
-              badge={
-                totalTrips > 1 ? (
-                  <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] bg-violet-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+              aria-label={tripsLabel}
+              aria-current={tripsActive ? "page" : undefined}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${tripsActive ? "text-violet-400" : "text-gray-500"}`}
+            >
+              <div className="relative">
+                <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
+                  {tripsActive && (
+                    <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+                  )}
+                  <Map className={`relative w-[22px] h-[22px] transition-colors ${tripsActive ? "text-violet-400" : "text-gray-500"}`} strokeWidth={tripsActive ? 2.5 : 1.5} />
+                </motion.div>
+                {totalTrips > 1 && (
+                  <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] bg-violet-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                     {totalTrips}
                   </span>
-                ) : null
-              }
-            >
-              {totalTrips > 1 && (
+                )}
+              </div>
+              {totalTrips > 1 ? (
                 <ChevronUp className={`h-3 w-3 transition-transform text-gray-500 ${showTripPicker ? "rotate-180" : ""}`} />
+              ) : (
+                <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Viajes" : "Trips"}</span>
               )}
-            </NavTab>
+            </button>
+
+            {/* FAB spacer */}
             <div className="w-14 shrink-0" aria-hidden="true" />
-            <NavTab
-              active={activeTab === "discover"}
+
+            {/* Descubrir */}
+            <button
               onClick={() => { haptics.impact(); onNavigate("discover"); }}
-              ariaLabel={locale === "es" ? "Descubrir" : "Discover"}
-              ariaCurrent={activeTab === "discover" ? "page" : undefined}
-              icon={Compass}
-            />
-            <NavTab
-              active={activeTab === "profile"}
+              aria-label={locale === "es" ? "Descubrir" : "Discover"}
+              aria-current={activeTab === "discover" ? "page" : undefined}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "discover" ? "text-violet-400" : "text-gray-500"}`}
+            >
+              <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
+                {activeTab === "discover" && (
+                  <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+                )}
+                <Compass className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "discover" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "discover" ? 2.5 : 1.5} />
+              </motion.div>
+              <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Descubrir" : "Discover"}</span>
+            </button>
+
+            {/* Perfil */}
+            <button
               onClick={() => { haptics.impact(); onNavigate("profile"); }}
-              ariaLabel={tabLabels.profile}
-              ariaCurrent={activeTab === "profile" ? "page" : undefined}
-              icon={User}
-            />
+              aria-label={tabLabels.profile}
+              aria-current={activeTab === "profile" ? "page" : undefined}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`}
+            >
+              <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
+                {activeTab === "profile" && (
+                  <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-violet-500/20" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+                )}
+                <User className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "profile" ? "text-violet-400" : "text-gray-500"}`} strokeWidth={activeTab === "profile" ? 2.5 : 1.5} />
+              </motion.div>
+              <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Perfil" : "Profile"}</span>
+            </button>
+
           </div>
         </div>
       </nav>

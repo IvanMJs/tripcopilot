@@ -253,6 +253,17 @@ export default function HomePage() {
     setUnreadCount(getUnreadCount());
   }, []);
 
+  // Redirect new users to trips tab when auth + data are both resolved.
+  // Uses a per-user key so different accounts on the same browser each see FTUE.
+  useEffect(() => {
+    if (!mounted || tripsLoading || !userId) return;
+    const userKey = `tc-onboarded-${userId}`;
+    if (userTrips.length === 0 && !localStorage.getItem(userKey) && !localStorage.getItem("tc-onboarded")) {
+      setActiveTabRaw("trips");
+      prevTabRef.current = "trips";
+    }
+  }, [mounted, userId, tripsLoading, userTrips.length]);
+
   // Check-in push notifications
   useEffect(() => {
     if (!mounted) return;
@@ -424,6 +435,7 @@ export default function HomePage() {
   function markOnboarded() {
     localStorage.setItem("tripcopilot-onboarded", "true");
     localStorage.setItem("tc-onboarded", "true");
+    if (userId) localStorage.setItem(`tc-onboarded-${userId}`, "true");
   }
 
   // ── Trip management ───────────────────────────────────────────────────────
@@ -1038,7 +1050,7 @@ export default function HomePage() {
 
             {activeTab === "trips" && (
               <>
-                {mounted && !tripsLoading && userTrips.length === 0 && !localStorage.getItem("tc-onboarded") ? (
+                {mounted && !tripsLoading && userTrips.length === 0 && !(userId ? localStorage.getItem(`tc-onboarded-${userId}`) : localStorage.getItem("tc-onboarded")) ? (
                   <NewUserWelcomeView
                     statusMap={statusMap}
                     loading={loading}
