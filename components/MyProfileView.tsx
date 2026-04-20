@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, type Easing } from "framer-motion";
 import { TrendingUp, Globe, Plane, MapPin, Zap, Award, X, BarChart3, Trophy, Gift, Users, Share2, Share, Camera, Settings } from "lucide-react";
-import { WorldMapView } from "@/components/WorldMapView";
 import { TripTab } from "@/lib/types";
 import { computeTripStats } from "@/lib/tripStats";
 import { PLANS } from "@/lib/mercadopago";
