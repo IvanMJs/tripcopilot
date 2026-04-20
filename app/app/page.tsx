@@ -1046,6 +1046,7 @@ export default function HomePage() {
                       Object.entries(statusMap).map(([k, v]) => [k, { status: v.status, lastChecked: v.lastChecked }])
                     )}
                     locale={locale}
+                    userId={userId}
                     onAddFlight={() => {
                       markOnboarded();
                       void openCreateTripModal();

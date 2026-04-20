@@ -9,6 +9,7 @@ interface NewUserWelcomeViewProps {
   statusMap: Record<string, { status: string; lastChecked: Date }>;
   locale: "es" | "en";
   onAddFlight: () => void;
+  userId?: string | null;
 }
 
 const FEATURED_AIRPORTS = ["EZE", "JFK", "MIA", "GCM"] as const;
@@ -36,9 +37,23 @@ function getStatusInfo(raw: string | undefined, locale: "es" | "en"): { icon: st
   return { icon: "⚠️", label: locale === "es" ? "demoras activas" : "active delays" };
 }
 
-export function NewUserWelcomeView({ statusMap, locale, onAddFlight }: NewUserWelcomeViewProps) {
+function getImplication(raw: string | undefined, locale: "es" | "en"): string {
+  const es = locale === "es";
+  if (raw === "ok") return es ? "No necesitás salir antes de lo planeado." : "No need to leave earlier than planned.";
+  if (raw === "delay_minor") return es ? "Demoras leves — tu vuelo podría salir un poco tarde." : "Minor delays — your flight may depart slightly late.";
+  if (raw === "delay_moderate") return es ? "Demoras moderadas — revisá si tenés conexión ajustada." : "Moderate delays — check if you have a tight connection.";
+  if (raw === "delay_severe") return es ? "Demoras severas — llegá temprano y confirmá tu vuelo." : "Severe delays — arrive early and confirm your flight.";
+  if (raw === "ground_delay") return es ? "Retención en tierra — tu vuelo puede salir tarde." : "Ground delay — your flight may depart late.";
+  if (raw === "ground_stop") return es ? "Sin salidas por ahora — monitoreá antes de ir al aeropuerto." : "No departures right now — monitor before heading to the airport.";
+  if (raw === "closure") return es ? "Aeropuerto cerrado — verificá tu vuelo con la aerolínea." : "Airport closed — verify your flight with the airline.";
+  return es ? "Sin datos por ahora — volvé a revisar en unos minutos." : "No data yet — check back in a few minutes.";
+}
+
+export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: NewUserWelcomeViewProps) {
   const [view, setView] = useState<FtueView>("list");
   const [selectedIata, setSelectedIata] = useState("");
+  const [alertsActivated, setAlertsActivated] = useState(false);
+  const [showSignupNudge, setShowSignupNudge] = useState(false);
   const staggerDelays = [0, 0.06, 0.12, 0.18];
   const es = locale === "es";
 
@@ -47,7 +62,20 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight }: NewUserWe
 
   function goToList() {
     setSelectedIata("");
+    setAlertsActivated(false);
+    setShowSignupNudge(false);
     setView("list");
+  }
+
+  function handleActivateAlerts() {
+    if (userId) {
+      // Logged in — save intent locally (real push subscription comes with trip creation)
+      try { localStorage.setItem(`tc-alert-${selectedIata}`, "true"); } catch { /* ignore */ }
+      setAlertsActivated(true);
+    } else {
+      // Not logged in — surface soft signup nudge
+      setShowSignupNudge(true);
+    }
   }
 
   return (
@@ -125,7 +153,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight }: NewUserWe
                 onClick={() => setView("picker")}
                 className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
               >
-                {es ? "Ver mi aeropuerto →" : "See my airport →"}
+                {es ? "Ver el estado de tu aeropuerto en tiempo real →" : "See your airport's live status →"}
               </button>
               <p className="text-xs text-gray-600 text-center mt-2">
                 {es
@@ -199,27 +227,74 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight }: NewUserWe
               {es ? "← Ver otros aeropuertos" : "← See other airports"}
             </button>
 
-            {/* Hero airport card */}
             <HeroCard
               iata={selectedIata}
               entry={statusMap[selectedIata]}
               locale={locale}
             />
 
-            {/* Secondary CTA — only shown after user sees their airport */}
+            {/* Primary CTA: activate alerts */}
             <div className="flex flex-col gap-2">
+              {alertsActivated ? (
+                <div className="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3.5 flex items-center justify-center gap-2">
+                  <span className="text-green-400 font-bold text-sm">
+                    {es ? "✓ Alertas activadas para " : "✓ Alerts activated for "}{selectedIata}
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleActivateAlerts}
+                  className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
+                >
+                  {es ? "Activar alertas para este aeropuerto ✈️" : "Activate alerts for this airport ✈️"}
+                </button>
+              )}
+              <p className="text-xs text-gray-600 text-center">
+                {es
+                  ? "Te avisamos si hay demoras o cambios importantes."
+                  : "We'll notify you of delays or important changes."}
+              </p>
+            </div>
+
+            {/* Soft signup nudge — only shown after intent click when not logged in */}
+            <AnimatePresence>
+              {showSignupNudge && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="rounded-xl border border-violet-500/30 bg-violet-500/[0.08] px-4 py-4 flex flex-col gap-3"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-white mb-0.5">
+                      {es ? "Creá tu cuenta gratis" : "Create your free account"}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {es
+                        ? "Las alertas se guardan con tu cuenta. Es gratis y tarda 30 segundos."
+                        : "Alerts are saved with your account. Free, takes 30 seconds."}
+                    </p>
+                  </div>
+                  <button
+                    onClick={onAddFlight}
+                    className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3 w-full transition-colors tap-scale"
+                  >
+                    {es ? "Crear cuenta →" : "Create account →"}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Secondary CTA */}
+            {!showSignupNudge && (
               <button
                 onClick={onAddFlight}
-                className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
+                className="rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-gray-300 text-sm font-medium py-3 w-full transition-colors tap-scale"
               >
                 {es ? "Agregar mi vuelo ✈️" : "Add my flight ✈️"}
               </button>
-              <p className="text-xs text-gray-600 text-center">
-                {es
-                  ? "Recibí alertas personalizadas para tus vuelos"
-                  : "Get personalized alerts for your flights"}
-              </p>
-            </div>
+            )}
           </motion.div>
         )}
 
@@ -238,29 +313,42 @@ function HeroCard({
   locale: "es" | "en";
 }) {
   const { icon, label } = getStatusInfo(entry?.status, locale);
+  const implication = getImplication(entry?.status, locale);
+  const es = locale === "es";
   return (
-    <div className="rounded-2xl border border-white/[0.12] bg-white/[0.04] px-6 py-6 flex items-start justify-between gap-4">
-      <div>
-        <p className="text-5xl font-black text-white leading-none">{iata}</p>
-        <p className="text-sm text-gray-500 mt-2">
-          {AIRPORT_DB[iata]?.city ?? iata}
-        </p>
+    <div className="rounded-2xl border border-white/[0.12] bg-white/[0.04] px-6 py-6 flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">
+            {es ? "Salida desde" : "Departing from"}
+          </p>
+          <p className="text-5xl font-black text-white leading-none">{iata}</p>
+          <p className="text-sm text-gray-500 mt-1.5">
+            {AIRPORT_DB[iata]?.city ?? iata}
+          </p>
+        </div>
+
+        {entry ? (
+          <div className="flex flex-col items-end gap-1 pt-1 shrink-0">
+            <span className="text-3xl">{icon}</span>
+            <span className="text-sm text-gray-400 text-right">{label}</span>
+            <span className="text-[11px] text-gray-600">
+              {formatLastChecked(entry.lastChecked, locale)}
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-end gap-2 pt-1 shrink-0">
+            <div className="h-8 w-8 rounded-lg bg-white/[0.07] animate-pulse" />
+            <div className="h-4 w-20 rounded-md bg-white/[0.07] animate-pulse" />
+            <div className="h-3 w-16 rounded-md bg-white/[0.04] animate-pulse" />
+          </div>
+        )}
       </div>
 
-      {entry ? (
-        <div className="flex flex-col items-end gap-1 pt-1 shrink-0">
-          <span className="text-3xl">{icon}</span>
-          <span className="text-sm text-gray-400 text-right">{label}</span>
-          <span className="text-[11px] text-gray-600">
-            {formatLastChecked(entry.lastChecked, locale)}
-          </span>
-        </div>
-      ) : (
-        <div className="flex flex-col items-end gap-2 pt-1 shrink-0">
-          <div className="h-8 w-8 rounded-lg bg-white/[0.07] animate-pulse" />
-          <div className="h-4 w-20 rounded-md bg-white/[0.07] animate-pulse" />
-          <div className="h-3 w-16 rounded-md bg-white/[0.04] animate-pulse" />
-        </div>
+      {entry && (
+        <p className="text-sm text-gray-400 border-t border-white/[0.06] pt-3 leading-relaxed">
+          {implication}
+        </p>
       )}
     </div>
   );
