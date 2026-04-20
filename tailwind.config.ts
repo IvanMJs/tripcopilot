@@ -47,6 +47,7 @@ const config: Config = {
         "slide-in-right":  "slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) both",
         "risk-draw":       "risk-draw 1s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both",
         "shimmer":         "shimmer 2s linear infinite",
+        "fade-in":         "fade-in 0.3s ease-out both",
       },
       keyframes: {
         "highlight-flash": {
@@ -92,6 +93,10 @@ const config: Config = {
           "15%":  { opacity: "1" },
           "85%":  { opacity: "1" },
           "100%": { transform: "translateX(220%)",  opacity: "0" },
+        },
+        "fade-in": {
+          "0%":   { opacity: "0" },
+          "100%": { opacity: "1" },
         },
       },
       boxShadow: {
