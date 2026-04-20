@@ -558,23 +558,25 @@ export function DepartureBoard({
           {/* Next Flight Hero — shown when no war room */}
           <NextFlightHero nextFlight={globalNextFlight} locale={locale} />
 
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-black text-white">
-                {locale === "es" ? "Vuelos de hoy" : "Today's flights"}
-              </h2>
-              <p className="text-xs text-gray-500 mt-0.5">{dateLabel}</p>
+          {/* Header — hidden when no flights so empty state sits higher */}
+          {todayFlights.length > 0 && (
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-black text-white">
+                  {locale === "es" ? "Vuelos de hoy" : "Today's flights"}
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">{dateLabel}</p>
+              </div>
+              {flightCount > 0 && (
+                <span className="text-xs font-semibold text-gray-500 px-2 py-1 rounded-lg border border-white/[0.08] bg-white/[0.03]">
+                  {flightCount}{" "}
+                  {flightCount === 1
+                    ? (locale === "es" ? "vuelo" : "flight")
+                    : (locale === "es" ? "vuelos" : "flights")}
+                </span>
+              )}
             </div>
-            {flightCount > 0 && (
-              <span className="text-xs font-semibold text-gray-500 px-2 py-1 rounded-lg border border-white/[0.08] bg-white/[0.03]">
-                {flightCount}{" "}
-                {flightCount === 1
-                  ? (locale === "es" ? "vuelo" : "flight")
-                  : (locale === "es" ? "vuelos" : "flights")}
-              </span>
-            )}
-          </div>
+          )}
 
           {/* Empty state */}
           {todayFlights.length === 0 && (

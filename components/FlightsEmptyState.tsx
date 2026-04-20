@@ -84,7 +84,7 @@ export function FlightsEmptyState({ locale, onCreateTrip }: FlightsEmptyStatePro
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex flex-col gap-3 px-4 pt-4 pb-2"
+      className="flex flex-col gap-3 px-4 pt-1 pb-2"
     >
       {/* Ghost boarding pass */}
       <div className="relative">
