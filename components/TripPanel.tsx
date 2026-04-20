@@ -375,7 +375,7 @@ export function TripPanel({
       {/* Trip header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-0.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
             {locale === "es" ? "Viaje" : "Trip"}
           </p>
           {trip.isShared && (
@@ -415,7 +415,7 @@ export function TripPanel({
             />
           ) : (
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-black text-white truncate">{trip.name}</h2>
+              <h2 className="text-lg font-black text-white truncate tracking-tight">{trip.name}</h2>
               {onRenameTrip && isOwner && (
                 <button
                   onClick={() => { setRenamingTripName(trip.name); setIsRenamingTrip(true); }}
@@ -489,12 +489,15 @@ export function TripPanel({
 
       {/* Draft banner */}
       {isDraft && (
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-3 bg-violet-950/80 border border-violet-700/40 rounded-xl backdrop-blur-sm mx-0 mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-violet-400">✏️</span>
+        <div className="sticky top-0 z-10 relative flex items-center justify-between gap-3 px-4 py-3 bg-violet-950/80 border border-violet-500/30 rounded-xl backdrop-blur-sm mx-0 mb-4 shadow-[0_0_0_1px_rgba(124,58,237,0.25),0_0_24px_rgba(124,58,237,0.15)]">
+          <span aria-hidden className="absolute inset-0 rounded-xl bg-[radial-gradient(ellipse_at_top_left,rgba(124,58,237,0.18),transparent_60%)] pointer-events-none" />
+          <div className="relative flex items-center gap-2">
+            <span className="text-violet-300">✏️</span>
             <div>
-              <p className="text-xs font-bold text-violet-300">{locale === "es" ? "Borrador — no guardado" : "Draft — not saved"}</p>
-              <p className="text-xs text-violet-500">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-violet-300 mb-0.5">
+                {locale === "es" ? "Borrador — no guardado" : "Draft — not saved"}
+              </p>
+              <p className="text-[11px] text-violet-400/80">
                 {locale === "es"
                   ? `${trip.flights.length} vuelo${trip.flights.length !== 1 ? "s" : ""} · listo para guardar`
                   : `${trip.flights.length} flight${trip.flights.length !== 1 ? "s" : ""} · ready to save`}
@@ -509,7 +512,7 @@ export function TripPanel({
               try { await Promise.resolve(onSave?.()); } finally { setSaving(false); }
             }}
             disabled={saving}
-            className={`btn-primary flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shrink-0 ${saving ? "opacity-70 cursor-not-allowed" : ""}`}
+            className={`relative btn-primary flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shrink-0 ${saving ? "opacity-70 cursor-not-allowed" : ""}`}
           >
             {saving ? (
               <>
@@ -554,7 +557,7 @@ export function TripPanel({
         <div
           role="tablist"
           aria-label={locale === "es" ? "Secciones del viaje" : "Trip sections"}
-          className="flex items-center bg-white/5 rounded-xl p-0.5 gap-0.5 overflow-x-auto scrollbar-none"
+          className="flex items-center bg-white/[0.04] border border-white/[0.06] rounded-xl p-1 gap-0.5 overflow-x-auto scrollbar-none"
         >
           {(
             [
@@ -572,13 +575,13 @@ export function TripPanel({
               id={`trip-tab-${tab.id}`}
               onClick={() => { haptics.impact(); setActiveSection(tab.id); }}
               className={`relative flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                activeSection === tab.id ? "text-white" : "text-gray-500 hover:text-gray-300"
+                activeSection === tab.id ? "text-violet-200" : "text-gray-500 hover:text-gray-300"
               }`}
             >
               {activeSection === tab.id && (
                 <motion.span
                   layoutId="trip-section-pill"
-                  className="absolute inset-0 rounded-lg bg-white/10"
+                  className="absolute inset-0 rounded-lg bg-violet-500/15 ring-1 ring-violet-400/25"
                   layout
                   transition={{ type: "spring", stiffness: 420, damping: 30 }}
                 />
