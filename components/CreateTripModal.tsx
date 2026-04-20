@@ -20,17 +20,19 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm, prefill
   const [creating, setCreating] = useState(false);
   const [selectedDestination, setSelectedDestination] = useState<string>(prefillDestination ?? "");
 
-  // A7: Focus trap — focus first input on open, close on Escape
-  useEffect(() => {
-    const firstInput = modalRef.current?.querySelector<HTMLElement>("input, button, textarea");
-    firstInput?.focus();
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
+  // Focus trap — runs once on mount only to avoid re-stealing focus on re-renders
+  useEffect(() => {
+    inputRef.current?.focus();
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleConfirm() {
     const val = inputRef.current?.value.trim() ?? "";
@@ -64,7 +66,10 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm, prefill
             </p>
           </div>
 
-          <div className="input-float-wrapper mt-6">
+          <div className="space-y-1.5">
+            <label htmlFor="trip-name-input" className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              {locale === "es" ? "Nombre del viaje" : "Trip name"}
+            </label>
             <input
               id="trip-name-input"
               ref={inputRef}
@@ -74,11 +79,8 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm, prefill
               }}
               placeholder={locale === "es" ? "Ej: Vacaciones Miami 2026" : "E.g. Miami Trip 2026"}
               maxLength={40}
-              className="w-full rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <label htmlFor="trip-name-input">
-              {locale === "es" ? "Nombre del viaje" : "Trip name"}
-            </label>
           </div>
 
           {/* Destination field */}
