@@ -176,10 +176,7 @@ export default function HomePage() {
   const [draftLeaveConfirm, setDraftLeaveConfirm] = useState<{ targetTab: string } | null>(null);
 
   // Device timezone detection
-  const [showDeviceTz, setShowDeviceTz] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("tripcopilot-show-device-tz") === "true";
-  });
+  const [showDeviceTz, setShowDeviceTz] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
 
   const { deviceTz, tzChanged, clearTzChanged } = useDeviceTimezone(locale);
@@ -240,6 +237,7 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true);
+    setShowDeviceTz(localStorage.getItem("tripcopilot-show-device-tz") === "true");
     // Migrate legacy key so returning users are not re-shown the welcome view
     if (localStorage.getItem("tripcopilot-onboarded") && !localStorage.getItem("tc-onboarded")) {
       localStorage.setItem("tc-onboarded", "true");
