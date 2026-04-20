@@ -403,7 +403,7 @@ export function AirportCard({ iata, status, onRemove, weather, metar, highlight,
           </span>
         </div>
 
-        <StatusBadge status={s} className="mb-3" />
+        <StatusBadge status={s} dense className="mb-3" />
 
         {/* Urgency strip */}
         {reason && (

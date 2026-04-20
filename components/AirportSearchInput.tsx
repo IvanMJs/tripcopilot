@@ -9,6 +9,8 @@ interface AirportSearchInputProps {
   placeholder: string;
   locale: "es" | "en";
   label?: string;
+  /** Suggested IATA codes — pills shown when input is empty */
+  suggestions?: string[];
 }
 
 interface AirportResult {
@@ -16,6 +18,8 @@ interface AirportResult {
   city: string;
   name: string;
 }
+
+const DEFAULT_SUGGESTIONS = ["EZE", "AEP", "JFK", "MIA", "MAD", "GRU"];
 
 function searchAirports(query: string): AirportResult[] {
   if (!query || query.length < 2) return [];
@@ -39,20 +43,20 @@ export function AirportSearchInput({
   onChange,
   placeholder,
   locale,
+  suggestions = DEFAULT_SUGGESTIONS,
 }: AirportSearchInputProps) {
-  // displayValue shows the human-readable text; value prop holds the IATA code
   const [inputText, setInputText] = useState(() => {
     if (!value) return "";
     const info = AIRPORTS[value];
     return info ? `${info.city} (${value})` : value;
   });
-  const [results, setResults] = useState<AirportResult[]>([]);
-  const [open, setOpen] = useState(false);
+  const [results, setResults]         = useState<AirportResult[]>([]);
+  const [open, setOpen]               = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [focused, setFocused]         = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef     = useRef<HTMLInputElement>(null);
 
-  // Sync inputText when value prop changes externally (e.g. form reset)
   useEffect(() => {
     if (!value) {
       setInputText("");
@@ -67,7 +71,6 @@ export function AirportSearchInput({
     setInputText(text);
     setActiveIndex(-1);
 
-    // If user is clearing the field, clear the parent value too
     if (!text.trim()) {
       onChange("");
       setResults([]);
@@ -87,6 +90,12 @@ export function AirportSearchInput({
     setOpen(false);
   }, [onChange]);
 
+  const selectIata = useCallback((iata: string) => {
+    const info = AIRPORTS[iata];
+    if (!info) return;
+    selectAirport({ iata, city: info.city, name: info.name });
+  }, [selectAirport]);
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!open) return;
     if (e.key === "ArrowDown") {
@@ -104,10 +113,9 @@ export function AirportSearchInput({
   }, [open, results, activeIndex, selectAirport]);
 
   const handleBlur = useCallback((e: React.FocusEvent) => {
-    // Only close if focus leaves the container entirely
     if (!containerRef.current?.contains(e.relatedTarget as Node)) {
       setOpen(false);
-      // If the current inputText doesn't correspond to the selected value, restore it
+      setFocused(false);
       if (value) {
         const info = AIRPORTS[value];
         setInputText(info ? `${info.city} (${value})` : value);
@@ -115,10 +123,14 @@ export function AirportSearchInput({
     }
   }, [value]);
 
-  const inputClass =
-    "w-full rounded-xl border border-white/10 bg-surface-darker px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500/70";
+  const noResultsLabel   = locale === "es" ? "Sin resultados" : "No results";
+  const suggestionsLabel = locale === "es" ? "Sugerencias" : "Suggestions";
 
-  const noResultsLabel = locale === "es" ? "Sin resultados" : "No results";
+  // Show pills when focused AND input empty AND no current value
+  const showSuggestions = focused && !inputText.trim() && !value;
+
+  const inputClass =
+    "w-full rounded-xl border border-white/10 bg-surface-darker px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 outline-none transition-all focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/20";
 
   return (
     <div ref={containerRef} className="relative" onBlur={handleBlur}>
@@ -128,16 +140,46 @@ export function AirportSearchInput({
         value={inputText}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
+        onFocus={() => setFocused(true)}
         placeholder={placeholder}
         autoComplete="off"
         role="combobox"
-        aria-expanded={open}
+        aria-expanded={open || showSuggestions}
         aria-controls="airport-search-listbox"
         aria-haspopup="listbox"
         aria-autocomplete="list"
         aria-activedescendant={activeIndex >= 0 && results[activeIndex] ? `${results[activeIndex].iata}-option` : undefined}
         className={inputClass}
       />
+
+      {showSuggestions && suggestions.length > 0 && (
+        <div
+          id="airport-search-listbox"
+          className="absolute z-50 mt-1 w-full rounded-xl border border-white/[0.07] bg-surface-elevated shadow-2xl p-2"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 px-1 pb-1.5">
+            {suggestionsLabel}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {suggestions.map((iata) => {
+              const info = AIRPORTS[iata];
+              if (!info) return null;
+              return (
+                <button
+                  key={iata}
+                  onMouseDown={(e) => { e.preventDefault(); selectIata(iata); }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs font-semibold text-white hover:border-violet-500/40 hover:bg-violet-500/10 hover:text-violet-200 transition-colors"
+                  title={info.city}
+                >
+                  <span className="font-mono tracking-wider">{iata}</span>
+                  <span className="text-gray-500 font-normal truncate max-w-[80px]">{info.city}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {open && (
         <ul
           id="airport-search-listbox"
@@ -153,20 +195,16 @@ export function AirportSearchInput({
                 id={`${r.iata}-option`}
                 role="option"
                 aria-selected={i === activeIndex}
-                onMouseDown={(e) => {
-                  // Prevent blur from firing before click
-                  e.preventDefault();
-                  selectAirport(r);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); selectAirport(r); }}
                 className={`px-3 py-2.5 cursor-pointer text-sm transition-colors ${
                   i === activeIndex
-                    ? "bg-blue-600/30 text-white"
+                    ? "bg-violet-600/25 text-white"
                     : "text-gray-300 hover:bg-white/[0.05]"
                 }`}
               >
                 <span className="font-semibold text-white">{r.city}</span>
                 {" "}
-                <span className="text-blue-400">({r.iata})</span>
+                <span className="text-violet-400 font-mono">({r.iata})</span>
                 {" "}
                 <span className="text-gray-500 text-xs">— {r.name}</span>
               </li>
