@@ -12,6 +12,7 @@ interface NewUserWelcomeViewProps {
   locale: "es" | "en";
   onAddFlight: () => void;
   userId?: string | null;
+  loading?: boolean;
 }
 
 const FEATURED_AIRPORTS = ["EZE", "JFK", "MIA", "GCM"] as const;
@@ -66,7 +67,7 @@ function severeReason(entry: AirportStatus | undefined): string | null {
   return null;
 }
 
-export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: NewUserWelcomeViewProps) {
+export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId, loading = false }: NewUserWelcomeViewProps) {
   const [view, setView] = useState<FtueView>("list");
   const [selectedIata, setSelectedIata] = useState("");
   const [alertsActivated, setAlertsActivated] = useState(false);
@@ -74,7 +75,9 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
   const staggerDelays = [0, 0.06, 0.12, 0.18];
   const es = locale === "es";
 
-  const hasData = FEATURED_AIRPORTS.every((iata) => statusMap[iata] !== undefined);
+  // loaded = FAA query completed at least once. Airports missing from statusMap
+  // after load are not in any FAA delay list → treat as "ok" (no active issues).
+  const loaded = !loading;
 
   function goToList() {
     setSelectedIata("");
@@ -128,8 +131,10 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
 
               {FEATURED_AIRPORTS.map((iata, index) => {
                 const entry = statusMap[iata];
-                const tone = toneFromStatus(entry?.status);
-                const { icon, label } = getStatusInfo(entry?.status, locale);
+                // Airports not in statusMap after load are not in any FAA delay list → "ok"
+                const effectiveStatus = entry?.status ?? (loaded ? "ok" : undefined);
+                const tone = toneFromStatus(effectiveStatus);
+                const { icon, label } = getStatusInfo(effectiveStatus, locale);
                 const haloByToneCard: Record<Tone, string> = {
                   ok:      "bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.18),transparent_65%)]",
                   warn:    "bg-[radial-gradient(circle_at_top_right,rgba(251,146,60,0.20),transparent_65%)]",
@@ -158,7 +163,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
                     className={`relative overflow-hidden rounded-xl border bg-white/[0.03] hover:bg-white/[0.06] text-left transition-colors tap-scale ${borderByToneCard[tone]}`}
                   >
                     {/* Ambient halo */}
-                    {tone !== "neutral" && hasData && (
+                    {tone !== "neutral" && loaded && (
                       <div
                         aria-hidden
                         className={`pointer-events-none absolute -top-10 -right-6 size-[140px] rounded-full blur-2xl ${haloByToneCard[tone]}`}
@@ -169,7 +174,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
                       {/* Left: IATA big + city */}
                       <div className="min-w-0 flex flex-col gap-0.5">
                         <div className="flex items-center gap-2">
-                          {hasData && <RadarDot tone={tone} size="sm" />}
+                          {loaded && <RadarDot tone={tone} size="sm" />}
                           <span className="text-[28px] font-black leading-none tracking-[-0.02em] text-white tabular-nums font-mono">
                             {iata}
                           </span>
@@ -180,7 +185,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
                       </div>
 
                       {/* Right: status + last checked */}
-                      {hasData ? (
+                      {loaded ? (
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           <span className={`flex items-center gap-1.5 text-xs font-semibold ${labelByToneCard[tone]}`}>
                             <span className="text-sm leading-none">{icon}</span>
@@ -202,7 +207,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId }: N
               })}
             </div>
 
-            {!hasData && (
+            {!loaded && (
               <p className="text-xs text-gray-600 text-center -mt-1">
                 {es ? "Actualizando ahora..." : "Updating now..."}
               </p>

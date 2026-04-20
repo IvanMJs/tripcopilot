@@ -22,7 +22,7 @@ function formatMinutes(min: number | undefined): string {
 }
 
 function AirportClock({ iata }: { iata: string }) {
-  const [time, setTime] = useState(() => getAirportTime(iata));
+  const [time, setTime] = useState<string | null>(null); // null on SSR — avoids hydration mismatch
 
   useEffect(() => {
     setTime(getAirportTime(iata));

@@ -1043,6 +1043,7 @@ export default function HomePage() {
                 {mounted && !tripsLoading && userTrips.length === 0 && !localStorage.getItem("tc-onboarded") ? (
                   <NewUserWelcomeView
                     statusMap={statusMap}
+                    loading={loading}
                     locale={locale}
                     userId={userId}
                     onAddFlight={() => {
