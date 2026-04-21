@@ -257,6 +257,7 @@ export function FlightCard({
 
   return (
     <div
+      role="article"
       id={`flight-card-${idx}`}
       aria-label={flightCardLabel}
       className={`relative rounded-xl border-2 transition-all animate-fade-in-up stagger-item hover:-translate-y-1 ${

@@ -46,7 +46,6 @@ const config: Config = {
         "scale-in":        "scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both",
         "slide-in-right":  "slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) both",
         "risk-draw":       "risk-draw 1s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both",
-        "shimmer":         "shimmer 2s linear infinite",
         "fade-in":         "fade-in 0.3s ease-out both",
       },
       keyframes: {
@@ -74,10 +73,6 @@ const config: Config = {
         "risk-draw": {
           "0%":   { strokeDasharray: "0 400" },
           "100%": { strokeDasharray: "var(--risk-progress) 400" },
-        },
-        "shimmer": {
-          "0%":   { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
         },
         "radarPulse": {
           "0%":   { transform: "scale(1)",   opacity: "0.6" },

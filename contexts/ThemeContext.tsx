@@ -48,6 +48,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setThemeState(preference);
       setResolvedTheme(resolved);
       applyTheme(resolved);
+      
+      // Aplicar clase dark-forced en mount según preferencia guardada
+      if (preference === "dark") {
+        document.documentElement.classList.add('dark-forced');
+      }
     } catch {
       // localStorage unavailable (SSR / private browsing edge case)
     }
@@ -78,6 +83,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setThemeState(preference);
     setResolvedTheme(resolved);
     applyTheme(resolved);
+    
+    // Manejar clase dark-forced para prefers-color-scheme automático
+    if (preference === "dark") {
+      document.documentElement.classList.add('dark-forced');
+    } else {
+      document.documentElement.classList.remove('dark-forced');
+    }
+    
     try {
       localStorage.setItem(STORAGE_KEY, preference);
     } catch {

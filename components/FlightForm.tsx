@@ -6,8 +6,19 @@ import { TripFlight } from "@/lib/types";
 import { AIRLINES, parseFlightCode } from "@/lib/flightUtils";
 import { analytics } from "@/lib/analytics";
 import { AirportSearchInput } from "./AirportSearchInput";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { FlightLookupInput } from "./FlightLookupInput";
 import { CommonFlightInfo } from "@/lib/commonFlights";
+
+const inputClass = [
+  "w-full rounded-lg",
+  "border border-white/[0.08] focus:border-violet-500/60",
+  "bg-white/[0.04]",
+  "px-3 py-2 text-sm text-white",
+  "outline-none transition-colors",
+  "disabled:opacity-50 disabled:cursor-not-allowed",
+].join(" ");
 
 // ── Airline preview map ────────────────────────────────────────────────────────
 const AIRLINE_NAMES: Record<string, string> = {
@@ -175,8 +186,6 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
   const airlinePreviewCode = form.flightCode.slice(0, 2).toUpperCase();
   const airlinePreviewName = form.flightCode.length >= 2 ? AIRLINE_NAMES[airlinePreviewCode] : undefined;
 
-  const inputClass =
-    "w-full rounded-xl border border-white/10 bg-surface-darker px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500/70";
   const labelClass =
     "block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5";
 
@@ -209,12 +218,11 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
           {locale === "es" ? "Código de vuelo" : "Flight code"}
         </label>
         <div className="relative">
-          <input
+          <Input
             value={form.flightCode}
             onChange={(e) => update("flightCode", e.target.value.toUpperCase())}
             onKeyDown={handleKey}
             placeholder={L.flightPlaceholder}
-            className={inputClass + " pr-16"}
           />
           {showValidation && (
             <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ${isValidFlightCode ? "text-green-400" : "text-red-400"}`}>
@@ -255,13 +263,12 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
           <label className={labelClass}>
             {locale === "es" ? "Fecha" : "Date"}
           </label>
-          <input
-            type="date"
-            value={form.isoDate}
-            onChange={(e) => update("isoDate", e.target.value)}
-            onKeyDown={handleKey}
-            className={inputClass}
-          />
+           <Input
+             type="date"
+             value={form.isoDate}
+             onChange={(e) => update("isoDate", e.target.value)}
+             onKeyDown={handleKey}
+           />
         </div>
       </div>
 
@@ -274,13 +281,12 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
               ({locale === "es" ? "opcional" : "optional"})
             </span>
           </label>
-          <input
-            type="time"
-            value={form.departureTime}
-            onChange={(e) => update("departureTime", e.target.value)}
-            onKeyDown={handleKey}
-            className={inputClass}
-          />
+           <Input
+             type="time"
+             value={form.departureTime}
+             onChange={(e) => update("departureTime", e.target.value)}
+             onKeyDown={handleKey}
+           />
         </div>
         {form.departureTime && (
           <div>
@@ -304,13 +310,13 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       {/* Add button — full width on mobile */}
-      <button
-        onClick={handleAdd}
-        className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 px-5 py-2.5 text-sm font-semibold text-white transition-all tap-scale"
-      >
-        <Plus className="h-3.5 w-3.5" />
-        {L.addBtn}
-      </button>
+       <Button
+         onClick={handleAdd}
+         variant="primary"
+         icon={<Plus className="h-3.5 w-3.5" />}
+       >
+         {L.addBtn}
+       </Button>
 
       {/* Soft-conflict confirmation modal */}
       {pendingFlight && (
