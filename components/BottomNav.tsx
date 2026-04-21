@@ -101,7 +101,7 @@ export function BottomNav({
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => { haptics.impact(); setShowTripPicker(false); onNewTrip(); }}
-            aria-label={locale === "es" ? "Nuevo viaje" : "New trip"}
+             aria-label={locale === "es" ? "Agregar vuelo" : "Add flight"}
             className="h-14 w-14 rounded-full bg-gradient-to-br from-violet-600 to-violet-800 shadow-lg shadow-violet-500/30 ring-4 ring-[#0a0a14] flex items-center justify-center"
           >
             <Plus className="h-7 w-7 text-white" strokeWidth={2} />

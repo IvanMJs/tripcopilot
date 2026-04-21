@@ -83,7 +83,8 @@
       "Bash(gh pr:*)",
       "Bash(git fetch:*)",
       "Bash(git rebase:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git merge *)"
     ]
   },
   "enableAllProjectMcpServers": true,

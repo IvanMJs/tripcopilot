@@ -117,6 +117,7 @@ function parseTzOffset(tzAbbr: string): number | null {
   return sign * (hours + minutes / 60);
 }
 
+
 export function FlightCardBody({
   flight,
   locale,

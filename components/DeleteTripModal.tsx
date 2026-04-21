@@ -1,5 +1,8 @@
 "use client";
 
+import { ModalBase } from "@/components/ui/ModalBase";
+import { Button } from "@/components/ui/Button";
+
 interface Props {
   locale: "es" | "en";
   tripName: string;
@@ -16,16 +19,8 @@ export function DeleteTripModal({ locale, tripName, flightCount, onClose, onConf
     : "";
 
   return (
-    <>
-      <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-trip-modal-title"
-          className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4"
-          style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
-        >
+    <ModalBase open={true} onClose={onClose} maxWidth="sm">
+      <div className="p-5 space-y-4">
           <div>
             <h3 id="delete-trip-modal-title" className="text-base font-black text-white">
               {locale === "es" ? "¿Eliminar viaje?" : "Delete trip?"}
@@ -37,21 +32,20 @@ export function DeleteTripModal({ locale, tripName, flightCount, onClose, onConf
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <button
+            <Button
+              variant="secondary"
               onClick={onClose}
-              className="w-full sm:w-auto flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors"
             >
               {locale === "es" ? "Cancelar" : "Cancel"}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="danger"
               onClick={onConfirm}
-              className="w-full sm:w-auto flex-1 rounded-xl bg-red-700 hover:bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors"
             >
               {locale === "es" ? "Eliminar" : "Delete"}
-            </button>
+            </Button>
           </div>
-        </div>
       </div>
-    </>
+    </ModalBase>
   );
 }

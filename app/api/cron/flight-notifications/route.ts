@@ -1385,6 +1385,14 @@ export async function GET(request: Request) {
     }
   }
 
+  {
+    await sendInBatches(
+      (hotelAccs ?? []) as AccommodationRow[],
+      processAccommodation,
+      10,
+    );
+  }
+
   await supabase.from("cron_runs").insert({
     flights_processed: flights.length,
     notifications_sent: notificationsSent,

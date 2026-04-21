@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AIRPORTS } from "@/lib/airports";
+import { Input } from "@/components/ui/Input";
 
 interface AirportSearchInputProps {
   value: string;
@@ -129,28 +130,25 @@ export function AirportSearchInput({
   // Show pills when focused AND input empty AND no current value
   const showSuggestions = focused && !inputText.trim() && !value;
 
-  const inputClass =
-    "w-full rounded-xl border border-white/10 bg-surface-darker px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 outline-none transition-all focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/20";
 
   return (
     <div ref={containerRef} className="relative" onBlur={handleBlur}>
-      <input
-        ref={inputRef}
-        type="text"
-        value={inputText}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={() => setFocused(true)}
-        placeholder={placeholder}
-        autoComplete="off"
-        role="combobox"
-        aria-expanded={open || showSuggestions}
-        aria-controls="airport-search-listbox"
-        aria-haspopup="listbox"
-        aria-autocomplete="list"
-        aria-activedescendant={activeIndex >= 0 && results[activeIndex] ? `${results[activeIndex].iata}-option` : undefined}
-        className={inputClass}
-      />
+       <Input
+         ref={inputRef}
+         type="text"
+         value={inputText}
+         onChange={handleInputChange}
+         onKeyDown={handleKeyDown}
+         onFocus={() => setFocused(true)}
+         placeholder={placeholder}
+         autoComplete="off"
+         role="combobox"
+         aria-expanded={open || showSuggestions}
+         aria-controls="airport-search-listbox"
+         aria-haspopup="listbox"
+         aria-autocomplete="list"
+         aria-activedescendant={activeIndex >= 0 && results[activeIndex] ? `${results[activeIndex].iata}-option` : undefined}
+       />
 
       {showSuggestions && suggestions.length > 0 && (
         <div

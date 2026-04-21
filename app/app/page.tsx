@@ -179,7 +179,7 @@ export default function HomePage() {
   const [showDeviceTz, setShowDeviceTz] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
 
-  const { deviceTz, tzChanged, clearTzChanged } = useDeviceTimezone(locale);
+  const { deviceTz, tzChanged, clearTzChanged } = useDeviceTimezone();
 
   useEffect(() => {
     if (tzChanged) {
@@ -234,6 +234,7 @@ export default function HomePage() {
   useEffect(() => {
     void fetch("/api/auth/welcome", { method: "POST" });
   }, []);
+
 
   useEffect(() => {
     setMounted(true);

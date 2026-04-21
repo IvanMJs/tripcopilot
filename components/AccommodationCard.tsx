@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Hotel, Pencil, Trash2, X, Plus, Upload, RotateCcw, MapPin, Hash, Sun, Moon } from "lucide-react";
 import { analytics } from "@/lib/analytics";
+import { Input } from "@/components/ui/Input";
 
 function TripCopilotIcon({ spinning, size = 16 }: { spinning?: boolean; size?: number }) {
   return (
@@ -95,8 +96,6 @@ export function AccommodationInline({
   const [editConfCode, setEditConfCode] = useState(acc.confirmationCode ?? "");
   const [editAddress, setEditAddress] = useState(acc.address ?? "");
   const nights = checkOutDate ? nightsBetween(checkInDate, checkOutDate) : null;
-  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-blue-500/60 transition-colors";
-  const timeCls  = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-1.5 py-1 text-[11px] text-white outline-none focus:border-blue-500/60 transition-colors";
 
   void locale;
 
@@ -108,24 +107,26 @@ export function AccommodationInline({
   if (editing) {
     return (
       <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-2">
-        <input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
-          placeholder={L.accNamePlaceholder} className={inputCls}
-          onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditing(false); }}
+        <Input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
+          placeholder={L.accNamePlaceholder}
+                   onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditing(false); }}
         />
         <div className="flex gap-2">
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-600 mb-1">{L.accCheckIn}</p>
-            <input type="time" value={editCheckIn} onChange={(e) => setEditCheckIn(e.target.value)} className={timeCls} />
+            <Input type="time" value={editCheckIn} onChange={(e) => setEditCheckIn(e.target.value)} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-600 mb-1">{L.accCheckOut}</p>
-            <input type="time" value={editCheckOut} onChange={(e) => setEditCheckOut(e.target.value)} className={timeCls} />
+            <Input type="time" value={editCheckOut} onChange={(e) => setEditCheckOut(e.target.value)} />
           </div>
         </div>
-        <input value={editConfCode} onChange={(e) => setEditConfCode(e.target.value)}
-          placeholder={L.accConfCode} className={inputCls} />
-        <input value={editAddress} onChange={(e) => setEditAddress(e.target.value)}
-          placeholder={L.accAddress} className={inputCls} />
+        <Input value={editConfCode} onChange={(e) => setEditConfCode(e.target.value)}
+          placeholder={L.accConfCode}
+                 />
+        <Input value={editAddress} onChange={(e) => setEditAddress(e.target.value)}
+          placeholder={L.accAddress}
+                 />
         <div className="flex gap-2">
           <button onClick={saveEdit}
             className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 py-1.5 text-xs font-medium text-white transition-colors">
@@ -251,8 +252,6 @@ export function AddAccommodationInlineForm({
   const [address, setAddress] = useState("");
   const [err, setErr] = useState<string | null>(null);
 
-  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-blue-500/60 transition-colors";
-  const timeCls  = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-1.5 py-1 text-[11px] text-white outline-none focus:border-blue-500/60 transition-colors";
 
   void locale;
 
@@ -417,23 +416,23 @@ export function AddAccommodationInlineForm({
             </button>
           </div>
 
-          <input value={name} onChange={(e) => { setName(e.target.value); setErr(null); }}
-            placeholder={L.accNamePlaceholder} className={inputCls} autoFocus />
+          <Input value={name} onChange={(e) => { setName(e.target.value); setErr(null); }}
+            placeholder={L.accNamePlaceholder} autoFocus />
 
           <div className="flex gap-2">
             <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-600 mb-1">{L.accCheckIn}</p>
-              <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} className={timeCls} />
+            <Input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-600 mb-1">{L.accCheckOut}</p>
-              <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} className={timeCls} />
+            <Input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} />
             </div>
           </div>
-          <input value={confCode} onChange={(e) => setConfCode(e.target.value)}
-            placeholder={L.accConfCode} className={inputCls} />
-          <input value={address} onChange={(e) => setAddress(e.target.value)}
-            placeholder={L.accAddress} className={inputCls} />
+          <Input value={confCode} onChange={(e) => setConfCode(e.target.value)}
+            placeholder={L.accConfCode} />
+          <Input value={address} onChange={(e) => setAddress(e.target.value)}
+            placeholder={L.accAddress} />
 
           {err && <p className="text-[11px] text-red-400">{err}</p>}
 
@@ -448,24 +447,23 @@ export function AddAccommodationInlineForm({
       {/* ── MANUAL TAB ── */}
       {tab === "manual" && (
         <div className="space-y-2">
-          <input autoFocus value={name} onChange={(e) => { setName(e.target.value); setErr(null); }}
-            placeholder={L.accNamePlaceholder} className={inputCls}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          <Input autoFocus value={name} onChange={(e) => { setName(e.target.value); setErr(null); }}
+            placeholder={L.accNamePlaceholder}            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           />
           <div className="flex gap-2">
             <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-600 mb-1">{L.accCheckIn}</p>
-              <input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} className={timeCls} />
+            <Input type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-600 mb-1">{L.accCheckOut}</p>
-              <input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} className={timeCls} />
+            <Input type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} />
             </div>
           </div>
-          <input value={confCode} onChange={(e) => setConfCode(e.target.value)}
-            placeholder={L.accConfCode} className={inputCls} />
-          <input value={address} onChange={(e) => setAddress(e.target.value)}
-            placeholder={L.accAddress} className={inputCls} />
+          <Input value={confCode} onChange={(e) => setConfCode(e.target.value)}
+            placeholder={L.accConfCode} />
+          <Input value={address} onChange={(e) => setAddress(e.target.value)}
+            placeholder={L.accAddress} />
           {err && <p className="text-[11px] text-red-400">{err}</p>}
           <button onClick={handleSubmit}
             className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 transition-colors">

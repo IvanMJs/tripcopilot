@@ -91,7 +91,21 @@ function MetarRow({ metar }: { metar: MetarData }) {
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold border",
         style.pill,
       )}>
-        <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", style.dot)} />
+         <span
+           className={cn("h-1.5 w-1.5 rounded-full shrink-0", style.dot)}
+           aria-label={
+             fc === "VFR"  ? "VFR — condiciones visuales" :
+             fc === "MVFR" ? "MVFR — condiciones visuales marginales" :
+             fc === "IFR"  ? "IFR — condiciones por instrumentos" :
+             "LIFR — condiciones por instrumentos bajas"
+           }
+           title={
+             fc === "VFR"  ? "Visual Flight Rules" :
+             fc === "MVFR" ? "Marginal Visual Flight Rules" :
+             fc === "IFR"  ? "Instrument Flight Rules" :
+             "Low Instrument Flight Rules"
+           }
+         />
         {fc}
       </span>
       <Wind className="h-3 w-3 text-gray-600 shrink-0" />

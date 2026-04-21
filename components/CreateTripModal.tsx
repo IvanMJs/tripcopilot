@@ -3,6 +3,9 @@
 import { useRef, useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { AirportSearchInput } from "@/components/AirportSearchInput";
+import { ModalBase } from "@/components/ui/ModalBase";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { CostEstimatorCard } from "@/components/CostEstimatorCard";
 import { CITY_BUDGETS } from "@/lib/cityBudgets";
 
@@ -46,17 +49,8 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm, prefill
   }
 
   return (
-    <>
-      <div className="fixed inset-x-0 top-0 h-dvh z-50 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-x-0 top-0 h-dvh z-50 flex items-center justify-center px-4 pointer-events-none">
-        <div
-          ref={modalRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create-trip-modal-title"
-          className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl p-5 space-y-4 overflow-y-auto max-h-[80dvh]"
-          style={{ background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)" }}
-        >
+    <ModalBase open={true} onClose={onClose} maxWidth="sm">
+      <div ref={modalRef} className="p-5 space-y-4">
           <div>
             <h3 id="create-trip-modal-title" className="text-base font-black text-white">
               {locale === "es" ? "Nuevo viaje" : "New trip"}
@@ -70,7 +64,7 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm, prefill
             <label htmlFor="trip-name-input" className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               {locale === "es" ? "Nombre del viaje" : "Trip name"}
             </label>
-            <input
+            <Input
               id="trip-name-input"
               ref={inputRef}
               onKeyDown={(e) => {
@@ -79,7 +73,6 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm, prefill
               }}
               placeholder={locale === "es" ? "Ej: Vacaciones Miami 2026" : "E.g. Miami Trip 2026"}
               maxLength={40}
-              className="w-full rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -102,32 +95,23 @@ export function CreateTripModal({ locale, tripCount, onClose, onConfirm, prefill
           )}
 
           <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={onClose}
               disabled={creating}
-              className="w-full sm:w-auto flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 text-sm font-semibold text-gray-400 hover:text-white transition-colors disabled:opacity-50"
             >
               {locale === "es" ? "Cancelar" : "Cancel"}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
               onClick={handleConfirm}
               disabled={creating}
-              className={`btn-primary w-full sm:w-auto flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold tap-scale ${creating ? "opacity-70 cursor-not-allowed" : ""}`}
+              loading={creating}
             >
-              {creating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {locale === "es" ? "Creando..." : "Creating..."}
-                </>
-              ) : (
-                locale === "es" ? "Crear viaje" : "Create trip"
-              )}
-            </button>
+              {locale === "es" ? "Crear viaje" : "Create trip"}
+            </Button>
           </div>
-        </div>
       </div>
-    </>
+    </ModalBase>
   );
 }

@@ -12,6 +12,7 @@ const PostBodySchema = z.object({
 
 const APP_URL = "https://tripcopilot.app";
 
+
 // POST: invite a collaborator to a trip
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -98,9 +99,8 @@ export async function POST(req: NextRequest) {
       to: email,
       subject: `${inviterName} te invitó a ${tripName} ✈️`,
       html: buildInviteEmail({ inviterName, tripName, inviteUrl, roleLabel }),
-    }).catch((err) => {
+    }).catch(() => {
       // Log but don't block the response — invite is created in DB regardless
-      console.error("[invite] Resend error:", err);
     });
   }
 

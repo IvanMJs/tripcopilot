@@ -60,34 +60,7 @@ export function FlightArcAnimation({ originIata, destIata, onComplete }: FlightA
   const arcPathRef = useRef<SVGPathElement>(null);
   const planeRef   = useRef<SVGTextElement>(null);
 
-  // Auto-dismiss
-  useEffect(() => {
-    const id = setTimeout(onComplete, AUTO_DISMISS_MS);
-    return () => clearTimeout(id);
-  }, [onComplete]);
-
-  // Plane follows arc via requestAnimationFrame
-  useEffect(() => {
-    if (!arcPathRef.current || !planeRef.current) return;
-    const pathEl  = arcPathRef.current;
-    const planeEl = planeRef.current;
-    const total   = pathEl.getTotalLength();
-    const start   = performance.now();
-    let rafId: number;
-
-    function step(now: number) {
-      const elapsed = (now - start) / 1000;
-      const t = Math.min(elapsed / ARC_DURATION, 1);
-      const eased = t < 1 ? 1 - Math.pow(1 - t, 3) : 1;
-      const pt = pathEl.getPointAtLength(eased * total);
-      planeEl.setAttribute("x", String(pt.x - 8));
-      planeEl.setAttribute("y", String(pt.y + 6));
-      if (t < 1) rafId = requestAnimationFrame(step);
-    }
-
-    rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
-  }, [originIata, destIata]);
+  // No auto dismiss mientras carga el viaje - el padre decide cuando cerrarlo
 
   if (!origin?.lat || !dest?.lat) return null;
 
@@ -179,7 +152,7 @@ export function FlightArcAnimation({ originIata, destIata, onComplete }: FlightA
               strokeDasharray={1}
               strokeDashoffset={1}
               filter="url(#arcGlow)"
-              style={{ animation: `arcDrawNorm ${ARC_DURATION}s ease-out forwards` }}
+              style={{ animation: `arcDrawNorm ${ARC_DURATION}s ease-out infinite` }}
             />
 
             {/* Origin pulse dot */}
@@ -196,16 +169,18 @@ export function FlightArcAnimation({ originIata, destIata, onComplete }: FlightA
               <animate attributeName="opacity" from="0.5" to="0" dur="2s" begin="0.3s" repeatCount="indefinite" />
             </circle>
 
-            {/* Plane follows arc */}
-            <text
-              ref={planeRef}
-              fontSize="18"
-              x="-20"
-              y="-20"
-              aria-hidden
-            >
-              ✈️
-            </text>
+            {/* Plane floating at top blinking */}
+            <g style={{ 
+              animation: "planeBlink 2.8s ease-in-out infinite",
+              transform: "translate(175px, 45px)"
+            }}>
+              <text
+                fontSize="42"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="white"
+              >✈️</text>
+            </g>
           </svg>
 
           {/* City labels */}
