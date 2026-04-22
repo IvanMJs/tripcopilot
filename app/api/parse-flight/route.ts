@@ -2,17 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
-import { checkRateLimit } from "@/lib/rateLimiter";
-
-const HOUR_MS = 3_600_000;
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import * as Sentry from "@sentry/nextjs";
 
 const BodySchema = z.object({
   text:        z.string().max(20_000).optional(),
   imageBase64: z.string().max(1_500_000).optional(), // ~1MB image
   mimeType:    z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]).optional(),
+}).superRefine((data, ctx) => {
+  if (!data.text && !data.imageBase64) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "text or imageBase64 required",
+      path: ["text"],
+    });
+  }
+
+  if (data.imageBase64 && !data.mimeType) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "mimeType is required when imageBase64 is provided",
+      path: ["mimeType"],
+    });
+  }
 });
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+function getAnthropicClient() {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+  return new Anthropic({ apiKey });
+}
 
 const SYSTEM_PROMPT = `You are a flight data extractor. Given an airline booking confirmation email, itinerary screenshot, or any travel document, extract all flight segments.
 
@@ -63,58 +82,13 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Rate limit by IP (20 req/hour) — applied first as a broad guard.
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown";
-
-  const ipLimit = checkRateLimit({
-    windowMs: HOUR_MS,
-    maxRequests: 20,
-    identifier: `parse-flight:ip:${ip}`,
-  });
-
-  if (!ipLimit.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests", resetIn: ipLimit.resetIn },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": String(ipLimit.resetIn),
-          "Retry-After": String(ipLimit.resetIn),
-        },
-      },
-    );
+  const client = getAnthropicClient();
+  if (!client) {
+    return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
   }
 
-  // Rate limit by userId (50 req/hour for authenticated users).
-  const userLimit = checkRateLimit({
-    windowMs: HOUR_MS,
-    maxRequests: 50,
-    identifier: `parse-flight:user:${user.id}`,
-  });
-
-  if (!userLimit.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests", resetIn: userLimit.resetIn },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": String(userLimit.resetIn),
-          "Retry-After": String(userLimit.resetIn),
-        },
-      },
-    );
-  }
-
-  // Attach rate limit headers to all successful responses further down.
-  const rateLimitHeaders = {
-    "X-RateLimit-Remaining": String(Math.min(ipLimit.remaining, userLimit.remaining)),
-    "X-RateLimit-Reset": String(Math.min(ipLimit.resetIn, userLimit.resetIn)),
-  };
+  const allowed = await checkUserRateLimit(supabase, user.id, "parse-flight", 20);
+  if (!allowed) return rateLimitResponse();
 
   try {
     const raw = await req.json();
@@ -123,10 +97,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
     const { text, imageBase64, mimeType } = parsed.data;
-
-    if (!text && !imageBase64) {
-      return NextResponse.json({ error: "text or imageBase64 required" }, { status: 400 });
-    }
 
     const userContent: Anthropic.MessageParam["content"] = [];
 
@@ -162,7 +132,7 @@ export async function POST(req: NextRequest) {
     // Extract JSON from response (handle cases where model adds extra text)
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return NextResponse.json({ flights: [] }, { headers: rateLimitHeaders });
+      return NextResponse.json({ flights: [] });
     }
 
     const jsonParsed = JSON.parse(jsonMatch[0]) as { flights?: unknown[] };
@@ -187,9 +157,10 @@ export async function POST(req: NextRequest) {
     });
 
     const flights = z.array(FlightSchema).max(20).catch([]).parse(jsonParsed.flights ?? []);
-    return NextResponse.json({ flights }, { headers: rateLimitHeaders });
+    return NextResponse.json({ flights });
   } catch (err) {
     console.error("[parse-flight]", err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Failed to parse" }, { status: 500 });
   }
 }

@@ -30,11 +30,21 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!,
 );
 
-// FlightAware does not sign webhook callbacks with HMAC on the basic plan.
-// Security relies on the callback URL being private (not guessable).
-// FLIGHTAWARE_WEBHOOK_SECRET is kept as an env var for future use if FlightAware
-// adds signature support, but is not used for request verification.
 export async function POST(request: Request) {
+  const token = new URL(request.url).searchParams.get("token");
+  const secret = process.env.FLIGHTAWARE_WEBHOOK_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[fa-webhook] FLIGHTAWARE_WEBHOOK_SECRET is not configured");
+      return Response.json({ error: "Webhook not configured" }, { status: 503 });
+    }
+    // In development without a secret, skip verification
+  } else {
+    if (token !== secret) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   let payload: FAWebhookPayload;
   try {
     payload = (await request.json()) as FAWebhookPayload;

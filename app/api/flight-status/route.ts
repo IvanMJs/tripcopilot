@@ -56,18 +56,22 @@ function toLegacyRecord(fd: FlightData): LegacyFlightRecord {
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user && !(await checkUserRateLimit(supabase, user.id, "flight-status", 20))) {
-    return rateLimitResponse();
-  }
-
   const url = new URL(req.url);
   const flightIata = url.searchParams.get("flight_iata") ?? "";
   const flightDate = url.searchParams.get("flight_date") ?? "";
 
   if (!flightIata.trim()) {
     return Response.json({ error: "flight_iata required" }, { status: 400 });
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!(await checkUserRateLimit(supabase, user.id, "flight-status", 20))) {
+    return rateLimitResponse();
   }
 
   const result = await getFlightData(flightIata, flightDate);
