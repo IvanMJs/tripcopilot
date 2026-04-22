@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   const { tripId, emoji } = parsed.data;
 
-  const { error } = await supabase.from("trip_social_reactions").insert({
+  const { error } = await supabase.from("social_reactions").insert({
     trip_id: tripId,
     user_id: user.id,
     emoji,

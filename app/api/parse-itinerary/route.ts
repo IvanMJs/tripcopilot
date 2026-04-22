@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
-import { checkRateLimit } from "@/lib/rateLimiter";
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import * as Sentry from "@sentry/nextjs";
-
-const HOUR_MS = 3_600_000;
 
 const BodySchema = z
   .object({
@@ -16,9 +14,17 @@ const BodySchema = z
   })
   .refine((d) => d.text || d.imageBase64, {
     message: "Either text or imageBase64 is required",
+  })
+  .refine((d) => !d.imageBase64 || !!d.mimeType, {
+    message: "mimeType is required when imageBase64 is provided",
+    path: ["mimeType"],
   });
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+function getAnthropicClient() {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+  return new Anthropic({ apiKey });
+}
 
 const SYSTEM_PROMPT = `You are a travel itinerary data extractor. Given an airline booking confirmation (email, screenshot, or travel document), extract ALL flight segments.
 
@@ -76,57 +82,13 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Rate limit by IP (20 req/hour)
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown";
-
-  const ipLimit = checkRateLimit({
-    windowMs:    HOUR_MS,
-    maxRequests: 20,
-    identifier:  `parse-itinerary:ip:${ip}`,
-  });
-
-  if (!ipLimit.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests", resetIn: ipLimit.resetIn },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset":     String(ipLimit.resetIn),
-          "Retry-After":           String(ipLimit.resetIn),
-        },
-      },
-    );
+  const client = getAnthropicClient();
+  if (!client) {
+    return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
   }
 
-  // Rate limit by userId (50 req/hour)
-  const userLimit = checkRateLimit({
-    windowMs:    HOUR_MS,
-    maxRequests: 50,
-    identifier:  `parse-itinerary:user:${user.id}`,
-  });
-
-  if (!userLimit.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests", resetIn: userLimit.resetIn },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset":     String(userLimit.resetIn),
-          "Retry-After":           String(userLimit.resetIn),
-        },
-      },
-    );
-  }
-
-  const rateLimitHeaders = {
-    "X-RateLimit-Remaining": String(Math.min(ipLimit.remaining, userLimit.remaining)),
-    "X-RateLimit-Reset":     String(Math.min(ipLimit.resetIn, userLimit.resetIn)),
-  };
+  const allowed = await checkUserRateLimit(supabase, user.id, "parse-itinerary", 20);
+  if (!allowed) return rateLimitResponse();
 
   try {
     const raw = await req.json();
@@ -170,10 +132,7 @@ export async function POST(req: NextRequest) {
 
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return NextResponse.json(
-        { flights: [], rawExtraction: "" },
-        { headers: rateLimitHeaders },
-      );
+      return NextResponse.json({ flights: [], rawExtraction: "" });
     }
 
     const jsonParsed = JSON.parse(jsonMatch[0]) as {
@@ -228,10 +187,7 @@ export async function POST(req: NextRequest) {
         ? jsonParsed.rawExtraction.slice(0, 500)
         : "";
 
-    return NextResponse.json(
-      { flights, rawExtraction },
-      { headers: rateLimitHeaders },
-    );
+    return NextResponse.json({ flights, rawExtraction });
   } catch (err) {
     Sentry.captureException(err);
     return NextResponse.json({ error: "Failed to parse" }, { status: 500 });

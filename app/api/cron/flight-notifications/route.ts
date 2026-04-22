@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import webpush from "web-push";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
@@ -48,6 +49,14 @@ export async function GET(request: Request) {
 
   const now = new Date();
 
+  // ── Retry previously failed push notifications ───────────────────────────
+  try {
+    await retryFailedPushes(supabase);
+  } catch (err) {
+    Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "retry-failed-pushes" } });
+    cronErrors.push(`retryFailedPushes: ${String(err)}`);
+  }
+
   // ── Cron timing constants (cron-job.org fires every 30 min) ─────────────
   const STATUS_DEDUP_MIN       = 35;   // slightly wider than the 30-min cron interval
   const DELAY_THRESHOLD_MIN    = 20;   // minimum delay (minutes) to notify
@@ -77,7 +86,10 @@ export async function GET(request: Request) {
     .gte("iso_date", todayISO)
     .lte("iso_date", threeDaysISO);
 
-  if (error) cronErrors.push(`flights query: ${error.message}`);
+  if (error) {
+    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), { extra: { step: "flights-query" } });
+    cronErrors.push(`flights query: ${error.message}`);
+  }
   if (error || !flights?.length) {
     await supabase.from("cron_runs").insert({
       flights_processed: 0, notifications_sent: 0,
@@ -91,7 +103,13 @@ export async function GET(request: Request) {
   // Retry FA alert registration for flights that failed at add-time
   // (transient network error, FA briefly down, etc.)
   {
-    const WEBHOOK_URL = "https://tripcopilot.app/api/webhooks/flightaware";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://tripcopilot.app";
+    const webhookSecret = process.env.FLIGHTAWARE_WEBHOOK_SECRET;
+    const webhookUrl = new URL("/api/webhooks/flightaware", appUrl);
+    if (webhookSecret) {
+      webhookUrl.searchParams.set("token", webhookSecret);
+    }
+
     const { data: unregistered } = await supabase
       .from("flights")
       .select("id, flight_code, iso_date")
@@ -102,7 +120,11 @@ export async function GET(request: Request) {
     if (unregistered?.length) {
       await Promise.allSettled(
         unregistered.map(async (f) => {
-          const alert = await registerFlightAlert(f.flight_code, f.iso_date, WEBHOOK_URL);
+          const alert = await registerFlightAlert(
+            f.flight_code,
+            f.iso_date,
+            webhookUrl.toString(),
+          );
           if (alert?.alert_id) {
             await supabase.from("flights").update({ fa_alert_id: alert.alert_id }).eq("id", f.id);
           }
@@ -193,6 +215,7 @@ export async function GET(request: Request) {
         );
         for (const result of results) {
           if (result.status === "rejected") {
+            Sentry.captureException(result.reason instanceof Error ? result.reason : new Error(String(result.reason)), { extra: { step: "aerodatabox-allsettled" } });
             cronErrors.push(`AeroDataBox fetch error: ${String(result.reason)}`);
             continue;
           }
@@ -213,6 +236,7 @@ export async function GET(request: Request) {
                 .upsert({ iata, data: status, cached_at: now.toISOString() });
             }
           } catch (e) {
+            Sentry.captureException(e instanceof Error ? e : new Error(String(e)), { extra: { step: "aerodatabox-parse" } });
             cronErrors.push(`AeroDataBox ${iata}: ${String(e)}`);
           }
         }
@@ -596,6 +620,7 @@ export async function GET(request: Request) {
       }
     }
     } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "process-flight-row" } });
       cronErrors.push(`processFlightRow ${flight.flight_code} (${flight.iso_date}): ${String(err)}`);
     }
   }
@@ -652,6 +677,7 @@ export async function GET(request: Request) {
       notificationsSent++;
     }
     } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "process-weather-alert" } });
       cronErrors.push(`processWeatherAlert ${flight.flight_code} (${flight.iso_date}): ${String(err)}`);
     }
   }
@@ -663,6 +689,7 @@ export async function GET(request: Request) {
   // 30 min–4 h away. The shared tag means the browser replaces the previous
   // countdown notification rather than stacking them.
   async function processCountdown(flight: FlightRow): Promise<void> {
+    try {
     const userId: string = flight.trips.user_id;
     const departureTime: string | null = flight.departure_time;
     const isoDate: string = flight.iso_date;
@@ -704,9 +731,13 @@ export async function GET(request: Request) {
         : `${flightCode} · Departs in ${formatted}`;
     const body = `${originCode} → ${destCode}`;
 
-    const failed = await pushToAll(subs, supabase, { title, body, url: "/app" }, "flight_countdown");
+    const failed = await pushToAll(subs, supabase, { title, body, url: "/app" }, "flight_countdown", userId);
     notificationsSent++;
     notificationsFailed += failed;
+    } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "process-countdown" } });
+      cronErrors.push(`processCountdown: ${String(err)}`);
+    }
   }
 
   await sendInBatches(flightRows, processCountdown, 10);
@@ -778,6 +809,7 @@ export async function GET(request: Request) {
       }
     }
     } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "process-accommodation" } });
       cronErrors.push(`processAccommodation ${acc.name} (${acc.check_in_date}): ${String(err)}`);
     }
   }
@@ -870,7 +902,7 @@ export async function GET(request: Request) {
           : "Your target month is just 7 days away. Last chance.";
       }
 
-      notificationsFailed += await pushToAll(subs, supabase, { title, body, url: "/app" }, tag);
+      notificationsFailed += await pushToAll(subs, supabase, { title, body, url: "/app" }, tag, alert.user_id);
       notificationsSent++;
 
       await supabase.from("notification_log").insert({
@@ -949,7 +981,7 @@ export async function GET(request: Request) {
             ? `Tenés ${count} vuelo${count !== 1 ? "s" : ""} en los próximos 14 días. Próximo: ${next.flight_code} ${next.origin_code}→${next.destination_code} el ${nextDay}/${nextMonth}.`
             : `You have ${count} flight${count !== 1 ? "s" : ""} in the next 14 days. Next: ${next.flight_code} ${next.origin_code}→${next.destination_code} on ${nextMonth}/${nextDay}.`;
 
-          const failed = await pushToAll(subs, supabase, { title, body, url: "/app" }, briefingType);
+          const failed = await pushToAll(subs, supabase, { title, body, url: "/app" }, briefingType, userId);
           notificationsSent++;
           notificationsFailed += failed;
 
@@ -1033,7 +1065,7 @@ export async function GET(request: Request) {
           ? `Esta semana: ${flightCount} vuelo${flightCount !== 1 ? "s" : ""} registrado${flightCount !== 1 ? "s" : ""}.`
           : `This week: ${flightCount} flight${flightCount !== 1 ? "s" : ""} tracked.`;
 
-        notificationsFailed += await pushToAll(recapSubs, supabase, { title, body, url: "/app" }, recapType);
+        notificationsFailed += await pushToAll(recapSubs, supabase, { title, body, url: "/app" }, recapType, recapUserId);
         notificationsSent++;
 
         await supabase.from("notification_log").insert({
@@ -1116,7 +1148,7 @@ export async function GET(request: Request) {
           ? "¡Revisá tu checklist y confirmá todo antes de volar!"
           : "Check your checklist and confirm everything before you fly!";
 
-        notificationsFailed += await pushToAll(reEngageSubs, supabase, { title, body, url: "/app" }, reEngageType);
+        notificationsFailed += await pushToAll(reEngageSubs, supabase, { title, body, url: "/app" }, reEngageType, reEngageUserId);
         notificationsSent++;
 
         await supabase.from("notification_log").insert({
@@ -1202,6 +1234,7 @@ export async function GET(request: Request) {
             url: "/app?explore=1",
           },
           "explore",
+          travelUserId,
         );
         notificationsFailed += travelFailed;
         if (travelFailed < travelSubs.length) notificationsSent++;
@@ -1261,7 +1294,7 @@ export async function GET(request: Request) {
           const L = CRON_LABELS[annivLocale];
           const { title, body } = L.anniversary(years, destCity);
 
-          const annivFailed = await pushToAll(annivSubs, supabase, { title, body, url: "/app" }, anniversaryTag);
+          const annivFailed = await pushToAll(annivSubs, supabase, { title, body, url: "/app" }, anniversaryTag, userId);
           notificationsFailed += annivFailed;
           if (annivFailed < annivSubs.length) notificationsSent++;
 
@@ -1272,6 +1305,7 @@ export async function GET(request: Request) {
             sent_at: new Date().toISOString(),
           });
         } catch (err) {
+          Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "process-anniversary" } });
           cronErrors.push(`processAnniversary ${row.id}: ${String(err)}`);
         }
       }
@@ -1369,6 +1403,7 @@ export async function GET(request: Request) {
             supabase,
             { title: statsTitle, body: statsBody, url: "/app" },
             statsTag,
+            statsUserId,
           );
           notificationsSent++;
           notificationsFailed += statsFailed;
@@ -1379,6 +1414,7 @@ export async function GET(request: Request) {
             sent_at: new Date().toISOString(),
           });
         } catch (err) {
+          Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "weekly-stats" } });
           cronErrors.push(`weeklyStats ${statsUserId}: ${String(err)}`);
         }
       }
@@ -1447,7 +1483,8 @@ async function fetchFlightStatusFromAeroDataBox(
     const estimatedDeparture = actualLocal ? actualLocal.slice(11, 16) : null;
 
     return { delayMinutes, estimatedDeparture, gate, cancelled, landed };
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "fetch-flight-status-aerodatabox" } });
     return null;
   }
 }
@@ -1486,7 +1523,8 @@ async function fetchFlightStatusFromAviationStack(
     const estimatedDeparture = actualOrEst ? actualOrEst.slice(11, 16) : null;
 
     return { delayMinutes, estimatedDeparture, gate, cancelled, landed };
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "fetch-flight-status-aviationstack" } });
     return null;
   }
 }
@@ -1519,7 +1557,8 @@ async function fetchFlightStatusFromOpenSky(
       cancelled: false,
       landed: false,
     };
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "fetch-flight-status-opensky" } });
     return null;
   }
 }
@@ -1544,6 +1583,45 @@ async function fetchFlightStatus(
     return fetchFlightStatusFromOpenSky(flightCode, isoDate, originIcao, scheduledUnix);
   }
   return null;
+}
+
+// ── Push retry ────────────────────────────────────────────────────────────
+
+async function retryFailedPushes(supabase: SupabaseClient): Promise<void> {
+  const { data: failed } = await supabase
+    .from("failed_push_notifications")
+    .select("*")
+    .lt("attempts", 3)
+    .order("created_at", { ascending: true })
+    .limit(50);
+
+  for (const row of failed ?? []) {
+    try {
+      const { subscription, notification } = row.payload as {
+        subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
+        notification: object;
+      };
+      await webpush.sendNotification(subscription, JSON.stringify(notification));
+      await supabase.from("failed_push_notifications").delete().eq("id", row.id);
+    } catch (err: unknown) {
+      const status = (err as { statusCode?: number }).statusCode;
+      if (status === 404 || status === 410) {
+        await supabase.from("failed_push_notifications").delete().eq("id", row.id);
+        await supabase.from("push_subscriptions").delete().eq("endpoint", row.endpoint);
+      } else {
+        await supabase
+          .from("failed_push_notifications")
+          .update({ attempts: row.attempts + 1, last_attempted_at: new Date().toISOString() })
+          .eq("id", row.id);
+      }
+    }
+  }
+
+  await supabase
+    .from("failed_push_notifications")
+    .delete()
+    .gte("attempts", 3)
+    .lt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 }
 
 // ── Notification log helpers ───────────────────────────────────────────────
@@ -1594,7 +1672,7 @@ async function sendAndLogFlight(
   type: string,
   notification: { title: string; body: string; url: string },
 ): Promise<number> {
-  const failed = await pushToAll(subs, supabase, notification, type);
+  const failed = await pushToAll(subs, supabase, notification, type, userId);
   await supabase.from("notification_log").insert({
     flight_id: flightId,
     user_id: userId,
@@ -1612,7 +1690,7 @@ async function sendAndLogAccommodation(
   type: string,
   notification: { title: string; body: string; url: string },
 ): Promise<number> {
-  const failed = await pushToAll(subs, supabase, notification, type);
+  const failed = await pushToAll(subs, supabase, notification, type, userId);
   await supabase.from("notification_log").insert({
     accommodation_id: accommodationId,
     user_id: userId,
@@ -1627,6 +1705,7 @@ async function pushToAll(
   supabase: SupabaseClient,
   notification: { title: string; body: string; url: string },
   tag: string,
+  userId: string,
 ): Promise<number> {
   let failed = 0;
   await Promise.allSettled(
@@ -1641,7 +1720,15 @@ async function pushToAll(
         if (status === 404 || status === 410) {
           await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
         } else {
+          Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "push-to-all", tag } });
           failed++;
+          await supabase.from("failed_push_notifications").insert({
+            user_id: userId,
+            endpoint: sub.endpoint,
+            payload: { subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, notification },
+            attempts: 1,
+            last_attempted_at: new Date().toISOString(),
+          });
         }
       }
     }),
