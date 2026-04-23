@@ -141,7 +141,7 @@ export function useMetar(airportCodes: string[]): Record<string, MetarData> {
           if (!iata) continue;
 
           const visib   = parseVisibility(item.visib);
-          const ceiling = findCeiling(item.sky as Parameters<typeof findCeiling>[0]);
+          const ceiling = findCeiling((item.sky as unknown) as Parameters<typeof findCeiling>[0]);
           const isVRB   = String(item.wdir ?? "").toUpperCase() === "VRB";
 
           const metar: MetarData = {
@@ -152,7 +152,7 @@ export function useMetar(airportCodes: string[]): Record<string, MetarData> {
             windGustKt:     item.wgst != null ? Number(item.wgst) : undefined,
             visibilitySM:   visib,
             ceilingFt:      ceiling,
-            weatherString:  item.wxString as string | undefined || undefined,
+            weatherString:  typeof item.wxString === "string" ? item.wxString : undefined,
             tempC:          Math.round(Number(item.temp ?? 0)),
             flightCategory: deriveFlightCategory(visib, ceiling),
             rawOb:          String(item.rawOb ?? ""),
