@@ -1,7 +1,10 @@
 import { createClient } from "@/utils/supabase/server";
 import { registerFlightAlert } from "@/lib/flightaware";
 
-const WEBHOOK_URL = "https://tripcopilot.app/api/webhooks/flightaware";
+const WEBHOOK_BASE = "https://tripcopilot.app/api/webhooks/flightaware";
+const WEBHOOK_URL = process.env.FLIGHTAWARE_WEBHOOK_SECRET
+  ? `${WEBHOOK_BASE}?token=${process.env.FLIGHTAWARE_WEBHOOK_SECRET}`
+  : WEBHOOK_BASE;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
