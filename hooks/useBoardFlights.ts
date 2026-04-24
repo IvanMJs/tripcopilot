@@ -114,19 +114,34 @@ export function useBoardFlights() {
     const supabase = createClient();
 
     async function load() {
-      const { data: trip } = await supabase
+      const { data: trips } = await supabase
         .from("trips")
-        .select("id, flights(*)")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
+        .select("id, created_at, flights(*)")
+        .order("created_at", { ascending: false });
 
-      if (!trip?.flights) {
+      if (!trips || trips.length === 0) {
         setLoading(false);
         return;
       }
 
-      const dbFlights = (trip.flights as DbFlight[]).sort((a, b) => a.sort_order - b.sort_order);
+      const todayStr = new Date().toISOString().split("T")[0];
+
+      // Collect all flights across all trips
+      const allFlights: (DbFlight & { tripCreatedAt: string })[] = trips.flatMap((trip) =>
+        ((trip.flights ?? []) as DbFlight[]).map((f) => ({ ...f, tripCreatedAt: trip.created_at as string }))
+      );
+
+      // Prefer upcoming flights (date >= today); fall back to most recent trip's flights
+      const upcoming = allFlights.filter((f) => f.iso_date >= todayStr);
+      const source = upcoming.length > 0
+        ? upcoming
+        : (trips[0].flights as DbFlight[] ?? []);
+
+      const dbFlights = [...source].sort((a, b) => {
+        const dateDiff = a.iso_date.localeCompare(b.iso_date);
+        return dateDiff !== 0 ? dateDiff : a.sort_order - b.sort_order;
+      });
+
       const tripFlights = dbFlights.map(dbToTripFlight);
 
       // Fetch live gate/status for today's and tomorrow's flights
