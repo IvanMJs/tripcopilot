@@ -880,6 +880,65 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── TRIPBOARD ─────────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+
+            {/* Text side */}
+            <div className="flex-1 text-center lg:text-left">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-amber-500/60 mb-4">
+                ✈ Nuevo · TripBoard
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight mb-5">
+                Tu tablero de salidas<br />
+                <span className="text-amber-400">al estilo aeropuerto</span>
+              </h2>
+              <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-md mx-auto lg:mx-0">
+                Abrí <strong className="text-white">/board</strong> y ves todos tus vuelos con animaciones
+                split-flap en tiempo real — hora, puerta, estado. Girá el celular y aparece
+                el tablero completo estilo aeropuerto. Compartí el link y tu familia
+                sabe exactamente en qué vuelo estás.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <span className="text-amber-400">◉</span> Animaciones split-flap reales
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <span className="text-amber-400">◉</span> Puerta en tiempo real
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <span className="text-amber-400">◉</span> Link público compartible
+                </div>
+              </div>
+            </div>
+
+            {/* Image side */}
+            <div className="flex-shrink-0 flex justify-center">
+              <div
+                className="relative"
+                style={{ filter: "drop-shadow(0 32px 80px rgba(255,184,0,0.18))" }}
+              >
+                <img
+                  src="/tripboard-preview.png"
+                  alt="TripBoard — tablero de vuelos estilo aeropuerto"
+                  width={280}
+                  height={497}
+                  className="rounded-[28px] border border-white/[0.07]"
+                  style={{ background: "#07070d" }}
+                />
+                {/* Amber glow ring */}
+                <div
+                  className="absolute inset-0 rounded-[28px] pointer-events-none"
+                  style={{ boxShadow: "0 0 0 1px rgba(255,184,0,0.15), inset 0 0 60px rgba(255,184,0,0.03)" }}
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* ── VIDEO DEMO ────────────────────────────────────────────────────── */}
       <section id="demo" className="py-16 px-4">
         <div className="max-w-5xl mx-auto">

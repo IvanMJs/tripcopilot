@@ -3,10 +3,9 @@
 const A = "#FFB800";
 const A35 = "rgba(255,184,0,.35)";
 const T18 = "rgba(232,232,240,.18)";
-const T45 = "rgba(232,232,240,.45)";
 const MONO = "'JetBrains Mono','Courier New',monospace";
 
-type Screen = "board" | "share";
+export type Screen = "board" | "share" | "public";
 
 interface BottomNavProps {
   active: Screen;
@@ -14,8 +13,9 @@ interface BottomNavProps {
 }
 
 const TABS: { id: Screen; label: string; icon: string }[] = [
-  { id: "board", label: "MIS VUELOS", icon: "✈" },
-  { id: "share", label: "COMPARTIR", icon: "⬡" },
+  { id: "board",  label: "MIS VUELOS", icon: "✈" },
+  { id: "share",  label: "COMPARTIR",  icon: "⬡" },
+  { id: "public", label: "PÚBLICO",    icon: "◎" },
 ];
 
 export function BottomNav({ active, onChange }: BottomNavProps) {

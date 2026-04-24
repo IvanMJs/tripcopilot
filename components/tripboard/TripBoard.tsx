@@ -4,12 +4,11 @@ import { useState, useEffect } from "react";
 import { useBoardFlights } from "@/hooks/useBoardFlights";
 import { BoardScreen } from "./BoardScreen";
 import { ShareCard } from "./ShareCard";
-import { BottomNav } from "./BottomNav";
+import { PublicLinkScreen } from "./PublicLinkScreen";
+import { BottomNav, type Screen } from "./BottomNav";
 import { LandscapeBoard } from "./LandscapeBoard";
 
 const MONO = "'JetBrains Mono','Courier New',monospace";
-
-type Screen = "board" | "share";
 
 export function TripBoard() {
   const { flights, loading } = useBoardFlights();
@@ -17,7 +16,6 @@ export function TripBoard() {
   const [litId, setLitId] = useState<string | null>(null);
   const [isLandscape, setIsLandscape] = useState(false);
 
-  // Detect orientation
   useEffect(() => {
     const mq = window.matchMedia("(orientation: landscape) and (min-width: 600px)");
     const update = (e: MediaQueryListEvent | MediaQueryList) => setIsLandscape(e.matches);
@@ -26,7 +24,6 @@ export function TripBoard() {
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  // Highlight newly-updated flights from websocket / FA webhook
   useEffect(() => {
     if (flights.length === 0) return;
     const boarding = flights.find((f) => f.status === "boarding");
@@ -56,12 +53,10 @@ export function TripBoard() {
     );
   }
 
-  // Landscape: full departure-board layout
   if (isLandscape) {
     return <LandscapeBoard flights={flights} />;
   }
 
-  // Portrait: phone-first with bottom nav
   return (
     <div
       style={{
@@ -80,6 +75,7 @@ export function TripBoard() {
         />
       )}
       {screen === "share" && <ShareCard flights={flights} />}
+      {screen === "public" && <PublicLinkScreen />}
 
       <BottomNav active={screen} onChange={setScreen} />
     </div>
