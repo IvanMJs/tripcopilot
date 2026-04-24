@@ -102,7 +102,7 @@ export function BoardScreen({ flights, litId, onShare }: BoardScreenProps) {
               textAlign: "center",
               fontFamily: MONO,
               fontSize: 11,
-              color: "rgba(232,232,240,.35)",
+              color: "rgba(232,232,240,.60)",
             }}
           >
             Sin vuelos próximos

@@ -45,8 +45,8 @@
   --surface-3: rgba(30, 30, 46, 0.95);
 
   --text-primary: var(--foreground);
-  --text-secondary: rgba(232, 232, 240, 0.7);
-  --text-muted: rgba(232, 232, 240, 0.5);
+  --text-secondary: rgba(232, 232, 240, 0.80);
+  --text-muted: rgba(232, 232, 240, 0.62);
 
   --border-subtle: rgba(255, 255, 255, 0.04);
   --border-default: rgba(255, 255, 255, 0.08);

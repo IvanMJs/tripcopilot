@@ -73,7 +73,7 @@ export function LandscapeBoard({ flights }: LandscapeBoardProps) {
         }}
       >
         {["HORA", "DESTINO", "ORIG", "VUELO", "PUERTA", "ESTADO"].map((h) => (
-          <span key={h} style={{ fontSize: 8, color: T18, letterSpacing: "0.14em" }}>
+          <span key={h} style={{ fontSize: 8, color: "rgba(232,232,240,.50)", letterSpacing: "0.14em" }}>
             {h}
           </span>
         ))}
@@ -96,10 +96,10 @@ export function LandscapeBoard({ flights }: LandscapeBoardProps) {
               <SplitFlapTime time={f.time} sz={24} />
               <div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", lineHeight: 1 }}>{f.dest}</div>
-                <div style={{ fontSize: 9, color: T35, marginTop: 2, letterSpacing: "0.05em" }}>{f.city}</div>
+                <div style={{ fontSize: 9, color: "rgba(232,232,240,.70)", marginTop: 2, letterSpacing: "0.05em" }}>{f.city}</div>
               </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: T35 }}>{f.orig}</span>
-              <span style={{ fontSize: 13, color: A60, letterSpacing: "0.04em" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(232,232,240,.70)" }}>{f.orig}</span>
+              <span style={{ fontSize: 13, color: "rgba(255,184,0,.85)", letterSpacing: "0.04em" }}>
                 {f.airline} {f.num}
               </span>
               <span style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{f.gate}</span>

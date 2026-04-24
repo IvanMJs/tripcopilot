@@ -57,7 +57,7 @@ export function FlightRow({ flight, idx, lit }: FlightRowProps) {
           style={{
             fontFamily: "'JetBrains Mono','Courier New',monospace",
             fontSize: 10,
-            color: "rgba(232,232,240,.35)",
+            color: "rgba(232,232,240,.70)",
             marginTop: 3,
             letterSpacing: "0.05em",
           }}
@@ -74,10 +74,10 @@ export function FlightRow({ flight, idx, lit }: FlightRowProps) {
             fontSize: 11,
           }}
         >
-          <span style={{ color: "rgba(255,184,0,.6)" }}>
+          <span style={{ color: "rgba(255,184,0,.85)" }}>
             {flight.airline} {flight.num} · GATE {flight.gate}
           </span>
-          <span style={{ color: "rgba(232,232,240,.35)" }}>{flight.cd}</span>
+          <span style={{ color: "rgba(232,232,240,.65)" }}>{flight.cd}</span>
         </div>
       </div>
     </div>
