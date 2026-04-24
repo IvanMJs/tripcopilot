@@ -518,7 +518,7 @@ export function TripSocialView({ locale, userId }: Props) {
                 className="flex items-center gap-3 hover:bg-white/[0.04] rounded-xl p-2 -mx-2 transition-colors"
               >
                 <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-black text-white">{(f.displayName ?? f.username)[0]?.toUpperCase()}</span>
+                  <span className="text-sm font-black text-white">{(f.displayName ?? f.username ?? "?")[0]?.toUpperCase()}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-white truncate">{f.displayName ?? f.username}</p>
@@ -549,7 +549,7 @@ export function TripSocialView({ locale, userId }: Props) {
                 className="flex items-center gap-3 hover:bg-white/[0.04] rounded-xl p-2 -mx-2 transition-colors"
               >
                 <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-black text-white">{(f.displayName ?? f.username)[0]?.toUpperCase()}</span>
+                  <span className="text-sm font-black text-white">{(f.displayName ?? f.username ?? "?")[0]?.toUpperCase()}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-white truncate">{f.displayName ?? f.username}</p>
@@ -586,7 +586,7 @@ export function TripSocialView({ locale, userId }: Props) {
                 >
                   <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
                     <span className="text-sm font-black text-white">
-                      {(item.displayName ?? item.username)[0]?.toUpperCase()}
+                      {(item.displayName ?? item.username ?? "?")[0]?.toUpperCase()}
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
