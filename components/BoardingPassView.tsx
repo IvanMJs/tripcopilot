@@ -100,7 +100,7 @@ export function BoardingPassView({
             <X className="h-4 w-4 text-white" />
           </button>
 
-          <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#FFB800] mb-1">
             {flight.airlineName}
           </p>
           <p className="text-6xl font-black text-white tracking-tight leading-none">
@@ -116,8 +116,8 @@ export function BoardingPassView({
             <p className="text-xs text-gray-400 mt-1 truncate max-w-[90px]">{originCity}</p>
           </div>
           <div className="flex flex-col items-center gap-1 flex-1">
-            <Plane className="h-5 w-5 text-violet-400 rotate-0" />
-            <div className="h-px w-full bg-violet-800/50" />
+            <Plane className="h-5 w-5 text-[#FFB800] rotate-0" />
+            <div className="h-px w-full bg-[rgba(255,184,0,0.10)]" />
           </div>
           <div className="text-center">
             <p className="text-4xl font-black text-white">{flight.destinationCode}</p>
@@ -181,7 +181,7 @@ export function BoardingPassView({
                       transition={{ duration: 0.3, ease: "easeIn" }}
                       onAnimationComplete={() => setFlipped(true)}
                       style={{ backfaceVisibility: "hidden" }}
-                      className="w-full h-48 rounded-xl bg-violet-950/50 border border-violet-700/30 flex items-center justify-center overflow-hidden"
+                      className="w-full h-48 rounded-xl bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] flex items-center justify-center overflow-hidden"
                     >
                       {/* Boarding pass back pattern */}
                       <div className="absolute inset-0 opacity-20"
@@ -189,7 +189,7 @@ export function BoardingPassView({
                           backgroundImage: "repeating-linear-gradient(45deg, rgba(139,92,246,0.4) 0, rgba(139,92,246,0.4) 1px, transparent 1px, transparent 12px), repeating-linear-gradient(-45deg, rgba(139,92,246,0.4) 0, rgba(139,92,246,0.4) 1px, transparent 1px, transparent 12px)",
                         }}
                       />
-                      <Plane className="h-10 w-10 text-violet-400/60" />
+                      <Plane className="h-10 w-10 text-[#FFB800]/60" />
                     </motion.div>
                   ) : (
                     <motion.div
@@ -200,7 +200,7 @@ export function BoardingPassView({
                       style={{ backfaceVisibility: "hidden" }}
                       className="w-full relative"
                     >
-                      <div className="w-full rounded-xl overflow-hidden border border-violet-800/30 relative">
+                      <div className="w-full rounded-xl overflow-hidden border border-[rgba(255,184,0,0.25)] relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={imageUrl}
@@ -247,22 +247,22 @@ export function BoardingPassView({
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="w-full group flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-violet-700/40 hover:border-violet-500/60 bg-violet-950/20 hover:bg-violet-950/40 py-8 transition-all disabled:opacity-50"
+                    className="w-full group flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[rgba(255,184,0,0.25)] hover:border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.06)] hover:bg-[rgba(255,184,0,0.06)] py-8 transition-all disabled:opacity-50"
                   >
                     {uploading ? (
                       <>
-                        <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
-                        <span className="text-xs font-semibold text-violet-300">
+                        <Loader2 className="h-8 w-8 animate-spin text-[#FFB800]" />
+                        <span className="text-xs font-semibold text-[#FFB800]">
                           {locale === "es" ? "Subiendo…" : "Uploading…"}
                         </span>
                       </>
                     ) : (
                       <>
-                        <div className="h-14 w-14 rounded-2xl bg-violet-900/40 border border-violet-700/40 group-hover:bg-violet-800/50 flex items-center justify-center transition-colors">
-                          <Camera className="h-7 w-7 text-violet-400 group-hover:text-violet-300 transition-colors" />
+                        <div className="h-14 w-14 rounded-2xl bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] group-hover:bg-[rgba(255,184,0,0.10)] flex items-center justify-center transition-colors">
+                          <Camera className="h-7 w-7 text-[#FFB800] group-hover:text-[#FFB800] transition-colors" />
                         </div>
                         <div className="text-center">
-                          <p className="text-sm font-bold text-violet-300 group-hover:text-violet-200 transition-colors">
+                          <p className="text-sm font-bold text-[#FFB800] group-hover:text-[#FFC933] transition-colors">
                             {locale === "es" ? "Subir boarding pass" : "Upload boarding pass"}
                           </p>
                           <p className="text-xs text-gray-600 mt-0.5">

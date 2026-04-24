@@ -106,7 +106,7 @@ function LinkButton({
 
 const CARD_ACCENTS = [
   { bar: "bg-blue-400/80",   border: "border-blue-500/25",   bg: "bg-blue-950/35"   },
-  { bar: "bg-violet-400/80", border: "border-violet-500/25", bg: "bg-violet-950/35" },
+  { bar: "bg-[rgba(255,184,0,0.25)]/80", border: "border-[rgba(255,184,0,0.25)]", bg: "bg-[rgba(255,184,0,0.06)]" },
   { bar: "bg-teal-400/80",   border: "border-teal-500/25",   bg: "bg-teal-950/35"   },
   { bar: "bg-amber-400/80",  border: "border-amber-500/25",  bg: "bg-amber-950/35"  },
   { bar: "bg-rose-400/80",   border: "border-rose-500/25",   bg: "bg-rose-950/35"   },

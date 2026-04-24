@@ -98,7 +98,7 @@ export function CountryCelebration({
             {flag}
           </p>
           <p className="text-xl font-black text-gray-800 mb-1">{country}</p>
-          <p className="text-sm text-violet-700 font-semibold">{statLine}</p>
+          <p className="text-sm text-[#FFB800] font-semibold">{statLine}</p>
         </motion.div>
       </motion.div>
     </div>

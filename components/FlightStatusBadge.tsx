@@ -130,7 +130,7 @@ export function FlightStatusBadge({ flightIata, isoDate, locale }: Props) {
           {/* B2 — Departure gate (prominent) */}
           {data.departure.gate && (
             <span className="flex items-center gap-1 text-sm font-semibold text-white">
-              <DoorOpen className="w-3.5 h-3.5 text-violet-400" />
+              <DoorOpen className="w-3.5 h-3.5 text-[#FFB800]" />
               {locale === "en" ? "Gate" : "Puerta"} {data.departure.gate}
               {data.departure.terminal ? ` · T${data.departure.terminal}` : ""}
             </span>

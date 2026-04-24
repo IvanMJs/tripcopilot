@@ -200,7 +200,7 @@ export function TripSummaryHero({ statusMap, locale, flights }: TripSummaryHeroP
           </div>
           <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-violet-500 rounded-full transition-all"
+              className="h-full bg-[rgba(255,184,0,0.12)] rounded-full transition-all"
               style={{ width: `${(completedFlights / totalFlights) * 100}%` }}
             />
           </div>

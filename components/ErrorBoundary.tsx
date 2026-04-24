@@ -63,7 +63,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <div className="flex gap-3">
             <button
               onClick={this.handleRetry}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500 active:scale-95"
+              className="rounded-lg bg-[#FFB800] px-4 py-2 text-sm font-medium text-[#07070d] transition hover:bg-[#FFC933] active:scale-95"
             >
               Reintentar / Retry
             </button>

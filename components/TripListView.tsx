@@ -154,7 +154,7 @@ export function TripListView({
         </div>
         <button
           onClick={onCreateTrip}
-          className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-4 py-2 transition-all tap-scale"
+          className="flex items-center gap-1.5 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-sm font-semibold px-4 py-2 transition-all tap-scale"
         >
           <Plus className="h-4 w-4" />
           {locale === "es" ? "Nuevo" : "New"}
@@ -203,7 +203,7 @@ export function TripListView({
             : daysUntil === 1
             ? "from-blue-950/60 to-blue-900/40 border-blue-700/40 text-blue-300 shadow-blue-900/20"
             : daysUntil <= 7
-            ? "from-indigo-950/60 to-violet-950/40 border-indigo-700/40 text-indigo-300 shadow-indigo-900/20"
+            ? "from-indigo-950/60 to-[#E6A500]/40 border-indigo-700/40 text-indigo-300 shadow-indigo-900/20"
             : "from-gray-900/60 to-gray-900/40 border-white/[0.08] text-gray-400 shadow-black/20";
 
         return (
@@ -226,7 +226,7 @@ export function TripListView({
       {trips.length === 0 && (
         <button
           onClick={onCreateTrip}
-          className="fixed bottom-24 right-4 z-30 w-14 h-14 rounded-full btn-primary shadow-lg shadow-violet-900/40 flex items-center justify-center"
+          className="fixed bottom-24 right-4 z-30 w-14 h-14 rounded-full btn-primary shadow-lg shadow-[rgba(255,184,0,0.20)] flex items-center justify-center"
           aria-label={locale === "es" ? "Crear viaje" : "Create trip"}
         >
           <Plus className="w-6 h-6" />
@@ -235,7 +235,7 @@ export function TripListView({
 
       {/* Example trip card */}
       {exampleTrip && (
-        <div className="rounded-2xl border border-dashed border-violet-600/40 overflow-hidden bg-violet-950/10">
+        <div className="rounded-2xl border border-dashed border-[rgba(255,184,0,0.25)] overflow-hidden bg-[rgba(255,184,0,0.06)]">
           <div className="flex items-center gap-2 pr-3">
             <button
               onClick={onSelectExample}
@@ -243,7 +243,7 @@ export function TripListView({
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-violet-400 border border-violet-600/40 bg-violet-900/30 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#FFB800] border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.08)] px-1.5 py-0.5 rounded">
                     {locale === "es" ? "Ejemplo" : "Example"}
                   </span>
                 </div>
@@ -303,7 +303,7 @@ export function TripListView({
             key={trip.id}
             className={`rounded-2xl border overflow-hidden transition-all ${
               isShared
-                ? "border-violet-700/40 hover:border-violet-600/60"
+                ? "border-[rgba(255,184,0,0.25)] hover:border-[rgba(255,184,0,0.25)]"
                 : "border-white/[0.07] hover:border-white/[0.14]"
             } ${isDepartureDay ? "animate-pulse-aura" : ""}`}
             style={{ background: "linear-gradient(150deg, rgba(14,14,24,0.97) 0%, rgba(9,9,18,0.99) 100%)" }}
@@ -317,7 +317,7 @@ export function TripListView({
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-base font-bold text-white truncate">{trip.name}</span>
                     {isShared && (
-                      <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-violet-900/30 border border-violet-700/40 text-violet-300">
+                      <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] text-[#FFB800]">
                         {locale === "es" ? "Compartido" : "Shared"}
                       </span>
                     )}
@@ -345,7 +345,7 @@ export function TripListView({
                       {flightLabel}
                     </span>
                     {nextFlightLabel && (
-                      <span className={`text-xs font-medium ${nextFlightLabel.isToday ? "text-red-400" : "text-violet-400"}`}>
+                      <span className={`text-xs font-medium ${nextFlightLabel.isToday ? "text-red-400" : "text-[#FFB800]"}`}>
                         {nextFlightLabel.label}
                       </span>
                     )}
@@ -375,7 +375,7 @@ export function TripListView({
         <div className="flex justify-center pt-1">
           <button
             onClick={() => onViewArchivedTrip()}
-            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-violet-400 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-[#FFB800] transition-colors"
           >
             <History className="h-3.5 w-3.5" />
             {locale === "es"
@@ -421,7 +421,7 @@ export function TripListView({
                     <div className="flex justify-end px-1">
                       <button
                         onClick={() => onCreateSimilar(trip)}
-                        className="text-xs font-medium text-gray-500 hover:text-violet-400 border border-white/[0.06] hover:border-violet-500/40 rounded-lg px-3 py-1 transition-colors"
+                        className="text-xs font-medium text-gray-500 hover:text-[#FFB800] border border-white/[0.06] hover:border-[rgba(255,184,0,0.25)] rounded-lg px-3 py-1 transition-colors"
                       >
                         {locale === "es" ? "+ Crear similar" : "+ Create similar"}
                       </button>

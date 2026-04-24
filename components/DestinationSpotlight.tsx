@@ -232,10 +232,10 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
       <div className="fixed inset-0 z-[70] flex items-center justify-center px-6 bg-black/60 backdrop-blur-sm">
         <div className="relative w-full max-w-sm rounded-2xl p-6" style={CARD_STYLE}>
           <div className="space-y-3 animate-pulse">
-            <div className="h-4 bg-violet-200/60 rounded w-1/2 mx-auto" />
-            <div className="h-10 bg-violet-200/40 rounded w-1/3 mx-auto" />
+            <div className="h-4 bg-[rgba(255,184,0,0.12)] rounded w-1/2 mx-auto" />
+            <div className="h-10 bg-[rgba(255,184,0,0.12)] rounded w-1/3 mx-auto" />
             <div className="h-3 bg-gray-200/60 rounded w-2/3 mx-auto" />
-            <div className="h-px bg-violet-200/40 my-2" />
+            <div className="h-px bg-[rgba(255,184,0,0.12)] my-2" />
             <div className="h-3 bg-gray-200/40 rounded w-1/2 mx-auto" />
           </div>
         </div>
@@ -291,7 +291,7 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
             aria-hidden
           >
             <span
-              className="text-[72px] font-black text-violet-400/10 tracking-widest"
+              className="text-[72px] font-black text-[#FFB800]/10 tracking-widest"
               style={{ transform: "rotate(-20deg)", fontFamily: "serif" }}
             >
               DESTINO
@@ -308,7 +308,7 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
             </button>
 
             {/* Header */}
-            <p className="text-[10px] font-black tracking-[0.25em] text-violet-500 uppercase text-center mb-4">
+            <p className="text-[10px] font-black tracking-[0.25em] text-[#FFB800] uppercase text-center mb-4">
               {locale === "es" ? "✨ Destino Actual" : "✨ Current Destination"}
             </p>
 
@@ -326,7 +326,7 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
             </div>
 
             {/* Divider */}
-            <div className="border-t border-dashed border-violet-300 my-3" />
+            <div className="border-t border-dashed border-[rgba(255,184,0,0.35)] my-3" />
 
             {/* Weather */}
             {(weatherIcon !== null || weatherTemp !== null) && (
@@ -352,36 +352,36 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
               ) : exploreData ? (
                 <div className="grid grid-cols-2 gap-2">
                   {/* Currency */}
-                  <div className="rounded-xl bg-white/50 border border-violet-100 px-3 py-2">
-                    <p className="text-[9px] font-semibold uppercase tracking-widest text-violet-400 mb-0.5">
+                  <div className="rounded-xl bg-white/50 border border-[rgba(255,184,0,0.35)] px-3 py-2">
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-[#FFB800] mb-0.5">
                       💰 {locale === "es" ? "Moneda" : "Currency"}
                     </p>
                     <p className="text-sm font-medium text-gray-700 leading-snug">{exploreData.currency}</p>
                   </div>
                   {/* Key phrase */}
-                  <div className="rounded-xl bg-white/50 border border-violet-100 px-3 py-2">
-                    <p className="text-[9px] font-semibold uppercase tracking-widest text-violet-400 mb-0.5">
+                  <div className="rounded-xl bg-white/50 border border-[rgba(255,184,0,0.35)] px-3 py-2">
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-[#FFB800] mb-0.5">
                       🗣️ {locale === "es" ? "Frase clave" : "Key phrase"}
                     </p>
                     <p className="text-sm font-medium text-gray-700 leading-snug">{exploreData.phrase}</p>
                   </div>
                   {/* Must try */}
-                  <div className="rounded-xl bg-white/50 border border-violet-100 px-3 py-2">
-                    <p className="text-[9px] font-semibold uppercase tracking-widest text-violet-400 mb-0.5">
+                  <div className="rounded-xl bg-white/50 border border-[rgba(255,184,0,0.35)] px-3 py-2">
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-[#FFB800] mb-0.5">
                       🍽️ {locale === "es" ? "Imperdible" : "Must try"}
                     </p>
                     <p className="text-sm font-medium text-gray-700 leading-snug">{exploreData.mustTry}</p>
                   </div>
                   {/* Watch out */}
-                  <div className="rounded-xl bg-white/50 border border-violet-100 px-3 py-2">
-                    <p className="text-[9px] font-semibold uppercase tracking-widest text-violet-400 mb-0.5">
+                  <div className="rounded-xl bg-white/50 border border-[rgba(255,184,0,0.35)] px-3 py-2">
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-[#FFB800] mb-0.5">
                       ⚠️ {locale === "es" ? "Ojo con" : "Watch out"}
                     </p>
                     <p className="text-sm font-medium text-gray-700 leading-snug">{exploreData.watchOut}</p>
                   </div>
                   {/* Vibe — full width */}
-                  <div className="col-span-2 rounded-xl bg-violet-50/80 border border-violet-200/60 px-3 py-2 text-center">
-                    <p className="text-[9px] font-semibold uppercase tracking-widest text-violet-400 mb-0.5">✨ Vibe</p>
+                  <div className="col-span-2 rounded-xl bg-[rgba(255,184,0,0.12)] border border-[rgba(255,184,0,0.25)] px-3 py-2 text-center">
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-[#FFB800] mb-0.5">✨ Vibe</p>
                     <p className="text-sm font-medium text-gray-700 italic leading-snug">&ldquo;{exploreData.vibe}&rdquo;</p>
                   </div>
                 </div>
@@ -390,8 +390,8 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
 
             {/* Visited banner */}
             {showVisitedBanner && !placeAdded && (
-              <div className="mt-1 rounded-xl border border-violet-300/60 bg-violet-50/80 px-3 py-2.5">
-                <p className="text-xs text-violet-700 text-center mb-2">
+              <div className="mt-1 rounded-xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.12)] px-3 py-2.5">
+                <p className="text-xs text-[#FFB800] text-center mb-2">
                   {locale === "es"
                     ? `Parece que estás en ${geoPlace.country} ${flag} — ¿Marcarlo como visitado?`
                     : `Looks like you're in ${geoPlace.country} ${flag} — Mark it as visited?`}
@@ -400,7 +400,7 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
                   <button
                     onClick={() => void handleConfirmVisited()}
                     disabled={addingPlace}
-                    className="flex items-center gap-1 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white text-xs font-semibold px-3 py-1.5 transition-colors"
+                    className="flex items-center gap-1 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-60 text-[#07070d] text-xs font-semibold px-3 py-1.5 transition-colors"
                   >
                     <Check className="h-3 w-3" />
                     {locale === "es" ? "Confirmar" : "Confirm"}
@@ -416,7 +416,7 @@ export function DestinationSpotlight({ position, locale, onClose }: DestinationS
             )}
 
             {placeAdded && (
-              <p className="text-xs text-violet-600 text-center font-semibold mt-1">
+              <p className="text-xs text-[#FFB800] text-center font-semibold mt-1">
                 {locale === "es" ? `✓ ${geoPlace.country} marcado como visitado` : `✓ ${geoPlace.country} marked as visited`}
               </p>
             )}

@@ -31,9 +31,9 @@ export function InstallBanner({ locale }: InstallBannerProps) {
   if (!canInstall || isDismissed) return null;
 
   return (
-    <div className="rounded-2xl border border-violet-700/30 bg-gradient-to-br from-violet-950/50 to-transparent px-4 py-4 flex items-center gap-3">
+    <div className="rounded-2xl border border-[rgba(255,184,0,0.25)] bg-gradient-to-br from-[rgba(7,7,13,0.50)] to-transparent px-4 py-4 flex items-center gap-3">
       {/* App icon placeholder */}
-      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-900/40">
+      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#FFB800] to-[#E6A500] flex items-center justify-center shrink-0 shadow-lg shadow-[rgba(255,184,0,0.25)]">
         <span className="text-2xl" aria-hidden="true">✈</span>
       </div>
 
@@ -51,7 +51,7 @@ export function InstallBanner({ locale }: InstallBannerProps) {
         </button>
         <button
           onClick={install}
-          className="rounded-lg bg-violet-600 hover:bg-violet-500 active:bg-violet-700 transition-colors px-3 py-1.5 text-xs font-bold text-white"
+          className="rounded-lg bg-[#FFB800] hover:bg-[#FFC933] active:bg-[#E6A500] transition-colors px-3 py-1.5 text-xs font-bold text-[#07070d]"
         >
           {L.install}
         </button>

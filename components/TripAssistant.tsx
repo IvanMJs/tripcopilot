@@ -141,7 +141,7 @@ export function TripAssistant({
             }
             className={[
               "relative flex h-14 w-14 items-center justify-center rounded-full shadow-2xl",
-              "bg-gradient-to-br from-blue-600 to-violet-600",
+              "bg-gradient-to-br from-blue-600 to-[#FFC933]",
               hasNewAlert ? "animate-pulse" : "",
             ]
               .filter(Boolean)
@@ -168,7 +168,7 @@ export function TripAssistant({
           {/* Header */}
           <div className="flex items-center justify-between gap-3 rounded-t-2xl border-b border-white/10 bg-gray-800/80 px-4 py-3 backdrop-blur-sm">
             <div className="flex min-w-0 items-center gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-600">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-[#FFC933]">
                 <Bot className="h-4 w-4 text-white" />
               </div>
               <div className="min-w-0">
@@ -202,7 +202,7 @@ export function TripAssistant({
           <div className="flex h-80 flex-col gap-3 overflow-y-auto p-4">
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-4 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-600/20 to-violet-600/20 ring-1 ring-white/10">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-600/20 to-[#FFC933]/20 ring-1 ring-white/10">
                   <Bot className="h-6 w-6 text-blue-400" />
                 </div>
                 <p className="text-xs text-gray-400">
@@ -236,7 +236,7 @@ export function TripAssistant({
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-2`}
               >
                 {msg.role === "assistant" && (
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center self-end rounded-full bg-gradient-to-br from-blue-600 to-violet-600">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center self-end rounded-full bg-gradient-to-br from-blue-600 to-[#FFC933]">
                     <Bot className="h-3.5 w-3.5 text-white" />
                   </div>
                 )}
@@ -244,7 +244,7 @@ export function TripAssistant({
                   className={[
                     "max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
                     msg.role === "user"
-                      ? "rounded-br-sm bg-blue-600 text-white"
+                      ? "rounded-br-sm bg-[#FFB800] text-[#07070d]"
                       : "rounded-bl-sm bg-gray-800 text-gray-100",
                     msg.role === "assistant" && !msg.content
                       ? "flex items-center gap-1.5"
@@ -310,7 +310,7 @@ export function TripAssistant({
               onClick={() => handleSend(inputText)}
               disabled={isLoading || !inputText.trim()}
               aria-label={locale === "es" ? "Enviar" : "Send"}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition-colors hover:bg-blue-500 disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFB800] text-[#07070d] transition-colors hover:bg-[#FFC933] disabled:opacity-40"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

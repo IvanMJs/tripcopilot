@@ -175,7 +175,7 @@ export function AllTimeStatsDashboard({
           emoji="🛫"
           label={L.totalFlights}
           numericTarget={stats.totalFlights}
-          color="bg-violet-500/15"
+          color="bg-[rgba(255,184,0,0.12)]"
           delay={0.12}
         />
         <StatTile

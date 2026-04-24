@@ -88,7 +88,7 @@ export function FlightArcAnimation({ originIata, destIata, onComplete }: FlightA
           <span className="font-mono text-3xl font-black text-white tracking-wider">
             {originIata}
           </span>
-          <span className="text-violet-400 font-bold text-2xl">→</span>
+          <span className="text-[#FFB800] font-bold text-2xl">→</span>
           <span className="font-mono text-3xl font-black text-white tracking-wider">
             {destIata}
           </span>

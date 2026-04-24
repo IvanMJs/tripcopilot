@@ -19,7 +19,7 @@ const LABELS = {
     testimonials: [
       {
         initials: "MG",
-        gradient: "from-pink-500 to-violet-600",
+        gradient: "from-pink-500 to-[#FFC933]",
         name: "María G.",
         location: "Buenos Aires",
         quote:
@@ -54,7 +54,7 @@ const LABELS = {
     testimonials: [
       {
         initials: "MG",
-        gradient: "from-pink-500 to-violet-600",
+        gradient: "from-pink-500 to-[#FFC933]",
         name: "Maria G.",
         location: "Buenos Aires",
         quote:

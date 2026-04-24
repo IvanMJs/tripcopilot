@@ -212,7 +212,7 @@ export function FriendsTravelSection({ locale, userId }: FriendsTravelSectionPro
               className="flex items-center justify-between gap-3 flex-wrap"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center shrink-0">
+                <div className="h-8 w-8 rounded-full bg-[#FFB800] flex items-center justify-center shrink-0">
                   <span className="text-xs font-bold text-white">
                     {getInitial(req.requesterEmail)}
                   </span>
@@ -226,7 +226,7 @@ export function FriendsTravelSection({ locale, userId }: FriendsTravelSectionPro
                 <button
                   onClick={() => void handleAccept(req.friendshipId)}
                   disabled={actionLoading === req.friendshipId}
-                  className="rounded-lg bg-violet-600 hover:bg-violet-500 active:scale-95 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 transition-all"
+                  className="rounded-lg bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 disabled:opacity-50 text-[#07070d] text-xs font-semibold px-3 py-1.5 transition-all"
                 >
                   {L.accept}
                 </button>
@@ -266,7 +266,7 @@ export function FriendsTravelSection({ locale, userId }: FriendsTravelSectionPro
           {friends.map((friend) => (
             <div key={friend.friendshipId} className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-9 w-9 rounded-full bg-violet-600 flex items-center justify-center shrink-0">
+                <div className="h-9 w-9 rounded-full bg-[#FFB800] flex items-center justify-center shrink-0">
                   <span className="text-sm font-bold text-white">
                     {getInitial(friend.email)}
                   </span>
@@ -274,7 +274,7 @@ export function FriendsTravelSection({ locale, userId }: FriendsTravelSectionPro
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white/90 truncate">{friend.email}</p>
                   {friend.currentLocation !== null && (
-                    <p className="text-xs text-violet-400 font-medium mt-0.5">
+                    <p className="text-xs text-[#FFB800] font-medium mt-0.5">
                       {"📍 "}
                       {friend.currentLocation.city} &mdash; {L.traveling}
                     </p>
@@ -319,14 +319,14 @@ export function FriendsTravelSection({ locale, userId }: FriendsTravelSectionPro
               setAddSuccess(false);
             }}
             placeholder={L.emailPlaceholder}
-            className="flex-1 min-w-0 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white text-sm placeholder-white/30 px-3 py-2 focus:outline-none focus:border-violet-500/60 transition-colors"
+            className="flex-1 min-w-0 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white text-sm placeholder-white/30 px-3 py-2 focus:outline-none focus:border-[rgba(255,184,0,0.25)] transition-colors"
             disabled={addLoading}
             required
           />
           <button
             type="submit"
             disabled={addLoading || !addEmail.trim()}
-            className="shrink-0 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 transition-all"
+            className="shrink-0 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 disabled:opacity-50 text-[#07070d] text-sm font-semibold px-4 py-2 transition-all"
           >
             {addLoading ? L.sending : L.sendInvite}
           </button>

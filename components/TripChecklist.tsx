@@ -228,7 +228,7 @@ function AddItemRow({ onAdd, locale }: AddItemRowProps) {
       <button
         onClick={handleAdd}
         disabled={!value.trim()}
-        className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40 transition-colors"
+        className="rounded-lg bg-[#FFB800] px-3 py-1.5 text-xs font-medium text-[#07070d] hover:bg-[#FFC933] disabled:opacity-40 transition-colors"
       >
         {L.addBtn}
       </button>
@@ -389,7 +389,7 @@ function TemplatePicker({ locale, onSelect }: TemplatePickerProps) {
             <button
               key={type}
               onClick={() => onSelect(type)}
-              className="w-full flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] hover:border-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/60"
+              className="w-full flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 text-left hover:bg-white/[0.06] hover:border-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[rgba(255,184,0,0.45)]/60"
             >
               <span className="text-2xl leading-none mt-0.5">{TRIP_TYPE_ICONS[type]}</span>
               <div>

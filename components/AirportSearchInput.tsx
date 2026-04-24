@@ -166,7 +166,7 @@ export function AirportSearchInput({
                 <button
                   key={iata}
                   onMouseDown={(e) => { e.preventDefault(); selectIata(iata); }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs font-semibold text-white hover:border-violet-500/40 hover:bg-violet-500/10 hover:text-violet-200 transition-colors"
+                  className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs font-semibold text-white hover:border-[rgba(255,184,0,0.25)] hover:bg-[#FFC933]/10 hover:text-[#FFC933] transition-colors"
                   title={info.city}
                 >
                   <span className="font-mono tracking-wider">{iata}</span>
@@ -196,13 +196,13 @@ export function AirportSearchInput({
                 onMouseDown={(e) => { e.preventDefault(); selectAirport(r); }}
                 className={`px-3 py-2.5 cursor-pointer text-sm transition-colors ${
                   i === activeIndex
-                    ? "bg-violet-600/25 text-white"
+                    ? "bg-[#FFB800]/25 text-[#07070d]"
                     : "text-gray-300 hover:bg-white/[0.05]"
                 }`}
               >
                 <span className="font-semibold text-white">{r.city}</span>
                 {" "}
-                <span className="text-violet-400 font-mono">({r.iata})</span>
+                <span className="text-[#FFB800] font-mono">({r.iata})</span>
                 {" "}
                 <span className="text-gray-500 text-xs">— {r.name}</span>
               </li>

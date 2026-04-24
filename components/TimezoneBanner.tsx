@@ -27,7 +27,7 @@ export function TimezoneBanner({ deviceTz, locale, onAccept, onDismiss }: Timezo
         <div className="flex items-center gap-2 mt-2">
           <button
             onClick={onAccept}
-            className="text-[11px] font-bold bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg transition-colors"
+            className="text-[11px] font-bold bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d] px-3 py-1 rounded-lg transition-colors"
           >
             {es ? "Sí, mi hora" : "Yes, my time"}
           </button>

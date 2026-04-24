@@ -77,7 +77,7 @@ export function SocialPrivacySettings({ locale }: { locale: "es" | "en" }) {
   if (loading) return <div className="h-8 animate-pulse rounded-xl bg-white/[0.03]" />;
 
   const toggleClass = (on: boolean) =>
-    `relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${on ? "bg-violet-600" : "bg-white/10"}`;
+    `relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${on ? "bg-[#FFB800]" : "bg-white/10"}`;
 
   const Toggle = ({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) => (
     <button role="switch" aria-checked={on} onClick={() => onChange(!on)} className={toggleClass(on)}>
@@ -108,7 +108,7 @@ export function SocialPrivacySettings({ locale }: { locale: "es" | "en" }) {
             <button
               key={v}
               onClick={() => update("profileVisible", v)}
-              className={`flex-1 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors ${settings.profileVisible === v ? "border-violet-500/50 bg-violet-600/20 text-violet-300" : "border-white/[0.07] bg-white/[0.02] text-gray-500 hover:text-gray-300"}`}
+              className={`flex-1 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors ${settings.profileVisible === v ? "border-[rgba(255,184,0,0.25)] bg-[#FFB800]/20 text-[#FFB800]" : "border-white/[0.07] bg-white/[0.02] text-gray-500 hover:text-gray-300"}`}
             >
               {v === "friends" ? L.profileVisibleFriends : L.profileVisibleNobody}
             </button>

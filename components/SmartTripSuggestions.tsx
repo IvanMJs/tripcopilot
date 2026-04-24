@@ -135,7 +135,7 @@ function SuggestionCard({
         <p className="text-xs text-gray-400 leading-snug mt-1.5">
           {suggestion.reason}
         </p>
-        <button className="mt-3 w-full rounded-xl bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/30 text-violet-200 text-xs font-bold py-2 transition-all active:scale-95">
+        <button className="mt-3 w-full rounded-xl bg-[#FFB800]/30 hover:bg-[#FFC933]/50 border border-[rgba(255,184,0,0.25)] text-[#FFB800] text-xs font-bold py-2 transition-all active:scale-95">
           {L.explore}
         </button>
       </div>
@@ -143,14 +143,14 @@ function SuggestionCard({
       {/* Upgrade overlay for blurred cards */}
       {blurred && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-darker/60 backdrop-blur-[2px] p-4">
-          <Lock className="h-5 w-5 text-violet-400/80" />
+          <Lock className="h-5 w-5 text-[#FFB800]/80" />
           <p className="text-[11px] text-gray-400 font-medium text-center leading-tight">
             {L.upgradeHint}
           </p>
           {onUpgrade && (
             <button
               onClick={onUpgrade}
-              className="mt-1 rounded-xl bg-gradient-to-r from-violet-600/80 to-blue-600/80 hover:from-violet-500/90 hover:to-blue-500/90 border border-violet-500/30 text-white text-[11px] font-bold px-3 py-1.5 transition-all active:scale-95"
+              className="mt-1 rounded-xl bg-gradient-to-r from-[#FFB800]/80 to-blue-600/80 hover:from-[#FFB800]/90 hover:to-blue-500/90 border border-[rgba(255,184,0,0.25)] text-white text-[11px] font-bold px-3 py-1.5 transition-all active:scale-95"
             >
               {L.upgradeCta}
             </button>

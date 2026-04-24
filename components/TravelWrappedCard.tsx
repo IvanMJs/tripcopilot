@@ -119,10 +119,10 @@ export function TravelWrappedCard({
 
   const allStats: StatDef[] = [
     {
-      icon: <Plane className="h-4 w-4 text-violet-400" />,
+      icon: <Plane className="h-4 w-4 text-[#FFB800]" />,
       value: totalFlights.toString(),
       label: L.totalFlights,
-      color: "bg-violet-500/15",
+      color: "bg-[rgba(255,184,0,0.12)]",
     },
     {
       icon: <TrendingUp className="h-4 w-4 text-emerald-400" />,
@@ -210,18 +210,18 @@ export function TravelWrappedCard({
 
   return (
     <div className="px-4 pb-4">
-      <div className="rounded-2xl overflow-hidden border border-violet-700/30 bg-gradient-to-br from-violet-900/50 via-blue-900/30 to-indigo-950/60 p-5">
+      <div className="rounded-2xl overflow-hidden border border-[rgba(255,184,0,0.25)] bg-gradient-to-br from-[#FFB800]/50 via-blue-900/30 to-indigo-950/60 p-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-violet-300/60 mb-1">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#FFB800]/60 mb-1">
               {L.sectionTitle}
             </p>
             <p className="text-lg font-black text-white leading-tight">
               {L.year(year)}
             </p>
             {favoriteAirline && isPremium && (
-              <p className="text-xs text-violet-300/70 mt-1 font-medium">
+              <p className="text-xs text-[#FFB800]/70 mt-1 font-medium">
                 {L.favoriteAirline}: {favoriteAirline}
               </p>
             )}
@@ -273,7 +273,7 @@ export function TravelWrappedCard({
                   </p>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Lock className="h-4 w-4 text-violet-400/70" />
+                  <Lock className="h-4 w-4 text-[#FFB800]/70" />
                 </div>
               </div>
             ))}
@@ -283,7 +283,7 @@ export function TravelWrappedCard({
           {!isPremium && (
             <button
               onClick={onUpgrade}
-              className="w-full rounded-xl bg-gradient-to-r from-violet-600/80 to-blue-600/80 hover:from-violet-500/90 hover:to-blue-500/90 active:scale-95 border border-violet-500/30 text-white text-xs font-bold py-2.5 mb-3 transition-all"
+              className="w-full rounded-xl bg-gradient-to-r from-[#FFB800]/80 to-blue-600/80 hover:from-[#FFB800]/90 hover:to-blue-500/90 active:scale-95 border border-[rgba(255,184,0,0.25)] text-white text-xs font-bold py-2.5 mb-3 transition-all"
             >
               {L.unlockCta}
             </button>
@@ -322,7 +322,7 @@ export function TravelWrappedCard({
           <button
             onClick={handleShareImage}
             disabled={imageLoading}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 active:scale-95 border border-violet-500/30 text-violet-200 text-sm font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#FFB800]/30 hover:bg-[#FFC933]/50 active:scale-95 border border-[rgba(255,184,0,0.25)] text-[#FFB800] text-sm font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
           >
             {imageLoading ? (
               <>

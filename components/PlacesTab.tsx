@@ -146,7 +146,7 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="h-5 w-5 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+        <div className="h-5 w-5 rounded-full border-2 border-[rgba(255,184,0,0.35)] border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -158,12 +158,12 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
         <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
           {L.title}
           {allPlaces.length > 0 && (
-            <span className="ml-2 text-violet-400 font-black">{allPlaces.length}</span>
+            <span className="ml-2 text-[#FFB800] font-black">{allPlaces.length}</span>
           )}
         </p>
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="flex items-center gap-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+          className="flex items-center gap-1 text-xs font-semibold text-[#FFB800] hover:text-[#FFB800] transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           {L.add}
@@ -180,8 +180,8 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
             transition={{ duration: 0.22 }}
             className="overflow-hidden"
           >
-            <div className="rounded-xl border border-violet-800/40 bg-violet-950/20 p-3 space-y-3">
-              <p className="text-xs font-bold text-violet-300">{L.addTitle}</p>
+            <div className="rounded-xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.06)] p-3 space-y-3">
+              <p className="text-xs font-bold text-[#FFB800]">{L.addTitle}</p>
 
               {/* City search */}
               <div className="relative">
@@ -190,7 +190,7 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
                   value={selectedCity ? selectedCity.city : cityQuery}
                   onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
                   placeholder={L.cityPlaceholder}
-                  className="w-full text-sm bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-violet-600/50"
+                  className="w-full text-sm bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-[rgba(255,184,0,0.25)]"
                 />
                 {selectedCity && (
                   <button
@@ -225,7 +225,7 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
                   value={dateValue}
                   onChange={(e) => setDateValue(e.target.value)}
                   max={new Date().toISOString().slice(0, 10)}
-                  className="w-full text-sm bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-violet-600/50"
+                  className="w-full text-sm bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[rgba(255,184,0,0.25)]"
                 />
               </div>
 
@@ -234,7 +234,7 @@ export function PlacesTab({ trips, locale }: PlacesTabProps) {
                 <button
                   onClick={handleAddConfirm}
                   disabled={!selectedCity || !dateValue || saving}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-40 disabled:cursor-not-allowed text-[#07070d] text-xs font-semibold transition-colors"
                 >
                   <Check className="h-3.5 w-3.5" />
                   {saving ? "…" : L.confirm}
@@ -317,7 +317,7 @@ function PlaceCard({ place, locale, onRemove }: PlaceCardProps) {
       {/* STAMP watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.06]">
         <p
-          className="text-5xl font-black text-violet-700 uppercase tracking-widest"
+          className="text-5xl font-black text-[#FFB800] uppercase tracking-widest"
           style={{ transform: "rotate(-20deg)" }}
         >
           STAMP
@@ -329,8 +329,8 @@ function PlaceCard({ place, locale, onRemove }: PlaceCardProps) {
         <div className="flex items-center justify-between mb-1.5">
           <span title={place.source === "inferred" ? L.inferred : L.manual}>
             {place.source === "inferred"
-              ? <Plane className="h-3 w-3 text-violet-600/60" />
-              : <MapPin className="h-3 w-3 text-violet-600/60" />
+              ? <Plane className="h-3 w-3 text-[#FFB800]/60" />
+              : <MapPin className="h-3 w-3 text-[#FFB800]/60" />
             }
           </span>
           {onRemove && (
@@ -351,7 +351,7 @@ function PlaceCard({ place, locale, onRemove }: PlaceCardProps) {
         </div>
 
         {/* Date */}
-        <div className="mt-2 pt-2 border-t border-violet-400/20 text-center">
+        <div className="mt-2 pt-2 border-t border-[rgba(255,184,0,0.25)] text-center">
           <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">{L.firstVisit}</p>
           <p className="text-[10px] font-black text-gray-700">{formatDate(place.dateVisited, locale)}</p>
         </div>

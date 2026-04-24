@@ -71,7 +71,7 @@ const TEMPLATES: TripTemplateData[] = [
     flightSlots: 3,
     durationEs: "7-14 días",
     durationEn: "7-14 days",
-    gradient: "from-violet-700/60 to-indigo-900/60",
+    gradient: "from-[#FFB800]/60 to-indigo-900/60",
   },
   {
     id: "family",
@@ -138,7 +138,7 @@ export function TripTemplates({ locale, onSelectTemplate }: Props) {
     <div className="space-y-4">
       {/* Section header */}
       <div className="flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-violet-400 shrink-0" />
+        <Sparkles className="w-4 h-4 text-[#FFB800] shrink-0" />
         <h3 className="text-sm font-bold text-white">
           {locale === "es" ? "Plantillas de viaje" : "Trip templates"}
         </h3>
@@ -162,7 +162,7 @@ export function TripTemplates({ locale, onSelectTemplate }: Props) {
               whileTap={{ scale: 0.96 }}
               className={`snap-start relative flex-none w-48 rounded-2xl border overflow-hidden text-left transition-all ${
                 isSelected
-                  ? "border-violet-500/70 ring-2 ring-violet-500/30"
+                  ? "border-[rgba(255,184,0,0.25)] ring-2 ring-[#FFB800]/30"
                   : "border-white/[0.07] hover:border-white/[0.14]"
               }`}
             >
@@ -181,7 +181,7 @@ export function TripTemplates({ locale, onSelectTemplate }: Props) {
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
                       transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center"
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[rgba(255,184,0,0.12)] flex items-center justify-center"
                     >
                       <Check className="w-3.5 h-3.5 text-white" />
                     </motion.div>
@@ -207,7 +207,7 @@ export function TripTemplates({ locale, onSelectTemplate }: Props) {
                 <span
                   className={`block w-full text-center rounded-lg py-1.5 text-xs font-semibold transition-colors ${
                     isSelected
-                      ? "bg-violet-600 text-white"
+                      ? "bg-[#FFB800] text-[#07070d]"
                       : "bg-white/[0.06] text-gray-300 hover:bg-white/[0.10] hover:text-white"
                   }`}
                 >

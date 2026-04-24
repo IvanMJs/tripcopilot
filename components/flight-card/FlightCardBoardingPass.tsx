@@ -113,10 +113,10 @@ export function FlightCardBoardingPass({
   return (
     <>
       {showSection && (
-        <div className="px-4 pb-4 pt-2 border-t border-violet-800/20 space-y-2">
+        <div className="px-4 pb-4 pt-2 border-t border-[rgba(255,184,0,0.25)] space-y-2">
           <button
             onClick={handleOpen}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-violet-950/40 border border-violet-700/40 hover:bg-violet-950/60 py-2.5 text-xs font-bold text-violet-300 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] hover:bg-[rgba(255,184,0,0.06)] py-2.5 text-xs font-bold text-[#FFB800] transition-colors"
           >
             {hasBoardingPass ? (
               <>

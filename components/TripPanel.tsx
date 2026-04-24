@@ -380,7 +380,7 @@ export function TripPanel({
           </p>
           {trip.isShared && (
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-violet-900/30 border border-violet-700/40 text-violet-300">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] text-[#FFB800]">
                 <Users className="h-3 w-3" />
                 {locale === "es" ? "Viaje compartido" : "Shared trip"}
               </span>
@@ -489,15 +489,15 @@ export function TripPanel({
 
       {/* Draft banner */}
       {isDraft && (
-        <div className="sticky top-0 z-10 relative flex items-center justify-between gap-3 px-4 py-3 bg-violet-950/80 border border-violet-500/30 rounded-xl backdrop-blur-sm mx-0 mb-4 shadow-[0_0_0_1px_rgba(124,58,237,0.25),0_0_24px_rgba(124,58,237,0.15)]">
+        <div className="sticky top-0 z-10 relative flex items-center justify-between gap-3 px-4 py-3 bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] rounded-xl backdrop-blur-sm mx-0 mb-4 shadow-[0_0_0_1px_rgba(124,58,237,0.25),0_0_24px_rgba(124,58,237,0.15)]">
           <span aria-hidden className="absolute inset-0 rounded-xl bg-[radial-gradient(ellipse_at_top_left,rgba(124,58,237,0.18),transparent_60%)] pointer-events-none" />
           <div className="relative flex items-center gap-2">
-            <span className="text-violet-300">✏️</span>
+            <span className="text-[#FFB800]">✏️</span>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-violet-300 mb-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#FFB800] mb-0.5">
                 {locale === "es" ? "Borrador — no guardado" : "Draft — not saved"}
               </p>
-              <p className="text-[11px] text-violet-400/80">
+              <p className="text-[11px] text-[#FFB800]/80">
                 {locale === "es"
                   ? `${trip.flights.length} vuelo${trip.flights.length !== 1 ? "s" : ""} · listo para guardar`
                   : `${trip.flights.length} flight${trip.flights.length !== 1 ? "s" : ""} · ready to save`}
@@ -575,13 +575,13 @@ export function TripPanel({
               id={`trip-tab-${tab.id}`}
               onClick={() => { haptics.impact(); setActiveSection(tab.id); }}
               className={`relative flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                activeSection === tab.id ? "text-violet-200" : "text-gray-500 hover:text-gray-300"
+                activeSection === tab.id ? "text-[#FFB800]" : "text-gray-500 hover:text-gray-300"
               }`}
             >
               {activeSection === tab.id && (
                 <motion.span
                   layoutId="trip-section-pill"
-                  className="absolute inset-0 rounded-lg bg-violet-500/15 ring-1 ring-violet-400/25"
+                  className="absolute inset-0 rounded-lg bg-[rgba(255,184,0,0.12)] ring-1 ring-[rgba(255,184,0,0.25)]"
                   layout
                   transition={{ type: "spring", stiffness: 420, damping: 30 }}
                 />
@@ -770,8 +770,8 @@ export function TripPanel({
                   {todayFlights.length > 0 && (
                     <div className="mb-4">
                       <div className="flex items-center gap-2 mb-2 px-1">
-                        <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse inline-block" />
-                        <span className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">
+                        <span className="w-2 h-2 rounded-full bg-[rgba(255,184,0,0.12)] animate-pulse inline-block" />
+                        <span className="text-[11px] font-bold text-[#FFB800] uppercase tracking-widest">
                           {locale === "es" ? "Hoy" : "Today"}
                         </span>
                       </div>
@@ -783,7 +783,7 @@ export function TripPanel({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: Math.min(index, 8) * 0.05, duration: 0.25 }}
                         >
-                          <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-violet-600/30 to-transparent pointer-events-none" />
+                          <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-[#FFB800]/30 to-transparent pointer-events-none" />
                           <div className="relative">{renderFlightCard(flight)}</div>
                         </motion.div>
                       ))}
@@ -844,7 +844,7 @@ export function TripPanel({
             {!isDraft ? (
               <button
                 onClick={() => setShowShareModal(true)}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-violet-800/50 bg-violet-950/30 px-3 py-2.5 text-xs font-semibold text-violet-400 hover:bg-violet-950/50 transition-colors"
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.06)] px-3 py-2.5 text-xs font-semibold text-[#FFB800] hover:bg-[rgba(255,184,0,0.06)] transition-colors"
               >
                 <Share2 className="h-3.5 w-3.5" />
                 {locale === "en" ? "Share" : "Compartir"}
@@ -959,7 +959,7 @@ export function TripPanel({
                   setTripCardLoading(false);
                 }
               }}
-              className="flex items-center gap-1.5 rounded-lg border border-violet-800/40 bg-violet-950/20 px-3 py-1.5 text-xs text-violet-400 hover:text-violet-300 hover:bg-violet-950/40 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              className="flex items-center gap-1.5 rounded-lg border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.06)] px-3 py-1.5 text-xs text-[#FFB800] hover:text-[#FFB800] hover:bg-[rgba(255,184,0,0.06)] transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
               <Share2 className="h-3.5 w-3.5" />
               {tripCardLoading
@@ -1152,14 +1152,14 @@ export function TripPanel({
               {/* Teaser 1: AI Health Check */}
               <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 overflow-hidden">
                 <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 z-10 flex flex-col items-center justify-center">
-                  <Lock className="h-5 w-5 text-violet-400 mb-2" />
+                  <Lock className="h-5 w-5 text-[#FFB800] mb-2" />
                   <p className="text-sm font-bold text-white">AI Health Check</p>
                   <p className="text-xs text-gray-400 mt-1">
                     {locale === "es" ? "Disponible en Explorer" : "Available in Explorer"}
                   </p>
                   <button
                     onClick={onUpgrade}
-                    className="mt-3 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
+                    className="mt-3 px-4 py-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] text-xs font-bold text-[#07070d] transition-colors"
                   >
                     {locale === "es" ? "Mejorar plan →" : "Upgrade plan →"}
                   </button>
@@ -1174,7 +1174,7 @@ export function TripPanel({
               {/* Teaser 2: Price Alerts */}
               <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 overflow-hidden">
                 <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 z-10 flex flex-col items-center justify-center">
-                  <Lock className="h-5 w-5 text-violet-400 mb-2" />
+                  <Lock className="h-5 w-5 text-[#FFB800] mb-2" />
                   <p className="text-sm font-bold text-white">
                     {locale === "es" ? "Alertas de precio" : "Price alerts"}
                   </p>
@@ -1183,7 +1183,7 @@ export function TripPanel({
                   </p>
                   <button
                     onClick={onUpgrade}
-                    className="mt-3 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
+                    className="mt-3 px-4 py-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] text-xs font-bold text-[#07070d] transition-colors"
                   >
                     {locale === "es" ? "Mejorar plan →" : "Upgrade plan →"}
                   </button>

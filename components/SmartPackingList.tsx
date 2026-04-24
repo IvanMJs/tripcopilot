@@ -66,7 +66,7 @@ function CategoryIcon({ category }: { category: PackingCategory }) {
     case "documents":
       return <FileText className="h-4 w-4 text-blue-400" />;
     case "clothes":
-      return <Shirt className="h-4 w-4 text-violet-400" />;
+      return <Shirt className="h-4 w-4 text-[#FFB800]" />;
     case "toiletries":
       return <Zap className="h-4 w-4 text-amber-400" />;
     case "electronics":
@@ -167,7 +167,7 @@ export function SmartPackingList({
             <MapPin className="h-4 w-4 text-emerald-400" />
             <h2 className="text-base font-black text-white">{L.title}</h2>
             {aiEnhanced && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-900/40 border border-violet-700/40 text-[10px] font-bold text-violet-300">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] text-[10px] font-bold text-[#FFB800]">
                 <Sparkles className="h-3 w-3" />
                 {L.aiEnhanced}
               </span>
@@ -227,7 +227,7 @@ export function SmartPackingList({
           {/* Loading state */}
           {loading && items.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-500">
-              <Loader2 className="h-6 w-6 animate-spin text-violet-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-[#FFB800]" />
               <p className="text-sm font-medium">{L.regenerating}</p>
             </div>
           )}

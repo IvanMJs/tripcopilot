@@ -216,7 +216,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId, loa
             <div className="mt-2 flex flex-col gap-0 items-center">
               <button
                 onClick={() => setView("picker")}
-                className="relative overflow-hidden rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
+                className="relative overflow-hidden rounded-xl bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d] font-bold text-sm py-3.5 w-full transition-colors tap-scale"
               >
                 <span className="relative z-[1]">
                   {es ? "Ver el estado de tu aeropuerto en tiempo real →" : "See your airport's live status →"}
@@ -264,7 +264,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId, loa
             <button
               onClick={() => { if (selectedIata) setView("hero"); }}
               disabled={!selectedIata}
-              className="rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
+              className="rounded-xl bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-40 disabled:cursor-not-allowed text-[#07070d] font-bold text-sm py-3.5 w-full transition-colors tap-scale"
             >
               {es ? "Ver estado →" : "Check status →"}
             </button>
@@ -303,7 +303,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId, loa
               ) : (
                 <button
                   onClick={handleActivateAlerts}
-                  className="relative overflow-hidden rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3.5 w-full transition-colors tap-scale"
+                  className="relative overflow-hidden rounded-xl bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d] font-bold text-sm py-3.5 w-full transition-colors tap-scale"
                 >
                   <span className="relative z-[1]">
                     {es ? "Activar alertas para este aeropuerto ✈️" : "Activate alerts for this airport ✈️"}
@@ -326,7 +326,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId, loa
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.18 }}
-                  className="rounded-xl border border-violet-500/30 bg-violet-500/[0.08] px-4 py-4 flex flex-col gap-3"
+                  className="rounded-xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.12)][0.08] px-4 py-4 flex flex-col gap-3"
                 >
                   <div>
                     <p className="text-sm font-semibold text-white mb-0.5">
@@ -338,7 +338,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId, loa
                   </div>
                   <button
                     onClick={onAddFlight}
-                    className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm py-3 w-full transition-colors tap-scale"
+                    className="rounded-xl bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d] font-bold text-sm py-3 w-full transition-colors tap-scale"
                   >
                     {es ? "Crear cuenta →" : "Create account →"}
                   </button>

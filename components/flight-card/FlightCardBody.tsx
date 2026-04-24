@@ -472,7 +472,7 @@ export function FlightCardBody({
                   }}
                   placeholder={locale === "es" ? "Agregar nota…" : "Add note…"}
                   rows={2}
-                  className="w-full text-xs bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-gray-300 placeholder-gray-600 resize-none focus:outline-none focus:border-violet-600/50"
+                  className="w-full text-xs bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-gray-300 placeholder-gray-600 resize-none focus:outline-none focus:border-[rgba(255,184,0,0.25)]"
                   autoFocus
                 />
                 <p className="text-xs text-gray-600">
@@ -501,7 +501,7 @@ export function FlightCardBody({
               <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">⬆️</span>
-                  <p className="text-xs font-bold text-violet-300">
+                  <p className="text-xs font-bold text-[#FFB800]">
                     {locale === "en" ? "Upgrade requested" : "Upgrade solicitado"}
                   </p>
                 </div>
@@ -510,7 +510,7 @@ export function FlightCardBody({
                     href={AIRLINE_UPGRADE_URLS[flight.airlineCode]}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-1.5 border text-violet-300 border-violet-700/50 bg-violet-900/20 hover:bg-violet-900/40 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-1.5 border text-[#FFB800] border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.08)] hover:bg-[rgba(255,184,0,0.08)] transition-colors"
                   >
                     {locale === "en" ? "Manage upgrade" : "Gestionar upgrade"}
                     <ExternalLink className="h-3 w-3" />

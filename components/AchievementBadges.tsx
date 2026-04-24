@@ -76,16 +76,16 @@ function BadgeCard({
             ? { type: "spring", stiffness: 320, damping: 18, delay: 0.05 }
             : { duration: 0 }
         }
-        className="flex flex-col items-center gap-1.5 rounded-2xl border border-violet-700/40 bg-violet-950/40 p-3 text-center"
+        className="flex flex-col items-center gap-1.5 rounded-2xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.06)] p-3 text-center"
         title={description}
       >
         <span className="text-3xl leading-none" aria-hidden>
           {badge.emoji}
         </span>
-        <p className="text-[11px] font-bold text-violet-200 leading-tight">
+        <p className="text-[11px] font-bold text-[#FFC933] leading-tight">
           {label}
         </p>
-        <span className="text-[9px] font-semibold uppercase tracking-widest text-violet-400/70">
+        <span className="text-[9px] font-semibold uppercase tracking-widest text-[#FFB800]/70">
           {L.unlocked}
         </span>
       </motion.div>

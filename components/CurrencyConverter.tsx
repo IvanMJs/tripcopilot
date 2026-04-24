@@ -196,7 +196,7 @@ export function CurrencyConverter({ locale, tripFlights }: CurrencyConverterProp
           <select
             value={fromCcy}
             onChange={(e) => setFromCcy(e.target.value)}
-            className="bg-transparent text-xs font-bold text-violet-300 outline-none cursor-pointer"
+            className="bg-transparent text-xs font-bold text-[#FFB800] outline-none cursor-pointer"
             aria-label={locale === "es" ? "Moneda origen" : "From currency"}
           >
             {TOP_CURRENCIES.map((c) => (
@@ -253,7 +253,7 @@ export function CurrencyConverter({ locale, tripFlights }: CurrencyConverterProp
           <select
             value={toCcy}
             onChange={(e) => setToCcy(e.target.value)}
-            className="bg-transparent text-xs font-bold text-violet-300 outline-none cursor-pointer"
+            className="bg-transparent text-xs font-bold text-[#FFB800] outline-none cursor-pointer"
             aria-label={locale === "es" ? "Moneda destino" : "To currency"}
           >
             {TOP_CURRENCIES.map((c) => (

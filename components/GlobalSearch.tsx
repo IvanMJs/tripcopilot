@@ -271,8 +271,8 @@ export function GlobalSearch({
                         onClick={() => handleSelectTrip(r)}
                         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.05] transition-colors text-left"
                       >
-                        <div className="h-8 w-8 rounded-lg bg-violet-950/40 border border-violet-800/30 flex items-center justify-center shrink-0">
-                          <Map className="h-3.5 w-3.5 text-violet-400" />
+                        <div className="h-8 w-8 rounded-lg bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] flex items-center justify-center shrink-0">
+                          <Map className="h-3.5 w-3.5 text-[#FFB800]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-white truncate">{r.primary}</p>

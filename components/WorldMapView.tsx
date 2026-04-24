@@ -333,7 +333,7 @@ export function WorldMapView({ trips, locale, onAirportClick, friendLocations }:
           {L.places(visitedPlaces.length)}
         </span>
       )}
-      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 border border-violet-300/60 px-2.5 py-1 text-xs font-semibold text-violet-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(255,184,0,0.15)] border border-[rgba(255,184,0,0.25)] px-2.5 py-1 text-xs font-semibold text-[#FFB800]">
         <span aria-hidden>🌍</span>
         {L.world(worldPct)}
       </span>
@@ -422,7 +422,7 @@ export function WorldMapView({ trips, locale, onAirportClick, friendLocations }:
                   aria-hidden
                 >
                   <span
-                    className="text-[72px] font-black text-violet-400/10 tracking-widest rotate-[-20deg]"
+                    className="text-[72px] font-black text-[#FFB800]/10 tracking-widest rotate-[-20deg]"
                     style={{ fontFamily: "serif" }}
                   >
                     VISITED
@@ -438,7 +438,7 @@ export function WorldMapView({ trips, locale, onAirportClick, friendLocations }:
                 </button>
 
                 {/* Header label */}
-                <p className="text-[10px] font-black tracking-[0.25em] text-violet-500 uppercase mb-3 text-center">
+                <p className="text-[10px] font-black tracking-[0.25em] text-[#FFB800] uppercase mb-3 text-center">
                   {locale === "es" ? "Lugar Visitado" : "Visited Place"}
                 </p>
 
@@ -456,7 +456,7 @@ export function WorldMapView({ trips, locale, onAirportClick, friendLocations }:
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-dashed border-violet-300 my-3" />
+                <div className="border-t border-dashed border-[rgba(255,184,0,0.35)] my-3" />
 
                 {/* Date */}
                 <p className="text-center text-xs font-semibold text-gray-500 tracking-widest uppercase">

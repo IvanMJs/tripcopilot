@@ -13,7 +13,7 @@ import { CommonFlightInfo } from "@/lib/commonFlights";
 
 const inputClass = [
   "w-full rounded-lg",
-  "border border-white/[0.08] focus:border-violet-500/60",
+  "border border-white/[0.08] focus:border-[rgba(255,184,0,0.25)]",
   "bg-white/[0.04]",
   "px-3 py-2 text-sm text-white",
   "outline-none transition-colors",
@@ -231,7 +231,7 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
           )}
         </div>
         {airlinePreviewName && (
-          <p className="mt-1 text-xs text-violet-400">{airlinePreviewName}</p>
+          <p className="mt-1 text-xs text-[#FFB800]">{airlinePreviewName}</p>
         )}
       </div>
 

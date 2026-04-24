@@ -46,7 +46,7 @@ export function RatingNudge({ showAfterTrips, tripCount }: RatingNudgeProps) {
           <a
             href="mailto:feedback@tripcopilot.app"
             onClick={handleDismiss}
-            className="mt-2 inline-block rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 transition-all"
+            className="mt-2 inline-block rounded-lg bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-xs font-semibold px-3 py-1.5 transition-all"
           >
             Dejar reseña
           </a>

@@ -179,7 +179,7 @@ export function ContactPicker({ isOpen, onSelect, onClose, locale }: Props) {
                             onSelect(contact);
                             onClose();
                           }}
-                          className="rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+                          className="rounded-lg bg-[#FFB800] px-2.5 py-1 text-xs font-medium text-[#07070d] hover:bg-[#FFC933] transition-colors"
                         >
                           {L.select}
                         </button>

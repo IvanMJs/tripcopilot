@@ -224,7 +224,7 @@ export function ExploreMap({ defaultOrigin = "EZE", locale, onCreateTrip }: Prop
             onClick={() => setActiveFilter(chip.key)}
             className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
               activeFilter === chip.key
-                ? "bg-blue-600 border-blue-500 text-white"
+                ? "bg-[#FFB800] border-blue-500 text-[#07070d]"
                 : "border-white/10 bg-white/[0.04] text-gray-400 hover:text-white hover:border-white/20"
             }`}
           >
@@ -305,7 +305,7 @@ export function ExploreMap({ defaultOrigin = "EZE", locale, onCreateTrip }: Prop
                 <div className="px-3 pb-3 pt-1">
                   <button
                     onClick={() => onCreateTrip?.(item.dest.iata, name)}
-                    className="w-full rounded-xl bg-blue-600/90 hover:bg-blue-500 active:scale-[0.98] text-white text-xs font-semibold py-2 transition-all pointer-events-auto"
+                    className="w-full rounded-xl bg-[#FFB800]/90 hover:bg-[#FFC933] active:scale-[0.98] text-[#07070d] text-xs font-semibold py-2 transition-all pointer-events-auto"
                   >
                     {locale === "es" ? "Crear viaje" : "Create trip"}
                   </button>

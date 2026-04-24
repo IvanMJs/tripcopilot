@@ -27,7 +27,7 @@ const DESTINATION_VISUALS: Record<string, { gradient: string; emoji: string }> =
   MVD: { gradient: "from-blue-600/40 to-indigo-800/40",   emoji: "🌊" },
   PUJ: { gradient: "from-teal-500/40 to-cyan-800/40",     emoji: "🏝️" },
   CTG: { gradient: "from-orange-600/40 to-red-800/40",    emoji: "🏰" },
-  MDZ: { gradient: "from-violet-700/40 to-red-900/40",    emoji: "🍷" },
+  MDZ: { gradient: "from-[#FFB800]/40 to-red-900/40",    emoji: "🍷" },
   EZE: { gradient: "from-blue-700/40 to-indigo-900/40",   emoji: "💃" },
   PMI: { gradient: "from-cyan-500/40 to-blue-700/40",     emoji: "🏄" },
   BCN: { gradient: "from-yellow-600/40 to-red-800/40",    emoji: "🎨" },
@@ -38,7 +38,7 @@ const DESTINATION_VISUALS: Record<string, { gradient: string; emoji: string }> =
   DXB: { gradient: "from-amber-400/40 to-yellow-900/40",  emoji: "🏙️" },
 };
 
-const DEFAULT_VISUAL = { gradient: "from-violet-700/40 to-gray-900/40", emoji: "✈️" };
+const DEFAULT_VISUAL = { gradient: "from-[#FFB800]/40 to-gray-900/40", emoji: "✈️" };
 
 function getVisual(iata: string): { gradient: string; emoji: string } {
   return DESTINATION_VISUALS[iata] ?? DEFAULT_VISUAL;
@@ -379,8 +379,8 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-500/20">
-          <Compass className="w-5 h-5 text-violet-400" />
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[rgba(255,184,0,0.12)]">
+          <Compass className="w-5 h-5 text-[#FFB800]" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-white">
@@ -429,7 +429,7 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
               onChange={(e) => setOrigin(e.target.value.toUpperCase())}
               placeholder={`${recentOrigin} (${recentCity})`}
               maxLength={3}
-              className="w-full rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-violet-500/60 focus:border-violet-500/60 transition-colors"
+              className="w-full rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[rgba(255,184,0,0.45)]/60 focus:border-[rgba(255,184,0,0.25)] transition-colors"
             />
           </div>
 
@@ -445,7 +445,7 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
               onChange={(e) => setDestination(e.target.value.toUpperCase())}
               placeholder="MIA, JFK, BCN..."
               maxLength={3}
-              className="w-full rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-violet-500/60 focus:border-violet-500/60 transition-colors"
+              className="w-full rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[rgba(255,184,0,0.45)]/60 focus:border-[rgba(255,184,0,0.25)] transition-colors"
             />
           </div>
         </div>
@@ -461,7 +461,7 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
               value={date}
               onChange={(e) => setDate(e.target.value)}
               min={new Date().toISOString().slice(0, 10)}
-              className="w-full rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500/60 focus:border-violet-500/60 transition-colors [color-scheme:dark]"
+              className="w-full rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[rgba(255,184,0,0.45)]/60 focus:border-[rgba(255,184,0,0.25)] transition-colors [color-scheme:dark]"
             />
           </div>
 
@@ -473,7 +473,7 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
             <select
               value={cabin}
               onChange={(e) => setCabin(e.target.value)}
-              className="w-full rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet-500/60 focus:border-violet-500/60 transition-colors"
+              className="w-full rounded-xl bg-white/[0.06] border border-white/[0.08] px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[rgba(255,184,0,0.45)]/60 focus:border-[rgba(255,184,0,0.25)] transition-colors"
             >
               {CABIN_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value} className="bg-gray-900">
@@ -487,7 +487,7 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
         <button
           type="submit"
           disabled={!origin || !destination || !date}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-3 text-sm transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] disabled:bg-gray-700 disabled:text-gray-500 text-[#07070d] font-semibold py-3 text-sm transition-colors"
         >
           <Search className="w-4 h-4" />
           {locale === "es" ? "Buscar vuelos" : "Search flights"}
@@ -497,7 +497,7 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
       {/* Popular destinations */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-violet-400" />
+          <MapPin className="w-4 h-4 text-[#FFB800]" />
           <h3 className="text-sm font-bold text-white">
             {locale === "es"
               ? `Destinos populares desde ${recentCity}`
@@ -511,7 +511,7 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
               <button
                 key={dest.iata}
                 onClick={() => openDestination(dest.iata)}
-                className="group relative rounded-2xl overflow-hidden aspect-[4/3] text-left focus:outline-none focus:ring-2 focus:ring-violet-500/60 border border-white/[0.06] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="group relative rounded-2xl overflow-hidden aspect-[4/3] text-left focus:outline-none focus:ring-2 focus:ring-[rgba(255,184,0,0.45)]/60 border border-white/[0.06] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <div
                   className={`absolute inset-0 bg-gradient-to-br ${visual.gradient} transition-opacity duration-300 group-hover:opacity-80`}
@@ -552,7 +552,7 @@ export function DiscoverView({ trips, locale, onCreateTrip, userPlan, onUpgrade,
               <button
                 key={idea.iata}
                 onClick={() => openDestination(idea.iata)}
-                className="group relative rounded-2xl overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-violet-500/60 border border-white/[0.06] transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
+                className="group relative rounded-2xl overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-[rgba(255,184,0,0.45)]/60 border border-white/[0.06] transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
               >
                 <div
                   className={`h-32 bg-gradient-to-br ${visual.gradient} flex items-center justify-center transition-opacity duration-300 group-hover:opacity-80`}

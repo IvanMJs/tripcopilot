@@ -81,7 +81,7 @@ export function PriceAlerts({ locale }: PriceAlertsProps) {
             {locale === "es" ? "Alertas de precio" : "Price alerts"}
           </span>
           {alerts.filter((a) => a.isActive).length > 0 && (
-            <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+            <span className="rounded-full bg-[#FFB800] px-1.5 py-0.5 text-[10px] font-bold text-[#07070d] leading-none">
               {alerts.filter((a) => a.isActive).length}
             </span>
           )}
@@ -192,7 +192,7 @@ export function PriceAlerts({ locale }: PriceAlertsProps) {
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 py-1.5 text-xs font-semibold text-white transition-colors"
+                  className="flex-1 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-50 py-1.5 text-xs font-semibold text-[#07070d] transition-colors"
                 >
                   {submitting
                     ? (locale === "es" ? "Guardando…" : "Saving…")

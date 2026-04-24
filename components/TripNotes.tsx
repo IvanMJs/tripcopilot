@@ -31,7 +31,7 @@ function applyBasicMarkdown(text: string): string {
     // headers: lines starting with #
     .replace(/^(#{1,3})\s+(.+)$/gm, (_, hashes: string, content: string) => {
       const level = hashes.length;
-      const size = level === 1 ? "text-base font-bold text-white" : level === 2 ? "text-sm font-bold text-violet-300" : "text-xs font-bold text-gray-300";
+      const size = level === 1 ? "text-base font-bold text-white" : level === 2 ? "text-sm font-bold text-[#FFB800]" : "text-xs font-bold text-gray-300";
       return `<span class="${size} block mt-2">${content}</span>`;
     })
     // bold: **text**
@@ -125,7 +125,7 @@ export function TripNotes({ tripId, locale }: TripNotesProps) {
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-violet-400" />
+          <FileText className="h-4 w-4 text-[#FFB800]" />
           <h3 className="text-sm font-bold text-white">
             {locale === "es" ? "Notas del viaje" : "Trip notes"}
           </h3>
@@ -135,7 +135,7 @@ export function TripNotes({ tripId, locale }: TripNotesProps) {
             onClick={() => setShowPreview((v) => !v)}
             className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
               showPreview
-                ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
+                ? "border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.12)] text-[#FFB800]"
                 : "border-white/10 bg-white/5 text-gray-400 hover:text-gray-300"
             }`}
           >
@@ -187,7 +187,7 @@ export function TripNotes({ tripId, locale }: TripNotesProps) {
               ? "Anotá todo lo importante: dirección del hotel, contactos, códigos de reserva...\n\nUsá ## para títulos y **texto** para negrita."
               : "Jot down everything important: hotel address, contacts, booking codes...\n\nUse ## for headings and **text** for bold."
           }
-          className="w-full min-h-[180px] rounded-xl border border-white/[0.08] bg-white/[0.03] focus:border-violet-500/50 focus:bg-violet-950/10 px-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 leading-relaxed resize-y outline-none transition-colors"
+          className="w-full min-h-[180px] rounded-xl border border-white/[0.08] bg-white/[0.03] focus:border-[rgba(255,184,0,0.25)] focus:bg-[rgba(255,184,0,0.06)] px-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 leading-relaxed resize-y outline-none transition-colors"
           spellCheck={false}
         />
       )}

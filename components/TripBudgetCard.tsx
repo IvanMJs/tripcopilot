@@ -266,7 +266,7 @@ export function TripBudgetCard({ trip, locale }: TripBudgetCardProps) {
             <button
               onClick={handleSubmit}
               disabled={submitting || !formDescription.trim() || !formAmount}
-              className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed py-1.5 text-xs font-semibold text-white transition-colors flex items-center justify-center gap-1"
+              className="flex-1 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-50 disabled:cursor-not-allowed py-1.5 text-xs font-semibold text-[#07070d] transition-colors flex items-center justify-center gap-1"
             >
               {submitting ? (
                 <Loader2 className="h-3 w-3 animate-spin" />

@@ -81,7 +81,7 @@ export function LoungeInfo({ airportIata, airlineCode, locale }: LoungeInfoProps
                       </span>
                     )}
                   </div>
-                  <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-violet-950/50 border border-violet-700/40 text-violet-300">
+                  <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] text-[#FFB800]">
                     {lounge.access}
                   </span>
                   <p className="text-[11px] text-gray-500">{lounge.location}</p>

@@ -125,7 +125,7 @@ function TripReactionBar({ tripId, disabled }: TripReactionBarProps) {
           disabled={disabled || reacted !== null}
           className={`text-base rounded-lg px-2 py-1 transition-all active:scale-95 ${
             reacted === emoji
-              ? "bg-violet-600/30 border border-violet-500/50 scale-110"
+              ? "bg-[#FFB800]/30 border border-[rgba(255,184,0,0.25)] scale-110"
               : "bg-white/[0.05] border border-white/[0.07] hover:enabled:bg-white/[0.10]"
           } disabled:cursor-default`}
           aria-label={emoji}
@@ -236,7 +236,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
         className="flex flex-col items-center gap-3 pt-4"
       >
         {/* Avatar */}
-        <div className="h-20 w-20 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-lg shadow-violet-900/40">
+        <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shadow-lg shadow-[rgba(255,184,0,0.20)]">
           <span className="text-3xl font-black text-white">
             {getInitials(profile.displayName, profile.username)}
           </span>
@@ -249,7 +249,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
               {profile.displayName}
             </h1>
           )}
-          <p className="text-sm font-semibold text-violet-400 mt-0.5">
+          <p className="text-sm font-semibold text-[#FFB800] mt-0.5">
             @{profile.username}
           </p>
         </div>
@@ -304,7 +304,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
                     className={`rounded-xl text-sm font-bold px-5 py-2.5 transition-all active:scale-95 disabled:opacity-60 ${
                       viewerFollows
                         ? "bg-white/[0.08] border border-white/[0.15] text-white/70 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400"
-                        : "bg-violet-600 hover:bg-violet-500 text-white"
+                        : "bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d]"
                     }`}
                   >
                     {followLoading ? "..." : viewerFollows ? L.following : L.follow}
@@ -325,7 +325,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
               <div className="flex flex-col items-center gap-1.5">
                 <a
                   href="/#empezar"
-                  className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold px-5 py-2.5 transition-all active:scale-95"
+                  className="rounded-xl bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d] text-sm font-bold px-5 py-2.5 transition-all active:scale-95"
                 >
                   {L.follow}
                 </a>
@@ -371,7 +371,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
                     onClick={() => setSelectedYear(y)}
                     className={`flex-none text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${
                       y === activeYear
-                        ? "bg-violet-600 text-white"
+                        ? "bg-[#FFB800] text-[#07070d]"
                         : "bg-white/[0.06] border border-white/[0.08] text-white/40 hover:text-white/70"
                     }`}
                   >
@@ -464,9 +464,9 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
               {profile.friendData.sharedDestinations.map((d) => (
                 <div
                   key={d.destinationCode}
-                  className="flex items-center gap-1.5 rounded-lg bg-violet-600/20 border border-violet-500/30 px-2.5 py-1.5"
+                  className="flex items-center gap-1.5 rounded-lg bg-[#FFB800]/20 border border-[rgba(255,184,0,0.25)] px-2.5 py-1.5"
                 >
-                  <span className="text-xs font-semibold text-violet-200">
+                  <span className="text-xs font-semibold text-[#FFB800]">
                     {d.destinationName ?? d.destinationCode}
                   </span>
                 </div>
@@ -522,7 +522,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
                   className="flex items-center justify-between gap-2"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-violet-400 bg-violet-600/15 border border-violet-500/20 rounded px-1.5 py-0.5">
+                    <span className="text-xs font-mono font-bold text-[#FFB800] bg-[#FFB800]/15 border border-[rgba(255,184,0,0.25)] rounded px-1.5 py-0.5">
                       {dest.destinationCode}
                     </span>
                     <span className="text-sm font-semibold text-white/90">
@@ -561,7 +561,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
               </p>
               <div className="flex flex-wrap gap-1 mb-3 text-xs text-white/40">
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-violet-600/20 border border-violet-500/50" />
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#FFB800]/20 border border-[rgba(255,184,0,0.25)]" />
                   {L.both}
                 </span>
                 <span className="inline-flex items-center gap-1 ml-2">
@@ -569,7 +569,7 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
                   {L.onlyThem}
                 </span>
                 <span className="inline-flex items-center gap-1 ml-2">
-                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-blue-600/15 border border-blue-500/40" />
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#FFB800]/15 border border-blue-500/40" />
                   {L.youVisited}
                 </span>
               </div>
@@ -578,9 +578,9 @@ export function TripSocialProfile({ profile, currentUserId }: Props) {
                   const isBoth = sharedSet.has(code);
                   const isViewerOnly = !profileCodes.includes(code);
                   const cls = isBoth
-                    ? "border-violet-500/50 bg-violet-600/20"
+                    ? "border-[rgba(255,184,0,0.25)] bg-[#FFB800]/20"
                     : isViewerOnly
-                    ? "border-blue-500/40 bg-blue-600/15"
+                    ? "border-blue-500/40 bg-[#FFB800]/15"
                     : "border-white/[0.07] bg-white/[0.06]";
                   return (
                     <div key={code} title={code} className={`flex items-center rounded-lg border px-1.5 py-1 ${cls}`}>

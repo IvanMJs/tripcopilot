@@ -51,7 +51,7 @@ const LABELS = {
 const LEVEL_STYLES: Record<HealthCheckItem["level"], string> = {
   ok: "border-l-emerald-500 bg-emerald-950/20",
   warning: "border-l-amber-500 bg-amber-950/20",
-  tip: "border-l-violet-500 bg-violet-950/20",
+  tip: "border-l-[#FFB800] bg-[rgba(255,184,0,0.06)]",
 };
 
 // ── Score color ───────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ export function TripHealthCheck({ tripId, locale }: TripHealthCheckProps) {
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-white">{labels.title}</h3>
-            <span className="rounded-full bg-violet-500/20 border border-violet-500/30 px-1.5 py-0.5 text-[10px] font-medium text-violet-300">
+            <span className="rounded-full bg-[rgba(255,184,0,0.12)] border border-[rgba(255,184,0,0.25)] px-1.5 py-0.5 text-[10px] font-medium text-[#FFB800]">
               AI
             </span>
           </div>
@@ -189,7 +189,7 @@ export function TripHealthCheck({ tripId, locale }: TripHealthCheckProps) {
           </AnimatePresence>
 
           {/* AI Tip */}
-          <p className="text-[11px] italic text-violet-300 leading-snug">
+          <p className="text-[11px] italic text-[#FFB800] leading-snug">
             ✨ {data.aiTip}
           </p>
         </div>

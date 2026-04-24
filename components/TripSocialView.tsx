@@ -313,9 +313,9 @@ export function TripSocialView({ locale, userId }: Props) {
         <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
           {L.searchLabel}
         </p>
-        <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 focus-within:border-violet-500/60 transition-colors">
+        <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.05] px-3 py-2 focus-within:border-[rgba(255,184,0,0.25)] transition-colors">
           {/* @ prefix icon */}
-          <span className="text-sm font-semibold text-violet-400 select-none">@</span>
+          <span className="text-sm font-semibold text-[#FFB800] select-none">@</span>
           <input
             type="text"
             value={searchQuery}
@@ -325,7 +325,7 @@ export function TripSocialView({ locale, userId }: Props) {
           />
           {searchLoading && (
             <svg
-              className="h-4 w-4 text-violet-400 animate-spin shrink-0"
+              className="h-4 w-4 text-[#FFB800] animate-spin shrink-0"
               viewBox="0 0 24 24"
               fill="none"
             >
@@ -358,7 +358,7 @@ export function TripSocialView({ locale, userId }: Props) {
                   className="flex items-center justify-between px-4 py-2.5 hover:bg-white/[0.05] transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shrink-0">
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
                       <span className="text-xs font-bold text-white">
                         {getInitial(result.displayName ?? result.username)}
                       </span>
@@ -367,7 +367,7 @@ export function TripSocialView({ locale, userId }: Props) {
                       <p className="text-sm font-medium text-white truncate">
                         {result.displayName ?? result.username}
                       </p>
-                      <p className="text-xs text-violet-400">@{result.username}</p>
+                      <p className="text-xs text-[#FFB800]">@{result.username}</p>
                     </div>
                   </div>
                   <button
@@ -375,7 +375,7 @@ export function TripSocialView({ locale, userId }: Props) {
                       setSearchOpen(false);
                       router.push(`/u/${result.username}`);
                     }}
-                    className="shrink-0 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors ml-3"
+                    className="shrink-0 text-xs font-semibold text-[#FFB800] hover:text-[#FFB800] transition-colors ml-3"
                   >
                     {L.viewProfile}
                   </button>
@@ -403,7 +403,7 @@ export function TripSocialView({ locale, userId }: Props) {
               className="flex items-center justify-between gap-3 flex-wrap"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shrink-0">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
                   <span className="text-xs font-bold text-white">
                     {getInitial(req.requesterEmail)}
                   </span>
@@ -416,7 +416,7 @@ export function TripSocialView({ locale, userId }: Props) {
                 <button
                   onClick={() => void handleAccept(req.friendshipId)}
                   disabled={actionLoading === req.friendshipId}
-                  className="rounded-lg bg-violet-600 hover:bg-violet-500 active:scale-95 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 transition-all"
+                  className="rounded-lg bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 disabled:opacity-50 text-[#07070d] text-xs font-semibold px-3 py-1.5 transition-all"
                 >
                   {L.accept}
                 </button>
@@ -468,7 +468,7 @@ export function TripSocialView({ locale, userId }: Props) {
                   }}
                   className="w-full flex items-center gap-3 text-left disabled:cursor-default hover:enabled:bg-white/[0.04] rounded-xl px-1 py-1 transition-colors"
                 >
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shrink-0">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
                     <span className="text-sm font-bold text-white">
                       {getInitial(label)}
                     </span>
@@ -476,10 +476,10 @@ export function TripSocialView({ locale, userId }: Props) {
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-white/90 truncate">{label}</p>
                     {friend.username && (
-                      <p className="text-xs text-violet-400">@{friend.username}</p>
+                      <p className="text-xs text-[#FFB800]">@{friend.username}</p>
                     )}
                     {friend.currentLocation !== null && (
-                      <p className="text-xs text-violet-400 font-medium mt-0.5">
+                      <p className="text-xs text-[#FFB800] font-medium mt-0.5">
                         {"📍 "}
                         {friend.currentLocation.city} &mdash; {L.travelingNow}
                       </p>
@@ -517,7 +517,7 @@ export function TripSocialView({ locale, userId }: Props) {
                 href={`/u/${f.username}`}
                 className="flex items-center gap-3 hover:bg-white/[0.04] rounded-xl p-2 -mx-2 transition-colors"
               >
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shrink-0">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
                   <span className="text-sm font-black text-white">{(f.displayName ?? f.username)[0]?.toUpperCase()}</span>
                 </div>
                 <div className="min-w-0">
@@ -548,7 +548,7 @@ export function TripSocialView({ locale, userId }: Props) {
                 href={`/u/${f.username}`}
                 className="flex items-center gap-3 hover:bg-white/[0.04] rounded-xl p-2 -mx-2 transition-colors"
               >
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shrink-0">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
                   <span className="text-sm font-black text-white">{(f.displayName ?? f.username)[0]?.toUpperCase()}</span>
                 </div>
                 <div className="min-w-0">
@@ -584,7 +584,7 @@ export function TripSocialView({ locale, userId }: Props) {
                   href={`/u/${item.username}`}
                   className="flex items-center gap-3 hover:bg-white/[0.04] rounded-xl p-2 -mx-2 transition-colors"
                 >
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shrink-0">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#FFB800] to-blue-600 flex items-center justify-center shrink-0">
                     <span className="text-sm font-black text-white">
                       {(item.displayName ?? item.username)[0]?.toUpperCase()}
                     </span>
@@ -595,7 +595,7 @@ export function TripSocialView({ locale, userId }: Props) {
                       {" "}
                       <span className="text-white/50">{isUpcoming ? L.feedUpcoming : L.feedAdded}</span>
                       {" "}
-                      <span className="font-semibold text-violet-300">{item.destinationName ?? item.destinationCode}</span>
+                      <span className="font-semibold text-[#FFB800]">{item.destinationName ?? item.destinationCode}</span>
                     </p>
                     <p className="text-xs text-white/30 mt-0.5">{item.isoDate}</p>
                   </div>
@@ -627,13 +627,13 @@ export function TripSocialView({ locale, userId }: Props) {
               setAddSuccess(false);
             }}
             placeholder={L.addFriendPlaceholder}
-            className="flex-1 min-w-0 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white text-sm placeholder-white/30 px-3 py-2 focus:outline-none focus:border-violet-500/60 transition-colors"
+            className="flex-1 min-w-0 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white text-sm placeholder-white/30 px-3 py-2 focus:outline-none focus:border-[rgba(255,184,0,0.25)] transition-colors"
             disabled={addLoading}
           />
           <button
             type="submit"
             disabled={addLoading || !addUsername.trim()}
-            className="shrink-0 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 transition-all"
+            className="shrink-0 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 disabled:opacity-50 text-[#07070d] text-sm font-semibold px-4 py-2 transition-all"
           >
             {addLoading ? "..." : L.addBtn}
           </button>

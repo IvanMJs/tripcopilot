@@ -114,7 +114,7 @@ export function InstallBanner({ locale }: InstallBannerProps) {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={install}
-                className="rounded-lg bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 transition-all"
+                className="rounded-lg bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-xs font-semibold px-3 py-1.5 transition-all"
               >
                 {L.install}
               </button>

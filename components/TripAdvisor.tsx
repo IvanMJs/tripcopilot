@@ -161,7 +161,7 @@ function DestinationCard({
     if (c.includes("tropical") || c.includes("humid")) return "border-l-2 border-l-blue-500/50";
     if (c.includes("dry") || c.includes("arid")) return "border-l-2 border-l-amber-500/50";
     if (c.includes("temperate")) return "border-l-2 border-l-green-500/50";
-    return "border-l-2 border-l-violet-500/30";
+    return "border-l-2 border-l-[#FFB800]/30";
   }
 
   return (
@@ -235,7 +235,7 @@ function DestinationCard({
                   onClick={() => setActiveTab(tab)}
                   className={`px-3 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px ${
                     activeTab === tab
-                      ? "border-violet-500 text-violet-300"
+                      ? "border-[rgba(255,184,0,0.35)] text-[#FFB800]"
                       : "border-transparent text-gray-500 hover:text-gray-300"
                   }`}
                 >
@@ -288,7 +288,7 @@ function DestinationCard({
                     <ul className="space-y-1 mb-2">
                       {tips.map((t, i) => (
                         <li key={i} className="flex items-start gap-2 text-xs text-gray-400">
-                          <span className="text-violet-500 mt-0.5">✦</span>
+                          <span className="text-[#FFB800] mt-0.5">✦</span>
                           <span>{locale === "es" ? t.es : t.en}</span>
                         </li>
                       ))}
@@ -440,7 +440,7 @@ function PackingSection({
                           type="checkbox"
                           checked={!!checked[item.item]}
                           onChange={() => toggleItem(item.item)}
-                          className="w-5 h-5 mt-0.5 shrink-0 cursor-pointer accent-violet-500"
+                          className="w-5 h-5 mt-0.5 shrink-0 cursor-pointer accent-[#FFB800]"
                         />
                         <div>
                           <span className="text-gray-300">{item.item}</span>
@@ -698,7 +698,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
             <div className="px-4 py-4 flex items-center gap-3 border-b border-white/[0.04]">
               <TripCopilotIcon spinning size={36} />
               <div>
-                <p className="text-xs font-semibold text-violet-300 animate-pulse">
+                <p className="text-xs font-semibold text-[#FFB800] animate-pulse">
                   {locale === "es" ? "Preparando tus consejos…" : "Preparing your tips…"}
                 </p>
                 <p className="text-[11px] text-gray-500 mt-0.5">
@@ -711,13 +711,13 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
           {/* AI summary — prominent card */}
           {aiData?.summary && (
             <div
-              className="mx-3 my-3 rounded-xl border border-violet-700/30 overflow-hidden"
+              className="mx-3 my-3 rounded-xl border border-[rgba(255,184,0,0.25)] overflow-hidden"
               style={{ background: "linear-gradient(135deg, rgba(76,29,149,0.18) 0%, rgba(30,10,60,0.25) 100%)" }}
             >
               <div className="flex items-start gap-3 px-4 py-3">
                 <TripCopilotIcon size={40} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-violet-400 mb-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#FFB800] mb-1">
                     {locale === "es" ? "Resumen IA" : "AI Summary"}
                   </p>
                   <p className="text-sm text-gray-200 leading-relaxed">{aiData.summary}</p>
@@ -814,11 +814,11 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
                               transition={{ type: "spring", stiffness: 400, damping: 22 }}
                               className={`inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-xl border transition-colors ${
                                 selected
-                                  ? "bg-violet-600/20 text-violet-200 border-violet-500/50"
+                                  ? "bg-[#FFB800]/20 text-[#FFB800] border-[rgba(255,184,0,0.25)]"
                                   : "bg-white/[0.04] text-gray-300 border-white/[0.08] hover:border-white/20"
                               }`}
                             >
-                              {selected && <span className="text-violet-400 text-[10px]">✓ </span>}
+                              {selected && <span className="text-[#FFB800] text-[10px]">✓ </span>}
                               <span>{chip.emoji}</span>
                               <span>{locale === "es" ? chip.label : chip.labelEn}</span>
                             </motion.button>
@@ -827,7 +827,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
                       </div>
                       <button
                         onClick={handleRefine}
-                        className="w-full py-2 rounded-xl bg-violet-700/40 border border-violet-500/40 text-xs font-semibold text-violet-100 hover:bg-violet-700/60 transition-colors"
+                        className="w-full py-2 rounded-xl bg-[#E6A500]/40 border border-[rgba(255,184,0,0.25)] text-xs font-semibold text-[#FFB800] hover:bg-[#E6A500]/60 transition-colors"
                       >
                         {locale === "es" ? "Regenerar consejos →" : "Regenerate tips →"}
                       </button>
@@ -846,7 +846,7 @@ export function TripAdvisor({ flights, locale }: TripAdvisorProps) {
               </p>
               <button
                 onClick={() => { fetchedKey.current = ""; setFetchTrigger((v) => v + 1); }}
-                className="text-xs text-violet-400 hover:text-violet-300 transition-colors shrink-0"
+                className="text-xs text-[#FFB800] hover:text-[#FFB800] transition-colors shrink-0"
               >
                 {locale === "es" ? "Reintentar" : "Retry"}
               </button>

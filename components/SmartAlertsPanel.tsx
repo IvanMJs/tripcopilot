@@ -18,14 +18,14 @@ const BORDER_COLOR: Record<SmartAlert["type"], string> = {
   departure_soon:   "border-l-amber-400",
   delay_active:     "border-l-red-500",
   checkin_reminder: "border-l-blue-500",
-  gate_change:      "border-l-violet-500",
+  gate_change:      "border-l-[#FFB800]",
 };
 
 const ICON_COLOR: Record<SmartAlert["type"], string> = {
   departure_soon:   "text-amber-400",
   delay_active:     "text-red-400",
   checkin_reminder: "text-blue-400",
-  gate_change:      "text-violet-400",
+  gate_change:      "text-[#FFB800]",
 };
 
 // ── Icon component ────────────────────────────────────────────────────────────

@@ -71,7 +71,7 @@ export function FlightsEmptyState({ locale, onCreateTrip }: FlightsEmptyStatePro
   }, []);
 
   const toneClasses = {
-    violet:  "border-violet-500/20 text-violet-300 bg-violet-500/[0.08]",
+    violet:  "border-[rgba(255,184,0,0.25)] text-[#FFB800] bg-[rgba(255,184,0,0.12)][0.08]",
     blue:    "border-blue-500/20 text-blue-300 bg-blue-500/[0.08]",
     emerald: "border-emerald-500/20 text-emerald-300 bg-emerald-500/[0.08]",
   } as const;
@@ -126,12 +126,12 @@ export function FlightsEmptyState({ locale, onCreateTrip }: FlightsEmptyStatePro
           </div>
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.05]">
             <div className="h-2 w-20 bg-white/10 rounded-full" />
-            <div className="h-6 w-16 bg-violet-500/20 rounded-lg" />
+            <div className="h-6 w-16 bg-[rgba(255,184,0,0.12)] rounded-lg" />
           </div>
         </div>
         <div className="absolute inset-0 rounded-2xl bg-[#080810]/75 flex flex-col items-center justify-center gap-2">
-          <div className="flex items-center gap-2 bg-violet-500/20 border border-violet-500/30 rounded-full px-3 py-1.5 backdrop-blur-sm">
-            <Ticket size={13} className="text-violet-300" />
+          <div className="flex items-center gap-2 bg-[rgba(255,184,0,0.12)] border border-[rgba(255,184,0,0.25)] rounded-full px-3 py-1.5 backdrop-blur-sm">
+            <Ticket size={13} className="text-[#FFB800]" />
             <span className="text-[11px] font-black text-white">{L.ghostLabel}</span>
           </div>
           <p className="text-[10px] text-gray-400 text-center px-8 leading-relaxed">{L.ghostSub}</p>
@@ -214,7 +214,7 @@ export function FlightsEmptyState({ locale, onCreateTrip }: FlightsEmptyStatePro
       {/* CTA */}
       <button
         onClick={onCreateTrip}
-        className="animate-glow-pulse relative overflow-hidden w-full rounded-2xl bg-gradient-to-r from-violet-600 to-violet-500 text-white font-black py-4 text-[15px] active:scale-[0.98] transition-transform shimmer-btn"
+        className="animate-glow-pulse relative overflow-hidden w-full rounded-2xl bg-gradient-to-r from-[#FFB800] to-[#E6A500] text-white font-black py-4 text-[15px] active:scale-[0.98] transition-transform shimmer-btn"
       >
         <span className="relative z-10 flex items-center justify-center gap-2">
           <Plus size={20} strokeWidth={2.5} />

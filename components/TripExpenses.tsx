@@ -173,15 +173,15 @@ export function TripExpenses({ tripId, tripName = "trip", locale, readOnly = fal
 
       {/* First-use hint for long-press */}
       {showHint && onQuickAdd && (
-        <div className="mx-4 mb-2 flex items-center justify-between gap-2 rounded-lg bg-violet-950/30 border border-violet-800/30 px-3 py-2">
-          <p className="text-xs text-violet-300">
+        <div className="mx-4 mb-2 flex items-center justify-between gap-2 rounded-lg bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] px-3 py-2">
+          <p className="text-xs text-[#FFB800]">
             {locale === "es"
               ? "Mantén presionado el encabezado para agregar un gasto rápido."
               : "Long-press the header to quickly add an expense."}
           </p>
           <button
             onClick={dismissHint}
-            className="shrink-0 text-violet-400 hover:text-violet-200 transition-colors"
+            className="shrink-0 text-[#FFB800] hover:text-[#FFC933] transition-colors"
             aria-label={locale === "es" ? "Cerrar" : "Dismiss"}
           >
             <X className="h-3 w-3" />
@@ -197,7 +197,7 @@ export function TripExpenses({ tripId, tripName = "trip", locale, readOnly = fal
               {totalEntries.map(([cur, amt]) => (
                 <span
                   key={cur}
-                  className="px-2.5 py-1 rounded-lg bg-violet-950/40 border border-violet-800/30 text-xs font-semibold text-violet-300"
+                  className="px-2.5 py-1 rounded-lg bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] text-xs font-semibold text-[#FFB800]"
                 >
                   {cur} {amt.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </span>
@@ -311,7 +311,7 @@ export function TripExpenses({ tripId, tripName = "trip", locale, readOnly = fal
                 <button
                   onClick={handleSubmit}
                   disabled={submitting || !formAmount}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 text-xs font-semibold text-[#07070d] transition-colors"
                 >
                   {submitting
                     ? (locale === "es" ? "Guardando..." : "Saving...")

@@ -91,10 +91,10 @@ export function TripCountdownWidget({
   }
 
   return (
-    <div className="rounded-2xl border border-violet-700/30 bg-gradient-to-br from-violet-950/50 to-[#07070f] p-4">
+    <div className="rounded-2xl border border-[rgba(255,184,0,0.25)] bg-gradient-to-br from-[#FFB800]/50 to-[#07070f] p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-violet-400/70 mb-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#FFB800]/70 mb-0.5">
             {L.departure} · {route}
           </p>
           <p className="text-2xl font-black text-white leading-tight tabular-nums">
@@ -107,7 +107,7 @@ export function TripCountdownWidget({
           onClick={handleShare}
           disabled={sharing}
           aria-label={sharing ? L.generating : L.share}
-          className="shrink-0 flex items-center gap-1.5 rounded-xl border border-violet-600/40 bg-violet-900/30 hover:bg-violet-900/50 active:scale-95 px-3 py-2 text-xs font-bold text-violet-300 transition-all disabled:opacity-50 disabled:pointer-events-none"
+          className="shrink-0 flex items-center gap-1.5 rounded-xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.08)] hover:bg-[rgba(255,184,0,0.08)] active:scale-95 px-3 py-2 text-xs font-bold text-[#FFB800] transition-all disabled:opacity-50 disabled:pointer-events-none"
         >
           {sharing ? (
             <>

@@ -45,7 +45,7 @@ export function EmptyState({
           {cta && (
             <button
               onClick={cta.onClick}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-6 py-3 transition-all"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-sm font-semibold px-6 py-3 transition-all"
             >
               {cta.label}
             </button>

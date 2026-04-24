@@ -64,9 +64,9 @@ function getAirlineColor(code: string): string {
     AR: "bg-sky-700",
     LA: "bg-red-800",
     AV: "bg-red-600",
-    CM: "bg-blue-600",
+    CM: "bg-[#FFB800]",
   };
-  return colors[code] ?? "bg-violet-700";
+  return colors[code] ?? "bg-[#E6A500]";
 }
 
 function getStatusPillClass(status: string | undefined): string {
@@ -124,7 +124,7 @@ function FlightEventCard({
         pastFlight
           ? "border-white/[0.04] bg-white/[0.02] opacity-60"
           : isFirst
-          ? "border-violet-700/30 bg-white/[0.05]"
+          ? "border-[rgba(255,184,0,0.25)] bg-white/[0.05]"
           : "border-white/[0.06] bg-white/[0.04]"
       }`}
     >
@@ -363,19 +363,19 @@ export function TripTimelineView({ trip, locale, statusMap }: TripTimelineViewPr
                 <div
                   className={`relative z-10 shrink-0 h-10 w-10 rounded-full flex items-center justify-center border-2 ${
                     isTodayDay
-                      ? "border-violet-500 bg-violet-900/60"
+                      ? "border-[rgba(255,184,0,0.35)] bg-[rgba(255,184,0,0.08)]"
                       : isPastDay
                       ? "border-white/10 bg-white/[0.03]"
                       : "border-white/20 bg-white/[0.06]"
                   }`}
                 >
                   {isTodayDay && (
-                    <div className="absolute inset-[-3px] rounded-full border border-violet-500/40 animate-pulse" />
+                    <div className="absolute inset-[-3px] rounded-full border border-[rgba(255,184,0,0.25)] animate-pulse" />
                   )}
                   <span
                     className={`text-[10px] font-black uppercase tabular-nums ${
                       isTodayDay
-                        ? "text-violet-300"
+                        ? "text-[#FFB800]"
                         : isPastDay
                         ? "text-gray-600"
                         : "text-gray-400"
@@ -390,7 +390,7 @@ export function TripTimelineView({ trip, locale, statusMap }: TripTimelineViewPr
                   <p
                     className={`text-xs font-bold ${
                       isTodayDay
-                        ? "text-violet-300"
+                        ? "text-[#FFB800]"
                         : isPastDay
                         ? "text-gray-600"
                         : "text-gray-300"
@@ -403,14 +403,14 @@ export function TripTimelineView({ trip, locale, statusMap }: TripTimelineViewPr
                       : formatDayHeader(date, locale)}
                   </p>
                   {isTodayDay && (
-                    <p className="text-[10px] text-violet-500 font-semibold uppercase tracking-widest">
+                    <p className="text-[10px] text-[#FFB800] font-semibold uppercase tracking-widest">
                       {formatDayHeader(date, locale)}
                     </p>
                   )}
                 </div>
 
                 {isTodayDay && (
-                  <span className="ml-auto shrink-0 text-[10px] font-bold uppercase tracking-widest text-violet-400 bg-violet-900/30 border border-violet-700/40 px-2 py-0.5 rounded-full">
+                  <span className="ml-auto shrink-0 text-[10px] font-bold uppercase tracking-widest text-[#FFB800] bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] px-2 py-0.5 rounded-full">
                     {locale === "es" ? "Hoy" : "Today"}
                   </span>
                 )}

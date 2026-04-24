@@ -201,14 +201,14 @@ export function DreamTripPlanner({
         placeholder={L.placeholder}
         disabled={streaming}
         rows={3}
-        className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-gray-200 placeholder-gray-600 px-3 py-2 resize-none focus:outline-none focus:border-violet-500/50 disabled:opacity-50"
+        className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-gray-200 placeholder-gray-600 px-3 py-2 resize-none focus:outline-none focus:border-[rgba(255,184,0,0.25)] disabled:opacity-50"
       />
       <div className="flex items-center justify-between mt-1 mb-3">
         <span className="text-[10px] text-gray-600">{L.charCount(prompt.length)}</span>
         <button
           onClick={handleSubmit}
           disabled={streaming || prompt.trim().length < 5}
-          className="rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-1.5 text-xs font-semibold text-white transition-colors"
+          className="rounded-xl bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-40 disabled:cursor-not-allowed px-4 py-1.5 text-xs font-semibold text-[#07070d] transition-colors"
         >
           {streaming ? L.buttonLoading : L.button}
         </button>
@@ -222,7 +222,7 @@ export function DreamTripPlanner({
         <div className="mt-2 border-t border-white/[0.05] pt-3">
           {renderPlan(planText)}
           {streaming && (
-            <span className="inline-block w-1.5 h-3 bg-violet-400 animate-pulse ml-0.5" />
+            <span className="inline-block w-1.5 h-3 bg-[rgba(255,184,0,0.25)] animate-pulse ml-0.5" />
           )}
         </div>
       )}
@@ -233,7 +233,7 @@ export function DreamTripPlanner({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           onClick={handleCreateTrip}
-          className="mt-3 w-full rounded-xl border border-violet-500/30 bg-violet-600/10 hover:bg-violet-600/20 px-4 py-2 text-xs font-semibold text-violet-300 transition-colors"
+          className="mt-3 w-full rounded-xl border border-[rgba(255,184,0,0.25)] bg-[#FFB800]/10 hover:bg-[#FFC933]/20 px-4 py-2 text-xs font-semibold text-[#FFB800] transition-colors"
         >
           {L.createTrip}
         </motion.button>

@@ -88,7 +88,7 @@ export function KeyboardShortcutsHelp({ open, onClose, locale }: KeyboardShortcu
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07]">
                 <div className="flex items-center gap-2">
-                  <Keyboard className="h-4 w-4 text-violet-400" />
+                  <Keyboard className="h-4 w-4 text-[#FFB800]" />
                   <h2 className="text-sm font-bold text-white">{title}</h2>
                 </div>
                 <button

@@ -91,14 +91,14 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
               }`}
             >
               <div className="relative h-16 w-16 shrink-0">
-                <div className="h-16 w-16 rounded-2xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center overflow-hidden">
-                  <svg className="h-8 w-8 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <div className="h-16 w-16 rounded-2xl bg-[#FFB800]/20 border border-[rgba(255,184,0,0.25)] flex items-center justify-center overflow-hidden">
+                  <svg className="h-8 w-8 text-[#FFB800]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                     <rect x="4" y="2" width="16" height="20" rx="2" />
                     <line x1="8" y1="8" x2="16" y2="8" />
                     <line x1="8" y1="12" x2="16" y2="12" />
                     <line x1="8" y1="16" x2="12" y2="16" />
                   </svg>
-                  <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-90 animate-onboarding-scan" />
+                  <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#FFC933] to-transparent opacity-90 animate-onboarding-scan" />
                 </div>
               </div>
               <div>
@@ -168,7 +168,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
                     maxLength={20}
                     autoCapitalize="none"
                     autoCorrect="off"
-                    className="w-full pl-7 pr-10 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-violet-500/50 transition-colors"
+                    className="w-full pl-7 pr-10 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-[rgba(255,184,0,0.25)] transition-colors"
                   />
                   {usernameStatus === "checking" && (
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">...</span>
@@ -191,7 +191,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value.slice(0, 40))}
                   placeholder={es ? "Tu nombre (ej: María G.)" : "Your name (e.g. Maria G.)"}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-violet-500/50 transition-colors"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 text-sm outline-none focus:border-[rgba(255,184,0,0.25)] transition-colors"
                 />
                 <p className="text-[11px] text-gray-600 text-center">
                   {es ? "Solo letras minúsculas, números y _ · 3–20 caracteres" : "Lowercase letters, numbers and _ · 3–20 chars"}
@@ -246,7 +246,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
               aria-label={`Step ${i + 1}`}
               className={`rounded-full transition-all duration-300 ${
                 i === step
-                  ? "h-2 w-5 bg-violet-500"
+                  ? "h-2 w-5 bg-[#FFB800]"
                   : "h-2 w-2 bg-white/20 hover:bg-white/35"
               }`}
             />
@@ -267,7 +267,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
               )}
               <button
                 onClick={() => void handleNext()}
-                className="flex-1 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-sm font-bold py-3 transition-all tap-scale"
+                className="flex-1 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-sm font-bold py-3 transition-all tap-scale"
               >
                 {es ? "Siguiente →" : "Next →"}
               </button>
@@ -276,7 +276,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
             <div className="space-y-2">
               <button
                 onClick={onSeeExample}
-                className="w-full rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-sm font-bold py-3.5 transition-all tap-scale"
+                className="w-full rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-sm font-bold py-3.5 transition-all tap-scale"
               >
                 {es ? "Ver viaje de ejemplo ✈️" : "See example trip ✈️"}
               </button>

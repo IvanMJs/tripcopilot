@@ -125,7 +125,7 @@ function TripCard({
         <div className="flex items-center gap-1 flex-wrap">
           {breadcrumb.map((iata, i) => (
             <span key={`${iata}-${i}`} className="flex items-center gap-1">
-              <span className="text-xs font-mono font-bold text-violet-300">
+              <span className="text-xs font-mono font-bold text-[#FFB800]">
                 {iata}
               </span>
               {i < breadcrumb.length - 1 && (
@@ -159,7 +159,7 @@ function TripCard({
         {onCreateSimilar && (
           <button
             onClick={() => onCreateSimilar(trip)}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/30 text-violet-300 text-xs font-bold py-2 transition-all active:scale-95"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#FFB800]/20 hover:bg-[#FFC933]/35 border border-[rgba(255,184,0,0.25)] text-[#FFB800] text-xs font-bold py-2 transition-all active:scale-95"
           >
             <Copy className="h-3.5 w-3.5" />
             {L.createSimilar}
@@ -262,7 +262,7 @@ export function TripHistoryView({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={L.searchPlaceholder}
-              className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] pl-8 pr-3 py-2.5 text-xs text-white placeholder:text-gray-600 outline-none focus:border-violet-500/50 transition-colors"
+              className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] pl-8 pr-3 py-2.5 text-xs text-white placeholder:text-gray-600 outline-none focus:border-[rgba(255,184,0,0.25)] transition-colors"
             />
           </div>
 
@@ -338,7 +338,7 @@ function YearPill({
       onClick={onClick}
       className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold border transition-all active:scale-95 ${
         active
-          ? "bg-violet-600/30 border-violet-500/50 text-violet-200"
+          ? "bg-[#FFB800]/30 border-[rgba(255,184,0,0.25)] text-[#FFC933]"
           : "bg-white/[0.04] border-white/[0.08] text-gray-500 hover:bg-white/[0.08] hover:text-gray-300"
       }`}
     >

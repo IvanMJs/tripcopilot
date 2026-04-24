@@ -101,12 +101,12 @@ export function FlightPriceAlertTeaser({
   const isFree = planType === "free";
 
   return (
-    <div className="rounded-xl border border-violet-800/30 bg-violet-950/20 p-4 space-y-3">
+    <div className="rounded-xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.06)] p-4 space-y-3">
       {/* Header row */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-violet-900/50 flex items-center justify-center">
-            <TrendingDown className="h-3.5 w-3.5 text-violet-400" />
+          <div className="w-7 h-7 rounded-full bg-[rgba(255,184,0,0.08)] flex items-center justify-center">
+            <TrendingDown className="h-3.5 w-3.5 text-[#FFB800]" />
           </div>
           <div>
             <p className="text-xs font-bold text-white">{L.title}</p>
@@ -116,7 +116,7 @@ export function FlightPriceAlertTeaser({
           </div>
         </div>
 
-        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-900/40 border border-violet-700/30 text-violet-400">
+        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] text-[#FFB800]">
           {L.badge}
         </span>
       </div>
@@ -131,7 +131,7 @@ export function FlightPriceAlertTeaser({
         {isFree ? (
           <button
             onClick={onUpgrade}
-            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white transition-colors"
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] text-xs font-bold text-[#07070d] transition-colors"
           >
             {L.ctaFree}
           </button>

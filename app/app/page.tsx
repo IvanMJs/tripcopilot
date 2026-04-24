@@ -820,7 +820,7 @@ export default function HomePage() {
                   aria-label={locale === "es" ? "Ajustes" : "Settings"}
                   className={`flex items-center justify-center rounded-md border p-1.5 transition-colors ${
                     activeTab === "settings"
-                      ? "border-violet-700/60 bg-violet-900/20 text-violet-400"
+                      ? "border-[rgba(255,184,0,0.35)] bg-[rgba(255,184,0,0.08)] text-[#FFB800]"
                       : "border-gray-700 bg-gray-900 text-gray-500 hover:text-gray-300 hover:border-gray-600"
                   }`}
                 >
@@ -927,7 +927,7 @@ export default function HomePage() {
               <span>⚠️ {t.errorFAA} {error}</span>
               <button
                 onClick={() => refresh()}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors shrink-0"
+                className="px-4 py-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d] text-sm font-semibold transition-colors shrink-0"
               >
                 {locale === "es" ? "Reintentar" : "Retry"}
               </button>
@@ -1017,7 +1017,7 @@ export default function HomePage() {
                     </p>
                     <button
                       onClick={openCreateTripModal}
-                      className="rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-5 py-2.5 transition-all"
+                      className="rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-sm font-semibold px-5 py-2.5 transition-all"
                     >
                       {locale === "es" ? "Crear viaje" : "Create trip"}
                     </button>
@@ -1125,9 +1125,9 @@ export default function HomePage() {
                   />
                 )}
                 {!tripsLoading && userTrips.length >= PLANS.free.maxTrips && (
-                  <div className="mx-4 mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="mx-4 mb-4 rounded-xl border border-[rgba(255,184,0,0.30)] bg-[rgba(255,184,0,0.08)] px-4 py-3 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-violet-300">
+                      <p className="text-sm font-semibold text-[#FFB800]">
                         {locale === "es" ? "Plan gratuito completo" : "Free plan limit reached"}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
@@ -1138,7 +1138,7 @@ export default function HomePage() {
                     </div>
                     <button
                       onClick={() => setShowUpgradeModal(true)}
-                      className="shrink-0 rounded-lg bg-violet-600 hover:bg-violet-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                      className="shrink-0 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] px-3 py-1.5 text-xs font-semibold text-[#07070d] transition-colors"
                     >
                       Premium ✦
                     </button>

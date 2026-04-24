@@ -352,7 +352,7 @@ function TripTimeline({
                 <div className="absolute left-[7px] top-5 bottom-0 w-px bg-white/[0.07]" />
               )}
               <div className="flex items-start gap-3 py-1.5">
-                <div className="h-3.5 w-3.5 rounded-full border border-violet-700/60 bg-violet-900/40 shrink-0 mt-0.5" />
+                <div className="h-3.5 w-3.5 rounded-full border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.06)] shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-white">
                     {originCity}
@@ -429,7 +429,7 @@ export default async function ShareTripPage({ params }: PageProps) {
           }
         `}</style>
         <div
-          className="animate-fly absolute top-5 text-violet-500/20 text-lg select-none"
+          className="animate-fly absolute top-5 text-[rgba(255,184,0,0.60)] text-lg select-none"
         >
           ✈
         </div>
@@ -439,11 +439,11 @@ export default async function ShareTripPage({ params }: PageProps) {
       <div className="relative overflow-hidden">
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-br from-violet-950/60 via-[#0a0a12] to-[#0a0a12]"
+          className="absolute inset-0 bg-gradient-to-br from-[rgba(7,7,13,0.60)] via-[#0a0a12] to-[#0a0a12]"
         />
         <div
           aria-hidden="true"
-          className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-violet-600/15 blur-3xl"
+          className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[rgba(255,184,0,0.12)] blur-3xl"
         />
 
         <div className="relative max-w-lg mx-auto px-5 pt-10 pb-8">
@@ -460,7 +460,7 @@ export default async function ShareTripPage({ params }: PageProps) {
 
           {/* Destination city */}
           {heroCity && (
-            <p className="text-lg font-semibold text-violet-300/80 mb-4">{heroCity}</p>
+            <p className="text-lg font-semibold text-[rgba(255,184,0,0.60)] mb-4">{heroCity}</p>
           )}
 
           {/* Route breadcrumb */}
@@ -475,7 +475,7 @@ export default async function ShareTripPage({ params }: PageProps) {
           <div className="flex items-center gap-2 flex-wrap">
             {flightCount > 0 && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.06] border border-white/[0.09] text-xs font-semibold text-gray-300">
-                <Plane className="h-3 w-3 text-violet-400" aria-hidden="true" />
+                <Plane className="h-3 w-3 text-[#FFB800]" aria-hidden="true" />
                 {L.flights(flightCount)}
               </span>
             )}
@@ -544,14 +544,14 @@ export default async function ShareTripPage({ params }: PageProps) {
         <InstallBanner locale={locale} />
 
         {/* CTA */}
-        <div className="rounded-2xl border border-violet-800/30 bg-gradient-to-br from-violet-950/40 to-transparent px-5 py-6 text-center space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-violet-400/80">
+        <div className="rounded-2xl border border-[rgba(255,184,0,0.25)] bg-gradient-to-br from-[rgba(7,7,13,0.60)] to-transparent px-5 py-6 text-center space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-[rgba(255,184,0,0.60)]">
             {L.ctaLabel}
           </p>
           <p className="text-base font-bold text-white">{L.ctaBody}</p>
           <Link
             href="/app"
-            className="inline-block rounded-xl bg-violet-600 hover:bg-violet-500 active:bg-violet-700 transition-colors px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-900/40"
+            className="inline-block rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:bg-[#E6A500] transition-colors px-6 py-2.5 text-sm font-bold text-[#07070d] shadow-lg shadow-[rgba(255,184,0,0.20)]"
           >
             {L.ctaBtn}
           </Link>

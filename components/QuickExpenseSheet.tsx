@@ -168,7 +168,7 @@ export function QuickExpenseSheet({ tripId, locale, onClose }: QuickExpenseSheet
                     onClick={() => setCurrency(c)}
                     className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                       currency === c
-                        ? "bg-violet-600 border-violet-500 text-white"
+                        ? "bg-[#FFB800] border-[rgba(255,184,0,0.35)] text-[#07070d]"
                         : "bg-white/[0.04] border-white/[0.08] text-gray-400 hover:text-white"
                     }`}
                   >
@@ -213,13 +213,13 @@ export function QuickExpenseSheet({ tripId, locale, onClose }: QuickExpenseSheet
               onChange={(e) => setDescription(e.target.value)}
               placeholder={L.descPlaceholder}
               maxLength={100}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-violet-500/50 transition-colors"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[rgba(255,184,0,0.25)] transition-colors"
             />
 
             <button
               onClick={handleAmountNext}
               disabled={!amount || parseFloat(amount) <= 0}
-              className="w-full rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-3 text-sm font-bold text-white transition-colors"
+              className="w-full rounded-xl bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-40 disabled:cursor-not-allowed px-4 py-3 text-sm font-bold text-[#07070d] transition-colors"
             >
               {L.next}
             </button>
@@ -239,7 +239,7 @@ export function QuickExpenseSheet({ tripId, locale, onClose }: QuickExpenseSheet
                   key={cat.value}
                   onClick={() => handleCategorySelect(cat.value)}
                   disabled={submitting}
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-violet-950/40 hover:border-violet-700/50 disabled:opacity-50 px-3 py-4 transition-all active:scale-95"
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] hover:bg-[rgba(255,184,0,0.06)] hover:border-[rgba(255,184,0,0.25)] disabled:opacity-50 px-3 py-4 transition-all active:scale-95"
                 >
                   <span className="text-2xl" aria-hidden="true">{cat.emoji}</span>
                   <span className="text-xs font-semibold text-gray-300">

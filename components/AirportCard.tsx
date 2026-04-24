@@ -234,7 +234,7 @@ function FaaExplainButton({
     <div className="mt-2">
       <button
         onClick={handleExplain}
-        className="flex items-center gap-1.5 text-xs bg-violet-900/60 hover:bg-violet-800/80 text-violet-300 hover:text-violet-100 border border-violet-700/50 px-2.5 py-1 rounded-full transition-all"
+        className="flex items-center gap-1.5 text-xs bg-[rgba(255,184,0,0.08)] hover:bg-[rgba(255,184,0,0.10)] text-[#FFB800] hover:text-[#FFD566] border border-[rgba(255,184,0,0.25)] px-2.5 py-1 rounded-full transition-all"
       >
         {explainState === "loading" ? (
           <>
@@ -255,7 +255,7 @@ function FaaExplainButton({
       </button>
 
       {open && explainState === "done" && explanation && (
-        <p className="mt-1.5 text-sm text-gray-300 leading-relaxed bg-violet-950/20 border border-violet-800/20 rounded-lg p-3">
+        <p className="mt-1.5 text-sm text-gray-300 leading-relaxed bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] rounded-lg p-3">
           {explanation}
         </p>
       )}

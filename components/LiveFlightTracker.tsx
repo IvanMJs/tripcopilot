@@ -244,7 +244,7 @@ export function LiveFlightTracker({
       <div className="px-3 pb-2">
         <div className="h-1 rounded-full bg-white/[0.08] overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-violet-400"
+            className="h-full rounded-full bg-gradient-to-r from-[#FFB800] to-[#E6A500]"
             initial={{ width: 0 }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}

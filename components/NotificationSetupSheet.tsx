@@ -207,7 +207,7 @@ function RequestButton({ locale, onClose }: { locale: "es" | "en"; onClose: () =
     <button
       onClick={request}
       disabled={state === "loading"}
-      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-bold text-sm py-3.5 transition-colors tap-scale"
+      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-60 text-[#07070d] font-bold text-sm py-3.5 transition-colors tap-scale"
     >
       <Bell className="h-4 w-4" />
       {state === "loading"

@@ -631,7 +631,7 @@ function ChatSection({
             key={prompt}
             onClick={() => void sendMessage(prompt)}
             disabled={loading}
-            className="text-xs bg-violet-900/40 hover:bg-violet-800/60 border border-violet-700/40 text-violet-300 px-3 py-1.5 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="text-xs bg-[rgba(255,184,0,0.08)] hover:bg-[rgba(255,184,0,0.10)] border border-[rgba(255,184,0,0.25)] text-[#FFB800] px-3 py-1.5 rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {prompt}
           </button>

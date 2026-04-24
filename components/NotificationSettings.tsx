@@ -227,8 +227,8 @@ export function NotificationSettings({ open, onClose, locale }: Props) {
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-violet-900/40 border border-violet-700/40 flex items-center justify-center shrink-0">
-                  <Bell className="h-5 w-5 text-violet-400" />
+                <div className="h-10 w-10 rounded-2xl bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] flex items-center justify-center shrink-0">
+                  <Bell className="h-5 w-5 text-[#FFB800]" />
                 </div>
                 <div>
                   <h3 className="text-base font-black text-white">
@@ -262,7 +262,7 @@ export function NotificationSettings({ open, onClose, locale }: Props) {
                     onClick={() => setTheme(value)}
                     className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-semibold transition-colors tap-scale ${
                       theme === value
-                        ? "bg-violet-600/30 border border-violet-500/50 text-violet-300"
+                        ? "bg-[#FFB800]/30 border border-[rgba(255,184,0,0.25)] text-[#FFB800]"
                         : "bg-white/[0.04] border border-white/[0.06] text-gray-400 hover:bg-white/[0.08]"
                     }`}
                   >
@@ -308,7 +308,7 @@ export function NotificationSettings({ open, onClose, locale }: Props) {
                     onClick={() => toggle(row.key)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-colors text-left"
                   >
-                    <span className={`shrink-0 ${prefs[row.key] ? "text-violet-400" : "text-gray-600"}`}>
+                    <span className={`shrink-0 ${prefs[row.key] ? "text-[#FFB800]" : "text-gray-600"}`}>
                       {row.icon}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -321,7 +321,7 @@ export function NotificationSettings({ open, onClose, locale }: Props) {
                     </div>
                     {/* Toggle pill */}
                     <div
-                      className={`shrink-0 w-9 h-5 rounded-full transition-colors duration-200 relative ${prefs[row.key] ? "bg-violet-600" : "bg-gray-700"}`}
+                      className={`shrink-0 w-9 h-5 rounded-full transition-colors duration-200 relative ${prefs[row.key] ? "bg-[#FFB800]" : "bg-gray-700"}`}
                     >
                       <span
                         className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${prefs[row.key] ? "translate-x-4" : "translate-x-0.5"}`}
@@ -336,7 +336,7 @@ export function NotificationSettings({ open, onClose, locale }: Props) {
             <button
               onClick={handleSave}
               disabled={saving || loading}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-bold text-sm py-3.5 transition-colors tap-scale"
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-60 text-[#07070d] font-bold text-sm py-3.5 transition-colors tap-scale"
             >
               {saving
                 ? (locale === "es" ? "Guardando..." : "Saving...")

@@ -123,7 +123,7 @@ export function SharedTripReactions({ shareToken }: SharedTripReactionsProps) {
                 "h-11 w-11 flex items-center justify-center rounded-full text-xl",
                 "border transition-all duration-150",
                 isSelected
-                  ? "border-violet-500/60 bg-violet-900/50 shadow-md shadow-violet-900/40"
+                  ? "border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.08)] shadow-md shadow-[rgba(255,184,0,0.20)]"
                   : isDisabled
                     ? "border-white/[0.06] bg-white/[0.03] opacity-50 cursor-default"
                     : "border-white/[0.08] bg-white/[0.05] hover:bg-white/[0.10] hover:border-white/20 cursor-pointer",
@@ -133,7 +133,7 @@ export function SharedTripReactions({ shareToken }: SharedTripReactionsProps) {
             </motion.button>
             <span
               className={`text-[11px] font-bold tabular-nums ${
-                isSelected ? "text-violet-300" : "text-gray-500"
+                isSelected ? "text-[#FFB800]" : "text-gray-500"
               }`}
             >
               {count > 0 ? count : ""}

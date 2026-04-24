@@ -197,7 +197,7 @@ export function TripTimeline({
             )}
             <button
               onClick={() => handleGoToCard(tooltip.idx, activeNode.isOrigin)}
-              className="mt-2 w-full flex items-center justify-center gap-1 rounded-md bg-blue-600 hover:bg-blue-500 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors"
+              className="mt-2 w-full flex items-center justify-center gap-1 rounded-md bg-[#FFB800] hover:bg-[#FFC933] px-2.5 py-1 text-[11px] font-semibold text-[#07070d] transition-colors"
             >
               <ArrowDown className="h-2.5 w-2.5" />
               {locale === "en" ? "Go to flight" : "Ir al vuelo"}
@@ -242,7 +242,7 @@ export function TripTimeline({
               ? "bg-emerald-400 ring-emerald-400/40"
               : daysUntil !== null && daysUntil <= 7
               ? "bg-amber-400 ring-amber-400/30"
-              : "bg-violet-400 ring-violet-400/30";
+              : "bg-[rgba(255,184,0,0.25)] ring-[rgba(255,184,0,0.25)]";
 
             return (
               <div key={idx} className="flex items-start">
@@ -279,7 +279,7 @@ export function TripTimeline({
                       daysUntil < 0   ? "text-white/30"        :
                       daysUntil === 0 ? "text-emerald-400 animate-pulse" :
                       daysUntil <= 7  ? "text-amber-400"        :
-                      "text-violet-400"
+                      "text-[#FFB800]"
                     }`}>
                       {daysUntil < 0  ? (locale === "en" ? "Done"  : "Listo") :
                        daysUntil === 0 ? (locale === "en" ? "TODAY" : "HOY")   :

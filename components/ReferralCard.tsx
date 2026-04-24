@@ -75,7 +75,7 @@ export function ReferralCard({ locale }: ReferralCardProps) {
 
   if (!info) {
     return (
-      <div className="mx-4 mb-4 rounded-2xl border border-violet-700/20 bg-gradient-to-br from-violet-950/40 via-purple-950/30 to-indigo-950/40 p-5 animate-pulse">
+      <div className="mx-4 mb-4 rounded-2xl border border-[rgba(255,184,0,0.25)] bg-gradient-to-br from-[#FFB800]/40 via-purple-950/30 to-indigo-950/40 p-5 animate-pulse">
         <div className="h-4 w-1/3 rounded bg-white/[0.06] mb-3" />
         <div className="h-3 w-2/3 rounded bg-white/[0.04] mb-5" />
         <div className="h-9 w-full rounded-xl bg-white/[0.05] mb-2" />
@@ -92,31 +92,31 @@ export function ReferralCard({ locale }: ReferralCardProps) {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="mx-4 mb-4 rounded-2xl border border-violet-700/30 bg-gradient-to-br from-violet-950/50 via-purple-950/30 to-indigo-950/50 p-5 overflow-hidden relative"
+      className="mx-4 mb-4 rounded-2xl border border-[rgba(255,184,0,0.25)] bg-gradient-to-br from-[#FFB800]/50 via-purple-950/30 to-indigo-950/50 p-5 overflow-hidden relative"
     >
       {/* Background glow */}
       <div
         aria-hidden="true"
-        className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-violet-600/10 blur-2xl pointer-events-none"
+        className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-[#FFB800]/10 blur-2xl pointer-events-none"
       />
 
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
-        <div className="rounded-xl bg-violet-500/15 p-2 shrink-0">
-          <Gift className="h-5 w-5 text-violet-400" aria-hidden="true" />
+        <div className="rounded-xl bg-[rgba(255,184,0,0.12)] p-2 shrink-0">
+          <Gift className="h-5 w-5 text-[#FFB800]" aria-hidden="true" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white leading-tight">{L.title}</p>
           <p className="text-xs text-gray-400 mt-0.5">{L.subtitle}</p>
         </div>
-        <span className="shrink-0 rounded-full bg-violet-600/20 border border-violet-500/30 px-2.5 py-1 text-[10px] font-bold text-violet-300 whitespace-nowrap">
+        <span className="shrink-0 rounded-full bg-[#FFB800]/20 border border-[rgba(255,184,0,0.25)] px-2.5 py-1 text-[10px] font-bold text-[#FFB800] whitespace-nowrap">
           {L.rewardBadge}
         </span>
       </div>
 
       {/* Invite URL */}
       <div className="flex items-center gap-2 rounded-xl bg-white/[0.05] border border-white/[0.08] px-3 py-2 mb-3">
-        <p className="flex-1 min-w-0 text-xs text-violet-300 font-mono truncate">
+        <p className="flex-1 min-w-0 text-xs text-[#FFB800] font-mono truncate">
           {inviteUrl}
         </p>
         <button
@@ -136,7 +136,7 @@ export function ReferralCard({ locale }: ReferralCardProps) {
       <div className="grid grid-cols-2 gap-2 mb-4">
         <button
           onClick={handleCopy}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-violet-700/40 bg-violet-900/30 px-3 py-2 text-xs font-semibold text-violet-300 hover:bg-violet-900/50 transition-colors"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.08)] px-3 py-2 text-xs font-semibold text-[#FFB800] hover:bg-[rgba(255,184,0,0.08)] transition-colors"
         >
           {copied ? (
             <Check className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
@@ -164,8 +164,8 @@ export function ReferralCard({ locale }: ReferralCardProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Gift className="h-3.5 w-3.5 text-violet-400 shrink-0" aria-hidden="true" />
-          <span className="text-xs font-semibold text-violet-300">
+          <Gift className="h-3.5 w-3.5 text-[#FFB800] shrink-0" aria-hidden="true" />
+          <span className="text-xs font-semibold text-[#FFB800]">
             {L.rewardEarned(info.referralCount)}
           </span>
         </div>

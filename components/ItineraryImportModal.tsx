@@ -352,7 +352,7 @@ export function ItineraryImportModal({
                             onClick={() => setTab(mode)}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                               tab === mode
-                                ? "bg-violet-600 text-white shadow"
+                                ? "bg-[#FFB800] text-[#07070d] shadow"
                                 : "text-gray-500 hover:text-gray-300"
                             }`}
                           >
@@ -370,7 +370,7 @@ export function ItineraryImportModal({
                         onChange={(e) => setText(e.target.value)}
                         placeholder={t.textPlaceholder}
                         rows={9}
-                        className="w-full rounded-xl border border-white/[0.07] bg-surface-darker px-4 py-3 text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-500/60 resize-none font-mono leading-relaxed"
+                        className="w-full rounded-xl border border-white/[0.07] bg-surface-darker px-4 py-3 text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-[rgba(255,184,0,0.45)]/60 resize-none font-mono leading-relaxed"
                       />
                     )}
 
@@ -380,7 +380,7 @@ export function ItineraryImportModal({
                         role="button"
                         tabIndex={0}
                         aria-label={locale === "es" ? "Zona para soltar imagen" : "Image drop zone"}
-                        className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-surface-darker p-6 cursor-pointer hover:border-violet-500/40 transition-colors"
+                        className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-surface-darker p-6 cursor-pointer hover:border-[rgba(255,184,0,0.25)] transition-colors"
                         onClick={() => fileRef.current?.click()}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
@@ -486,7 +486,7 @@ export function ItineraryImportModal({
                     className="flex flex-col items-center justify-center py-16 gap-5"
                   >
                     <div className="relative h-16 w-16">
-                      <div className="absolute inset-0 rounded-full border-2 border-violet-500/30 animate-ping" />
+                      <div className="absolute inset-0 rounded-full border-2 border-[rgba(255,184,0,0.25)] animate-ping" />
                       <div
                         className="animate-spin spin-always w-16 h-16"
                         style={{ animationDuration: "2s", willChange: "transform" }}
@@ -594,7 +594,7 @@ export function ItineraryImportModal({
                 <button
                   onClick={handleAnalyze}
                   disabled={!canAnalyze}
-                  className="flex items-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed px-5 py-2 text-sm font-semibold text-white transition-colors"
+                  className="flex items-center gap-2 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-40 disabled:cursor-not-allowed px-5 py-2 text-sm font-semibold text-[#07070d] transition-colors"
                 >
                   <Image
                     src="/tripcopliot-avatar.svg"
@@ -645,7 +645,7 @@ function FlightReviewCard({
     `w-full rounded-lg border px-2.5 py-1.5 text-xs text-gray-200 bg-surface-darker focus:outline-none focus:ring-1 transition-colors ${
       isMissing(field)
         ? "border-orange-600/60 focus:ring-orange-500/50 placeholder-orange-800"
-        : "border-white/[0.07] focus:ring-violet-500/40 placeholder-gray-700"
+        : "border-white/[0.07] focus:ring-[rgba(255,184,0,0.45)]/40 placeholder-gray-700"
     }`;
 
   const confidenceColor: Record<string, string> = {
@@ -655,7 +655,7 @@ function FlightReviewCard({
   };
 
   return (
-    <div className="rounded-xl border border-violet-600/25 bg-violet-950/10">
+    <div className="rounded-xl border border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.06)]">
       {/* Card header */}
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"

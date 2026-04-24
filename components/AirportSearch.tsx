@@ -117,7 +117,7 @@ export function AirportSearch({ watchedAirports, onAdd }: AirportSearchProps) {
               onClick={() => setSelectedCountry(null)}
               className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
                 selectedCountry === null
-                  ? "bg-blue-600 border-blue-500 text-white"
+                  ? "bg-[#FFB800] border-blue-500 text-[#07070d]"
                   : "border-gray-600 text-gray-400 hover:border-gray-400 hover:text-gray-200"
               }`}
             >
@@ -129,7 +129,7 @@ export function AirportSearch({ watchedAirports, onAdd }: AirportSearchProps) {
                 onClick={() => setSelectedCountry(country === selectedCountry ? null : country)}
                 className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors flex items-center gap-1 ${
                   selectedCountry === country
-                    ? "bg-blue-600 border-blue-500 text-white"
+                    ? "bg-[#FFB800] border-blue-500 text-[#07070d]"
                     : "border-gray-600 text-gray-400 hover:border-gray-400 hover:text-gray-200"
                 }`}
               >
@@ -150,7 +150,7 @@ export function AirportSearch({ watchedAirports, onAdd }: AirportSearchProps) {
                   <button
                     key={code}
                     onClick={() => handleAdd(code)}
-                    className="text-xs bg-white/5 hover:bg-violet-500/20 border border-white/10 hover:border-violet-500/40 text-gray-300 px-2.5 py-1 rounded-full transition-all"
+                    className="text-xs bg-white/5 hover:bg-[#FFC933]/20 border border-white/10 hover:border-[rgba(255,184,0,0.25)] text-gray-300 px-2.5 py-1 rounded-full transition-all"
                   >
                     {AIRPORT_FLAGS[code]} {code}
                   </button>

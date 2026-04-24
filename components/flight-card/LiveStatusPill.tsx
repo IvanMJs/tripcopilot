@@ -32,7 +32,7 @@ function statusLabel(
 
 function pillClasses(status: LiveFlightData["status"]): string {
   switch (status) {
-    case "departed":  return "bg-blue-600/20 text-blue-300 border border-blue-600/30";
+    case "departed":  return "bg-[#FFB800]/20 text-blue-300 border border-blue-600/30";
     case "landed":    return "bg-green-600/20 text-green-300 border border-green-600/30";
     case "cancelled": return "bg-red-700/20 text-red-300 border border-red-700/30";
     case "delayed":   return "bg-orange-600/20 text-orange-300 border border-orange-600/30";

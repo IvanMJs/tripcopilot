@@ -52,14 +52,14 @@ const URGENCY_GRADIENT: Record<HeroUrgency, string> = {
 };
 
 const URGENCY_BORDER: Record<HeroUrgency, string> = {
-  far:      "border-violet-700/40",
+  far:      "border-[rgba(255,184,0,0.25)]",
   week:     "border-blue-700/40",
   near:     "border-amber-600/40",
   imminent: "border-red-600/50",
 };
 
 const URGENCY_TEXT: Record<HeroUrgency, string> = {
-  far:      "text-violet-300",
+  far:      "text-[#FFB800]",
   week:     "text-blue-300",
   near:     "text-amber-300",
   imminent: "text-red-300",
@@ -195,7 +195,7 @@ export function NextFlightHero({ nextFlight, locale }: NextFlightHeroProps) {
             animate={{ y: [0, -6, 0] }}
             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
           >
-            <Plane className="h-10 w-10 text-violet-400/60" />
+            <Plane className="h-10 w-10 text-[#FFB800]/60" />
           </motion.div>
           <div>
             <p className="text-base font-bold text-white leading-tight">{L.cta}</p>

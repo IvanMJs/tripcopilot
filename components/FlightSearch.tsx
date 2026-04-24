@@ -137,7 +137,7 @@ export function FlightSearch({ statusMap }: FlightSearchProps) {
           {/* Button — full width on mobile */}
           <button
             onClick={handleAdd}
-            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shrink-0"
+            className="rounded-lg bg-[#FFB800] px-5 py-2.5 text-sm font-semibold text-[#07070d] hover:bg-[#FFC933] transition-colors shrink-0"
           >
             {L.add}
           </button>

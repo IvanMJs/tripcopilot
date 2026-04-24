@@ -121,7 +121,7 @@ export function TripEmptyState({ locale, onCreateTrip, onImport }: TripEmptyStat
           {onImport && (
             <button
               onClick={onImport}
-              className="shimmer-btn w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-6 py-3 transition-all"
+              className="shimmer-btn w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-sm font-semibold px-6 py-3 transition-all"
             >
               {locale === "es" ? "📷 Importar mi primer vuelo con IA" : "📷 Import my first flight with AI"}
             </button>
@@ -129,7 +129,7 @@ export function TripEmptyState({ locale, onCreateTrip, onImport }: TripEmptyStat
           {onCreateTrip && !onImport && (
             <button
               onClick={onCreateTrip}
-              className="shimmer-btn w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold px-6 py-3 transition-all"
+              className="shimmer-btn w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-sm font-semibold px-6 py-3 transition-all"
             >
               {locale === "es" ? "Agregar mi primer viaje →" : "Add my first trip →"}
             </button>

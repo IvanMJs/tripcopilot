@@ -11,7 +11,7 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-bold text-white">Cómo usamos tus datos</h2>
           <p>Solo para brindarte el servicio de TripCopilot: alertas de vuelo, monitoreo de estado, y funciones de IA. No vendemos ni compartimos tus datos con terceros.</p>
           <h2 className="text-lg font-bold text-white">Contacto</h2>
-          <p>Para consultas sobre privacidad: <a href="mailto:hola@tripcopilot.app" className="text-violet-400 hover:underline">hola@tripcopilot.app</a></p>
+          <p>Para consultas sobre privacidad: <a href="mailto:hola@tripcopilot.app" className="text-[#FFB800] hover:underline">hola@tripcopilot.app</a></p>
         </div>
         <a href="/" className="inline-block mt-8 text-sm text-gray-500 hover:text-white transition-colors">← Volver</a>
       </div>

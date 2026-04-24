@@ -181,7 +181,7 @@ function SegmentControl<T extends string>({
           onClick={() => onChange(opt.value)}
           className={`px-3 py-1.5 transition-colors ${
             value === opt.value
-              ? "bg-violet-600 text-white"
+              ? "bg-[#FFB800] text-[#07070d]"
               : "bg-white/[0.04] text-gray-400 hover:text-gray-200"
           }`}
         >
@@ -346,8 +346,8 @@ export function SettingsView({
 
         {/* Page title */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="h-9 w-9 rounded-2xl bg-violet-900/40 border border-violet-700/40 flex items-center justify-center shrink-0">
-            <Settings className="h-5 w-5 text-violet-400" />
+          <div className="h-9 w-9 rounded-2xl bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] flex items-center justify-center shrink-0">
+            <Settings className="h-5 w-5 text-[#FFB800]" />
           </div>
           <h1 className="text-xl font-black text-white">{L.title}</h1>
         </div>
@@ -362,7 +362,7 @@ export function SettingsView({
                 <button
                   key={l}
                   onClick={() => setLocale(l)}
-                  className={`px-3 py-1.5 transition-colors ${locale === l ? "bg-blue-600 text-white" : "bg-transparent text-gray-400 hover:text-gray-200"}`}
+                  className={`px-3 py-1.5 transition-colors ${locale === l ? "bg-[#FFB800] text-[#07070d]" : "bg-transparent text-gray-400 hover:text-gray-200"}`}
                 >
                   {l === "es" ? "Español" : "English"}
                 </button>
@@ -385,8 +385,8 @@ export function SettingsView({
                   className="h-10 w-10 rounded-full object-cover border border-white/10"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-violet-900/60 border border-violet-700/40 flex items-center justify-center">
-                  <span className="text-sm font-bold text-violet-300">{initials}</span>
+                <div className="h-10 w-10 rounded-full bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] flex items-center justify-center">
+                  <span className="text-sm font-bold text-[#FFB800]">{initials}</span>
                 </div>
               )}
             </div>
@@ -437,7 +437,7 @@ export function SettingsView({
               </span>
               <button
                 onClick={onUpgrade}
-                className="shrink-0 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 active:scale-95 text-white text-xs font-bold px-3 py-1.5 transition-all"
+                className="shrink-0 rounded-xl bg-gradient-to-r from-[#FFB800] to-blue-600 hover:from-[#FFB800] hover:to-blue-500 active:scale-95 text-white text-xs font-bold px-3 py-1.5 transition-all"
               >
                 {locale === "es" ? "Mejorar" : "Upgrade"}
               </button>
@@ -463,8 +463,8 @@ export function SettingsView({
         <SettingsCard>
           {/* Theme */}
           <SettingsRow>
-            <div className="h-8 w-8 rounded-xl bg-violet-950/40 border border-violet-700/30 flex items-center justify-center shrink-0">
-              <Palette className="h-4 w-4 text-violet-400" />
+            <div className="h-8 w-8 rounded-xl bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] flex items-center justify-center shrink-0">
+              <Palette className="h-4 w-4 text-[#FFB800]" />
             </div>
             <span className="flex-1 text-sm text-gray-300">{L.theme}</span>
             <div className="flex rounded-lg border border-white/[0.07] overflow-hidden text-xs font-semibold shrink-0">
@@ -474,7 +474,7 @@ export function SettingsView({
                   onClick={() => setTheme(value)}
                   className={`flex items-center gap-1 px-2.5 py-1.5 transition-colors ${
                     theme === value
-                      ? "bg-violet-600 text-white"
+                      ? "bg-[#FFB800] text-[#07070d]"
                       : "bg-white/[0.04] text-gray-400 hover:text-gray-200"
                   }`}
                   title={locale === "es" ? labelEs : labelEn}
@@ -560,8 +560,8 @@ export function SettingsView({
         <SettingsCard>
           {/* Summary + manage */}
           <SettingsRow>
-            <div className="h-8 w-8 rounded-xl bg-violet-950/40 border border-violet-700/30 flex items-center justify-center shrink-0">
-              <Bell className="h-4 w-4 text-violet-400" />
+            <div className="h-8 w-8 rounded-xl bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] flex items-center justify-center shrink-0">
+              <Bell className="h-4 w-4 text-[#FFB800]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-300">{L.notifManage}</p>
@@ -688,8 +688,8 @@ export function SettingsView({
 
           {/* TripCopilot info */}
           <SettingsRow>
-            <div className="h-8 w-8 rounded-xl bg-violet-950/30 border border-violet-800/30 flex items-center justify-center shrink-0">
-              <User className="h-4 w-4 text-violet-500" />
+            <div className="h-8 w-8 rounded-xl bg-[rgba(255,184,0,0.06)] border border-[rgba(255,184,0,0.25)] flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-[#FFB800]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-300">TripCopilot v{APP_VERSION}</p>

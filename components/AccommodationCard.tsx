@@ -129,7 +129,7 @@ export function AccommodationInline({
                  />
         <div className="flex gap-2">
           <button onClick={saveEdit}
-            className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 py-1.5 text-xs font-medium text-white transition-colors">
+            className="flex-1 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] py-1.5 text-xs font-medium text-[#07070d] transition-colors">
             {L.accSave}
           </button>
           <button onClick={() => setEditing(false)}
@@ -334,7 +334,7 @@ export function AddAccommodationInlineForm({
         <button
           onClick={() => { setTab("ai"); setParsed(null); setAiError(null); }}
           className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-[11px] font-semibold transition-all ${
-            tab === "ai" ? "bg-violet-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-300"
+            tab === "ai" ? "bg-[#FFB800] text-[#07070d] shadow-sm" : "text-gray-500 hover:text-gray-300"
           }`}
         >
           <TripCopilotIcon size={20} />
@@ -357,7 +357,7 @@ export function AddAccommodationInlineForm({
           {aiLoading ? (
             <div className="flex flex-col items-center justify-center gap-2 py-6">
               <TripCopilotIcon spinning size={36} />
-              <p className="text-xs text-violet-300 font-medium">{L.accAILoading}</p>
+              <p className="text-xs text-[#FFB800] font-medium">{L.accAILoading}</p>
             </div>
           ) : (
             <>
@@ -366,7 +366,7 @@ export function AddAccommodationInlineForm({
                 onChange={(e) => setAiText(e.target.value)}
                 placeholder={L.accAIPlaceholder}
                 rows={3}
-                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-violet-500/60 transition-colors resize-none leading-relaxed"
+                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[rgba(255,184,0,0.25)] transition-colors resize-none leading-relaxed"
               />
 
               {aiError && (
@@ -379,7 +379,7 @@ export function AddAccommodationInlineForm({
                 <button
                   onClick={() => aiText.trim() && handleAIParse(aiText)}
                   disabled={!aiText.trim()}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 py-2 text-xs font-bold text-white transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-40 py-2 text-xs font-bold text-[#07070d] transition-colors"
                 >
                   <TripCopilotIcon size={13} />
                   {L.accTabAI}
@@ -403,7 +403,7 @@ export function AddAccommodationInlineForm({
       {tab === "ai" && parsed && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center gap-1">
+            <p className="text-xs font-bold text-[#FFB800] uppercase tracking-wider flex items-center gap-1">
               <TripCopilotIcon size={12} />
               {L.accAIReview}
             </p>
@@ -437,7 +437,7 @@ export function AddAccommodationInlineForm({
           {err && <p className="text-[11px] text-red-400">{err}</p>}
 
           <button onClick={handleSubmit}
-            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 transition-colors">
+            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d] text-xs font-bold px-3 py-2 transition-colors">
             <Plus className="h-3.5 w-3.5" />
             {L.accAdd}
           </button>
@@ -466,7 +466,7 @@ export function AddAccommodationInlineForm({
             placeholder={L.accAddress} />
           {err && <p className="text-[11px] text-red-400">{err}</p>}
           <button onClick={handleSubmit}
-            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 transition-colors">
+            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] text-[#07070d] text-xs font-bold px-3 py-2 transition-colors">
             <Plus className="h-3.5 w-3.5" />
             {L.accAdd}
           </button>

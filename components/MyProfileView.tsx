@@ -235,7 +235,7 @@ function StampCard({ data, locale, onClose }: StampCardProps) {
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-violet-400/40 to-transparent mb-3" />
+          <div className="h-px bg-gradient-to-r from-transparent via-[#FFC933]/40 to-transparent mb-3" />
 
           {/* Stats */}
           <div className="flex justify-around text-center">
@@ -249,7 +249,7 @@ function StampCard({ data, locale, onClose }: StampCardProps) {
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">
                 {L.stamp.visited}
               </p>
-              <p className="text-2xl font-black text-violet-700 leading-none">
+              <p className="text-2xl font-black text-[#FFB800] leading-none">
                 {data.visitCount}
                 <span className="text-xs font-normal text-gray-500 ml-1">×</span>
               </p>
@@ -259,7 +259,7 @@ function StampCard({ data, locale, onClose }: StampCardProps) {
           {/* STAMP text watermark */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.07]">
             <p
-              className="text-7xl font-black text-violet-700 uppercase tracking-widest"
+              className="text-7xl font-black text-[#FFB800] uppercase tracking-widest"
               style={{ transform: "rotate(-20deg)" }}
             >
               STAMP
@@ -486,7 +486,7 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
 
   const badgePillColors = [
     "bg-emerald-950/50 border-emerald-700/40 text-emerald-300",
-    "bg-violet-950/50 border-violet-700/40 text-violet-300",
+    "bg-[rgba(255,184,0,0.06)] border-[rgba(255,184,0,0.25)] text-[#FFB800]",
     "bg-blue-950/50 border-blue-700/40 text-blue-300",
   ] as const;
 
@@ -525,11 +525,11 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
             />
             <div className="relative h-20 w-20 rounded-full bg-[#080810] border-4 border-[#080810] overflow-hidden flex items-center justify-center">
-              <div className="h-full w-full rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-4xl">
+              <div className="h-full w-full rounded-full bg-gradient-to-br from-[#FFB800] to-[#E6A500] flex items-center justify-center text-4xl">
                 🧑‍✈️
               </div>
             </div>
-            <button className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-violet-600 hover:bg-violet-500 border-[3px] border-[#0f0f17] flex items-center justify-center shadow-[0_4px_12px_rgba(124,58,237,0.5)]" aria-label={locale === "es" ? "Cambiar foto" : "Change photo"}>
+            <button className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-[#FFB800] hover:bg-[#FFC933] border-[3px] border-[#0f0f17] flex items-center justify-center shadow-[0_4px_12px_rgba(124,58,237,0.5)]" aria-label={locale === "es" ? "Cambiar foto" : "Change photo"}>
               <Camera size={12} className="text-white" />
             </button>
           </div>
@@ -564,7 +564,7 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
           {userPlan === "free" || userPlan === null ? (
             <button
               onClick={onUpgrade}
-              className="relative overflow-hidden rounded-full bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white text-[11px] font-black px-4 py-2 shadow-[0_4px_12px_rgba(124,58,237,0.4)] shrink-0"
+              className="relative overflow-hidden rounded-full bg-gradient-to-r from-[#FFB800] to-[#E6A500] hover:from-[#FFB800] hover:to-[#E6A500] text-white text-[11px] font-black px-4 py-2 shadow-[0_4px_12px_rgba(124,58,237,0.4)] shrink-0"
             >
               Upgrade ⭐
             </button>
@@ -633,8 +633,8 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                 {/* Total flights */}
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 flex flex-col gap-2">
                   <div className="flex items-center gap-2">
-                    <div className="rounded-lg bg-violet-500/15 p-1.5">
-                      <Plane className="h-4 w-4 text-violet-400" />
+                    <div className="rounded-lg bg-[rgba(255,184,0,0.12)] p-1.5">
+                      <Plane className="h-4 w-4 text-[#FFB800]" />
                     </div>
                   </div>
                   <p className="text-3xl font-black text-white leading-none tabular-nums">{animFlights}</p>
@@ -681,11 +681,11 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
             {/* Around the Earth highlight */}
             {stats.timesAroundEarth >= 0.1 && (
               <motion.div {...fadeUp(0.1)} className="px-4 pb-4">
-                <div className="rounded-2xl bg-gradient-to-r from-violet-900/60 to-blue-900/60 border border-violet-700/30 p-4">
+                <div className="rounded-2xl bg-gradient-to-r from-[#FFB800]/60 to-blue-900/60 border border-[rgba(255,184,0,0.25)] p-4">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl" aria-hidden>🌏</span>
                     <div>
-                      <p className="text-xs text-violet-300/70 font-semibold uppercase tracking-widest mb-0.5">
+                      <p className="text-xs text-[#FFB800]/70 font-semibold uppercase tracking-widest mb-0.5">
                         {locale === "es" ? "Vuelta al planeta" : "Around the planet"}
                       </p>
                       <p className="text-white font-black text-lg leading-tight">
@@ -808,7 +808,7 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                   <p className="text-sm text-gray-500 mb-4">{L.freeLimits}</p>
                   <button
                     onClick={onUpgrade}
-                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 active:scale-95 text-white text-sm font-bold py-3 transition-all"
+                    className="w-full rounded-xl bg-gradient-to-r from-[#FFB800] to-blue-600 hover:from-[#FFB800] hover:to-blue-500 active:scale-95 text-white text-sm font-bold py-3 transition-all"
                   >
                     {L.upgradeBtn}
                   </button>
@@ -819,8 +819,8 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                   onClick={onDiscover}
                   className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] active:scale-95 px-4 py-4 flex items-center gap-3 transition-all"
                 >
-                  <div className="h-10 w-10 rounded-xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center shrink-0">
-                    <Globe className="h-5 w-5 text-violet-400" />
+                  <div className="h-10 w-10 rounded-xl bg-[#FFB800]/20 border border-[rgba(255,184,0,0.25)] flex items-center justify-center shrink-0">
+                    <Globe className="h-5 w-5 text-[#FFB800]" />
                   </div>
                   <div className="text-left min-w-0">
                     <p className="text-sm font-bold text-white">
@@ -880,7 +880,7 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                           <div className="w-full">
                             <div className="h-1 w-full rounded-full bg-white/[0.06] mt-1">
                               <div
-                                className="h-full rounded-full bg-violet-500"
+                                className="h-full rounded-full bg-[#FFB800]"
                                 style={{ width: `${progressPct}%` }}
                               />
                             </div>
@@ -989,7 +989,7 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
             {/* Plan upgrade CTA for social sharing */}
             {userPlan === "free" && (
               <motion.div {...fadeUp(0.1)} className="px-4 pb-6">
-                <div className="rounded-2xl border border-violet-700/30 bg-gradient-to-br from-violet-950/40 to-surface-overlay p-4 text-center">
+                <div className="rounded-2xl border border-[rgba(255,184,0,0.25)] bg-gradient-to-br from-[#FFB800]/40 to-surface-overlay p-4 text-center">
                   <p className="text-sm font-semibold text-white/80 mb-1">
                     {locale === "es" ? "Compartí más con Premium" : "Share more with Premium"}
                   </p>
@@ -1000,7 +1000,7 @@ export function MyProfileView({ trips, locale, userPlan, userId, onUpgrade, onDi
                   </p>
                   <button
                     onClick={onUpgrade}
-                    className="rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 active:scale-95 text-white text-sm font-bold px-6 py-2.5 transition-all"
+                    className="rounded-xl bg-gradient-to-r from-[#FFB800] to-blue-600 hover:from-[#FFB800] hover:to-blue-500 active:scale-95 text-white text-sm font-bold px-6 py-2.5 transition-all"
                   >
                     {L.upgradeBtn}
                   </button>

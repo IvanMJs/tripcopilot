@@ -20,7 +20,7 @@ interface Props {
 }
 
 const tabBase = "px-4 py-2.5 text-sm font-medium transition-all duration-150 whitespace-nowrap rounded-lg mx-0.5 my-1 border-b-2 -mb-px";
-const tabActive   = "bg-violet-500/15 border-violet-500 text-violet-400 font-semibold shadow-sm";
+const tabActive   = "bg-[rgba(255,184,0,0.12)] border-[rgba(255,184,0,0.35)] text-[#FFB800] font-semibold shadow-sm";
 const tabInactive = "border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]";
 
 export function TripTabBar({
@@ -127,7 +127,7 @@ export function TripTabBar({
                     }}
                     onClick={(e) => e.stopPropagation()}
                     maxLength={30}
-                    className="bg-transparent border-b border-violet-400 outline-none text-violet-300 w-28 text-sm"
+                    className="bg-transparent border-b border-[rgba(255,184,0,0.35)] outline-none text-[#FFB800] w-28 text-sm"
                   />
                 </div>
               ) : (

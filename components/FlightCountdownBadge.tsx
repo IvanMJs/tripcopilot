@@ -130,7 +130,7 @@ export function FlightCountdownBadge({ flight, locale }: FlightCountdownBadgePro
   // Color scheme per tier
   const colorScheme = (() => {
     if (isUrgent)   return { bg: "bg-amber-950/40",  border: "border-amber-700/40",  text: "text-amber-300",   sub: "text-amber-400/60",  icon: "text-amber-400",  track: "bg-amber-900/50",  fill: "bg-amber-500/70"  };
-    if (isToday || isSoon) return { bg: "bg-violet-950/40", border: "border-violet-700/40", text: "text-violet-300",  sub: "text-violet-400/60", icon: "text-violet-400", track: "bg-violet-900/50", fill: "bg-violet-500/70" };
+    if (isToday || isSoon) return { bg: "bg-[rgba(255,184,0,0.06)]", border: "border-[rgba(255,184,0,0.25)]", text: "text-[#FFB800]",  sub: "text-[#FFB800]/60", icon: "text-[#FFB800]", track: "bg-[rgba(255,184,0,0.08)]", fill: "bg-[rgba(255,184,0,0.12)]" };
     if (isComingUp) return { bg: "bg-blue-950/40",   border: "border-blue-700/40",   text: "text-blue-300",    sub: "text-blue-400/60",   icon: "text-blue-400",   track: "bg-blue-900/50",   fill: "bg-blue-500/70"   };
     // isFar — slate
     return           { bg: "bg-slate-900/40",  border: "border-slate-700/40",  text: "text-slate-300",   sub: "text-slate-400/60",  icon: "text-slate-400",  track: "bg-slate-800/50",  fill: "bg-slate-500/70"  };

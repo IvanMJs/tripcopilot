@@ -269,21 +269,21 @@ export function TravelPersonality({ trips, userId, locale }: TravelPersonalityPr
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="mx-4 mb-4 rounded-2xl border border-violet-700/30 bg-gradient-to-br from-violet-900/30 via-zinc-900/60 to-indigo-950/40 p-4"
+      className="mx-4 mb-4 rounded-2xl border border-[rgba(255,184,0,0.25)] bg-gradient-to-br from-[#FFB800]/30 via-zinc-900/60 to-indigo-950/40 p-4"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-violet-400" />
+          <Sparkles className="h-4 w-4 text-[#FFB800]" />
           <div>
             <p className="text-sm font-bold text-white">{L.title}</p>
-            <p className="text-[10px] text-violet-300/50 mt-0.5">{L.subtitle}</p>
+            <p className="text-[10px] text-[#FFB800]/50 mt-0.5">{L.subtitle}</p>
           </div>
         </div>
         {persona && !loading && (
           <button
             onClick={handleRegenerate}
-            className="flex items-center gap-1.5 text-[11px] text-violet-400 hover:text-violet-300 transition-colors"
+            className="flex items-center gap-1.5 text-[11px] text-[#FFB800] hover:text-[#FFB800] transition-colors"
           >
             <RefreshCw className="h-3 w-3" />
             {L.regenerate}
@@ -303,7 +303,7 @@ export function TravelPersonality({ trips, userId, locale }: TravelPersonalityPr
           <p className="text-xs text-red-400">{L.error}</p>
           <button
             onClick={() => fetchPersona(true)}
-            className="text-xs text-violet-400 hover:text-violet-300 transition-colors underline underline-offset-2"
+            className="text-xs text-[#FFB800] hover:text-[#FFB800] transition-colors underline underline-offset-2"
           >
             {L.retry}
           </button>
@@ -333,7 +333,7 @@ export function TravelPersonality({ trips, userId, locale }: TravelPersonalityPr
             {persona.traits.map((trait) => (
               <span
                 key={trait}
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-violet-900/50 border border-violet-600/30 text-violet-300"
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.25)] text-[#FFB800]"
               >
                 {trait}
               </span>
@@ -344,7 +344,7 @@ export function TravelPersonality({ trips, userId, locale }: TravelPersonalityPr
           <button
             onClick={handleShare}
             disabled={sharing}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-violet-600/20 hover:bg-violet-600/35 active:scale-95 border border-violet-500/25 text-violet-200 text-xs font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#FFB800]/20 hover:bg-[#FFC933]/35 active:scale-95 border border-[rgba(255,184,0,0.25)] text-[#FFB800] text-xs font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
           >
             {shared ? (
               <>

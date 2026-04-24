@@ -101,7 +101,7 @@ export function TripDebriefModal({ trip, locale, onClose }: TripDebriefModalProp
             className="w-full max-w-sm rounded-3xl overflow-hidden bg-surface-input border border-white/[0.07] shadow-2xl"
           >
             {/* Gradient hero */}
-            <div className="relative px-6 pt-8 pb-5 bg-gradient-to-br from-violet-900/70 via-blue-900/40 to-[#0c0c1a]">
+            <div className="relative px-6 pt-8 pb-5 bg-gradient-to-br from-[#FFB800]/70 via-blue-900/40 to-[#0c0c1a]">
               <button
                 onClick={handleClose}
                 className="absolute top-4 right-4 rounded-full p-1.5 text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors"
@@ -113,7 +113,7 @@ export function TripDebriefModal({ trip, locale, onClose }: TripDebriefModalProp
               <div className="text-center">
                 <span className="text-5xl block mb-3" aria-hidden>🏁</span>
                 <h2 className="text-2xl font-black text-white">{L.heading}</h2>
-                <p className="text-sm text-violet-300/70 mt-1">{L.subheading(trip.name)}</p>
+                <p className="text-sm text-[#FFB800]/70 mt-1">{L.subheading(trip.name)}</p>
               </div>
             </div>
 
@@ -121,7 +121,7 @@ export function TripDebriefModal({ trip, locale, onClose }: TripDebriefModalProp
             <div className="px-5 py-4">
               <div className="grid grid-cols-2 gap-2.5">
                 <StatPill
-                  icon={<Plane className="h-4 w-4 text-violet-400" />}
+                  icon={<Plane className="h-4 w-4 text-[#FFB800]" />}
                   value={String(stats.totalFlights)}
                   label={L.flights}
                   accent="violet"
@@ -183,7 +183,7 @@ export function TripDebriefModal({ trip, locale, onClose }: TripDebriefModalProp
               </button>
               <button
                 onClick={handleClose}
-                className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 active:scale-95 text-white text-sm font-bold py-3 transition-all"
+                className="flex-1 rounded-xl bg-gradient-to-r from-[#FFB800] to-blue-600 hover:from-[#FFB800] hover:to-blue-500 active:scale-95 text-white text-sm font-bold py-3 transition-all"
               >
                 {rating > 0 ? L.saveRating : L.close}
               </button>
@@ -207,7 +207,7 @@ function StatPill({
   accent: "violet" | "blue" | "emerald" | "amber";
 }) {
   const styles: Record<string, string> = {
-    violet: "bg-violet-950/50 border-violet-800/30",
+    violet: "bg-[rgba(255,184,0,0.06)] border-[rgba(255,184,0,0.25)]",
     blue: "bg-blue-950/50 border-blue-800/30",
     emerald: "bg-emerald-950/50 border-emerald-800/30",
     amber: "bg-amber-950/50 border-amber-800/30",

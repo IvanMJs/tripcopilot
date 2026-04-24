@@ -114,14 +114,14 @@ const URGENCY_RING: Record<WarRoomUrgency, string> = {
   critical: "border-red-500 shadow-red-500/40",
   high:     "border-amber-500 shadow-amber-500/30",
   moderate: "border-blue-500 shadow-blue-500/30",
-  low:      "border-violet-500 shadow-violet-500/30",
+  low:      "border-[rgba(255,184,0,0.35)] shadow-[rgba(255,184,0,0.20)]",
 };
 
 const URGENCY_TEXT: Record<WarRoomUrgency, string> = {
   critical: "text-red-400",
   high:     "text-amber-400",
   moderate: "text-blue-400",
-  low:      "text-violet-400",
+  low:      "text-[#FFB800]",
 };
 
 const URGENCY_PULSE: Record<WarRoomUrgency, string> = {
@@ -135,7 +135,7 @@ const URGENCY_BG: Record<WarRoomUrgency, string> = {
   critical: "from-red-950/60 to-zinc-950",
   high:     "from-amber-950/60 to-zinc-950",
   moderate: "from-blue-950/40 to-zinc-950",
-  low:      "from-violet-950/40 to-zinc-950",
+  low:      "from-[#FFB800]/40 to-zinc-950",
 };
 
 // ── Status pill config ─────────────────────────────────────────────────────
