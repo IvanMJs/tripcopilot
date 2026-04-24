@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, type Easing } from "framer-motion";
-import { TrendingUp, Globe, Plane, MapPin, Zap, Award, X, BarChart3, Trophy, Gift, Users, Share2, Share, Camera, Settings } from "lucide-react";
+import { TrendingUp, Globe, Plane, MapPin, Zap, Award, X, BarChart3, Trophy, Gift, Users, Share2, Share, Camera, Settings, Pencil } from "lucide-react";
 import { TripTab } from "@/lib/types";
 import { computeTripStats } from "@/lib/tripStats";
 import { PLANS } from "@/lib/mercadopago";
@@ -26,6 +26,9 @@ interface MyProfileViewProps {
   userPlan: "free" | "explorer" | "pilot" | null;
   userId: string | null;
   userName?: string | null;
+  userAvatar?: string | null;
+  onNameChange?: (name: string) => void;
+  onAvatarChange?: (url: string) => void;
   onUpgrade: () => void;
   onDiscover?: () => void;
 }
@@ -332,12 +335,56 @@ function ShareAppCard({ locale }: { locale: "es" | "en" }) {
   );
 }
 
-export function MyProfileView({ trips, locale, userPlan, userId, userName, onUpgrade, onDiscover }: MyProfileViewProps) {
+export function MyProfileView({ trips, locale, userPlan, userId, userName, userAvatar, onNameChange, onAvatarChange, onUpgrade, onDiscover }: MyProfileViewProps) {
   const L = LABELS[locale];
   const [selectedIata, setSelectedIata] = useState<string | null>(null);
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const visitedCountries = useVisitedCountries(trips);
   const [activeProfileTab, setActiveProfileTab] = useState<ProfileTabId>("stats");
+
+  // Editable profile state
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(userName ?? "");
+  const [savingName, setSavingName] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [localAvatar, setLocalAvatar] = useState<string | null>(userAvatar ?? null);
+
+  async function handleSaveName() {
+    const trimmed = nameInput.trim();
+    if (!trimmed || trimmed === userName) { setEditingName(false); return; }
+    setSavingName(true);
+    try {
+      await fetch("/api/profile/display-name", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName: trimmed }),
+      });
+      onNameChange?.(trimmed);
+    } finally {
+      setSavingName(false);
+      setEditingName(false);
+    }
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    const preview = URL.createObjectURL(file);
+    setLocalAvatar(preview);
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: fd });
+      const json = await res.json();
+      if (json.avatarUrl) {
+        setLocalAvatar(json.avatarUrl);
+        onAvatarChange?.(json.avatarUrl);
+      }
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   const stats = useMemo(() => {
     const allFlights = trips.flatMap((t) => t.flights);
@@ -517,7 +564,7 @@ export function MyProfileView({ trips, locale, userPlan, userId, userName, onUpg
         <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(255,184,0,0.12),transparent_70%)] blur-2xl pointer-events-none" />
 
         <div className="relative flex items-start gap-4">
-          {/* Avatar with orbital ring */}
+          {/* Avatar with orbital ring + upload */}
           <div className="relative shrink-0">
             <motion.div
               className="absolute inset-[-4px] rounded-full"
@@ -526,19 +573,52 @@ export function MyProfileView({ trips, locale, userPlan, userId, userName, onUpg
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
             />
             <div className="relative h-20 w-20 rounded-full bg-[#080810] border-4 border-[#080810] overflow-hidden flex items-center justify-center">
-              <div className="h-full w-full rounded-full bg-gradient-to-br from-[#FFB800] to-[#E6A500] flex items-center justify-center text-4xl">
-                🧑‍✈️
-              </div>
+              {localAvatar ? (
+                <img src={localAvatar} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full rounded-full bg-gradient-to-br from-[#FFB800] to-[#E6A500] flex items-center justify-center text-4xl">
+                  🧑‍✈️
+                </div>
+              )}
+              {uploadingAvatar && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
+                  <div className="h-4 w-4 rounded-full border-2 border-[#FFB800] border-t-transparent animate-spin" />
+                </div>
+              )}
             </div>
-            <button className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-[#FFB800] hover:bg-[#FFC933] border-[3px] border-[#0f0f17] flex items-center justify-center shadow-[0_4px_12px_rgba(255,184,0,0.40)]" aria-label={locale === "es" ? "Cambiar foto" : "Change photo"}>
+            <label className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-[#FFB800] hover:bg-[#FFC933] border-[3px] border-[#0f0f17] flex items-center justify-center shadow-[0_4px_12px_rgba(255,184,0,0.40)] cursor-pointer" aria-label={locale === "es" ? "Cambiar foto" : "Change photo"}>
               <Camera size={12} className="text-[#07070d]" />
-            </button>
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarChange} />
+            </label>
           </div>
 
           <div className="flex-1 min-w-0 pt-1">
-            <h1 className="text-[20px] font-black text-white leading-tight">
-              {userName || (locale === "es" ? "Mi Perfil" : "My Profile")}
-            </h1>
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditingName(false); }}
+                  maxLength={40}
+                  className="flex-1 min-w-0 bg-white/[0.06] border border-[rgba(255,184,0,0.5)] rounded-lg px-2 py-1 text-[16px] font-black text-white outline-none"
+                />
+                <button onClick={handleSaveName} disabled={savingName} className="text-[#FFB800] text-xs font-bold shrink-0">
+                  {savingName ? "…" : (locale === "es" ? "OK" : "OK")}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setNameInput(userName ?? ""); setEditingName(true); }}
+                className="group flex items-center gap-1.5 text-left"
+                aria-label={locale === "es" ? "Editar nombre" : "Edit name"}
+              >
+                <h1 className="text-[20px] font-black text-white leading-tight">
+                  {userName || (locale === "es" ? "Mi Perfil" : "My Profile")}
+                </h1>
+                <Pencil size={13} className="text-gray-600 group-hover:text-[#FFB800] transition-colors shrink-0 mt-0.5" />
+              </button>
+            )}
             <p className="text-xs text-gray-500 mt-0.5 font-medium">
               {userId ? `@${userId.slice(0, 8)}` : "@viajero"}
             </p>

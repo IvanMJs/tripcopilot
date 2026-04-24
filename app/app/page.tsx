@@ -110,6 +110,7 @@ export default function HomePage() {
   const [userPlan, setUserPlan] = useState<"free" | "explorer" | "pilot" | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
   // DB-backed state
   const { airports: watchedAirports, add: addAirportDB, remove: removeAirportDB } = useWatchedAirports();
@@ -214,12 +215,15 @@ export default function HomePage() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       setUserId(user.id);
-      const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || null;
-      setUserName(name);
-      supabase.from("user_profiles").select("plan").eq("id", user.id).single()
+      const metaName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || null;
+      supabase.from("user_profiles").select("plan, display_name, avatar_url").eq("id", user.id).single()
         .then(({ data }) => {
           const plan = (data as { plan?: string } | null)?.plan;
           setUserPlan(plan === "pilot" ? "pilot" : plan === "explorer" ? "explorer" : "free");
+          const dbName = (data as { display_name?: string | null } | null)?.display_name;
+          setUserName(dbName || metaName);
+          const dbAvatar = (data as { avatar_url?: string | null } | null)?.avatar_url;
+          setUserAvatar(dbAvatar || null);
         });
       // Update last_seen_at (throttle: only if >30min since last update)
       supabase.from("user_profiles").select("last_seen_at").eq("id", user.id).single()
@@ -1066,6 +1070,9 @@ export default function HomePage() {
                   userPlan={userPlan}
                   userId={userId}
                   userName={userName}
+                  userAvatar={userAvatar}
+                  onNameChange={(n) => setUserName(n)}
+                  onAvatarChange={(url) => setUserAvatar(url)}
                   onUpgrade={() => setShowUpgradeModal(true)}
                 />
               </Suspense>
