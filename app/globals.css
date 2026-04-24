@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── TripBoard keyframes ───────────────────────────────────────────────────── */
+@keyframes pill-pulse {
+  0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,184,0,0); }
+  50%      { opacity: 0.7; box-shadow: 0 0 0 4px rgba(255,184,0,0.15); }
+}
+@keyframes dot-blink {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.3; transform: scale(0.65); }
+}
+@keyframes tb-row-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes tb-banner-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes tb-lit-fade {
+  0%   { background: rgba(255,184,0,0.08); }
+  100% { background: transparent; }
+}
+.flap-tile { position: relative; }
+.flap-tile::after {
+  content: '';
+  position: absolute; left: 0; right: 0; top: 50%;
+  height: 1px; background: rgba(0,0,0,0.75);
+  pointer-events: none; z-index: 2;
+}
+
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
   --background:    #080810;
