@@ -13,7 +13,7 @@ interface StatusBadgeProps {
 }
 
 const DOT_COLOR: Record<DelayStatus, string> = {
-  ok:             "bg-emerald-400",
+  ok:             "bg-[#FFB800]",
   delay_minor:    "bg-yellow-400",
   delay_moderate: "bg-orange-400",
   delay_severe:   "bg-red-400",
@@ -24,7 +24,7 @@ const DOT_COLOR: Record<DelayStatus, string> = {
 };
 
 const PILL: Record<DelayStatus, string> = {
-  ok:             "bg-emerald-950/60 text-emerald-300 border-emerald-500/25",
+  ok:             "bg-[rgba(255,184,0,0.08)] text-[#FFB800] border-[rgba(255,184,0,0.25)]",
   delay_minor:    "bg-yellow-950/60  text-yellow-300  border-yellow-500/25",
   delay_moderate: "bg-orange-950/60  text-orange-300  border-orange-500/25",
   delay_severe:   "bg-red-950/70     text-red-200     border-red-500/30",
