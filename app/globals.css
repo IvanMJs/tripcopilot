@@ -735,7 +735,7 @@ body::after {
   100% { background-position: 0% 50%; }
 }
 .hero-gradient {
-  background: linear-gradient(-45deg, #0a0a1a, #1a0535, #0f1729, #150a2e, #0a0a1a);
+  background: linear-gradient(-45deg, #07070d, #120c00, #0a0a10, #100900, #07070d);
   background-size: 400% 400%;
   animation: hero-shift 15s ease infinite;
 }

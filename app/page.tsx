@@ -523,14 +523,14 @@ export default function LandingPage() {
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="tu@email.com"
                           required
-                          className="w-full rounded-xl border border-white/[0.12] bg-surface-darker pl-10 pr-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full rounded-xl border border-white/[0.12] bg-surface-darker pl-10 pr-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#FFB800]"
                         />
                       </div>
                       {error && <p className="text-xs text-red-400">{error}</p>}
                       <button
                         type="submit"
                         disabled={loading || !email}
-                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 py-3 text-sm font-semibold text-white transition-colors"
+                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-50 py-3 text-sm font-semibold text-[#07070d] transition-colors"
                       >
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (lang === "en" ? "Send access link" : "Enviar link de acceso")}
                       </button>
@@ -577,7 +577,7 @@ export default function LandingPage() {
                 <button
                   key={l}
                   onClick={() => setLang(l)}
-                  className={`px-2.5 py-1.5 transition-colors ${lang === l ? "bg-blue-600 text-white" : "bg-transparent text-gray-400 hover:text-gray-200"}`}
+                  className={`px-2.5 py-1.5 transition-colors ${lang === l ? "bg-[#FFB800] text-[#07070d]" : "bg-transparent text-gray-400 hover:text-gray-200"}`}
                 >
                   {l.toUpperCase()}
                 </button>
@@ -592,7 +592,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={openAuthModal}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-semibold text-white transition-colors"
+              className="flex items-center gap-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] px-4 py-2 text-xs font-semibold text-[#07070d] transition-colors"
             >
               {lang === "en" ? "Start free" : "Empezar gratis"}
             </button>
@@ -607,9 +607,9 @@ export default function LandingPage() {
         {/* Background glows layered on top of animated gradient */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-10"
-            style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
+            style={{ background: "radial-gradient(circle, #FFB800 0%, transparent 70%)" }} />
           <div className="absolute top-1/2 right-0 -translate-y-1/3 w-[400px] h-[600px] rounded-full opacity-8"
-            style={{ background: "radial-gradient(circle, #7c3aed 0%, transparent 70%)" }} />
+            style={{ background: "radial-gradient(circle, #FFB800 0%, transparent 70%)" }} />
         </div>
 
         <div className="relative max-w-6xl mx-auto">
@@ -623,8 +623,8 @@ export default function LandingPage() {
               </div>
 
               {/* AI import badge — the hook */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-violet-700/50 bg-violet-950/40 px-4 py-1.5 text-xs text-violet-300 font-semibold mb-5">
-                <Brain className="h-3.5 w-3.5 text-violet-400" />
+              <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,184,0,0.3)] bg-[rgba(255,184,0,0.07)] px-4 py-1.5 text-xs text-[#FFB800] font-semibold mb-5">
+                <Brain className="h-3.5 w-3.5 text-[#FFB800]" />
                 {lang === "en" ? "Take a photo · AI loads everything" : "Sacás foto · La IA carga todo sola"}
               </div>
 
@@ -632,7 +632,7 @@ export default function LandingPage() {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.06] mb-5">
                 {lang === "en" ? "Your co-pilot for" : "Tu copiloto para"}<br />
                 <span className="text-transparent bg-clip-text"
-                  style={{ backgroundImage: "linear-gradient(135deg, #60a5fa, #a78bfa)" }}>
+                  style={{ backgroundImage: "linear-gradient(135deg, #FFB800, #FFD566)" }}>
                   {lang === "en" ? "every flight" : "cada vuelo"}
                 </span>
               </h1>
@@ -655,7 +655,7 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto mb-8">
                 <button
                   onClick={openAuthModal}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-8 py-3.5 text-sm font-bold text-white transition-all shadow-lg shadow-blue-900/30 tap-scale"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] px-8 py-3.5 text-sm font-bold text-[#07070d] transition-all shadow-lg shadow-[rgba(255,184,0,0.2)] tap-scale"
                 >
                   {lang === "en" ? "Start free" : "Empezar gratis"}
                   <ArrowRight className="h-4 w-4" />
@@ -704,7 +704,7 @@ export default function LandingPage() {
                 <div className="relative rounded-[2.8rem] border-2 border-white/[0.12] shadow-2xl overflow-hidden"
                   style={{
                     width: "min(280px, 72vw)",
-                    boxShadow: "0 0 0 1px rgba(124,58,237,0.15), 0 40px 80px rgba(0,0,0,0.7), 0 0 60px rgba(124,58,237,0.12)",
+                    boxShadow: "0 0 0 1px rgba(255,184,0,0.15), 0 40px 80px rgba(0,0,0,0.7), 0 0 60px rgba(255,184,0,0.10)",
                     background: "#08080f",
                   }}>
                   {/* Notch */}
@@ -722,13 +722,13 @@ export default function LandingPage() {
                 </div>
 
                 {/* Floating badge — TripCopilot */}
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-violet-700/50 bg-surface-elevated px-3 py-1.5 shadow-lg whitespace-nowrap">
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-[rgba(255,184,0,0.25)] bg-surface-elevated px-3 py-1.5 shadow-lg whitespace-nowrap">
                   <img src="/tripcopliot-avatar.svg" alt="TripCopilot" className="h-4 w-4" />
-                  <span className="text-[11px] text-violet-300 font-bold">TripCopilot lo hace solo</span>
+                  <span className="text-[11px] text-[#FFB800] font-bold">TripCopilot lo hace solo</span>
                 </div>
 
                 {/* Floating pill — top right */}
-                <div className="absolute -top-3 -right-3 inline-flex items-center gap-1 rounded-full bg-violet-600 px-3 py-1 text-xs text-white font-bold shadow-lg">
+                <div className="absolute -top-3 -right-3 inline-flex items-center gap-1 rounded-full bg-[#FFB800] px-3 py-1 text-xs text-[#07070d] font-bold shadow-lg">
                   <Zap className="h-3 w-3" />
                   IA Import
                 </div>
@@ -740,19 +740,19 @@ export default function LandingPage() {
       </section>
 
       {/* ── INLINE SIGN-UP CTA (after hero) ──────────────────────────────── */}
-      <div className="py-6 px-4" style={{ background: "linear-gradient(90deg, rgba(109,40,217,0.18) 0%, rgba(59,130,246,0.12) 100%)" }}>
+      <div className="py-6 px-4" style={{ background: "linear-gradient(90deg, rgba(255,184,0,0.10) 0%, rgba(255,184,0,0.05) 100%)" }}>
         <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div>
             <p className="text-sm font-bold text-white">
               {lang === "en" ? "Start free — no credit card required" : "Empezá gratis — sin tarjeta de crédito"}
             </p>
-            <p className="text-xs text-violet-300 mt-0.5">
+            <p className="text-xs text-[#FFB800] mt-0.5">
               {lang === "en" ? "2 trips free forever" : "2 viajes gratis para siempre"}
             </p>
           </div>
           <button
             onClick={openAuthModal}
-            className="shrink-0 flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-6 py-2.5 text-sm font-bold text-white transition-all shadow-lg shadow-violet-900/40"
+            className="shrink-0 flex items-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] px-6 py-2.5 text-sm font-bold text-[#07070d] transition-all shadow-lg shadow-[rgba(255,184,0,0.2)]"
           >
             {lang === "en" ? "Get started free" : "Empezar gratis"}
             <ArrowRight className="h-4 w-4" />
@@ -780,7 +780,7 @@ export default function LandingPage() {
               </div>
               <button
                 onClick={openAuthModal}
-                className="shrink-0 flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-sm font-bold text-white transition-all"
+                className="shrink-0 flex items-center gap-1.5 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] px-5 py-2.5 text-sm font-bold text-[#07070d] transition-all"
               >
                 {lang === "en" ? "Start free" : "Empezar gratis"}
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -858,8 +858,8 @@ export default function LandingPage() {
                 </div>
                 <p className="text-sm font-semibold text-gray-300 leading-snug text-center">{p.problem}</p>
                 <div className="h-px bg-white/[0.06]" />
-                <p className="text-xs text-blue-400 leading-relaxed text-center">
-                  <span className="font-bold text-blue-300">TripCopilot:</span> {p.solution}
+                <p className="text-xs text-[#FFB800] leading-relaxed text-center">
+                  <span className="font-bold text-[#FFB800]">TripCopilot:</span> {p.solution}
                 </p>
               </div>
             ))}
@@ -998,14 +998,14 @@ export default function LandingPage() {
           </div>
 
           {/* War Room featured highlight */}
-          <div className="mb-6 rounded-2xl border border-violet-600/40 overflow-hidden"
-            style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.18) 0%, rgba(14,14,28,0.97) 60%, rgba(59,130,246,0.10) 100%)" }}>
+          <div className="mb-6 rounded-2xl border border-[rgba(255,184,0,0.25)] overflow-hidden"
+            style={{ background: "linear-gradient(135deg, rgba(255,184,0,0.08) 0%, rgba(14,14,28,0.97) 60%, rgba(255,184,0,0.04) 100%)" }}>
             <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6">
-              <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-2xl bg-violet-950/60 border border-violet-700/40">
-                <MonitorPlay className="h-8 w-8 text-violet-400" />
+              <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-2xl bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.2)]">
+                <MonitorPlay className="h-8 w-8 text-[#FFB800]" />
               </div>
               <div className="text-center sm:text-left">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-600/20 border border-violet-600/30 px-3 py-0.5 text-[11px] font-bold text-violet-300 uppercase tracking-wider mb-2">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(255,184,0,0.12)] border border-[rgba(255,184,0,0.25)] px-3 py-0.5 text-[11px] font-bold text-[#FFB800] uppercase tracking-wider mb-2">
                   {lang === "en" ? "Featured" : "Destacado"}
                 </div>
                 <h3 className="text-lg font-black text-white mb-1">
@@ -1122,7 +1122,7 @@ export default function LandingPage() {
                     : "Vé dónde está cada viajero en el mundo y quién va al mismo destino que vos.",
                 },
               ].map((vp) => (
-                <div key={vp.title} className="flex items-start gap-4 rounded-2xl border border-violet-800/20 bg-violet-950/20 p-4">
+                <div key={vp.title} className="flex items-start gap-4 rounded-2xl border border-[rgba(255,184,0,0.12)] bg-[rgba(255,184,0,0.04)] p-4">
                   <span className="text-xl shrink-0 mt-0.5">{vp.icon}</span>
                   <div>
                     <h3 className="text-sm font-bold text-white mb-1">{vp.title}</h3>
@@ -1134,17 +1134,17 @@ export default function LandingPage() {
 
             {/* Fake profile card mockup */}
             <div className="flex justify-center">
-              <div className="w-full max-w-[280px] rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/50 to-purple-950/30 p-5 space-y-4">
+              <div className="w-full max-w-[280px] rounded-2xl border border-[rgba(255,184,0,0.18)] bg-[rgba(255,184,0,0.04)] p-5 space-y-4">
                 {/* Profile header */}
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center text-white font-black text-lg shrink-0">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#FFB800] to-[#FF9500] flex items-center justify-center text-[#07070d] font-black text-lg shrink-0">
                     M
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white">@maru_viaja</p>
                     <p className="text-xs text-gray-500">Mariana G.</p>
                   </div>
-                  <button className="ml-auto rounded-lg bg-violet-600/30 border border-violet-500/30 px-3 py-1 text-xs font-semibold text-violet-300">
+                  <button className="ml-auto rounded-lg bg-[rgba(255,184,0,0.15)] border border-[rgba(255,184,0,0.3)] px-3 py-1 text-xs font-semibold text-[#FFB800]">
                     {lang === "en" ? "Follow" : "Seguir"}
                   </button>
                 </div>
@@ -1230,18 +1230,18 @@ export default function LandingPage() {
 
       {/* ── IA Contextual Features Section ─────────────────────────────── */}
       <section className="relative py-20 sm:py-28 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(109,40,217,0.07)_0%,_transparent_70%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,184,0,0.05)_0%,_transparent_70%)] pointer-events-none" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
           {/* Header */}
           <div className="text-center mb-14">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 px-3 py-1 text-xs font-semibold text-violet-400 mb-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.2)] px-3 py-1 text-xs font-semibold text-[#FFB800] mb-4">
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
               TripCopilot IA · Tu viaje preparado
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               La IA que{" "}
-              <span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#FFB800] to-[#FFD566] bg-clip-text text-transparent">
                 viaja con vos
               </span>
             </h2>
@@ -1416,7 +1416,7 @@ export default function LandingPage() {
                 onClick={() => setPricingPeriod("annual")}
                 className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
                   pricingPeriod === "annual"
-                    ? "bg-violet-600 text-white"
+                    ? "bg-[#FFB800] text-[#07070d]"
                     : "text-gray-500 hover:text-gray-300"
                 }`}
               >
@@ -1458,8 +1458,8 @@ export default function LandingPage() {
             </div>
 
             {/* EXPLORER — POPULAR */}
-            <div className="relative rounded-2xl border border-violet-500/50 bg-violet-950/20 p-6 flex flex-col shadow-lg shadow-violet-900/20">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold text-white uppercase tracking-wider whitespace-nowrap">
+            <div className="relative rounded-2xl border border-[rgba(255,184,0,0.4)] bg-[rgba(255,184,0,0.05)] p-6 flex flex-col shadow-lg shadow-[rgba(255,184,0,0.08)]">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#FFB800] px-3 py-1 text-[11px] font-bold text-[#07070d] uppercase tracking-wider whitespace-nowrap">
                 {lang === "en" ? "Most popular" : "Más popular"}
               </div>
               {pricingPeriod === "annual" && (
@@ -1467,7 +1467,7 @@ export default function LandingPage() {
                   {lang === "en" ? "2 months free" : "2 meses gratis"}
                 </div>
               )}
-              <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-2">Explorer</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#FFB800] mb-2">Explorer</p>
               {pricingPeriod === "annual" ? (
                 <>
                   <p className="text-4xl font-black text-white mb-1">$4.166 ARS</p>
@@ -1497,7 +1497,7 @@ export default function LandingPage() {
                   lang === "en" ? "Trip Debrief · Export .ics" : "Trip Debrief · Export .ics",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm text-gray-300">
-                    <CheckCircle className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
+                    <CheckCircle className="h-4 w-4 text-[#FFB800] shrink-0 mt-0.5" />
                     {f}
                   </li>
                 ))}
@@ -1505,7 +1505,7 @@ export default function LandingPage() {
               <button
                 onClick={() => handleSubscribe("explorer")}
                 disabled={subscribeLoading !== null}
-                className="shimmer-btn w-full rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-60 active:scale-95 py-3 text-sm font-bold text-white transition-all flex items-center justify-center gap-2"
+                className="shimmer-btn w-full rounded-xl bg-[#FFB800] hover:bg-[#FFC933] disabled:opacity-60 active:scale-95 py-3 text-sm font-bold text-[#07070d] transition-all flex items-center justify-center gap-2"
               >
                 {subscribeLoading === "explorer" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {lang === "en" ? "Start Explorer →" : "Empezar Explorer →"}
@@ -1658,7 +1658,7 @@ export default function LandingPage() {
           </p>
           <button
             onClick={openAuthModal}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-8 py-3 text-sm font-bold text-white transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] px-8 py-3 text-sm font-bold text-[#07070d] transition-colors"
           >
             <LogIn className="h-4 w-4" />
             {lang === "en" ? "Start free" : "Empezar gratis"}
