@@ -146,7 +146,6 @@ export function useBoardFlights() {
 
       // Fetch live gate/status for today's and tomorrow's flights
       const today = new Date();
-      const todayStr = today.toISOString().split("T")[0];
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
       const tomorrowStr = tomorrow.toISOString().split("T")[0];
