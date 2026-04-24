@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, CheckCircle, AlertCircle, FileText, ImagePlus,
-  ArrowRight, Camera, Trash2,
+  ArrowRight, Camera, Trash2, Ticket,
 } from "lucide-react";
 import Image from "next/image";
 import { ParsedFlight } from "@/lib/importFlights";
@@ -19,6 +19,10 @@ const LABELS = {
     tabPaste:        "Pegar texto",
     tabUpload:       "Subir imagen",
     tabCamera:       "Cámara",
+    tabBoarding:     "Boarding pass",
+    boardingTip:     "Subí o fotografiá tu tarjeta de embarque",
+    boardingHint:    "La IA extrae vuelo, asiento, puerta y horario de embarque",
+    analyzingBP:     "Leyendo boarding pass...",
     textPlaceholder: `Pegá el texto de tu email de confirmación...
 
 Funciona con cualquier formato:
@@ -58,6 +62,10 @@ Funciona con cualquier formato:
     tabPaste:        "Paste text",
     tabUpload:       "Upload image",
     tabCamera:       "Camera",
+    tabBoarding:     "Boarding pass",
+    boardingTip:     "Upload or photograph your boarding pass",
+    boardingHint:    "AI extracts flight, seat, gate and boarding time",
+    analyzingBP:     "Reading boarding pass...",
     textPlaceholder: `Paste your booking confirmation text...
 
 Works with any format:
@@ -156,7 +164,7 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-type TabMode = "paste" | "upload" | "camera";
+type TabMode = "paste" | "upload" | "camera" | "boarding";
 type Phase   = "input" | "parsing" | "review";
 
 // ── ItineraryImportModal ──────────────────────────────────────────────────────
@@ -203,6 +211,29 @@ export function ItineraryImportModal({
     setPhase("parsing");
     setApiError(null);
     try {
+      if (tab === "boarding" && imageFile) {
+        // Boarding pass: specialized endpoint returns a single flight + extra fields
+        const base64 = await fileToBase64(imageFile);
+        const res = await fetch("/api/parse-boarding-pass", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: base64, mimeType: imageFile.type, locale }),
+        });
+        if (!res.ok) { setApiError(t.errorConnect); setPhase("input"); return; }
+        const bp = await res.json() as ParsedFlightRaw & { gate?: string; terminal?: string; boardingTime?: string; boardingGroup?: string };
+        const flight = buildEditableFlight(bp);
+        // Attach extra boarding pass fields as metadata for display
+        (flight as EditableFlight & { _bp?: Record<string, string> })._bp = {
+          gate:         bp.gate ?? "",
+          terminal:     bp.terminal ?? "",
+          boardingTime: bp.boardingTime ?? "",
+          boardingGroup: bp.boardingGroup ?? "",
+        };
+        setFlights([flight]);
+        setPhase("review");
+        return;
+      }
+
       let body: Record<string, string>;
       if ((tab === "upload" || tab === "camera") && imageFile) {
         const base64 = await fileToBase64(imageFile);
@@ -262,6 +293,8 @@ export function ItineraryImportModal({
 
   const canAnalyze =
     tab === "paste" ? text.trim().length > 0 : imageFile !== null;
+
+  const bpRef = useRef<HTMLInputElement>(null);
 
   const hasMissingRequired = flights.some((f) =>
     f.missing.some((m) =>
@@ -334,22 +367,24 @@ export function ItineraryImportModal({
                     className="space-y-4"
                   >
                     {/* Tab selector */}
-                    <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/6 w-fit">
-                      {(["paste", "upload", "camera"] as const).map((mode) => {
+                    <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/6 flex-wrap">
+                      {(["paste", "upload", "camera", "boarding"] as const).map((mode) => {
                         const icons: Record<TabMode, React.ReactNode> = {
-                          paste:  <FileText  className="h-3.5 w-3.5" />,
-                          upload: <ImagePlus className="h-3.5 w-3.5" />,
-                          camera: <Camera    className="h-3.5 w-3.5" />,
+                          paste:    <FileText  className="h-3.5 w-3.5" />,
+                          upload:   <ImagePlus className="h-3.5 w-3.5" />,
+                          camera:   <Camera    className="h-3.5 w-3.5" />,
+                          boarding: <Ticket    className="h-3.5 w-3.5" />,
                         };
                         const labels: Record<TabMode, string> = {
-                          paste:  t.tabPaste,
-                          upload: t.tabUpload,
-                          camera: t.tabCamera,
+                          paste:    t.tabPaste,
+                          upload:   t.tabUpload,
+                          camera:   t.tabCamera,
+                          boarding: t.tabBoarding,
                         };
                         return (
                           <button
                             key={mode}
-                            onClick={() => setTab(mode)}
+                            onClick={() => { setTab(mode); setImageFile(null); setImagePreview(null); }}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                               tab === mode
                                 ? "bg-[#FFB800] text-[#07070d] shadow"
@@ -467,6 +502,54 @@ export function ItineraryImportModal({
                       </div>
                     )}
 
+                    {/* Boarding pass tab */}
+                    {tab === "boarding" && (
+                      <div className="space-y-3">
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          aria-label={locale === "es" ? "Subir boarding pass" : "Upload boarding pass"}
+                          className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[rgba(255,184,0,0.25)] bg-[rgba(255,184,0,0.04)] p-6 cursor-pointer hover:border-[rgba(255,184,0,0.45)] transition-colors"
+                          onClick={() => bpRef.current?.click()}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bpRef.current?.click(); } }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file?.type.startsWith("image/")) handleImagePick(file); }}
+                        >
+                          {imagePreview ? (
+                            <img src={imagePreview} alt="boarding pass preview" className="max-h-52 rounded-lg object-contain border border-white/10" />
+                          ) : (
+                            <>
+                              <Ticket className="h-10 w-10 text-[rgba(255,184,0,0.5)]" />
+                              <p className="text-sm text-gray-300 text-center font-medium">{t.boardingTip}</p>
+                              <p className="text-xs text-gray-600 text-center">{t.boardingHint}</p>
+                            </>
+                          )}
+                          {imagePreview && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setImageFile(null); setImagePreview(null); }}
+                              className="text-xs text-gray-500 hover:text-red-400 transition-colors flex items-center gap-1"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              {locale === "es" ? "Cambiar" : "Change"}
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          ref={bpRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          capture="environment"
+                          className="hidden"
+                          onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImagePick(file); }}
+                        />
+                        <p className="text-[11px] text-[rgba(255,184,0,0.6)] text-center">
+                          {locale === "es"
+                            ? "✈ Extrae vuelo, asiento, puerta y horario automáticamente"
+                            : "✈ Automatically extracts flight, seat, gate and boarding time"}
+                        </p>
+                      </div>
+                    )}
+
                     {apiError && (
                       <p className="text-xs text-red-400 flex items-center gap-1.5">
                         <AlertCircle className="h-3.5 w-3.5 shrink-0" />
@@ -501,7 +584,9 @@ export function ItineraryImportModal({
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-400 animate-pulse">{t.analyzing}</p>
+                    <p className="text-sm text-gray-400 animate-pulse">
+                      {tab === "boarding" ? t.analyzingBP : t.analyzing}
+                    </p>
                   </motion.div>
                 )}
 
