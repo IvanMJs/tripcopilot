@@ -112,7 +112,7 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId, loa
             {/* Eyebrow with live pulse */}
             <div className="flex items-center justify-center gap-2">
               <RadarDot tone="ok" size="sm" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-green-400">
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#FFB800]">
                 {es ? "En vivo" : "Live"}
               </span>
             </div>
@@ -136,19 +136,19 @@ export function NewUserWelcomeView({ statusMap, locale, onAddFlight, userId, loa
                 const tone = toneFromStatus(effectiveStatus);
                 const { icon, label } = getStatusInfo(effectiveStatus, locale);
                 const haloByToneCard: Record<Tone, string> = {
-                  ok:      "bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.18),transparent_65%)]",
+                  ok:      "bg-[radial-gradient(circle_at_top_right,rgba(255,184,0,0.10),transparent_65%)]",
                   warn:    "bg-[radial-gradient(circle_at_top_right,rgba(251,146,60,0.20),transparent_65%)]",
                   danger:  "bg-[radial-gradient(circle_at_top_right,rgba(239,68,68,0.24),transparent_65%)]",
                   neutral: "",
                 };
                 const borderByToneCard: Record<Tone, string> = {
-                  ok:      "border-green-500/20",
+                  ok:      "border-[#FFB800]/20",
                   warn:    "border-orange-500/25",
                   danger:  "border-red-500/30",
                   neutral: "border-white/[0.08]",
                 };
                 const labelByToneCard: Record<Tone, string> = {
-                  ok:      "text-green-400",
+                  ok:      "text-[#FFB800]",
                   warn:    "text-orange-300",
                   danger:  "text-red-300",
                   neutral: "text-gray-500",
@@ -371,25 +371,25 @@ function HeroCard({ iata, entry, locale }: { iata: string; entry: AirportStatus 
   const reason = severeReason(entry);
 
   const shadowByTone: Record<Tone, string> = {
-    ok: "shadow-glow-green", warn: "shadow-glow-orange", danger: "shadow-glow-red", neutral: "",
+    ok: "", warn: "shadow-glow-orange", danger: "shadow-glow-red", neutral: "",
   };
   const haloByTone: Record<Tone, string> = {
-    ok:      "bg-[radial-gradient(circle,rgba(34,197,94,0.24),transparent_60%)]",
+    ok:      "bg-[radial-gradient(circle,rgba(255,184,0,0.14),transparent_60%)]",
     warn:    "bg-[radial-gradient(circle,rgba(251,146,60,0.26),transparent_60%)]",
     danger:  "bg-[radial-gradient(circle,rgba(239,68,68,0.30),transparent_60%)]",
     neutral: "",
   };
   const pulseByTone: Record<Tone, string> = {
-    ok: "bg-green-400", warn: "bg-orange-400", danger: "bg-red-500", neutral: "bg-gray-500",
+    ok: "bg-[#FFB800]", warn: "bg-orange-400", danger: "bg-red-500", neutral: "bg-gray-500",
   };
   const tileByTone: Record<Tone, string> = {
-    ok:      "bg-green-500/10 border-green-500/25",
+    ok:      "bg-[rgba(255,184,0,0.08)] border-[rgba(255,184,0,0.25)]",
     warn:    "bg-orange-500/10 border-orange-500/25",
     danger:  "bg-red-500/10 border-red-500/30",
     neutral: "bg-white/[0.04] border-white/10",
   };
   const labelByTone: Record<Tone, string> = {
-    ok: "text-green-400", warn: "text-orange-300", danger: "text-red-300", neutral: "text-gray-500",
+    ok: "text-[#FFB800]", warn: "text-orange-300", danger: "text-red-300", neutral: "text-gray-500",
   };
 
   const firstBoundary = implication.indexOf(". ");
