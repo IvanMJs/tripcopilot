@@ -56,7 +56,7 @@ export function FlightCardBoardingPass({
       .upload(path, file, { upsert: true });
 
     if (error) {
-      toast.error(locale === "es" ? "Error al subir el boarding pass" : "Error uploading boarding pass");
+      toast.error(locale === "es" ? "Error al subir el resumen de vuelo" : "Error uploading flight summary");
       setUploading(false);
       return;
     }
@@ -68,7 +68,7 @@ export function FlightCardBoardingPass({
     setSignedUrl(urlData?.signedUrl ?? null);
     onBoardingPassSaved?.(path);
     setUploading(false);
-    toast.success(locale === "es" ? "Boarding pass guardado ✓" : "Boarding pass saved ✓");
+    toast.success(locale === "es" ? "Resumen de vuelo guardado ✓" : "Flight summary saved ✓");
   }
 
   async function handleDownloadSummary() {
@@ -107,7 +107,7 @@ export function FlightCardBoardingPass({
     setSignedUrl(null);
     onBoardingPassSaved?.(null);
     setShowBoardingPass(false);
-    toast.success(locale === "es" ? "Boarding pass eliminado" : "Boarding pass removed");
+    toast.success(locale === "es" ? "Resumen de vuelo eliminado" : "Flight summary removed");
   }
 
   return (
@@ -121,12 +121,12 @@ export function FlightCardBoardingPass({
             {hasBoardingPass ? (
               <>
                 <Plane className="h-3.5 w-3.5" />
-                {locale === "es" ? "Ver boarding pass" : "View boarding pass"}
+                {locale === "es" ? "Ver resumen de vuelo" : "View flight summary"}
               </>
             ) : (
               <>
                 <ImagePlus className="h-3.5 w-3.5" />
-                {locale === "es" ? "Agregar boarding pass" : "Add boarding pass"}
+                {locale === "es" ? "Agregar resumen de vuelo" : "Add flight summary"}
               </>
             )}
           </button>

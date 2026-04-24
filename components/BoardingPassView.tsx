@@ -204,7 +204,7 @@ export function BoardingPassView({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={imageUrl}
-                          alt="Boarding pass"
+                          alt="Resumen de vuelo"
                           className="w-full object-contain max-h-64"
                         />
                         {/* Scanned stamp overlay */}
