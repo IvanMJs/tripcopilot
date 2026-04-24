@@ -1001,6 +1001,30 @@ export default function HomePage() {
                   </div>
                 )}
                 <DepartureBoard trips={userTrips} statusMap={statusMap} locale={locale} geoPosition={userPosition} userPlan={userPlan ?? undefined} onUpgrade={() => setShowUpgradeModal(true)} onCreateTrip={openCreateTripModal} />
+
+                {userTrips.length > 0 && (
+                  <a
+                    href="/board"
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] px-5 py-4 transition-colors hover:bg-amber-500/[0.08] active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">✈</span>
+                      <div>
+                        <p className="text-sm font-semibold text-amber-400 leading-tight">
+                          {locale === "es" ? "Ver tablero de vuelos" : "Open flight board"}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {locale === "es"
+                            ? "Cartel estilo aeropuerto · compartí con tu familia"
+                            : "Airport-style board · share with your family"}
+                        </p>
+                      </div>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-amber-500/50">
+                      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </a>
+                )}
               </div>
             )}
 
