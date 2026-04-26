@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -83,6 +84,13 @@ export default function RootLayout({
         </Providers>
         <Analytics />
         <SpeedInsights />
+        <Script
+          id="ms-clarity"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,"clarity","script","whz2qtpiod");`,
+          }}
+        />
       </body>
     </html>
   );
