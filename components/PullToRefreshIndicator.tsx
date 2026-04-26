@@ -29,7 +29,9 @@ export function PullToRefreshIndicator({
       aria-hidden="true"
     >
       {/* Background circle */}
-      <div className="absolute inset-0 rounded-full bg-gray-900/90 border border-white/10 backdrop-blur-sm shadow-lg" />
+      <div 
+        className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-300 to-blue-500 opacity-60 animate-pulse border border-white/10 backdrop-blur-sm shadow-lg" // Added gradient and pulse effect
+      />
 
       {/* SVG arc / spinner */}
       <svg
@@ -75,6 +77,7 @@ export function PullToRefreshIndicator({
         strokeLinecap="round"
         strokeLinejoin="round"
         className="relative z-10"
+        aria-label="Refresh" // Added aria-label for accessibility
         style={{ transition: "stroke 0.15s ease", transform: isPulling ? `rotate(${pullProgress * 180}deg)` : undefined }}
       >
         {/* RefreshCw icon paths */}

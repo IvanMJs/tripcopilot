@@ -8,12 +8,16 @@ export function AutoRefresh() {
   const router = useRouter();
 
   useEffect(() => {
-    const id = setInterval(() => {
-      router.refresh();
-    }, 2 * 60 * 1000); // 2 minutes
+    try {
+      const id = setInterval(() => {
+        router.refresh();
+      }, 2 * 60 * 1000); // 2 minutes
 
-    return () => clearInterval(id);
+      return () => clearInterval(id);
+    } catch (error) {
+      console.error("Error during AutoRefresh:", error);
+    }
   }, [router]);
 
-  return null;
+  return <span aria-label="Data refreshing"></span>;
 }
