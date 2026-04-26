@@ -50,7 +50,7 @@ function estimateDurationMin(flight: TripFlight, distKm: number): number {
 
   // Absolute fallback by route type
   const originUS = AIRPORTS[flight.originCode]?.country == null;   // no country = USA
-  const destUS   = AIRPORTS[flight.destinationCode]?.country == null;
+  const destUS = AIRPORTS[flight.destinationCode]?.country == null;
   if (originUS && destUS) return 165;
   return 240;
 }
@@ -61,8 +61,9 @@ function estimateDurationMin(flight: TripFlight, distKm: number): number {
 // Short-haul (<1500 km) factor: ~0.158 kg CO2/pax/km
 
 const CO2_SHORT = 0.158; // kg CO2 per pax per km, <1500 km
-const CO2_LONG  = 0.115; // kg CO2 per pax per km, >=1500 km
+const CO2_LONG = 0.115; // kg CO2 per pax per km, >=1500 km
 
+/** Calculate CO2 emissions for a flight based on distance. */
 function co2KgForFlight(distKm: number): number {
   if (distKm <= 0) return 0;
   const factor = distKm < 1500 ? CO2_SHORT : CO2_LONG;
@@ -87,6 +88,9 @@ export interface TripStats {
   timesAroundEarth: number;            // totalDistanceKm / 40075, rounded to 1 decimal
 }
 
+/**
+ * Compute trip statistics based on the given trip data.
+ */
 export function computeTripStats(trip: TripTab): TripStats {
   const { flights } = trip;
 
