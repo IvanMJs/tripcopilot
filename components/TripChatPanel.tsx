@@ -45,42 +45,9 @@ function getInitials(email: string): string {
 }
 
 function formatTimestamp(iso: string, locale: "es" | "en"): string {
-  const date = new Date(iso);
-  return date.toLocaleTimeString(locale === "es" ? "es-AR" : "en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-// ── Message bubble ────────────────────────────────────────────────────────────
-
-function ChatBubble({
-  message,
-  locale,
-}: {
-  message: TripChatMessage;
-  locale: "es" | "en";
-}) {
-  return (
-    <div className="flex items-start gap-2">
-      {/* Initials avatar */}
-      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E6A500]/50 flex items-center justify-center text-[10px] font-bold text-[#FFC933]">
-        {getInitials(message.user_email)}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[11px] font-semibold text-[#FFB800] truncate max-w-[140px]">
-            {message.user_email}
-          </span>
-          <span className="text-[10px] text-gray-600 flex-shrink-0">
-            {formatTimestamp(message.created_at, locale)}
-          </span>
-        </div>
-        <p className="mt-0.5 text-sm text-gray-200 break-words">{message.body}</p>
-      </div>
-    </div>
-  );
+  return `${locale === "es" ? "Hace" : "Ago"} ${new Date(
+    iso
+  ).toLocaleString("es-ES", { hour12: false })}`;
 }
 
 // ── Teaser (non-pilot) ────────────────────────────────────────────────────────
@@ -106,6 +73,7 @@ function ChatTeaser({
         <button
           onClick={onUpgrade}
           className="mt-1 px-4 py-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] text-xs font-bold text-[#07070d] transition-colors"
+          aria-label={L.send}
         >
           {L.upgradeCta}
         </button>
@@ -181,9 +149,7 @@ function ChatPanelInner({
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
         <MessageSquare className="h-4 w-4 text-[#FFB800]" />
-        <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-          {L.title}
-        </span>
+        <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{L.title}</span>
       </div>
 
       {!isPilot ? (
@@ -230,6 +196,37 @@ function ChatPanelInner({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ── Chat Bubble ───────────────────────────────────────────────────────────────
+
+function ChatBubble({
+  message,
+  locale,
+}: {
+  message: TripChatMessage;
+  locale: "es" | "en";
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      {/* Initials avatar */}
+      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E6A500]/50 flex items-center justify-center text-[10px] font-bold text-[#FFC933]">
+        {getInitials(message.user_email)}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[11px] font-semibold text-[#FFB800] truncate max-w-[140px]">
+            {message.user_email}
+          </span>
+          <span className="text-[10px] text-gray-600 flex-shrink-0">
+            {formatTimestamp(message.created_at, locale)}
+          </span>
+        </div>
+        <p className="mt-0.5 text-sm text-gray-200 break-words">{message.body}</p>
+      </div>
     </div>
   );
 }

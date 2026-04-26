@@ -8,6 +8,7 @@ interface EmptyStateProps {
   description?: string;
   cta?: { label: string; onClick: () => void };
   secondaryCta?: { label: string; onClick: () => void };
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export function EmptyState({
   description,
   cta,
   secondaryCta,
+  isLoading = false,
   className = "",
 }: EmptyStateProps) {
   return (
@@ -31,7 +33,7 @@ export function EmptyState({
       </div>
 
       <h3 className="text-base font-bold text-gray-100 mb-1 leading-snug">
-        {title}
+        {title} (Add more context if needed)
       </h3>
 
       {description && (
@@ -45,6 +47,7 @@ export function EmptyState({
           {cta && (
             <button
               onClick={cta.onClick}
+              aria-label={cta.label} 
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-95 text-[#07070d] text-sm font-semibold px-6 py-3 transition-all"
             >
               {cta.label}
@@ -53,10 +56,18 @@ export function EmptyState({
           {secondaryCta && (
             <button
               onClick={secondaryCta.onClick}
+              aria-label={secondaryCta.label} 
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.12] hover:bg-surface-2 active:scale-95 text-gray-300 text-sm font-semibold px-6 py-3 transition-all"
             >
               {secondaryCta.label}
             </button>
+          )}
+
+          {/* Add loading state if needed */}
+          {isLoading && (
+            <div className="mt-4 flex items-center justify-center">
+              <span className="animate-spin">Loading...</span>
+            </div>
           )}
         </div>
       )}
