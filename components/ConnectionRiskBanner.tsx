@@ -85,11 +85,11 @@ export function ConnectionRiskBanner({
           <p className="text-[11px] text-gray-500 mt-0.5">{details}</p>
           {showReroute && (
             <div className="flex gap-2 mt-2.5 flex-wrap">
-              <LinkButton href={googleUrl} variant="orange">
+              <LinkButton href={googleUrl} variant="orange" aria-label="Find alternatives">
                 {locale === "en" ? "Find alternatives" : "Buscar alternativas"}
               </LinkButton>
               {kayakUrl && (
-                <LinkButton href={kayakUrl} variant="default">
+                <LinkButton href={kayakUrl} variant="default" aria-label="View on Kayak">
                   Kayak
                 </LinkButton>
               )}
