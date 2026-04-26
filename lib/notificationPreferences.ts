@@ -19,14 +19,14 @@ export const DEFAULT_PREFS: Omit<NotificationPreferences, "userId"> = {
   flightDelays: true,
   gateChanges: true,
   checkInReminders: true,
-  weatherAlerts: false,
-  priceDrops: true,
-  weeklyDigest: false,
   morningBriefing: true,
-  weeklyRecap: true,
-  reEngagement: true,
-  friendRequests: true,
-  newFollower: true,
+  weatherAlerts: false,
+  weeklyDigest: false,
+  priceDrops: false,
+  weeklyRecap: false,
+  reEngagement: false,
+  friendRequests: false,
+  newFollower: false,
 };
 
 export async function getNotificationPrefs(
