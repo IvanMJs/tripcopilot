@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 const STATUS_CFG = {
-  scheduled: { es: "Programado", en: "Scheduled",  cls: "border-blue-700/60 bg-blue-900/20 text-blue-300" },
+  scheduled: { es: "Programado", en: "Scheduled", cls: "border-blue-700/60 bg-blue-900/20 text-blue-300" },
   active:    { es: "En vuelo",   en: "In flight",   cls: "border-emerald-600/60 bg-emerald-900/20 text-emerald-300" },
   landed:    { es: "Aterrizó",   en: "Landed",      cls: "border-gray-700 bg-gray-800/60 text-gray-400" },
   cancelled: { es: "Cancelado",  en: "Cancelled",   cls: "border-red-700/60 bg-red-900/20 text-red-400" },
@@ -57,7 +57,7 @@ function DelayStatusBadge({ delayMin, locale }: { delayMin: number | null | unde
     );
   }
   return (
-    <span className="flex items-center gap-1 text-xs font-medium text-amber-400">
+    <span className="flex items-center gap-1 text-xs font-medium text-gray-400">
       <Clock className="w-3.5 h-3.5" />
       {locale === "es" ? `Demora ${delayMin}min` : `Delay ${delayMin}min`}
     </span>
@@ -176,4 +176,11 @@ export function FlightStatusBadge({ flightIata, isoDate, locale }: Props) {
       )}
     </div>
   );
+
+  try {
+    if (loading) return null;
+    if (error) return <p>{locale === "en" ? "Error fetching data" : "Error al obtener los datos"}</p>;
+  } catch (e) {
+    console.error("An error occurred:", e);
+  }
 }

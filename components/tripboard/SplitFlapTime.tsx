@@ -1,6 +1,7 @@
 "use client";
 
 import { SplitFlapChar } from "./SplitFlapChar";
+import type { SplitFlapCharProps } from "./SplitFlapChar";
 
 export interface SplitFlapTimeProps {
   time: string;
