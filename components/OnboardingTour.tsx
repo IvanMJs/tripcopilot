@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { analytics } from "@/lib/analytics";
 
 interface OnboardingTourProps {
   onDone: () => void;
@@ -65,8 +66,13 @@ export function OnboardingTour({ onDone, onStartImport, locale = "es" }: Onboard
   const current = steps[step];
   const isLast = step === steps.length - 1;
 
+  useEffect(() => {
+    analytics.onboardingTourStarted();
+  }, []);
+
   function next() {
     if (isLast) {
+      analytics.onboardingTourCompleted();
       onDone();
       onStartImport?.();
     } else {

@@ -39,6 +39,7 @@
     "react-dom": "^18",
     "react-hot-toast": "^2.4.1",
     "react-simple-maps": "^3.0.0",
+    "recharts": "^3.8.1",
     "resend": "^6.9.4",
     "tailwind-merge": "^2.4.0",
     "web-push": "^3.6.7",

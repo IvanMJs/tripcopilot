@@ -1,10 +1,34 @@
 import { track } from "@vercel/analytics";
+import { trackEvent } from "./trackEvent";
 
 /**
- * Typed wrapper around Vercel Analytics track().
+ * Typed wrapper around Vercel Analytics track() + Supabase analytics_events.
  * Call these at the moment the user completes an action.
  */
 export const analytics = {
+  // ── Onboarding funnel ─────────────────────────────────────────────────────
+  onboardingTourStarted() {
+    track("onboarding_tour_started");
+    trackEvent("onboarding_tour_started");
+  },
+  onboardingTourCompleted() {
+    track("onboarding_tour_completed");
+    trackEvent("onboarding_tour_completed");
+  },
+  aiImportSuccess(props: { flightCount: number }) {
+    track("ai_import_success", props);
+    trackEvent("ai_import_success", props);
+  },
+  notificationPrompted() {
+    track("notification_prompted");
+    trackEvent("notification_prompted");
+  },
+  notificationGranted() {
+    track("notification_granted");
+    trackEvent("notification_granted");
+  },
+
+  // ── Existing events ────────────────────────────────────────────────────────
   flightAdded(props: { airline: string; origin: string; destination: string }) {
     track("flight_added", props);
   },

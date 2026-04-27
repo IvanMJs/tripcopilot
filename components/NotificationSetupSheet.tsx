@@ -184,6 +184,7 @@ function RequestButton({ locale, onClose }: { locale: "es" | "en"; onClose: () =
     if (result === "granted") {
       analytics.pushPermissionGranted();
       analytics.notificationEnabled();
+      analytics.notificationGranted();
       onClose();
     } else {
       setState("denied");

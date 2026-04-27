@@ -509,6 +509,7 @@ export default function HomePage() {
     setDraftTrip({ name: tripName, flights: tripFlights, accommodations: [] });
     setShowGlobalImport(false);
     setActiveTab(DRAFT_ID);
+    analytics.aiImportSuccess({ flightCount: flights.length });
     // After first import, prompt for notifications if not already set up
     const alreadyPrompted = typeof localStorage !== "undefined" && localStorage.getItem("tc-notif-prompted");
     const alreadyGranted = typeof Notification !== "undefined" && Notification.permission === "granted";
@@ -516,6 +517,7 @@ export default function HomePage() {
       setTimeout(() => {
         setShowNotifSheet(true);
         localStorage.setItem("tc-notif-prompted", "1");
+        analytics.notificationPrompted();
       }, 800);
     }
   }
