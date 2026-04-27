@@ -319,7 +319,7 @@ export function ItineraryImportModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="itinerary-import-modal-title"
-            className="relative w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl border border-white/[0.07] bg-surface-card shadow-2xl max-h-[92dvh] flex flex-col"
+            className="relative w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl border border-white/[0.07] bg-surface-card shadow-2xl max-h-[92dvh] flex flex-col self-center"
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}

@@ -98,10 +98,10 @@ export function TripDebriefModal({ trip, locale, onClose }: TripDebriefModalProp
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 32, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            className="w-full max-w-sm rounded-3xl overflow-hidden bg-surface-input border border-white/[0.07] shadow-2xl"
+            className="w-full max-w-sm rounded-3xl overflow-hidden bg-surface-input border border-white/[0.07] shadow-2xl self-center"
           >
             {/* Gradient hero */}
-            <div className="relative px-6 pt-8 pb-5 bg-gradient-to-br from-[#FFB800]/70 via-blue-900/40 to-[#0c0c1a]">
+            <div className="relative px-6 pt-8 pb-5 bg-gradient-to-br from-[#FFB800]/70 via-blue-900/40 to-[#0c0c1a] self-center">
               <button
                 onClick={handleClose}
                 className="absolute top-4 right-4 rounded-full p-1.5 text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors"
