@@ -138,6 +138,10 @@ export function TripWeatherSummary({ flights, locale }: TripWeatherSummaryProps)
       </div>
 
       {/* Packing tip */}
+      {!packingTip && (
+        <p className="text-xs text-gray-500 px-3 py-2 rounded-lg border border-white/[0.06]">No se recomienda nada en particular</p>
+      )}
+
       {packingTip && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
           <span className="text-sm shrink-0">🎒</span>
