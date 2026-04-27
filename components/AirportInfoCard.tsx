@@ -30,6 +30,7 @@ export function AirportInfoCard({ iata, locale, terminal }: AirportInfoCardProps
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-400 transition-colors"
+        aria-label={locale === "es" ? "Información del aeropuerto" : "Airport info"}
       >
         <MapPin className="h-3 w-3 shrink-0" />
         <span>{locale === "es" ? "Info del aeropuerto" : "Airport info"}</span>
