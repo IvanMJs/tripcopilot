@@ -98,7 +98,7 @@ export function OnboardingTour({ onDone, onStartImport, locale = "es" }: Onboard
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.97 }}
           transition={{ duration: 0.22 }}
-          className="relative w-full max-w-sm rounded-2xl border border-white/[0.08] p-7 flex flex-col gap-5"
+          className="relative w-full max-w-sm rounded-2xl border border-white/[0.08] p-7 flex flex-col gap-5 self-center"
           style={{ background: "linear-gradient(160deg, #0e0e1c 0%, #09090f 100%)" }}
         >
           {/* Skip */}

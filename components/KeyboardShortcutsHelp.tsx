@@ -82,7 +82,7 @@ export function KeyboardShortcutsHelp({ open, onClose, locale }: KeyboardShortcu
             className="fixed inset-0 z-[61] flex items-center justify-center px-4 pointer-events-none"
           >
             <div
-              className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.1] shadow-2xl"
+              className="w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.1] shadow-2xl self-center"
               style={{ background: "linear-gradient(160deg, rgba(15,15,28,0.98) 0%, rgba(8,8,18,1) 100%)" }}
             >
               {/* Header */}

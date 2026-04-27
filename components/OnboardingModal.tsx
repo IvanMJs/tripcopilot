@@ -77,7 +77,7 @@ export function OnboardingModal({ locale, onSeeExample, onStartFresh }: Onboardi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950 shadow-2xl overflow-hidden animate-slide-up">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950 shadow-2xl overflow-hidden animate-slide-up self-center">
 
         {/* Steps — fixed height to prevent layout shift */}
         <div className="relative overflow-hidden" style={{ minHeight: 290 }}>

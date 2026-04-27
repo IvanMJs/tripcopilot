@@ -54,7 +54,7 @@ export function NotificationSetupSheet({ open, onClose, locale }: NotificationSe
           role="dialog"
           aria-modal="true"
           aria-labelledby="notif-setup-modal-title"
-          className={`w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl transition-all duration-200 ease-out
+          className={`w-full max-w-sm pointer-events-auto rounded-2xl border border-white/[0.08] shadow-2xl transition-all duration-200 ease-out self-center
             ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
           style={{
             background: "linear-gradient(160deg, rgba(18,18,32,0.99) 0%, rgba(10,10,20,1) 100%)",

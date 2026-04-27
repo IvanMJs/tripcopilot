@@ -68,7 +68,7 @@ export function BoardingPassView({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-fade-in-up"
+        className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-fade-in-up self-center"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "linear-gradient(160deg, #1e0a3c 0%, #0f172a 100%)",

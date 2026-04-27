@@ -85,7 +85,7 @@ export function CountryCelebration({
         onAnimationComplete={() => {
           // schedule exit animation after 2000 ms
         }}
-        className="pointer-events-auto relative rounded-2xl px-8 py-6 text-center"
+        className="pointer-events-auto relative rounded-2xl px-8 py-6 text-center self-center"
         style={{
           background: "linear-gradient(135deg,#fdf8f0 0%,#f5ede0 50%,#faf4ec 100%)",
           border: "2px dashed #7c3aed",

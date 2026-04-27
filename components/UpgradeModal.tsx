@@ -125,7 +125,7 @@ export function UpgradeModal({ isOpen, onClose, locale = "es" }: UpgradeModalPro
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-white/10 bg-surface-input shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl rounded-2xl border border-white/10 bg-surface-input shadow-2xl overflow-hidden flex flex-col max-h-[90vh] self-center"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

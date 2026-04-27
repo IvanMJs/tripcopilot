@@ -233,7 +233,7 @@ export function ImportFlightsModal({ onImport, onClose, locale }: ImportFlightsM
         role="dialog"
         aria-modal="true"
         aria-labelledby="import-flights-modal-title"
-        className="relative w-full max-w-2xl rounded-2xl border border-white/[0.07] bg-surface-card shadow-2xl animate-fade-in-up max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-2xl rounded-2xl border border-white/[0.07] bg-surface-card shadow-2xl animate-fade-in-up max-h-[90vh] flex flex-col self-center"
       >
 
         {/* Confetti burst on successful import */}
