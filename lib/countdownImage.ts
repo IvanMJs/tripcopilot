@@ -48,7 +48,10 @@ export async function generateCountdownImage(
   canvas.width  = WIDTH;
   canvas.height = HEIGHT;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas 2D context not available");
+
+  if (!ctx) {
+    throw new Error("Canvas 2D context not available");
+  }
 
   // ── Background gradient (deep dark blue-violet) ──────────────────────────────
   const bg = ctx.createLinearGradient(0, 0, 0, HEIGHT);
