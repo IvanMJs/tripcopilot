@@ -47,7 +47,6 @@ function InviteContent() {
         setState({ phase: "accepted", tripId: data.tripId });
       })
       .catch(() => setState({ phase: "error", message: "Error de red. Intentá de nuevo." }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   // Auto-redirect after accept
