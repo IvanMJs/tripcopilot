@@ -50,7 +50,7 @@ function normalizeStatus(raw: string | undefined): FlightData["status"] {
 
 export async function fetchFromAviationStack(
   flightCode: string,
-  isoDate: string,
+  isoDate: string | undefined,
 ): Promise<FlightDataResult> {
   const apiKey = process.env.AVIATIONSTACK_API_KEY;
   if (!apiKey) {
@@ -65,12 +65,15 @@ export async function fetchFromAviationStack(
   const timeout = setTimeout(() => controller.abort(), 10000);
 
   try {
-    const params = new URLSearchParams({
+    let params = new URLSearchParams({
       access_key: apiKey,
       flight_iata: flightCode,
       limit: "1",
     });
-    if (isoDate) params.set("flight_date", isoDate);
+
+    if (isoDate) {
+      params.append("flight_date", isoDate);
+    }
 
     const res = await fetch(`${AVIATIONSTACK_BASE}/flights?${params}`, {
       headers: { "User-Agent": "AirportMonitor/1.0" },
