@@ -13,12 +13,9 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export interface UsePwaInstallResult {
-  /** Android/Chrome: native install prompt available */
   canInstall: boolean;
   install: () => Promise<void>;
-  /** iOS Safari (not standalone): show manual Add-to-Home-Screen instructions */
   showIosPrompt: boolean;
-  /** Shared dismiss (7-day TTL) */
   isDismissed: boolean;
   dismiss: () => void;
 }
@@ -67,7 +64,7 @@ export function usePwaInstall(): UsePwaInstallResult {
     }
 
     // Android/Chrome: wait for beforeinstallprompt
-    function handleBeforeInstallPrompt(e: Event) {
+    function handleBeforeInstallPrompt(e: Event): void {
       e.preventDefault();
       promptRef.current = e as BeforeInstallPromptEvent;
       timerRef.current = setTimeout(() => {
@@ -82,14 +79,14 @@ export function usePwaInstall(): UsePwaInstallResult {
     };
   }, []);
 
-  const install = useCallback(async (): Promise<void> => {
+  const install: () => Promise<void> = useCallback(async (): Promise<void> => {
     if (!promptRef.current) return;
     await promptRef.current.prompt();
     const { outcome } = await promptRef.current.userChoice;
     if (outcome === "accepted") setCanInstall(false);
-  }, []);
+  }, [promptRef]);
 
-  const dismiss = useCallback((): void => {
+  const dismiss: () => void = useCallback((): void => {
     setCanInstall(false);
     setShowIosPrompt(false);
     setIsDismissed(true);
