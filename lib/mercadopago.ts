@@ -7,12 +7,28 @@ export function getMP(): MercadoPagoConfig {
     if (!process.env.MP_ACCESS_TOKEN) {
       throw new Error("MP_ACCESS_TOKEN is not set");
     }
-    _mp = new MercadoPagoConfig({
-      accessToken: process.env.MP_ACCESS_TOKEN,
-      options: { timeout: 5000 },
-    });
+    try {
+      _mp = new MercadoPagoConfig({
+        accessToken: process.env.MP_ACCESS_TOKEN,
+        options: { timeout: 5000 },
+      });
+    } catch (error) {
+      console.error("Error initializing MercadoPagoConfig", error);
+      throw error;
+    }
   }
   return _mp;
+}
+
+export interface Plan {
+  name: string;
+  maxTrips?: number;
+  maxFlightsPerTrip?: number;
+  features?: string[];
+  mpAmount?: number;
+  mpAnnualAmount?: number;
+  mpCurrencyId?: string;
+  annualPriceARS?: number;
 }
 
 export const PLANS = {
