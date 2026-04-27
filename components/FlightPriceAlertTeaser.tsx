@@ -10,8 +10,8 @@ const LABELS = {
     badge: "Próximamente",
     title: "Alertas de precio",
     description: "Recibí notificaciones cuando el precio de tu vuelo baje.",
-    ctaFree: "Mejorar plan →",
-    ctaPaid: "Próximamente",
+    ctaFree: "Upgrade plan →",
+    ctaPaid: "Coming soon",
     route: "Ruta",
   },
   en: {
@@ -105,7 +105,7 @@ export function FlightPriceAlertTeaser({
       {/* Header row */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-[rgba(255,184,0,0.08)] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full bg-[rgba(255,184,0,0.08)] flex items-center justify-center" aria-label="Price drop indicator">
             <TrendingDown className="h-3.5 w-3.5 text-[#FFB800]" />
           </div>
           <div>
@@ -125,13 +125,14 @@ export function FlightPriceAlertTeaser({
       <PriceGraph />
 
       {/* Description + CTA */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3" id={`price-alert-description-${useId()}`} aria-describedby={`price-alert-description-${useId()}`}>
         <p className="text-[11px] text-gray-500 flex-1">{L.description}</p>
 
         {isFree ? (
           <button
             onClick={onUpgrade}
             className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#FFB800] hover:bg-[#FFC933] text-xs font-bold text-[#07070d] transition-colors"
+            aria-label="Upgrade plan to get price alerts"
           >
             {L.ctaFree}
           </button>

@@ -24,6 +24,7 @@ export function LinkButton({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Open ${children} in a new tab`}
+      title={`${children} link`}
       className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${colors[variant]}`}
     >
       {children}
