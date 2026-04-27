@@ -17,11 +17,13 @@ export function LinkButton({
     orange:  "border-orange-700/40 bg-orange-950/30 text-orange-400 hover:bg-orange-900/50 hover:text-orange-300",
     green:   "border-emerald-700/40 bg-emerald-950/30 text-emerald-400 hover:bg-emerald-900/50 hover:text-emerald-300",
   };
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      aria-label={`Open ${children} in a new tab`}
       className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${colors[variant]}`}
     >
       {children}
