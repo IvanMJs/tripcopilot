@@ -32,7 +32,10 @@ export function EmptyState({
         )}
       </div>
 
-      <h3 className="text-base font-bold text-gray-100 mb-1 leading-snug">
+      <h3
+        className="text-base font-bold text-gray-100 mb-1 leading-snug"
+        role="status"
+      >
         {title} (Add more context if needed)
       </h3>
 

@@ -12,25 +12,37 @@ export interface FlightNote {
 export function useFlightNotes() {
   const [notesMap, setNotesMap] = useState<Record<string, FlightNote>>({});
   const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const supabase = createClient();
 
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        setUserId(user.id);
 
-      const { data, error } = await supabase
-        .from("flight_notes")
-        .select("flight_key, pnr, seat, notes");
+        const { data, error } = await supabase
+          .from("flight_notes")
+          .select("flight_key, pnr, seat, notes");
 
-      if (!error && data) {
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (!data) return;
+
         const map: Record<string, FlightNote> = {};
         for (const r of data) {
           map[r.flight_key] = { pnr: r.pnr ?? "", seat: r.seat ?? "", notes: r.notes ?? "" };
         }
         setNotesMap(map);
+      } catch (error) {
+        console.error("Failed to load flight notes:", error);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -61,5 +73,9 @@ export function useFlightNotes() {
     [userId],
   );
 
-  return { notesMap, updateNote };
+  return {
+    notesMap,
+    updateNote,
+    loading,
+  };
 }

@@ -117,12 +117,24 @@ export function SocialPrivacySettings({ locale }: { locale: "es" | "en" }) {
       </div>
 
       <div className="divide-y divide-white/[0.04]">
-        <Row label={L.showMap}><Toggle on={settings.showMap} onChange={v => update("showMap", v)} /></Row>
-        <Row label={L.showStats}><Toggle on={settings.showStats} onChange={v => update("showStats", v)} /></Row>
-        <Row label={L.showTrips}><Toggle on={settings.showTrips} onChange={v => update("showTrips", v)} /></Row>
-        <Row label={L.showPersona}><Toggle on={settings.showPersona} onChange={v => update("showPersona", v)} /></Row>
-        <Row label={L.showCurrentLocation}><Toggle on={settings.showCurrentLocation} onChange={v => update("showCurrentLocation", v)} /></Row>
-        <Row label={L.acceptRequests}><Toggle on={settings.acceptRequests} onChange={v => update("acceptRequests", v)} /></Row>
+        <Row label={L.showMap}>
+          <Toggle on={settings.showMap} onChange={v => update("showMap", v)} />
+        </Row>
+        <Row label={L.showStats}>
+          <Toggle on={settings.showStats} onChange={v => update("showStats", v)} />
+        </Row>
+        <Row label={L.showTrips}>
+          <Toggle on={settings.showTrips} onChange={v => update("showTrips", v)} />
+        </Row>
+        <Row label={L.showPersona}>
+          <Toggle on={settings.showPersona} onChange={v => update("showPersona", v)} />
+        </Row>
+        <Row label={L.showCurrentLocation}>
+          <Toggle on={settings.showCurrentLocation} onChange={v => update("showCurrentLocation", v)} />
+        </Row>
+        <Row label={L.acceptRequests}>
+          <Toggle on={settings.acceptRequests} onChange={v => update("acceptRequests", v)} />
+        </Row>
       </div>
     </motion.div>
   );

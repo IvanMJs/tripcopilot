@@ -20,6 +20,7 @@ export function TripStamp({
         background:
           "linear-gradient(135deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.01) 100%)",
       }}
+      aria-label="Trip Stamp Information"
     >
       {/* Stamp seal rings */}
       <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full border-2 border-white/[0.05] pointer-events-none" />
@@ -57,6 +58,11 @@ export function TripStamp({
             </span>
           ))}
         </div>
+      )}
+
+      {/* Empty state for no reactions */}
+      {reactions?.length === 0 && (
+        <p className="text-[12px] text-white/40 mt-2">No reactions yet.</p>
       )}
     </div>
   );
