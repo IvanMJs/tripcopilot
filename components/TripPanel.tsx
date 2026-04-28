@@ -1119,6 +1119,13 @@ export function TripPanel({
 
       {activeSection === "flights" && !isDraft && sorted.length > 0 && (
         <>
+          <div className="flex items-center gap-3 pt-2">
+            <div className="flex-1 h-px bg-white/[0.06]" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+              {locale === "es" ? "Resumen del viaje" : "Trip summary"}
+            </span>
+            <div className="flex-1 h-px bg-white/[0.06]" />
+          </div>
           {trip.flights.length > 0 && <TripStatsCard trip={trip} locale={locale} />}
           {sorted.length >= 2 && <TripWeatherSummary flights={sorted} locale={locale} />}
           <CurrencyConverter locale={locale} tripFlights={trip.flights} />

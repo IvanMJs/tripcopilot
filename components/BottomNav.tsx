@@ -307,7 +307,7 @@ export function BottomNav({
             {/* Vuelos (airports home) */}
             <button
               onClick={() => { haptics.impact(); onNavigate("today"); }}
-              aria-label={locale === "es" ? "Vuelos" : "Flights"}
+              aria-label={locale === "es" ? "Hoy" : "Today"}
               aria-current={activeTab === "airports" || activeTab === "today" ? "page" : undefined}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "airports" || activeTab === "today" ? "text-[#FFB800]" : "text-gray-500"}`}
             >
