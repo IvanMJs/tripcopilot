@@ -397,24 +397,6 @@ export default function LandingPage() {
     },
   ];
 
-  const painPoints = [
-    {
-      emoji: "😰",
-      problem: lang === "en" ? "You find out about delays too late" : "Te enterás tarde de las demoras",
-      solution: lang === "en" ? "TripCopilot notifies you before the airport display does" : "TripCopilot te avisa antes que el panel del aeropuerto",
-    },
-    {
-      emoji: "😓",
-      problem: lang === "en" ? "You don't know if you'll miss your connection" : "No sabés si vas a perder la conexión",
-      solution: lang === "en" ? "Automatic connection risk analysis at every layover" : "Análisis automático de riesgo de conexión en cada escala",
-    },
-    {
-      emoji: "🤯",
-      problem: lang === "en" ? "Multi-destination travel is chaos" : "Viajar a múltiples destinos es un caos",
-      solution: lang === "en" ? "AI that understands your full itinerary and gives you a clear plan" : "IA que entiende todo tu itinerario y te da un plan claro",
-    },
-  ];
-
   const steps = [
     {
       num: "01",
@@ -651,12 +633,6 @@ export default function LandingPage() {
                   <>Nunca más te enterás de un cambio de puerta por el cartel del aeropuerto.{" "}<span className="text-white font-semibold">TripCopilot te avisa antes que nadie</span>{" "}— puertas, demoras, cancelaciones, riesgo de conexión.</>
                 )}
               </p>
-              <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-lg">
-                {lang === "en"
-                  ? "Paste your confirmation or take a photo — TripCopilot loads everything automatically and starts monitoring 24 hours before departure."
-                  : "Pegá tu confirmación o sacá una foto — TripCopilot carga todo solo y empieza a monitorear 24 horas antes de que salgas."}
-              </p>
-
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto mb-8">
                 <button
@@ -845,30 +821,6 @@ export default function LandingPage() {
                 </ul>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── PAIN POINTS ────────────────────────────────────────────────────── */}
-      <section className="py-16 px-4">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-center text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-10">
-            {lang === "en" ? "Has this ever happened to you?" : "¿Te pasó alguna vez?"}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {painPoints.map((p, i) => (
-              <div key={i} className="rounded-2xl border border-white/[0.06] p-5 space-y-3"
-                style={{ background: "linear-gradient(160deg, rgba(14,14,24,0.9) 0%, rgba(8,8,16,0.95) 100%)" }}>
-                <div className="flex justify-center">
-                  <span className="text-4xl">{p.emoji}</span>
-                </div>
-                <p className="text-sm font-semibold text-gray-300 leading-snug text-center">{p.problem}</p>
-                <div className="h-px bg-white/[0.06]" />
-                <p className="text-xs text-[#FFB800] leading-relaxed text-center">
-                  <span className="font-bold text-[#FFB800]">TripCopilot:</span> {p.solution}
-                </p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -1136,29 +1088,6 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          {/* War Room featured highlight */}
-          <div className="mb-6 rounded-2xl border border-[rgba(255,184,0,0.25)] overflow-hidden"
-            style={{ background: "linear-gradient(135deg, rgba(255,184,0,0.08) 0%, rgba(14,14,28,0.97) 60%, rgba(255,184,0,0.04) 100%)" }}>
-            <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6">
-              <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-2xl bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.2)]">
-                <MonitorPlay className="h-8 w-8 text-[#FFB800]" />
-              </div>
-              <div className="text-center sm:text-left">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(255,184,0,0.12)] border border-[rgba(255,184,0,0.25)] px-3 py-0.5 text-[11px] font-bold text-[#FFB800] uppercase tracking-wider mb-2">
-                  {lang === "en" ? "Featured" : "Destacado"}
-                </div>
-                <h3 className="text-lg font-black text-white mb-1">
-                  {lang === "en" ? "War Room mode" : "Modo War Room"}
-                </h3>
-                <p className="text-sm text-gray-400 leading-relaxed max-w-xl">
-                  {lang === "en"
-                    ? "Everything you need on flight day in one screen — departure time, airport status, connection risk, checklist and alerts. No more switching between apps."
-                    : "Todo lo que necesitás el día del vuelo en una sola pantalla — horario de salida, estado del aeropuerto, riesgo de conexión, checklist y alertas. Sin cambiar de app."}
-                </p>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.slice(0, 4).map((f) => {
               const Icon = f.icon;
@@ -1215,109 +1144,6 @@ export default function LandingPage() {
               </button>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* ── TRIPSOCIAL ──────────────────────────────────────────────────── */}
-      <section className="py-16 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-3">
-              {lang === "en" ? "New" : "Nuevo"}
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-              TripSocial
-            </h2>
-            <p className="text-sm text-gray-500 mt-3 max-w-lg mx-auto">
-              {lang === "en"
-                ? "Your travel community. Follow friends, react to their trips, and discover travelers with the same destinations."
-                : "Tu comunidad de viajeros. Seguí a amigos, reaccioná a sus viajes y descubrí viajeros con los mismos destinos."}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            {/* Value props */}
-            <div className="space-y-4">
-              {[
-                {
-                  icon: "👤",
-                  title: lang === "en" ? "Traveler profiles" : "Perfiles de viajero",
-                  desc: lang === "en"
-                    ? "Your @username, country flags and travel stats all in one public profile."
-                    : "Tu @username, banderas de países y estadísticas de viaje en un perfil público.",
-                },
-                {
-                  icon: "🎉",
-                  title: lang === "en" ? "Trip reactions" : "Reacciones en viajes",
-                  desc: lang === "en"
-                    ? "Friends react to your flights with emoji. You see it in real time during your trip."
-                    : "Tus amigos reaccionan a tus vuelos con emoji. Lo ves en tiempo real durante tu viaje.",
-                },
-                {
-                  icon: "🗺️",
-                  title: lang === "en" ? "Social map" : "Mapa social",
-                  desc: lang === "en"
-                    ? "See where in the world your travel friends are and who's flying to the same place."
-                    : "Vé dónde está cada viajero en el mundo y quién va al mismo destino que vos.",
-                },
-              ].map((vp) => (
-                <div key={vp.title} className="flex items-start gap-4 rounded-2xl border border-[rgba(255,184,0,0.12)] bg-[rgba(255,184,0,0.04)] p-4">
-                  <span className="text-xl shrink-0 mt-0.5">{vp.icon}</span>
-                  <div>
-                    <h3 className="text-sm font-bold text-white mb-1">{vp.title}</h3>
-                    <p className="text-xs text-gray-500 leading-relaxed">{vp.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Fake profile card mockup */}
-            <div className="flex justify-center">
-              <div className="w-full max-w-[280px] rounded-2xl border border-[rgba(255,184,0,0.18)] bg-[rgba(255,184,0,0.04)] p-5 space-y-4">
-                {/* Profile header */}
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#FFB800] to-[#FF9500] flex items-center justify-center text-[#07070d] font-black text-lg shrink-0">
-                    M
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">@maru_viaja</p>
-                    <p className="text-xs text-gray-500">Mariana G.</p>
-                  </div>
-                  <button className="ml-auto rounded-lg bg-[rgba(255,184,0,0.15)] border border-[rgba(255,184,0,0.3)] px-3 py-1 text-xs font-semibold text-[#FFB800]">
-                    {lang === "en" ? "Follow" : "Seguir"}
-                  </button>
-                </div>
-                {/* Country chips */}
-                <div className="flex flex-wrap gap-1.5">
-                  {["🇦🇷", "🇧🇷", "🇲🇽", "🇺🇸", "🇪🇸"].map((flag) => (
-                    <span key={flag} className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-sm">
-                      {flag}
-                    </span>
-                  ))}
-                  <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[11px] text-gray-500">
-                    +3
-                  </span>
-                </div>
-                {/* Trip with reactions */}
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">EZE</span>
-                    <span className="text-gray-600">→</span>
-                    <span className="text-xs text-gray-400">JFK</span>
-                    <span className="ml-auto text-[11px] text-gray-600">Apr 21</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {["🔥", "✈️", "🎉"].map((emoji) => (
-                      <span key={emoji} className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-sm">
-                        {emoji}
-                      </span>
-                    ))}
-                    <span className="ml-auto text-[11px] text-gray-600">12 reactions</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 

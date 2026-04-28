@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, X, Map, Trash2, ChevronUp, CalendarDays, Compass, User, Users, Bell } from "lucide-react";
+import { Plus, Pencil, X, Map, Trash2, ChevronUp, CalendarDays, User, Users } from "lucide-react";
 import { TripTab, TripFlight } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 
@@ -306,8 +306,8 @@ export function BottomNav({
 
             {/* Vuelos (airports home) */}
             <button
-              onClick={() => { haptics.impact(); onNavigate("airports"); }}
-              aria-label={locale === "es" ? "Vuelos" : "Flights"}
+              onClick={() => { haptics.impact(); onNavigate("today"); }}
+              aria-label={locale === "es" ? "Hoy" : "Today"}
               aria-current={activeTab === "airports" || activeTab === "today" ? "page" : undefined}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "airports" || activeTab === "today" ? "text-[#FFB800]" : "text-gray-500"}`}
             >
@@ -322,7 +322,7 @@ export function BottomNav({
                   <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-[#FFB800] ring-2 ring-[#0a0a14]" aria-label={locale === "es" ? "Vuelo próximo" : "Upcoming flight"} />
                 )}
               </div>
-              <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Vuelos" : "Flights"}</span>
+              <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Hoy" : "Today"}</span>
             </button>
 
             {/* Viajes (trips) */}
@@ -354,22 +354,6 @@ export function BottomNav({
 
             {/* FAB spacer */}
             <div className="w-14 shrink-0" aria-hidden="true" />
-
-            {/* Descubrir */}
-            <button
-              onClick={() => { haptics.impact(); onNavigate("discover"); }}
-              aria-label={locale === "es" ? "Descubrir" : "Discover"}
-              aria-current={activeTab === "discover" ? "page" : undefined}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "discover" ? "text-[#FFB800]" : "text-gray-500"}`}
-            >
-              <motion.div whileTap={{ scale: 0.82 }} className="relative flex items-center justify-center w-10 h-8 rounded-xl">
-                {activeTab === "discover" && (
-                  <motion.div layoutId="nav-indicator" className="absolute inset-0 rounded-xl bg-[rgba(255,184,0,0.12)]" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
-                )}
-                <Compass className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "discover" ? "text-[#FFB800]" : "text-gray-500"}`} strokeWidth={activeTab === "discover" ? 2.5 : 1.5} />
-              </motion.div>
-              <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Descubrir" : "Discover"}</span>
-            </button>
 
             {/* Perfil */}
             <button

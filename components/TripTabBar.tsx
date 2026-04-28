@@ -92,7 +92,7 @@ export function TripTabBar({
 
         {/* Static tabs */}
         {([
-          { id: "airports", label: tabLabels.airports },
+          { id: "today", label: tabLabels.airports },
           { id: "search",   label: tabLabels.search   },
         ] as const).map(({ id, label }) => (
           <button

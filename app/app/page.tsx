@@ -103,9 +103,9 @@ export default function HomePage() {
   // Initialize with a fixed default to avoid hydration mismatch.
   // On mount, both setMounted and the first-time tab redirect fire in the same
   // React 18 batch → single re-render, no visible airports→trips flash.
-  const [activeTab, setActiveTabRaw] = useState<string>("airports");
+  const [activeTab, setActiveTabRaw] = useState<string>("today");
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
-  const prevTabRef = useRef<string>("airports");
+  const prevTabRef = useRef<string>("today");
   const [mounted, setMounted] = useState(false);
   const [userPlan, setUserPlan] = useState<"free" | "explorer" | "pilot" | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -698,7 +698,7 @@ export default function HomePage() {
         isOpen={showGlobalSearch}
         onClose={() => setShowGlobalSearch(false)}
         onSelectTrip={(id) => { navigateAway(id); }}
-        onWatchAirport={(iata) => { addAirportDB(iata); navigateAway("airports"); }}
+        onWatchAirport={(iata) => { addAirportDB(iata); navigateAway("today"); }}
       />
 
       <NotificationSetupSheet
@@ -910,7 +910,7 @@ export default function HomePage() {
 
               {/* Help — desktop only */}
               <button
-                onClick={() => setActiveTab(activeTab === "help" ? "airports" : "help")}
+                onClick={() => setActiveTab(activeTab === "help" ? "today" : "help")}
                 title={locale === "en" ? "Help & documentation" : "Ayuda y documentación"}
                 className={`hidden md:flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
                   activeTab === "help"

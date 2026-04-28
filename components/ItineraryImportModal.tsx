@@ -366,36 +366,48 @@ export function ItineraryImportModal({
                     transition={{ duration: 0.18 }}
                     className="space-y-4"
                   >
-                    {/* Tab selector */}
-                    <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/6 flex-wrap">
-                      {(["paste", "upload", "camera", "boarding"] as const).map((mode) => {
-                        const icons: Record<TabMode, React.ReactNode> = {
-                          paste:    <FileText  className="h-3.5 w-3.5" />,
-                          upload:   <ImagePlus className="h-3.5 w-3.5" />,
-                          camera:   <Camera    className="h-3.5 w-3.5" />,
-                          boarding: <Ticket    className="h-3.5 w-3.5" />,
-                        };
-                        const labels: Record<TabMode, string> = {
-                          paste:    t.tabPaste,
-                          upload:   t.tabUpload,
-                          camera:   t.tabCamera,
-                          boarding: t.tabBoarding,
-                        };
-                        return (
-                          <button
-                            key={mode}
-                            onClick={() => { setTab(mode); setImageFile(null); setImagePreview(null); }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                              tab === mode
-                                ? "bg-[#FFB800] text-[#07070d] shadow"
-                                : "text-gray-500 hover:text-gray-300"
-                            }`}
-                          >
-                            {icons[mode]}
-                            <span className="hidden sm:inline">{labels[mode]}</span>
-                          </button>
-                        );
-                      })}
+                    {/* Tab selector — paste is primary, others are secondary icon buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setTab("paste"); setImageFile(null); setImagePreview(null); }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all flex-1 justify-center ${
+                          tab === "paste"
+                            ? "bg-[#FFB800] text-[#07070d] shadow"
+                            : "bg-white/[0.04] border border-white/[0.07] text-gray-400 hover:text-gray-200"
+                        }`}
+                      >
+                        <FileText className="h-4 w-4 shrink-0" />
+                        <span>{t.tabPaste}</span>
+                      </button>
+                      <div className="flex gap-1.5">
+                        {(["upload", "camera", "boarding"] as const).map((mode) => {
+                          const icons: Record<"upload" | "camera" | "boarding", React.ReactNode> = {
+                            upload:   <ImagePlus className="h-4 w-4" />,
+                            camera:   <Camera    className="h-4 w-4" />,
+                            boarding: <Ticket    className="h-4 w-4" />,
+                          };
+                          const ariaLabels: Record<"upload" | "camera" | "boarding", string> = {
+                            upload:   t.tabUpload,
+                            camera:   t.tabCamera,
+                            boarding: t.tabBoarding,
+                          };
+                          return (
+                            <button
+                              key={mode}
+                              onClick={() => { setTab(mode); setImageFile(null); setImagePreview(null); }}
+                              aria-label={ariaLabels[mode]}
+                              title={ariaLabels[mode]}
+                              className={`p-2 rounded-xl transition-all ${
+                                tab === mode
+                                  ? "bg-[#FFB800] text-[#07070d] shadow"
+                                  : "bg-white/[0.04] border border-white/[0.07] text-gray-500 hover:text-gray-300"
+                              }`}
+                            >
+                              {icons[mode]}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {/* Paste tab */}

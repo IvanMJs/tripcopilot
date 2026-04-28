@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart2, Map, MapPin, CalendarDays, Compass, Plus, Pencil, X, Trash2, ChevronDown, Monitor } from "lucide-react";
+import { BarChart2, Map, MapPin, CalendarDays, Plus, Pencil, X, Trash2, ChevronDown, Monitor } from "lucide-react";
 import { TripTab } from "@/lib/types";
 
 interface Props {
@@ -252,15 +252,6 @@ export function DesktopSidebar({
           <Monitor className="w-5 h-5 shrink-0" strokeWidth={1.5} />
           <span>{locale === "es" ? "Tablero" : "Board"}</span>
         </a>
-
-        {/* Explorar */}
-        <button
-          onClick={() => onNavigate("discover")}
-          className={navItemClass(activeTab === "discover")}
-        >
-          <Compass className="w-5 h-5 shrink-0" strokeWidth={activeTab === "discover" ? 2.5 : 1.5} />
-          <span>{locale === "es" ? "Explorar" : "Explore"}</span>
-        </button>
 
       </nav>
 

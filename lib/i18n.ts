@@ -18,7 +18,7 @@ export const translations = {
       `🚨 Situación crítica en ${n} aeropuerto${n > 1 ? "s" : ""}:`,
 
     // Tabs
-    tabAirports: "Monitor",
+    tabAirports: "Hoy",
     tabFlights: "Mi viaje",
     tabSearch: "Buscar",
     tabHelp: "Ayuda",
@@ -122,7 +122,7 @@ export const translations = {
       `🚨 Critical situation at ${n} airport${n > 1 ? "s" : ""}:`,
 
     // Tabs
-    tabAirports: "Monitor",
+    tabAirports: "Today",
     tabFlights: "My trip",
     tabSearch: "Search",
     tabHelp: "Help",
