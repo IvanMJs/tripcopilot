@@ -9,6 +9,7 @@ import {
 import Image from "next/image";
 import { ParsedFlight } from "@/lib/importFlights";
 import { AIRLINES } from "@/lib/flightUtils";
+import { SegmentType } from "@/lib/types";
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 
@@ -121,6 +122,7 @@ interface ParsedFlightRaw {
   departureTime:   string;
   arrivalDate?:    string;
   arrivalTime?:    string;
+  segmentType?:    SegmentType;
   cabinClass?:     string;
   seatNumber?:     string;
   bookingCode?:    string;
@@ -149,6 +151,7 @@ function buildEditableFlight(raw: ParsedFlightRaw): EditableFlight {
     arrivalDate:     raw.arrivalDate  || undefined,
     arrivalTime:     raw.arrivalTime  || undefined,
     arrivalBuffer:   2,
+    segmentType:     raw.segmentType  ?? 'flight',
     bookingCode:     raw.bookingCode  || undefined,
     confidence:      raw.confidence   ?? "medium",
     missing:         raw.missing,
@@ -759,6 +762,9 @@ function FlightReviewCard({
           <span className="font-bold text-white text-sm">
             {flight.flightCode || "—"}
           </span>
+          {flight.segmentType !== 'flight' && (
+            <span className="text-xs uppercase tracking-wide text-yellow-400">{flight.segmentType}</span>
+          )}
           <span className="text-gray-600">·</span>
           <span className="text-sm font-semibold text-gray-200">
             {flight.originCode || "?"}

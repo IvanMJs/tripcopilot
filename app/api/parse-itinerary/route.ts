@@ -42,6 +42,7 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
       "departureTime": "20:30",
       "arrivalDate": "2026-03-30",
       "arrivalTime": "06:45",
+      "segmentType": "flight",
       "cabinClass": "economy",
       "seatNumber": "12A",
       "bookingCode": "QDLHPV",
@@ -63,6 +64,7 @@ Rules:
 - departureTime: 24h format "HH:MM", or "" if not found. Convert 12h to 24h (e.g. "8:30 PM" → "20:30").
 - arrivalDate: arrival date, format "YYYY-MM-DD". May differ from isoDate for overnight flights. Leave "" if not found.
 - arrivalTime: arrival time in local time at destination, 24h format "HH:MM". Leave "" if not found.
+- segmentType: one of "flight"|"bus"|"train"|"car_rental"|"ferry"|"transfer". Detect from context: plane/airline → flight, bus/coach/autobus → bus, train/rail/AVE/Amtrak → train, rental car/car hire → car_rental, ferry/boat/cruise → ferry, shuttle/transfer/taxi → transfer. Default to "flight" if not clear.
 - cabinClass: one of "economy", "premium_economy", "business", "first". Leave "" if not found.
 - seatNumber: assigned seat, row + letter (e.g. "12A", "23F", "4C"). Leave "" if not assigned.
 - bookingCode: PNR/confirmation/reservation code. Formats: 6-char alphanumeric (e.g. "QDLHPV") OR 6-10 digit numeric. Shared across all flights in the same booking. Leave "" if not found.
@@ -166,6 +168,7 @@ export async function POST(req: NextRequest) {
         .regex(/^\d{2}:\d{2}$/)
         .or(z.literal(""))
         .catch(""),
+      segmentType: z.enum(['flight','bus','train','car_rental','ferry','transfer']).catch('flight'),
       cabinClass:  z
         .enum(["economy", "premium_economy", "business", "first"])
         .or(z.literal(""))

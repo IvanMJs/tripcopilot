@@ -1,5 +1,6 @@
 import { AIRPORTS } from "./airports";
 import { AIRLINES, parseFlightCode } from "./flightUtils";
+import { SegmentType } from "./types";
 
 export interface ParsedFlight {
   flightCode:    string;
@@ -15,6 +16,7 @@ export interface ParsedFlight {
   arrivalTime?:  string;
   arrivalBuffer: number;
   bookingCode?:  string;
+  segmentType?:  SegmentType;
   confidence:    "high" | "medium" | "low";
 }
 
@@ -196,6 +198,7 @@ export function parseFlightsFromText(text: string): ParseResult {
       isoDate:         date,
       departureTime:   time ?? "",
       arrivalBuffer:   2,
+      segmentType:     'flight',
       confidence:      (originCode && destCode && date && time) ? "high"
                      : (originCode && destCode && date)          ? "medium"
                      : "low",
@@ -232,6 +235,7 @@ export function parseFlightsFromText(text: string): ParseResult {
           isoDate:         date,
           departureTime:   time ?? "",
           arrivalBuffer:   2,
+          segmentType:     'flight',
           confidence:      time ? "high" : "medium",
         });
       }

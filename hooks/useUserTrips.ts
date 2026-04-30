@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
-import { TripTab, TripFlight, Accommodation, Passenger } from "@/lib/types";
+import { TripTab, TripFlight, Accommodation, Passenger, SegmentType } from "@/lib/types";
 import { cacheTrips, getCachedTrips } from "@/lib/tripsCache";
 import { haptics } from "@/lib/haptics";
 
@@ -55,6 +55,7 @@ interface DbFlight {
   wants_upgrade: boolean | null;
   cabin_class: string | null;
   booking_code: string | null;
+  segment_type: string | null;
 }
 
 function toTripFlight(f: DbFlight): TripFlight {
@@ -81,6 +82,9 @@ function toTripFlight(f: DbFlight): TripFlight {
       f.cabin_class === "business" ||
       f.cabin_class === "first"
     ) ? f.cabin_class : "economy",
+    segmentType: ((['flight','bus','train','car_rental','ferry','transfer'] as const) as readonly string[]).includes(f.segment_type ?? '')
+      ? (f.segment_type as SegmentType)
+      : 'flight',
   };
 }
 
@@ -422,6 +426,7 @@ export function useUserTrips() {
         sort_order,
         cabin_class:      flight.cabinClass ?? "economy",
         booking_code:     flight.bookingCode ?? null,
+        segment_type:     flight.segmentType ?? 'flight',
       })
       .select("id")
       .single();
@@ -604,6 +609,7 @@ export function useUserTrips() {
       arrivalTime:   f.arrivalTime   || null,
       wantsUpgrade:  f.wantsUpgrade  ?? false,
       cabinClass:    f.cabinClass    ?? "economy",
+      segmentType:   f.segmentType   ?? 'flight',
     }));
 
     const { data, error } = await supabase.rpc("save_draft_trip", {
@@ -692,6 +698,7 @@ export function useUserTrips() {
         arrival_buffer: flight.arrivalBuffer,
         sort_order,
         booking_code: flight.bookingCode ?? null,
+        segment_type: flight.segmentType ?? 'flight',
       }).select("id").single();
       if (fErr || !f) { await rollbackTrip(); return null; }
       flightIdMap[flight.id] = f.id;
@@ -772,6 +779,7 @@ export function useUserTrips() {
         arrival_buffer: flight.arrivalBuffer,
         sort_order,
         booking_code: flight.bookingCode ?? null,
+        segment_type: flight.segmentType ?? 'flight',
       }).select("id").single();
       if (fErr || !f) { await rollbackTrip(); return null; }
       flightIdMap[flight.id] = f.id;

@@ -1,3 +1,5 @@
+export type SegmentType = 'flight' | 'bus' | 'train' | 'car_rental' | 'ferry' | 'transfer';
+
 export type DelayStatus =
   | "ok"
   | "delay_minor"    // delays ≤15 min
@@ -63,6 +65,7 @@ export interface TripFlight {
   bookingCode?: string;    // PNR / confirmation code, e.g. "QDLHPV"
   seatNumber?: string;     // seat assignment, e.g. "12A", "23F"
   terminal?: string;       // departure terminal, e.g. "T2", "International"
+  segmentType?: SegmentType;
 }
 
 export interface Accommodation {

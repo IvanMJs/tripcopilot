@@ -100,7 +100,8 @@ CREATE OR REPLACE FUNCTION "public"."save_draft_trip"("p_name" "text", "p_flight
       INSERT INTO flights (
         trip_id, flight_code, airline_code, airline_name, airline_icao,
         flight_number, origin_code, destination_code, iso_date,
-        departure_time, arrival_date, arrival_time, arrival_buffer, sort_order
+        departure_time, arrival_date, arrival_time, arrival_buffer, sort_order,
+        segment_type
       ) VALUES (
         v_trip_id,
         v_flight->>'flightCode',
@@ -115,10 +116,11 @@ CREATE OR REPLACE FUNCTION "public"."save_draft_trip"("p_name" "text", "p_flight
         NULLIF(v_flight->>'arrivalDate', ''),
         NULLIF(v_flight->>'arrivalTime', ''),
         COALESCE((v_flight->>'arrivalBuffer')::int, 0),
-        i
+        i,
+        COALESCE(v_flight->>'segmentType', 'flight')
       ) RETURNING id INTO v_flight_id;
 
-      v_flight_map := v_flight_map || jsonb_build_object(v_draft_id, v_flight_id::text);
+      v_flight_map := v_flight_map || jsonb_build_object(COALESCE(v_draft_id, v_flight_id::text), v_flight_id::text);
     END LOOP;
 
     v_n_accs := jsonb_array_length(p_accommodations);
@@ -267,7 +269,9 @@ CREATE TABLE IF NOT EXISTS "public"."flights" (
     "wants_upgrade" boolean DEFAULT false,
     "cabin_class" "text" DEFAULT 'economy'::"text",
     "booking_code" "text",
-    "fa_alert_id" integer
+    "fa_alert_id" integer,
+    "segment_type" "text" DEFAULT 'flight'::"text" NOT NULL,
+    CONSTRAINT "flights_segment_type_check" CHECK (("segment_type" = ANY (ARRAY['flight'::"text", 'bus'::"text", 'train'::"text", 'car_rental'::"text", 'ferry'::"text", 'transfer'::"text"])))
 );
 
 

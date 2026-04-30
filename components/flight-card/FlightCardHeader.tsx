@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, ExternalLink, Copy, Check } from "lucide-react";
-import { TripFlight, AirportStatus } from "@/lib/types";
+import { Plane, PlaneTakeoff, Globe, Trash2, ChevronDown, ExternalLink, Copy, Check, Bus, Train, Car, Ship, ArrowLeftRight } from "lucide-react";
+import { TripFlight, AirportStatus, SegmentType } from "@/lib/types";
 import { WeatherData } from "@/hooks/useWeather";
 import { TripPanelLabels, AIRLINE_CHECKIN_URLS, AIRLINE_APP_URLS } from "@/components/TripPanelLabels";
 import { DaysCountdown } from "./helpers";
@@ -79,6 +79,16 @@ export interface FlightCardHeaderProps {
   isNextFlight?: boolean;
   // hours until departure (for action row highlight)
   hoursUntilDep?: number | null;
+}
+
+function segmentIcon(type: SegmentType | undefined, className: string) {
+  const Icon = type === 'bus' ? Bus
+    : type === 'train' ? Train
+    : type === 'car_rental' ? Car
+    : type === 'ferry' ? Ship
+    : type === 'transfer' ? ArrowLeftRight
+    : Plane;
+  return <Icon className={className} />;
 }
 
 export function FlightCardHeader({
@@ -184,7 +194,7 @@ export function FlightCardHeader({
         {/* Row 1: Flight code · status chip · [trash] */}
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0 flex-wrap">
-            <Plane className="h-3.5 w-3.5 text-gray-500 shrink-0" />
+            {segmentIcon(flight.segmentType, "h-3.5 w-3.5 text-gray-500 shrink-0")}
             <span className="text-sm font-bold tracking-wide text-white">{flight.flightCode}</span>
             {flight.bookingCode && (
               <button
@@ -298,7 +308,7 @@ export function FlightCardHeader({
 
           {/* Arrow / sonar */}
           <div className="flex flex-col items-center gap-0.5 px-1">
-            {isNextFlight ? <SonarIcon /> : <Plane className="w-4 h-4 text-gray-500 rotate-90" />}
+            {isNextFlight ? <SonarIcon /> : segmentIcon(flight.segmentType, "w-4 h-4 text-gray-500 rotate-90")}
           </div>
 
           {/* Destination */}
