@@ -110,7 +110,7 @@ CREATE OR REPLACE FUNCTION "public"."save_draft_trip"("p_name" "text", "p_flight
         v_flight->>'flightNumber',
         v_flight->>'originCode',
         v_flight->>'destinationCode',
-        v_flight->>'isoDate',
+        (v_flight->>'isoDate')::date,
         NULLIF(v_flight->>'departureTime', ''),
         NULLIF(v_flight->>'arrivalDate', ''),
         NULLIF(v_flight->>'arrivalTime', ''),
@@ -138,9 +138,9 @@ CREATE OR REPLACE FUNCTION "public"."save_draft_trip"("p_name" "text", "p_flight
           ELSE NULL
         END,
         v_acc->>'name',
-        NULLIF(v_acc->>'checkInDate', ''),
+        NULLIF(v_acc->>'checkInDate', '')::date,
         NULLIF(v_acc->>'checkInTime', ''),
-        NULLIF(v_acc->>'checkOutDate', ''),
+        NULLIF(v_acc->>'checkOutDate', '')::date,
         NULLIF(v_acc->>'checkOutTime', ''),
         NULLIF(v_acc->>'confirmationCode', ''),
         NULLIF(v_acc->>'address', '')
