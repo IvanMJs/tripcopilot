@@ -156,6 +156,7 @@ export type FlightRow = {
   wants_upgrade: boolean | null;
   fa_alert_id: number | null;
   aircraft_type: string | null;
+  segment_type: string;
   trips: { user_id: string };
 };
 

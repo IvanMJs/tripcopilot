@@ -118,6 +118,22 @@ export const CRON_LABELS = {
       title: `Tu avión de mañana: ${aircraftType} ✈️`,
       body: brief,
     }),
+    ground_segment_today: (f: { originCode: string; destinationCode: string; departureTime: string | null; segmentType: string }) => {
+      const bufferMap: Record<string, number> = { bus: 30, train: 15, ferry: 45, car_rental: 20, transfer: 20 };
+      const buffer = bufferMap[f.segmentType] ?? 20;
+      const titleMap: Record<string, string> = {
+        bus:        `Hoy tenés bus a ${f.destinationCode} 🚌`,
+        train:      `Hoy tenés tren a ${f.destinationCode} 🚂`,
+        ferry:      `Hoy tenés ferry a ${f.destinationCode} ⛴️`,
+        car_rental: `Hoy retirás el auto 🚗`,
+        transfer:   `Hoy tenés transfer a ${f.destinationCode} 🚐`,
+      };
+      const title = titleMap[f.segmentType] ?? `Hoy salís a ${f.destinationCode}`;
+      const body = f.departureTime
+        ? `Salís a las ${f.departureTime} desde ${f.originCode} · Llegá ${buffer} min antes`
+        : `Desde ${f.originCode} · Llegá ${buffer} min antes`;
+      return { title, body, tag: `ground_today_${f.originCode}_${f.destinationCode}`, url: "/trips" };
+    },
   },
   en: {
     statusLabel: {
@@ -172,6 +188,22 @@ export const CRON_LABELS = {
       title: `Tomorrow's aircraft: ${aircraftType} ✈️`,
       body: brief,
     }),
+    ground_segment_today: (f: { originCode: string; destinationCode: string; departureTime: string | null; segmentType: string }) => {
+      const bufferMap: Record<string, number> = { bus: 30, train: 15, ferry: 45, car_rental: 20, transfer: 20 };
+      const buffer = bufferMap[f.segmentType] ?? 20;
+      const titleMap: Record<string, string> = {
+        bus:        `Bus to ${f.destinationCode} today 🚌`,
+        train:      `Train to ${f.destinationCode} today 🚂`,
+        ferry:      `Ferry to ${f.destinationCode} today ⛴️`,
+        car_rental: `Car rental pickup today 🚗`,
+        transfer:   `Transfer to ${f.destinationCode} today 🚐`,
+      };
+      const title = titleMap[f.segmentType] ?? `Departing to ${f.destinationCode} today`;
+      const body = f.departureTime
+        ? `Departs at ${f.departureTime} from ${f.originCode} · Arrive ${buffer} min early`
+        : `From ${f.originCode} · Arrive ${buffer} min early`;
+      return { title, body, tag: `ground_today_${f.originCode}_${f.destinationCode}`, url: "/trips" };
+    },
   },
 } as const;
 

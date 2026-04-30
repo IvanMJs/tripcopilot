@@ -82,15 +82,14 @@ export async function GET(request: Request) {
   // Get all flights departing in the next 3 days, with their user_id via trip
   const { data: flights, error } = await supabase
     .from("flights")
-    .select("id, trip_id, flight_code, airline_code, airline_name, airline_icao, flight_number, origin_code, destination_code, iso_date, departure_time, arrival_date, arrival_time, arrival_buffer, gate, wants_upgrade, aircraft_type, trips!inner(user_id)")
+    .select("id, trip_id, flight_code, airline_code, airline_name, airline_icao, flight_number, origin_code, destination_code, iso_date, departure_time, arrival_date, arrival_time, arrival_buffer, gate, wants_upgrade, aircraft_type, segment_type, trips!inner(user_id)")
+    .eq("segment_type", "flight")
     .gte("iso_date", todayISO)
     .lte("iso_date", threeDaysISO);
 
   if (error) {
     Sentry.captureException(error instanceof Error ? error : new Error(String(error)), { extra: { step: "flights-query" } });
     cronErrors.push(`flights query: ${error.message}`);
-  }
-  if (error || !flights?.length) {
     await supabase.from("cron_runs").insert({
       flights_processed: 0, notifications_sent: 0,
       errors: cronErrors, duration_ms: Date.now() - cronStart,
@@ -98,7 +97,23 @@ export async function GET(request: Request) {
     return Response.json({ ok: true, processed: 0, sent: 0 });
   }
 
-  const flightRows = flights as unknown as FlightRow[];
+  // Query ground transport segments for today (before the empty-flights guard so
+  // ground notifications are still sent even when there are no flight rows)
+  const { data: groundSegments } = await supabase
+    .from("flights")
+    .select("id, trip_id, origin_code, destination_code, iso_date, departure_time, segment_type, trips!inner(user_id)")
+    .in("segment_type", ["bus", "train", "ferry", "car_rental", "transfer"])
+    .eq("iso_date", todayISO);
+
+  if (!flights?.length && !groundSegments?.length) {
+    await supabase.from("cron_runs").insert({
+      flights_processed: 0, notifications_sent: 0,
+      errors: cronErrors, duration_ms: Date.now() - cronStart,
+    });
+    return Response.json({ ok: true, processed: 0, sent: 0 });
+  }
+
+  const flightRows = (flights ?? []) as unknown as FlightRow[];
 
   // Retry FA alert registration for flights that failed at add-time
   // (transient network error, FA briefly down, etc.)
@@ -1429,8 +1444,85 @@ export async function GET(request: Request) {
     );
   }
 
+  // ── Ground transport day-of notification ─────────────────────────────────
+  async function processGroundSegment(row: {
+    id: string;
+    trip_id: string;
+    origin_code: string;
+    destination_code: string;
+    iso_date: string;
+    departure_time: string | null;
+    segment_type: string;
+    trips: { user_id: string };
+  }): Promise<void> {
+    try {
+      const userId = row.trips?.user_id;
+      if (!userId) return;
+
+      const { data: subs } = await supabase
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth")
+        .eq("user_id", userId);
+      if (!subs?.length) return;
+
+      const locale = await getUserLocale(userId);
+      const labels = CRON_LABELS[locale];
+
+      // Only send on the day of travel (UTC fallback for ground segments)
+      const airportTz = "UTC";
+      const todayLocal = dateInTimezone(now, airportTz);
+      if (row.iso_date !== todayLocal) return;
+
+      // Compute hours until departure if time is available
+      let hoursUntil: number | null = null;
+      if (row.departure_time) {
+        try {
+          const depDt = localToUTC(row.iso_date, row.departure_time, airportTz);
+          hoursUntil = (depDt.getTime() - now.getTime()) / (1000 * 60 * 60);
+        } catch {
+          // malformed time — treat as no departure time
+        }
+      }
+
+      // Don't send if less than 1h before departure (too late to be useful)
+      if (hoursUntil !== null && hoursUntil < 1) return;
+
+      // Dedup: send once per segment ever
+      const alreadySent = await checkFlightLog(supabase, row.id, "ground_today", Infinity);
+      if (alreadySent) return;
+
+      const payload = labels.ground_segment_today({
+        originCode: row.origin_code,
+        destinationCode: row.destination_code,
+        departureTime: row.departure_time,
+        segmentType: row.segment_type,
+      });
+
+      const failed = await sendAndLogFlight(
+        supabase,
+        subs as PushSubRow[],
+        row.id,
+        userId,
+        "ground_today",
+        { title: payload.title, body: payload.body, url: payload.url },
+      );
+      notificationsFailed += failed;
+      if (failed === 0) notificationsSent++;
+    } catch (err) {
+      cronErrors.push(`ground_segment ${row.id}: ${err}`);
+    }
+  }
+
+  if (groundSegments?.length) {
+    await sendInBatches(
+      groundSegments as unknown as Parameters<typeof processGroundSegment>[0][],
+      processGroundSegment,
+      10,
+    );
+  }
+
   await supabase.from("cron_runs").insert({
-    flights_processed: flights.length,
+    flights_processed: flightRows.length,
     notifications_sent: notificationsSent,
     errors: cronErrors,
     duration_ms: Date.now() - cronStart,
@@ -1438,7 +1530,7 @@ export async function GET(request: Request) {
 
   return Response.json({
     ok: true,
-    processed: flights.length,
+    processed: flightRows.length,
     sent: notificationsSent,
     failed: notificationsFailed,
     errors: cronErrors.length,
