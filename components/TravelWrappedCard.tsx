@@ -29,6 +29,7 @@ const LABELS = {
     favoriteAirline: "Aerolínea favorita",
     timezones: "Zonas horarias",
     shareImage: "Compartir imagen",
+    shareStory: "Historia 9:16",
     shareText: "Compartir stats",
     generating: "Generando...",
     copied: "¡Copiado!",
@@ -47,6 +48,7 @@ const LABELS = {
     favoriteAirline: "Favourite airline",
     timezones: "Time zones",
     shareImage: "Share as image",
+    shareStory: "Story 9:16",
     shareText: "Share stats",
     generating: "Generating...",
     copied: "Copied!",
@@ -81,6 +83,7 @@ interface TravelWrappedCardProps {
   locale: "es" | "en";
   userPlan: "free" | "explorer" | "pilot" | null;
   onUpgrade: () => void;
+  format?: "card" | "story";
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -98,12 +101,14 @@ export function TravelWrappedCard({
   locale,
   userPlan,
   onUpgrade,
+  format = "card",
 }: TravelWrappedCardProps) {
   const L = LABELS[locale];
   const isPremium = userPlan === "explorer" || userPlan === "pilot";
 
   const [copied, setCopied] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
+  const [storyLoading, setStoryLoading] = useState(false);
 
   const wrappedData: WrappedData = {
     totalFlights,
@@ -190,6 +195,28 @@ export function TravelWrappedCard({
       // cancelled or unavailable
     } finally {
       setImageLoading(false);
+    }
+  }
+
+  async function handleShareStory() {
+    setStoryLoading(true);
+    try {
+      const blob = await generateWrappedImage(wrappedData, isPremium ? "full" : "teaser");
+      const file = new File([blob], "travel-wrapped-story.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "TripCopilot Travel Wrapped" });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "travel-wrapped-story.png";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // cancelled or unavailable
+    } finally {
+      setStoryLoading(false);
     }
   }
 
@@ -319,23 +346,43 @@ export function TravelWrappedCard({
             )}
           </button>
 
-          <button
-            onClick={handleShareImage}
-            disabled={imageLoading}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#FFB800]/30 hover:bg-[#FFC933]/50 active:scale-95 border border-[rgba(255,184,0,0.25)] text-[#FFB800] text-sm font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
-          >
-            {imageLoading ? (
-              <>
-                <Download className="h-4 w-4 animate-bounce" />
-                {L.generating}
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                {L.shareImage}
-              </>
-            )}
-          </button>
+          {format === "story" ? (
+            <button
+              onClick={handleShareStory}
+              disabled={storyLoading}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#FFB800]/30 hover:bg-[#FFC933]/50 active:scale-95 border border-[rgba(255,184,0,0.25)] text-[#FFB800] text-sm font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {storyLoading ? (
+                <>
+                  <Download className="h-4 w-4 animate-bounce" />
+                  {L.generating}
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  {L.shareStory}
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={handleShareImage}
+              disabled={imageLoading}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#FFB800]/30 hover:bg-[#FFC933]/50 active:scale-95 border border-[rgba(255,184,0,0.25)] text-[#FFB800] text-sm font-bold py-2.5 transition-all disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {imageLoading ? (
+                <>
+                  <Download className="h-4 w-4 animate-bounce" />
+                  {L.generating}
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  {L.shareImage}
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

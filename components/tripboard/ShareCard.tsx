@@ -213,7 +213,24 @@ export function ShareCard({ flights }: ShareCardProps) {
           position: "relative",
         }}>
           <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: "rgba(232,232,240,.28)", letterSpacing: "0.04em" }}>TripCopilot</span>
-          <span style={{ fontFamily: MONO, fontSize: 8, color: "rgba(255,255,255,.15)", marginLeft: "auto" }}>tripcopilot.app</span>
+          {/* Branded share badge */}
+          <span style={{
+            marginLeft: "auto",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 3,
+            borderRadius: 9999,
+            background: "rgba(255,184,0,0.12)",
+            border: "1px solid rgba(255,184,0,0.25)",
+            padding: "2px 7px",
+            fontFamily: SANS,
+            fontSize: 8,
+            fontWeight: 700,
+            color: "rgba(255,184,0,0.7)",
+            letterSpacing: "0.04em",
+          }}>
+            TripCopilot ✈️
+          </span>
         </div>
       </div>
 

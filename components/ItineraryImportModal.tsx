@@ -10,6 +10,8 @@ import Image from "next/image";
 import { ParsedFlight } from "@/lib/importFlights";
 import { AIRLINES } from "@/lib/flightUtils";
 import { SegmentType } from "@/lib/types";
+import { Confetti } from "@/components/Confetti";
+import { haptics } from "@/lib/haptics";
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 
@@ -186,13 +188,14 @@ export function ItineraryImportModal({
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef  = useRef<HTMLInputElement>(null);
 
-  const [tab,          setTab]          = useState<TabMode>("paste");
-  const [text,         setText]         = useState("");
-  const [imageFile,    setImageFile]    = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [phase,        setPhase]        = useState<Phase>("input");
-  const [flights,      setFlights]      = useState<EditableFlight[]>([]);
-  const [apiError,     setApiError]     = useState<string | null>(null);
+  const [tab,            setTab]          = useState<TabMode>("paste");
+  const [text,           setText]         = useState("");
+  const [imageFile,      setImageFile]    = useState<File | null>(null);
+  const [imagePreview,   setImagePreview] = useState<string | null>(null);
+  const [phase,          setPhase]        = useState<Phase>("input");
+  const [flights,        setFlights]      = useState<EditableFlight[]>([]);
+  const [apiError,       setApiError]     = useState<string | null>(null);
+  const [confettiActive, setConfettiActive] = useState(false);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -204,6 +207,7 @@ export function ItineraryImportModal({
       setPhase("input");
       setFlights([]);
       setApiError(null);
+      setConfettiActive(false);
     }
   }, [isOpen]);
 
@@ -238,6 +242,8 @@ export function ItineraryImportModal({
         };
         setFlights([flight]);
         setPhase("review");
+        setConfettiActive(true);
+        haptics.success();
         return;
       }
 
@@ -265,6 +271,10 @@ export function ItineraryImportModal({
       const parsed = (data.flights ?? []).map(buildEditableFlight);
       setFlights(parsed);
       setPhase("review");
+      if (parsed.length > 0) {
+        setConfettiActive(true);
+        haptics.success();
+      }
     } catch {
       setApiError(t.errorGeneric);
       setPhase("input");
@@ -312,7 +322,9 @@ export function ItineraryImportModal({
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <AnimatePresence>
+    <>
+      <Confetti trigger={confettiActive} />
+      <AnimatePresence>
       {isOpen && (
         <motion.div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -713,6 +725,7 @@ export function ItineraryImportModal({
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 }
 
