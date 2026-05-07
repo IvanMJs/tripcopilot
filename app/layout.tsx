@@ -5,6 +5,7 @@ import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { UIModeProvider } from "@/contexts/UIModeContext";
 import { Providers } from "@/components/Providers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -79,7 +80,9 @@ export default function RootLayout({
       <body className="min-h-screen font-sans antialiased">
         <Providers>
           <ThemeProvider>
-            <LanguageProvider>{children}</LanguageProvider>
+            <UIModeProvider>
+              <LanguageProvider>{children}</LanguageProvider>
+            </UIModeProvider>
           </ThemeProvider>
         </Providers>
         <Analytics />

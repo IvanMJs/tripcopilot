@@ -43,6 +43,7 @@ import { InstallBanner } from "@/components/InstallBanner";
 import { RatingNudge } from "@/components/RatingNudge";
 import { analytics } from "@/lib/analytics";
 import { createClient } from "@/utils/supabase/client";
+import { useUIModeContext } from "@/contexts/UIModeContext";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { GlobalAlertBar } from "@/components/GlobalAlertBar";
@@ -71,6 +72,7 @@ import { TripHistoryView } from "@/components/TripHistoryView";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { getUnreadCount } from "@/lib/notificationsHub";
 import { NewUserWelcomeView } from "@/components/NewUserWelcomeView";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 
 const TripAssistant = dynamic(() => import("@/components/TripAssistant").then((m) => ({ default: m.TripAssistant })), { ssr: false });
 const TripDebriefModal = dynamic(() => import("@/components/TripDebriefModal").then((m) => ({ default: m.TripDebriefModal })), { ssr: false });
@@ -94,7 +96,12 @@ const EXAMPLE_ID = "__example__";
 export default function HomePage() {
   const { t, locale, setLocale } = useLanguage();
   const { showSwNotification, subscribeToPush, unsubscribeFromPush } = useServiceWorker();
+  const { setMode: setUIMode } = useUIModeContext();
   const router = useRouter();
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !localStorage.getItem("tripcopilot_onboarding_completed");
+  });
   const [showNotifSheet, setShowNotifSheet] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
@@ -261,6 +268,10 @@ export default function HomePage() {
     if (!localStorage.getItem("tc-onboarded")) {
       setActiveTabRaw("trips");
       prevTabRef.current = "trips";
+    }
+    // Show new onboarding flow if user hasn't completed it yet
+    if (!localStorage.getItem("tripcopilot_onboarding_completed")) {
+      setShowOnboarding(true);
     }
   }, []);
 
@@ -658,7 +669,23 @@ export default function HomePage() {
     onHelp: () => setShowKbdHelp((v) => !v),
   });
 
+  // ── Onboarding flow ───────────────────────────────────────────────────────
+
+  function handleOnboardingComplete(mode: "relax" | "pilot") {
+    localStorage.setItem("tripcopilot_onboarding_completed", "1");
+    // Also mark the old onboarding keys so legacy checks don't re-show other tours
+    localStorage.setItem("tc-onboarded", "true");
+    void setUIMode(mode);
+    setShowOnboarding(false);
+    // Prevent the legacy OnboardingTour from triggering after the new flow completes
+    setShowOnboardingTour(false);
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (showOnboarding) {
+    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <>
