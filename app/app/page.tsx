@@ -301,8 +301,10 @@ export default function HomePage() {
   }, [mounted, userId, tripsLoading, userTrips.length]);
 
   // Show onboarding tour once — shown to new users before they add their first trip
+  // Skip if the new dual-mode onboarding was already completed
   useEffect(() => {
     if (!mounted || tripsLoading || !userId) return;
+    if (localStorage.getItem("tripcopilot_onboarding_completed")) return;
     const tourKey = `tc-tour-${userId}`;
     if (!localStorage.getItem(tourKey)) {
       setShowOnboardingTour(true);
@@ -682,11 +684,12 @@ export default function HomePage() {
 
   function handleOnboardingComplete(mode: "relax" | "pilot") {
     localStorage.setItem("tripcopilot_onboarding_completed", "1");
-    // Also mark the old onboarding keys so legacy checks don't re-show other tours
+    // Also mark ALL old onboarding keys so legacy checks don't re-show other tours
     localStorage.setItem("tc-onboarded", "true");
+    if (userId) localStorage.setItem(`tc-tour-${userId}`, "true");
+    if (userId) localStorage.setItem(`tc-onboarded-${userId}`, "true");
     void setUIMode(mode);
     setShowOnboarding(false);
-    // Prevent the legacy OnboardingTour from triggering after the new flow completes
     setShowOnboardingTour(false);
   }
 
