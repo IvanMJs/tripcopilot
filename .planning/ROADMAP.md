@@ -47,17 +47,17 @@ Meta: App Store + Play Store con reviews reales
 
 ---
 
-## Bloque C: Features Premium
+## Bloque C: Features Premium (Completado)
 
-- [ ] **C1** — Offline Boarding Pass Wallet
-- [ ] **C2** — Expense OCR
-- [ ] **C3** — Visa Checker
-- [ ] **C4** — Smart Packing Notifications
-- [ ] **C5** — Morning Briefing
-- [ ] **C6** — Passport Expiry Tracker
-- [ ] **C7** — Trip Journal AI-Generated
-- [ ] **C8** — Milestone Celebrations
-- [ ] **C9** — Live Delay Feed (Pilot mode)
+- [x] **C1** — Offline Boarding Pass Wallet (IndexedDB, compresión, wake lock, swipe)
+- [x] **C2** — Expense Tracker (captura recibos, 9 monedas, 6 categorías, summary)
+- [x] **C3** — Visa Checker (140+ combinaciones, 8 pasaportes)
+- [x] **C4** — Smart Packing Notifications (clima + cron T-2d + checklist)
+- [x] **C5** — Morning Briefing enriquecido (clima, conexión, puerta)
+- [x] **C6** — Passport Expiry Tracker (cron mensual, status badge)
+- [x] **C7** — Trip Journal AI-Generated (Claude API + editor + share)
+- [x] **C8** — Milestone Celebrations (9 logros, toast confetti, grid perfil)
+- [x] **C9** — Live Delay Feed Pilot (SVG chart, countdown, FAA data)
 
 ---
 
