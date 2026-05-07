@@ -299,6 +299,22 @@ export async function GET(request: Request) {
     }
   }
 
+  // Cache user UI mode to avoid repeated auth admin calls
+  const userUIModeCache = new Map<string, "relax" | "pilot">();
+  async function getUserUIMode(userId: string): Promise<"relax" | "pilot"> {
+    if (userUIModeCache.has(userId)) return userUIModeCache.get(userId)!;
+    try {
+      const { data } = await supabase.auth.admin.getUserById(userId);
+      const raw = data?.user?.user_metadata?.ui_mode as string | undefined;
+      const mode: "relax" | "pilot" = raw === "pilot" ? "pilot" : "relax";
+      userUIModeCache.set(userId, mode);
+      return mode;
+    } catch {
+      userUIModeCache.set(userId, "relax");
+      return "relax";
+    }
+  }
+
   // Process each flight
   let notificationsSent = 0;
   let notificationsFailed = 0;
@@ -1519,6 +1535,354 @@ export async function GET(request: Request) {
       processGroundSegment,
       10,
     );
+  }
+
+  // ── Engagement Loop Notifications ─────────────────────────────────────────
+  // N1 (anticipation_7d), N2 (travel_tip_3d): upcoming flights up to 7.5 days ahead.
+  // N3 (welcome_arrival), N4 (stamp_ready), N5 (retention_7d): recently arrived flights.
+  {
+    const sevenPointFiveDaysISO = new Date(now.getTime() + 7.5 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+
+    const { data: engagementUpcoming } = await supabase
+      .from("flights")
+      .select("id, trip_id, flight_code, origin_code, destination_code, iso_date, departure_time, arrival_date, arrival_time, trips!inner(user_id)")
+      .eq("segment_type", "flight")
+      .gt("iso_date", threeDaysISO) // beyond the main window already handled
+      .lte("iso_date", sevenPointFiveDaysISO);
+
+    // Also fetch recently-arrived flights (0.5 h to 7.5 days in the past by arrival)
+    const sevenPointFiveDaysAgoISO = new Date(now.getTime() - 7.5 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+
+    const { data: recentlyArrived } = await supabase
+      .from("flights")
+      .select("id, trip_id, flight_code, origin_code, destination_code, iso_date, departure_time, arrival_date, arrival_time, trips!inner(user_id)")
+      .eq("segment_type", "flight")
+      .gte("arrival_date", sevenPointFiveDaysAgoISO)
+      .lt("arrival_date", todayISO);
+
+    // Helper: derive country flag emoji from IATA code
+    const countryFlagForIATA = (iataCode: string): string => {
+      const country = AIRPORTS[iataCode]?.country ?? "";
+      const nameToISO2Map: Record<string, string> = {
+        "USA": "US", "United States": "US", "Argentina": "AR", "Brazil": "BR",
+        "Chile": "CL", "Colombia": "CO", "Peru": "PE", "Uruguay": "UY",
+        "Mexico": "MX", "Canada": "CA", "Cuba": "CU", "Cayman Islands": "KY",
+        "Panama": "PA", "Costa Rica": "CR", "Guatemala": "GT", "Honduras": "HN",
+        "El Salvador": "SV", "Nicaragua": "NI", "Belize": "BZ", "Jamaica": "JM",
+        "Dominican Republic": "DO", "Haiti": "HT", "Puerto Rico": "PR",
+        "Bahamas": "BS", "Barbados": "BB", "Trinidad and Tobago": "TT",
+        "Curacao": "CW", "Aruba": "AW", "Venezuela": "VE", "Bolivia": "BO",
+        "Ecuador": "EC", "Paraguay": "PY", "Guyana": "GY", "Suriname": "SR",
+        "Spain": "ES", "France": "FR", "Germany": "DE", "Italy": "IT",
+        "United Kingdom": "GB", "Portugal": "PT", "Netherlands": "NL",
+        "Switzerland": "CH", "Austria": "AT", "Belgium": "BE", "Ireland": "IE",
+        "Sweden": "SE", "Norway": "NO", "Denmark": "DK", "Finland": "FI",
+        "Poland": "PL", "Czech Republic": "CZ", "Hungary": "HU", "Romania": "RO",
+        "Greece": "GR", "Turkey": "TR", "Russia": "RU", "Ukraine": "UA",
+        "United Arab Emirates": "AE", "Qatar": "QA", "Saudi Arabia": "SA",
+        "Israel": "IL", "Egypt": "EG", "Morocco": "MA", "South Africa": "ZA",
+        "Nigeria": "NG", "Kenya": "KE", "Ethiopia": "ET",
+        "Japan": "JP", "China": "CN", "South Korea": "KR", "India": "IN",
+        "Thailand": "TH", "Singapore": "SG", "Australia": "AU",
+        "New Zealand": "NZ", "Indonesia": "ID", "Malaysia": "MY",
+        "Philippines": "PH", "Vietnam": "VN", "Hong Kong": "HK",
+        "Antigua": "AG",
+      };
+      const iso2 = nameToISO2Map[country] ?? "XX";
+      if (iso2 === "XX") return "";
+      return Array.from(iso2.toUpperCase())
+        .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
+        .join("");
+    }
+
+    type EngagementFlightRow = {
+      id: string;
+      trip_id: string;
+      flight_code: string;
+      origin_code: string;
+      destination_code: string;
+      iso_date: string;
+      departure_time: string | null;
+      arrival_date: string | null;
+      arrival_time: string | null;
+      trips: { user_id: string };
+    };
+
+    // ── N1: Anticipation (T-7 days) ───────────────────────────────────────
+    const n1Flights = (engagementUpcoming ?? []) as unknown as EngagementFlightRow[];
+    for (const flight of n1Flights) {
+      try {
+        const userId = flight.trips.user_id;
+        const airportTz = AIRPORTS[flight.origin_code]?.timezone ?? "UTC";
+        let departureDateTime: Date | null = null;
+        if (flight.departure_time) {
+          try { departureDateTime = localToUTC(flight.iso_date, flight.departure_time, airportTz); } catch { /* skip */ }
+        }
+        const hoursUntil = departureDateTime
+          ? (departureDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+          : null;
+        if (hoursUntil === null || hoursUntil < 6.5 * 24 || hoursUntil > 7.5 * 24) continue;
+
+        const alreadySent = await checkFlightLog(supabase, flight.id, "anticipation_7d", Infinity);
+        if (alreadySent) continue;
+
+        const { data: subs } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", userId);
+        if (!subs?.length) continue;
+
+        const uiMode = await getUserUIMode(userId);
+        const destCity = AIRPORTS[flight.destination_code]?.city ?? flight.destination_code;
+        const flag = countryFlagForIATA(flight.destination_code);
+        const flagSuffix = flag ? ` ${flag}` : "";
+
+        const title = "✈️ En una semana...";
+        const body = uiMode === "pilot"
+          ? `${destCity} en 7 días. Verificá documentación y requisitos.`
+          : `En 7 días estás en ${destCity}${flagSuffix}. ¡Se viene!`;
+
+        notificationsFailed += await sendAndLogFlight(supabase, subs as PushSubRow[], flight.id, userId, "anticipation_7d", { title, body, url: "/app" });
+        notificationsSent++;
+      } catch (err) {
+        Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "engagement-n1" } });
+        cronErrors.push(`engagement N1 ${flight.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // ── N2: Travel Tip (T-3 days) ─────────────────────────────────────────
+    // Uses the main flightRows (already covers up to 3 days) but filters to 2.5–3.5 day window
+    const n2Flights = flightRows;
+    for (const flight of n2Flights) {
+      try {
+        const userId = flight.trips.user_id;
+        const airportTz = AIRPORTS[flight.origin_code]?.timezone ?? "UTC";
+        let departureDateTime: Date | null = null;
+        if (flight.departure_time) {
+          try { departureDateTime = localToUTC(flight.iso_date, flight.departure_time, airportTz); } catch { /* skip */ }
+        }
+        const hoursUntil = departureDateTime
+          ? (departureDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+          : null;
+        if (hoursUntil === null || hoursUntil < 2.5 * 24 || hoursUntil > 3.5 * 24) continue;
+
+        const alreadySent = await checkFlightLog(supabase, flight.id, "travel_tip_3d", Infinity);
+        if (alreadySent) continue;
+
+        const { data: subs } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", userId);
+        if (!subs?.length) continue;
+
+        const uiMode = await getUserUIMode(userId);
+        const destCity = AIRPORTS[flight.destination_code]?.city ?? flight.destination_code;
+
+        const title = "💡 Tip para tu viaje";
+        const body = uiMode === "pilot"
+          ? `${destCity} en 3 días. Verificá NOTAM, clima en ruta, y docs vigentes.`
+          : `En 3 días volás a ${destCity}. Tip: revisá el clima y prepará tu valija 🧳`;
+
+        notificationsFailed += await sendAndLogFlight(supabase, subs as PushSubRow[], flight.id, userId, "travel_tip_3d", { title, body, url: "/app" });
+        notificationsSent++;
+      } catch (err) {
+        Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "engagement-n2" } });
+        cronErrors.push(`engagement N2 ${flight.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // ── N3: Welcome (post-arrival, T+0) ──────────────────────────────────
+    // Trigger: arrival_time was 0.5–2 hours ago
+    const n3Flights = (recentlyArrived ?? []) as unknown as EngagementFlightRow[];
+    for (const flight of n3Flights) {
+      try {
+        if (!flight.arrival_date || !flight.arrival_time) continue;
+        const destTz = AIRPORTS[flight.destination_code]?.timezone ?? "UTC";
+        let arrivalDateTime: Date | null = null;
+        try { arrivalDateTime = localToUTC(flight.arrival_date, flight.arrival_time, destTz); } catch { continue; }
+        const hoursAgo = (now.getTime() - arrivalDateTime.getTime()) / (1000 * 60 * 60);
+        if (hoursAgo < 0.5 || hoursAgo > 2) continue;
+
+        const userId = flight.trips.user_id;
+        const alreadySent = await checkFlightLog(supabase, flight.id, "welcome_arrival", Infinity);
+        if (alreadySent) continue;
+
+        const { data: subs } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", userId);
+        if (!subs?.length) continue;
+
+        const uiMode = await getUserUIMode(userId);
+        const destCity = AIRPORTS[flight.destination_code]?.city ?? flight.destination_code;
+        const flag = countryFlagForIATA(flight.destination_code);
+        const flagSuffix = flag ? ` ${flag}` : "";
+
+        const title = "🎉 ¡Bienvenido!";
+        let body: string;
+        if (uiMode === "pilot") {
+          // Format local time at destination
+          const localTime = arrivalDateTime.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: destTz });
+          body = `Llegaste a ${destCity}. Horario local: ${localTime}.`;
+        } else {
+          body = `Bienvenido a ${destCity}${flagSuffix}. ¡Disfrutá tu viaje!`;
+        }
+
+        notificationsFailed += await sendAndLogFlight(supabase, subs as PushSubRow[], flight.id, userId, "welcome_arrival", { title, body, url: "/app" });
+        notificationsSent++;
+      } catch (err) {
+        Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "engagement-n3" } });
+        cronErrors.push(`engagement N3 ${flight.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // ── N4: Stamp Ready (T+1 day) ─────────────────────────────────────────
+    // Trigger: flight arrived more than 20–28 hours ago
+    for (const flight of n3Flights) {
+      try {
+        if (!flight.arrival_date || !flight.arrival_time) continue;
+        const destTz = AIRPORTS[flight.destination_code]?.timezone ?? "UTC";
+        let arrivalDateTime: Date | null = null;
+        try { arrivalDateTime = localToUTC(flight.arrival_date, flight.arrival_time, destTz); } catch { continue; }
+        const hoursAgo = (now.getTime() - arrivalDateTime.getTime()) / (1000 * 60 * 60);
+        if (hoursAgo < 20 || hoursAgo > 28) continue;
+
+        const userId = flight.trips.user_id;
+        const alreadySent = await checkFlightLog(supabase, flight.id, "stamp_ready", Infinity);
+        if (alreadySent) continue;
+
+        const { data: subs } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", userId);
+        if (!subs?.length) continue;
+
+        const destCity = AIRPORTS[flight.destination_code]?.city ?? flight.destination_code;
+        const title = "🪪 Nuevo stamp";
+        const body = `Tu stamp de ${destCity} está listo. ¡Mirá tu colección!`;
+
+        notificationsFailed += await sendAndLogFlight(supabase, subs as PushSubRow[], flight.id, userId, "stamp_ready", { title, body, url: "/app" });
+        notificationsSent++;
+      } catch (err) {
+        Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "engagement-n4" } });
+        cronErrors.push(`engagement N4 ${flight.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // ── N5: Retention (T+7 days after last arrival) ───────────────────────
+    // Trigger: all flights of user's most recent trip have arrived,
+    //          and the last arrival was 6.5–7.5 days ago.
+    // Max 1 retention push per user per week. Skip if user was inactive since last push.
+    {
+      // Group recentlyArrived by user, find users where last arrival was 6.5–7.5 days ago
+      type RetentionFlightRow = EngagementFlightRow;
+      const allRecentFlights = n3Flights as RetentionFlightRow[];
+
+      // Collect users and their latest arrival time
+      const latestArrivalByUser = new Map<string, { date: Date; flight: RetentionFlightRow }>();
+      for (const flight of allRecentFlights) {
+        if (!flight.arrival_date || !flight.arrival_time) continue;
+        const destTz = AIRPORTS[flight.destination_code]?.timezone ?? "UTC";
+        let arrivalDateTime: Date | null = null;
+        try { arrivalDateTime = localToUTC(flight.arrival_date, flight.arrival_time, destTz); } catch { continue; }
+        const userId = flight.trips.user_id;
+        const current = latestArrivalByUser.get(userId);
+        if (!current || arrivalDateTime > current.date) {
+          latestArrivalByUser.set(userId, { date: arrivalDateTime, flight });
+        }
+      }
+
+      for (const [retentionUserId, { date: lastArrivalDate }] of Array.from(latestArrivalByUser)) {
+        try {
+          const hoursAgo = (now.getTime() - lastArrivalDate.getTime()) / (1000 * 60 * 60);
+          if (hoursAgo < 6.5 * 24 || hoursAgo > 7.5 * 24) continue;
+
+          // Check user still has no upcoming flights in next 30 days (trip is truly over)
+          // We check by seeing if the user's trip_ids appear in upcoming flights.
+          // Collect all trip_ids for this user from the recently-arrived flights.
+          const userTripIds = new Set(
+            allRecentFlights
+              .filter((f) => f.trips.user_id === retentionUserId)
+              .map((f) => f.trip_id),
+          );
+          const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          const { data: futureFlightsJoin } = await supabase
+            .from("flights")
+            .select("id, trip_id, trips!inner(user_id)")
+            .eq("segment_type", "flight")
+            .gte("iso_date", todayISO)
+            .lte("iso_date", thirtyDaysFromNow)
+            .in("trip_id", Array.from(userTripIds))
+            .limit(1);
+          // Also check trips not in the recent-arrived set (user might have a future trip)
+          // by using the n1Flights (upcoming) set already fetched
+          const hasFutureViaUpcoming = n1Flights.some((f) => f.trips.user_id === retentionUserId) ||
+            n2Flights.some((f) => f.trips.user_id === retentionUserId);
+          if (futureFlightsJoin?.length || hasFutureViaUpcoming) continue;
+
+          // Dedup: once per week per user
+          const retentionType = "retention_7d";
+          const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+          const { data: existingRetention } = await supabase
+            .from("notification_log")
+            .select("id")
+            .eq("user_id", retentionUserId)
+            .eq("type", retentionType)
+            .gte("sent_at", oneWeekAgo)
+            .limit(1)
+            .maybeSingle();
+          if (existingRetention) continue;
+
+          // Skip if user hasn't opened the app since the last retention push
+          const { data: lastRetentionLog } = await supabase
+            .from("notification_log")
+            .select("sent_at")
+            .eq("user_id", retentionUserId)
+            .eq("type", retentionType)
+            .order("sent_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (lastRetentionLog?.sent_at) {
+            const { data: retentionProfile } = await supabase
+              .from("user_profiles")
+              .select("last_seen_at")
+              .eq("id", retentionUserId)
+              .single();
+            const lastSeen = (retentionProfile as { last_seen_at?: string | null } | null)?.last_seen_at;
+            if (!lastSeen || new Date(lastSeen) < new Date(lastRetentionLog.sent_at)) continue;
+          }
+
+          const { data: retentionSubs } = await supabase
+            .from("push_subscriptions")
+            .select("endpoint, p256dh, auth")
+            .eq("user_id", retentionUserId);
+          if (!retentionSubs?.length) continue;
+
+          const uiMode = await getUserUIMode(retentionUserId);
+          const title = "✈️ ¿Próximo destino?";
+          const body = uiMode === "pilot"
+            ? "Sin vuelos activos. Planificá tu próximo viaje."
+            : "¿Ya pensando en el próximo viaje? Pegá tu reserva y listo.";
+
+          notificationsFailed += await pushToAll(retentionSubs as PushSubRow[], supabase, { title, body, url: "/app" }, retentionType, retentionUserId);
+          notificationsSent++;
+
+          await supabase.from("notification_log").insert({
+            user_id: retentionUserId,
+            type: retentionType,
+            sent_at: new Date().toISOString(),
+          });
+        } catch (err) {
+          Sentry.captureException(err instanceof Error ? err : new Error(String(err)), { extra: { step: "engagement-n5" } });
+          cronErrors.push(`engagement N5 ${retentionUserId}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+    }
   }
 
   await supabase.from("cron_runs").insert({
