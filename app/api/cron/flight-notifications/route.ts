@@ -1,6 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import webpush from "web-push";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
 import Anthropic from "@anthropic-ai/sdk";
 import { AIRPORTS } from "@/lib/airports";
 import { parseAeroDataBox } from "@/lib/aerodatabox";
@@ -19,11 +21,19 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   return chunks;
 }
 
-webpush.setVapidDetails(
-  "mailto:support@tripcopilot.app",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+let vapidInitialized = false;
+function initVapid() {
+  if (vapidInitialized) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return;
+  webpush.setVapidDetails(
+    "mailto:support@tripcopilot.app",
+    publicKey,
+    privateKey,
+  );
+  vapidInitialized = true;
+}
 
 const ALERT_STATUSES = new Set([
   "delay_moderate",
@@ -34,6 +44,7 @@ const ALERT_STATUSES = new Set([
 ]);
 
 export async function GET(request: Request) {
+  initVapid();
   const cronStart = Date.now();
   const cronErrors: string[] = [];
 

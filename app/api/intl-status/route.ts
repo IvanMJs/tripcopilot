@@ -1,11 +1,31 @@
 export const dynamic = "force-dynamic";
 
+import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { AIRPORTS } from "@/lib/airports";
 import { parseAeroDataBox } from "@/lib/aerodatabox";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/server";
+import { rateLimitResponse } from "@/lib/rateLimit";
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
+
+// In-memory rate limit store: userId -> array of request timestamps (ms)
+const rateLimitStore = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 30; // 30 requests per minute
+
+function checkInMemoryRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const windowStart = now - RATE_LIMIT_WINDOW_MS;
+  const timestamps = (rateLimitStore.get(userId) ?? []).filter(
+    (t) => t > windowStart,
+  );
+  if (timestamps.length >= RATE_LIMIT_MAX) return false;
+  timestamps.push(now);
+  rateLimitStore.set(userId, timestamps);
+  return true;
+}
 
 function formatDateTime(d: Date): string {
   return d.toISOString().slice(0, 16);
@@ -18,7 +38,19 @@ function getServiceClient() {
   );
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const authSupabase = await createClient();
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser();
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!checkInMemoryRateLimit(user.id)) {
+    return rateLimitResponse();
+  }
+
   const { searchParams } = new URL(request.url);
   const airportParam = searchParams.get("airports") ?? "";
   const locale = (searchParams.get("locale") ?? "es") as "es" | "en";

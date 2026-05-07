@@ -3,6 +3,8 @@ import webpush from "web-push";
 import { AIRPORTS } from "@/lib/airports";
 import { CRON_LABELS, CronLocale } from "@/lib/cronUtils";
 
+export const dynamic = "force-dynamic";
+
 // FlightAware pushes events for alerts registered via POST /alerts.
 interface FAWebhookPayload {
   alert_id?: number;
@@ -24,13 +26,22 @@ interface FAWebhookPayload {
   };
 }
 
-webpush.setVapidDetails(
-  "mailto:support@tripcopilot.app",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+let vapidInitialized = false;
+function initVapid() {
+  if (vapidInitialized) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return;
+  webpush.setVapidDetails(
+    "mailto:support@tripcopilot.app",
+    publicKey,
+    privateKey,
+  );
+  vapidInitialized = true;
+}
 
 export async function POST(request: Request) {
+  initVapid();
   const token = new URL(request.url).searchParams.get("token");
   const secret = process.env.FLIGHTAWARE_WEBHOOK_SECRET;
   if (!secret) {

@@ -8,6 +8,8 @@ import { getNotificationPrefs } from "@/lib/notificationPreferences";
 import webpush from "web-push";
 import type { User } from "@supabase/auth-js";
 
+export const dynamic = "force-dynamic";
+
 const PostBodySchema = z
   .object({
     email: z.string().email().optional(),
@@ -17,6 +19,20 @@ const PostBodySchema = z
   .refine((d) => !(d.email && d.username), { message: "provide only one of email or username" });
 
 const APP_URL = "https://tripcopilot.app";
+
+let vapidInitialized = false;
+function initVapid() {
+  if (vapidInitialized) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return;
+  webpush.setVapidDetails(
+    "mailto:support@tripcopilot.app",
+    publicKey,
+    privateKey,
+  );
+  vapidInitialized = true;
+}
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerClient();
@@ -186,11 +202,7 @@ async function sendFriendRequestPush(addresseeId: string, requester: User) {
       .eq("user_id", addresseeId);
     if (!subs?.length) return;
 
-    webpush.setVapidDetails(
-      "mailto:support@tripcopilot.app",
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-      process.env.VAPID_PRIVATE_KEY!,
-    );
+    initVapid();
 
     const senderName = requester.user_metadata?.display_name
       ?? requester.user_metadata?.username

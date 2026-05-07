@@ -1,11 +1,20 @@
 export const runtime = "nodejs";
-export const alt = "TripCopilot — Seguimiento de viaje";
+export const alt = "TripCopilot — Trip tracking | Seguimiento de viaje";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 import { ImageResponse } from "next/og";
 import { getTripByShareToken } from "@/lib/tripShareServer";
 import { AIRPORTS } from "@/lib/airports";
+
+// ── i18n ──────────────────────────────────────────────────────────────────────
+
+const LABELS = {
+  es: { live: "SEGUIMIENTO EN VIVO", flight: "vuelo", flights: "vuelos" },
+  en: { live: "LIVE TRACKING",       flight: "flight", flights: "flights" },
+} as const;
+
+type Locale = keyof typeof LABELS;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -89,10 +98,14 @@ function buildRouteSvgData(
 
 interface PageProps {
   params: Promise<{ token: string }>;
+  searchParams: Promise<Record<string, string>>;
 }
 
-export default async function Image({ params }: PageProps) {
+export default async function Image({ params, searchParams }: PageProps) {
   const { token } = await params;
+  const sp = await searchParams;
+  const locale: Locale = sp.lang === "en" ? "en" : "es";
+  const L = LABELS[locale];
   const trip = await getTripByShareToken(token);
 
   const tripName      = trip?.name ?? "TripCopilot";
@@ -181,7 +194,7 @@ export default async function Image({ params }: PageProps) {
             >
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399" }} />
               <span style={{ fontSize: 15, fontWeight: 700, color: "#34d399", letterSpacing: 1 }}>
-                SEGUIMIENTO EN VIVO
+                {L.live}
               </span>
             </div>
 
@@ -323,7 +336,7 @@ export default async function Image({ params }: PageProps) {
                 >
                   <span style={{ fontSize: 22, color: "#a78bfa" }}>✈</span>
                   <span style={{ fontSize: 18, fontWeight: 700, color: "#e5e7eb" }}>
-                    {flightCount} {flightCount === 1 ? "vuelo" : "vuelos"}
+                    {flightCount} {flightCount === 1 ? L.flight : L.flights}
                   </span>
                 </div>
               )}

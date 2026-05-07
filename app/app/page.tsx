@@ -17,13 +17,8 @@ import { FlightSearch } from "@/components/FlightSearch";
 // TripPanel lazy-loaded — only rendered when a trip is selected
 const TripPanel = lazy(() => import("@/components/TripPanel").then((m) => ({ default: m.TripPanel })));
 import { TripListView } from "@/components/TripListView";
-import { ItineraryImportModal } from "@/components/ItineraryImportModal";
 import { ParsedFlight } from "@/lib/importFlights";
-import { HelpPanel } from "@/components/HelpPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { CreateTripModal } from "@/components/CreateTripModal";
-import { DeleteTripModal } from "@/components/DeleteTripModal";
-import { DraftLeaveModal } from "@/components/DraftLeaveModal";
 import { TripTabBar } from "@/components/TripTabBar";
 import { BottomNav } from "@/components/BottomNav";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
@@ -59,24 +54,33 @@ import { useConnectionAlerts } from "@/hooks/useConnectionAlerts";
 // Lazy-loaded tab views — only rendered when their respective tab is active
 const DiscoverView = lazy(() => import("@/components/DiscoverView").then((m) => ({ default: m.DiscoverView })));
 const MyProfileView = lazy(() => import("@/components/MyProfileView").then((m) => ({ default: m.MyProfileView })));
-import { UpgradeModal } from "@/components/UpgradeModal";
-import { NotificationSettings } from "@/components/NotificationSettings";
 const SettingsView = lazy(() => import("@/components/SettingsView").then((m) => ({ default: m.SettingsView })));
 import { PLANS } from "@/lib/mercadopago";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { KeyboardShortcutsHelp } from "@/components/KeyboardShortcutsHelp";
 import { exportAllTripsJSON } from "@/lib/dataExport";
-import { GlobalSearch } from "@/components/GlobalSearch";
-import { NotificationsHubPanel } from "@/components/NotificationsHubPanel";
-import { TripHistoryView } from "@/components/TripHistoryView";
-import { OnboardingTour } from "@/components/OnboardingTour";
 import { getUnreadCount } from "@/lib/notificationsHub";
-import { NewUserWelcomeView } from "@/components/NewUserWelcomeView";
-import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 
 const TripAssistant = dynamic(() => import("@/components/TripAssistant").then((m) => ({ default: m.TripAssistant })), { ssr: false });
 const TripDebriefModal = dynamic(() => import("@/components/TripDebriefModal").then((m) => ({ default: m.TripDebriefModal })), { ssr: false });
 const DestinationSpotlight = dynamic(() => import("@/components/DestinationSpotlight").then((m) => ({ default: m.DestinationSpotlight })), { ssr: false });
+
+// Lazy-loaded modals and overlays — only rendered when their condition is true
+const UpgradeModal = dynamic(() => import("@/components/UpgradeModal").then((m) => ({ default: m.UpgradeModal })), { ssr: false });
+const NotificationSettings = dynamic(() => import("@/components/NotificationSettings").then((m) => ({ default: m.NotificationSettings })), { ssr: false });
+const CreateTripModal = dynamic(() => import("@/components/CreateTripModal").then((m) => ({ default: m.CreateTripModal })), { ssr: false });
+const DeleteTripModal = dynamic(() => import("@/components/DeleteTripModal").then((m) => ({ default: m.DeleteTripModal })), { ssr: false });
+const DraftLeaveModal = dynamic(() => import("@/components/DraftLeaveModal").then((m) => ({ default: m.DraftLeaveModal })), { ssr: false });
+const ItineraryImportModal = dynamic(() => import("@/components/ItineraryImportModal").then((m) => ({ default: m.ItineraryImportModal })), { ssr: false });
+const KeyboardShortcutsHelp = dynamic(() => import("@/components/KeyboardShortcutsHelp").then((m) => ({ default: m.KeyboardShortcutsHelp })), { ssr: false });
+const GlobalSearch = dynamic(() => import("@/components/GlobalSearch").then((m) => ({ default: m.GlobalSearch })), { ssr: false });
+const NotificationsHubPanel = dynamic(() => import("@/components/NotificationsHubPanel").then((m) => ({ default: m.NotificationsHubPanel })), { ssr: false });
+const OnboardingFlow = dynamic(() => import("@/components/onboarding/OnboardingFlow").then((m) => ({ default: m.OnboardingFlow })), { ssr: false });
+
+// Lazy-loaded pure-UI views — no browser APIs
+const HelpPanel = lazy(() => import("@/components/HelpPanel").then((m) => ({ default: m.HelpPanel })));
+const TripHistoryView = lazy(() => import("@/components/TripHistoryView").then((m) => ({ default: m.TripHistoryView })));
+const OnboardingTour = lazy(() => import("@/components/OnboardingTour").then((m) => ({ default: m.OnboardingTour })));
+const NewUserWelcomeView = lazy(() => import("@/components/NewUserWelcomeView").then((m) => ({ default: m.NewUserWelcomeView })));
 
 const SEVERITY_ORDER: Record<DelayStatus, number> = {
   closure:        0,
@@ -166,7 +170,7 @@ export default function HomePage() {
 
   // Notifications hub
   const [showNotificationsHub, setShowNotificationsHub] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(() => getUnreadCount());
 
   // Trip history view
   const [showTripHistory, setShowTripHistory] = useState(false);
@@ -229,7 +233,8 @@ export default function HomePage() {
       if (!user) return;
       setUserId(user.id);
       const metaName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || null;
-      supabase.from("user_profiles").select("plan, display_name, avatar_url").eq("id", user.id).single()
+      // Single query for profile data + last_seen_at — eliminates one Supabase round-trip per page load
+      supabase.from("user_profiles").select("plan, display_name, avatar_url, last_seen_at").eq("id", user.id).single()
         .then(({ data }) => {
           const plan = (data as { plan?: string } | null)?.plan;
           setUserPlan(plan === "pilot" ? "pilot" : plan === "explorer" ? "explorer" : "free");
@@ -237,10 +242,7 @@ export default function HomePage() {
           setUserName(dbName || metaName);
           const dbAvatar = (data as { avatar_url?: string | null } | null)?.avatar_url;
           setUserAvatar(dbAvatar || null);
-        });
-      // Update last_seen_at (throttle: only if >30min since last update)
-      supabase.from("user_profiles").select("last_seen_at").eq("id", user.id).single()
-        .then(({ data }) => {
+          // Update last_seen_at (throttle: only if >30min since last update)
           const lastSeen = (data as { last_seen_at?: string | null } | null)?.last_seen_at
             ? new Date((data as { last_seen_at: string }).last_seen_at)
             : null;
@@ -250,11 +252,9 @@ export default function HomePage() {
             void supabase.from("user_profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id);
           }
         });
+      // Fire welcome API only once we have a confirmed authenticated user
+      void fetch("/api/auth/welcome", { method: "POST" });
     });
-  }, []);
-
-  useEffect(() => {
-    void fetch("/api/auth/welcome", { method: "POST" });
   }, []);
 
 
@@ -273,11 +273,6 @@ export default function HomePage() {
     if (!localStorage.getItem("tripcopilot_onboarding_completed")) {
       setShowOnboarding(true);
     }
-  }, []);
-
-  // Compute unread notification count on mount (client-only)
-  useEffect(() => {
-    setUnreadCount(getUnreadCount());
   }, []);
 
   // When switching from Pilot to Relax, redirect tabs that don't exist in Relax mode
@@ -454,8 +449,10 @@ export default function HomePage() {
   // ── Offline sync ──────────────────────────────────────────────────────────
   const { isOnline: offlineIsOnline, lastSync } = useOfflineSync(userId, userTrips, statusMap);
 
-  const allAirportsForWeather = Array.from(
-    new Set([...watchedAirports, ...FLIGHT_AIRPORTS, ...tripAirports])
+  const allAirportsForWeather = useMemo(
+    () => Array.from(new Set([...watchedAirports, ...FLIGHT_AIRPORTS, ...tripAirports])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [watchedAirports, tripAirports],
   );
   const weatherMap = useWeather(allAirportsForWeather, locale);
   const metarMap   = useMetar(watchedAirports);
@@ -818,26 +815,30 @@ export default function HomePage() {
 
       {/* Onboarding tour — shown once to new users, last step opens AI import */}
       {showOnboardingTour && (
-        <OnboardingTour
-          locale={locale}
-          onDone={() => {
-            setShowOnboardingTour(false);
-            if (userId) localStorage.setItem(`tc-tour-${userId}`, "true");
-          }}
-          onStartImport={() => setShowGlobalImport(true)}
-        />
+        <Suspense fallback={null}>
+          <OnboardingTour
+            locale={locale}
+            onDone={() => {
+              setShowOnboardingTour(false);
+              if (userId) localStorage.setItem(`tc-tour-${userId}`, "true");
+            }}
+            onStartImport={() => setShowGlobalImport(true)}
+          />
+        </Suspense>
       )}
 
       {/* Trip history view — full-screen overlay */}
       {showTripHistory && (
         <div className="fixed inset-0 z-50 bg-surface-darker overflow-y-auto">
-          <TripHistoryView
-            trips={userTrips}
-            locale={locale}
-            onCreateSimilar={handleCreateSimilar}
-            onViewTrip={(trip) => { setShowTripHistory(false); setActiveTab(trip.id); }}
-            onClose={() => setShowTripHistory(false)}
-          />
+          <Suspense fallback={null}>
+            <TripHistoryView
+              trips={userTrips}
+              locale={locale}
+              onCreateSimilar={handleCreateSimilar}
+              onViewTrip={(trip) => { setShowTripHistory(false); setActiveTab(trip.id); }}
+              onClose={() => setShowTripHistory(false)}
+            />
+          </Suspense>
         </div>
       )}
 
@@ -1158,7 +1159,9 @@ export default function HomePage() {
             )}
 
             {activeTab === "help" && (
-              <HelpPanel />
+              <Suspense fallback={null}>
+                <HelpPanel />
+              </Suspense>
             )}
 
             {activeTab === "settings" && (
@@ -1177,17 +1180,19 @@ export default function HomePage() {
             {activeTab === "trips" && (
               <>
                 {mounted && !tripsLoading && userTrips.length === 0 && !(userId ? localStorage.getItem(`tc-onboarded-${userId}`) : localStorage.getItem("tc-onboarded")) ? (
-                  <NewUserWelcomeView
-                    statusMap={statusMap}
-                    weatherMap={weatherMap}
-                    loading={loading}
-                    locale={locale}
-                    userId={userId}
-                    onAddFlight={() => {
-                      markOnboarded();
-                      void openCreateTripModal();
-                    }}
-                  />
+                  <Suspense fallback={null}>
+                    <NewUserWelcomeView
+                      statusMap={statusMap}
+                      weatherMap={weatherMap}
+                      loading={loading}
+                      locale={locale}
+                      userId={userId}
+                      onAddFlight={() => {
+                        markOnboarded();
+                        void openCreateTripModal();
+                      }}
+                    />
+                  </Suspense>
                 ) : (
                   <TripListView
                     trips={userTrips}

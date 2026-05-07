@@ -4,6 +4,8 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
 import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
+export const dynamic = "force-dynamic";
+
 const BodySchema = z.object({
   user_id: z.string().min(1),
   title: z.string().min(1),
@@ -12,13 +14,22 @@ const BodySchema = z.object({
   url: z.string().optional(),
 });
 
-webpush.setVapidDetails(
-  "mailto:support@tripcopilot.app",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+let vapidInitialized = false;
+function initVapid() {
+  if (vapidInitialized) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return;
+  webpush.setVapidDetails(
+    "mailto:support@tripcopilot.app",
+    publicKey,
+    privateKey,
+  );
+  vapidInitialized = true;
+}
 
 export async function POST(request: Request) {
+  initVapid();
   // Allow internal cron/n8n callers with CRON_SECRET to bypass auth
   const authHeader = request.headers.get("Authorization");
   const cronSecret = process.env.CRON_SECRET;

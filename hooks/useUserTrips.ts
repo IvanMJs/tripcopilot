@@ -232,10 +232,27 @@ export function useUserTrips() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("trips")
-        .select("id, name, passengers, flights(*), accommodations(*)")
-        .order("created_at", { ascending: true });
+      // Use getSession() (local, no network call) to get the user ID needed for the
+      // collaborator query — getUser() would add an extra Supabase round-trip here.
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id ?? null;
+
+      // Run owned trips fetch and collaborator IDs fetch in parallel
+      const [ownedResult, collabResult] = await Promise.all([
+        supabase
+          .from("trips")
+          .select("id, name, passengers, flights(*), accommodations(*)")
+          .order("created_at", { ascending: true }),
+        userId
+          ? supabase
+              .from("trip_collaborators")
+              .select("trip_id, role")
+              .eq("invitee_id", userId)
+              .eq("status", "accepted")
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+
+      const { data, error } = ownedResult;
 
       const ownedTrips: TripTab[] = (!error && data)
         ? data.map((t) => ({
@@ -253,15 +270,10 @@ export function useUserTrips() {
         : [];
 
       // Fetch trips shared with the current user as an accepted collaborator
-      const { data: { user } } = await supabase.auth.getUser();
       let sharedTrips: TripTab[] = [];
 
-      if (user) {
-        const { data: collabRows } = await supabase
-          .from("trip_collaborators")
-          .select("trip_id, role")
-          .eq("invitee_id", user.id)
-          .eq("status", "accepted");
+      if (userId) {
+        const { data: collabRows } = collabResult as { data: { trip_id: string; role: string }[] | null; error: unknown };
 
         if (collabRows && collabRows.length > 0) {
           const sharedIds = collabRows.map((c) => c.trip_id as string);

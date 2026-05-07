@@ -7,7 +7,23 @@ import { getNotificationPrefs } from "@/lib/notificationPreferences";
 import webpush from "web-push";
 import type { User } from "@supabase/auth-js";
 
+export const dynamic = "force-dynamic";
+
 const BodySchema = z.object({ username: z.string().min(1).max(30) });
+
+let vapidInitialized = false;
+function initVapid() {
+  if (vapidInitialized) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return;
+  webpush.setVapidDetails(
+    "mailto:support@tripcopilot.app",
+    publicKey,
+    privateKey,
+  );
+  vapidInitialized = true;
+}
 
 function makeAdmin() {
   return createAdminClient(
@@ -82,11 +98,7 @@ async function sendNewFollowerPush(targetId: string, follower: User) {
     .eq("user_id", targetId);
   if (!subs?.length) return;
 
-  webpush.setVapidDetails(
-    "mailto:support@tripcopilot.app",
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!,
-  );
+  initVapid();
 
   const senderName =
     follower.user_metadata?.display_name ??
