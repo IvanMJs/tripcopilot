@@ -27,7 +27,7 @@ const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value: [
-      "default-src 'self'",
+      "default-src 'self' capacitor: ionic: capacitor-electron:",
       // unsafe-eval is only included in development for Next.js HMR; never in production
       `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://vercel.live`,
       "style-src 'self' 'unsafe-inline'",
@@ -36,6 +36,9 @@ const securityHeaders = [
       // Supabase REST + Realtime websocket, FAA, AeroDataBox
       [
         "connect-src 'self'",
+        "capacitor:",
+        "ionic:",
+        "capacitor-electron:",
         "https://*.supabase.co",
         "wss://*.supabase.co",
         "https://nasstatus.faa.gov",

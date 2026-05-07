@@ -20,3 +20,8 @@ public/swe-worker-*.js.map
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Capacitor native projects
+/ios
+/android
+/out

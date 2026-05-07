@@ -10,10 +10,16 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "cap:sync": "npx cap sync",
+    "cap:ios": "npx cap open ios",
+    "cap:android": "npx cap open android",
+    "cap:build:ios": "npx cap sync ios && npx cap open ios",
+    "cap:build:android": "npx cap sync android && npx cap open android"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
+    "@capacitor/core": "^8.3.2",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
@@ -47,6 +53,9 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.3.2",
+    "@capacitor/cli": "^8.3.2",
+    "@capacitor/ios": "^8.3.2",
     "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
