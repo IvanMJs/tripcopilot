@@ -96,7 +96,7 @@ const EXAMPLE_ID = "__example__";
 export default function HomePage() {
   const { t, locale, setLocale } = useLanguage();
   const { showSwNotification, subscribeToPush, unsubscribeFromPush } = useServiceWorker();
-  const { setMode: setUIMode } = useUIModeContext();
+  const { isRelax, setMode: setUIMode } = useUIModeContext();
   const router = useRouter();
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -279,6 +279,15 @@ export default function HomePage() {
   useEffect(() => {
     setUnreadCount(getUnreadCount());
   }, []);
+
+  // When switching from Pilot to Relax, redirect tabs that don't exist in Relax mode
+  const RELAX_TABS = new Set(["today", "discover", "profile"]);
+  useEffect(() => {
+    if (isRelax && !RELAX_TABS.has(activeTab) && !activeTab.startsWith("trip-") && !userTrips.some((t) => t.id === activeTab) && activeTab !== DRAFT_ID && activeTab !== EXAMPLE_ID) {
+      setActiveTab("today");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRelax]);
 
   // Redirect new users to trips tab when auth + data are both resolved.
   // Uses a per-user key so different accounts on the same browser each see FTUE.
