@@ -8,6 +8,7 @@ import { AIRPORTS } from "@/lib/airports";
 import { parseAeroDataBox } from "@/lib/aerodatabox";
 import { parseXML } from "@/lib/faa";
 import { localToUTC, localHourInTimezone, dateInTimezone, CRON_LABELS, CronLocale } from "@/lib/cronUtils";
+import { getWeatherDescription } from "@/lib/wmo";
 import { analyzeConnection } from "@/lib/connectionRisk";
 import { TripFlight, AirportStatusMap, DelayStatus, FlightRow, AccommodationRow, PushSubRow, AeroDataBoxFlightLeg } from "@/lib/types";
 import { sendInBatches } from "@/lib/retry";
@@ -421,7 +422,83 @@ export async function GET(request: Request) {
       if (localHour >= 6 && localHour <= 10) {
         const alreadySent = await checkFlightLog(supabase, flight.id, "morning_briefing", Infinity);
         if (!alreadySent) {
-          const { title, body } = L.morningBriefing(flight.flight_code, departureTime ?? "?", originCode, destCode, statusLabel);
+          // Fetch current weather at origin airport
+          const airport = AIRPORTS[originCode];
+          let weatherIcon = "";
+          let tempC: number | undefined;
+          if (airport?.lat && airport?.lng) {
+            try {
+              const weatherRes = await fetch(
+                `https://api.open-meteo.com/v1/forecast?latitude=${airport.lat}&longitude=${airport.lng}&current=temperature_2m,weather_code&timezone=auto`,
+              );
+              const weatherData = await weatherRes.json() as {
+                current?: { temperature_2m: number; weather_code: number };
+              };
+              if (weatherData.current) {
+                tempC = Math.round(weatherData.current.temperature_2m);
+                const desc = getWeatherDescription(weatherData.current.weather_code, locale);
+                weatherIcon = desc.icon;
+              }
+            } catch {}
+          }
+
+          // Check for connection risk with the next flight in the same trip
+          let connectionInfo = "";
+          const tripId: string = flight.trip_id;
+          const nextFlight = flightRows.find((f) =>
+            f.trip_id === tripId &&
+            f.id !== flight.id &&
+            (f.iso_date > isoDate ||
+              (f.iso_date === isoDate && (f.departure_time ?? "") > (departureTime ?? ""))),
+          );
+          if (nextFlight) {
+            const currentTripFlight = {
+              id:              flight.id,
+              flightCode:      flight.flight_code,
+              airlineCode:     flight.airline_code,
+              airlineName:     flight.airline_name,
+              airlineIcao:     flight.airline_icao,
+              flightNumber:    flight.flight_number,
+              originCode:      originCode,
+              destinationCode: destCode,
+              isoDate:         isoDate,
+              departureTime:   departureTime ?? "",
+              arrivalBuffer:   flight.arrival_buffer ?? 2,
+            };
+            const nextTripFlight = {
+              id:              nextFlight.id,
+              flightCode:      nextFlight.flight_code,
+              airlineCode:     nextFlight.airline_code,
+              airlineName:     nextFlight.airline_name,
+              airlineIcao:     nextFlight.airline_icao,
+              flightNumber:    nextFlight.flight_number,
+              originCode:      nextFlight.origin_code,
+              destinationCode: nextFlight.destination_code,
+              isoDate:         nextFlight.iso_date,
+              departureTime:   nextFlight.departure_time ?? "",
+              arrivalBuffer:   nextFlight.arrival_buffer ?? 2,
+            };
+            const connAnalysis = analyzeConnection(currentTripFlight, nextTripFlight, airportStatusMap);
+            if (connAnalysis) {
+              if (connAnalysis.risk === "tight") {
+                connectionInfo = locale === "es" ? "⚠️ Conexión ajustada" : "⚠️ Tight connection";
+              } else if (connAnalysis.risk === "at_risk" || connAnalysis.risk === "missed") {
+                connectionInfo = locale === "es" ? "🚨 Conexión en riesgo" : "🚨 Connection at risk";
+              }
+            }
+          }
+
+          const { title, body } = L.morningBriefing({
+            code: flight.flight_number,
+            time: departureTime ?? "?",
+            origin: originCode,
+            dest: destCode,
+            statusLabel,
+            weatherIcon,
+            tempC,
+            connectionInfo,
+            gate: flight.gate ?? undefined,
+          });
           notificationsFailed += await sendAndLogFlight(supabase, subs, flight.id, userId, "morning_briefing", { title, body, url: "/app" });
           notificationsSent++;
         }
