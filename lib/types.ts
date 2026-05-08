@@ -179,6 +179,11 @@ export type PushSubRow = {
   auth: string;
 };
 
+export interface NativePushTokenRow {
+  token: string;
+  platform: 'ios' | 'android';
+}
+
 export interface TripChatMessage {
   id: string;
   trip_id: string;
