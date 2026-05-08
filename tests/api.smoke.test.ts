@@ -163,9 +163,9 @@ describe("localHourInTimezone", () => {
 
 describe("CRON_LABELS", () => {
   it("morningBriefing es template includes flight code and time", () => {
-    const { title, body } = CRON_LABELS.es.morningBriefing(
-      "AA900", "14:30", "JFK", "MIA", "Normal ✅"
-    );
+    const { title, body } = CRON_LABELS.es.morningBriefing({
+      code: "AA900", time: "14:30", origin: "JFK", dest: "MIA", statusLabel: "Normal ✅",
+    });
     expect(title).toContain("AA900");
     expect(title).toContain("14:30");
     expect(body).toContain("JFK");
@@ -173,9 +173,9 @@ describe("CRON_LABELS", () => {
   });
 
   it("morningBriefing en template includes flight code and time", () => {
-    const { title, body } = CRON_LABELS.en.morningBriefing(
-      "UA500", "08:00", "ORD", "LAX", "Normal ✅"
-    );
+    const { title, body } = CRON_LABELS.en.morningBriefing({
+      code: "UA500", time: "08:00", origin: "ORD", dest: "LAX", statusLabel: "Normal ✅",
+    });
     expect(title).toContain("UA500");
     expect(title).toContain("08:00");
     expect(body).toContain("ORD");

@@ -13,6 +13,8 @@ const withPWA = withPWAInit({
   },
 });
 
+const isDev = process.env.NODE_ENV === "development";
+
 const securityHeaders = [
   { key: "X-Content-Type-Options",    value: "nosniff" },
   { key: "X-Frame-Options",           value: "DENY" },
@@ -25,15 +27,18 @@ const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value: [
-      "default-src 'self'",
-      // Next.js requires unsafe-inline for inline styles/scripts; eval for HMR in dev
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live",
+      "default-src 'self' capacitor: ionic: capacitor-electron:",
+      // unsafe-eval is only included in development for Next.js HMR; never in production
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://vercel.live`,
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self'",
       "img-src 'self' data: blob: https:",
       // Supabase REST + Realtime websocket, FAA, AeroDataBox
       [
         "connect-src 'self'",
+        "capacitor:",
+        "ionic:",
+        "capacitor-electron:",
         "https://*.supabase.co",
         "wss://*.supabase.co",
         "https://nasstatus.faa.gov",
@@ -57,6 +62,12 @@ const nextConfig = {
   transpilePackages: ["swiper", "embla-carousel", "embla-carousel-react", "embla-carousel-autoplay"],
   async headers() {
     return [
+      {
+        source: "/.well-known/:path*",
+        headers: [
+          { key: "Content-Type", value: "application/json" },
+        ],
+      },
       {
         source: "/(.*)",
         headers: securityHeaders,

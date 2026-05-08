@@ -77,8 +77,30 @@ export const CRON_LABELS = {
     } as Record<string, string>,
     delayAlert: (origin: string, code: string, dest: string, date: string, label: string) =>
       ({ title: `Alerta en ${origin} — ${code}`, body: `Tu vuelo ${code} a ${dest} el ${date}. Estado de ${origin}: ${label}.` }),
-    morningBriefing: (code: string, time: string, origin: string, dest: string, label: string) =>
-      ({ title: `¡Hoy viajás! ${code} sale a las ${time}`, body: `${origin}→${dest}. ${origin}: ${label}. ¡Buen vuelo! 🛫` }),
+    morningBriefing: (opts: {
+      code: string;
+      time: string;
+      origin: string;
+      dest: string;
+      statusLabel: string;
+      weatherIcon?: string;
+      tempC?: number;
+      connectionInfo?: string;
+      gate?: string;
+    }) => {
+      const parts: string[] = [];
+      parts.push(`${opts.origin}→${opts.dest}. ${opts.origin}: ${opts.statusLabel}.`);
+      if (opts.weatherIcon && opts.tempC !== undefined) {
+        parts.push(`${opts.weatherIcon} ${opts.tempC}°C en ${opts.origin}.`);
+      }
+      if (opts.connectionInfo) parts.push(opts.connectionInfo);
+      if (opts.gate) parts.push(`Puerta ${opts.gate}`);
+      parts.push("¡Buen vuelo! 🛫");
+      return {
+        title: `Buenos días ☀️ Tu vuelo ${opts.code} sale a las ${opts.time}`,
+        body: parts.join(" "),
+      };
+    },
     checkin24h: (code: string, origin: string, dest: string, time: string) =>
       ({ title: "¿Hiciste el check-in? ✈️", body: `Tu vuelo ${code} ${origin}→${dest} sale mañana a las ${time}.` }),
     preflight3h: (code: string, origin: string, dest: string, time: string, label: string) =>
@@ -147,8 +169,30 @@ export const CRON_LABELS = {
     } as Record<string, string>,
     delayAlert: (origin: string, code: string, dest: string, date: string, label: string) =>
       ({ title: `Alert at ${origin} — ${code}`, body: `Your flight ${code} to ${dest} on ${date}. ${origin} status: ${label}.` }),
-    morningBriefing: (code: string, time: string, origin: string, dest: string, label: string) =>
-      ({ title: `Travel day! ${code} departs at ${time}`, body: `${origin}→${dest}. ${origin}: ${label}. Have a great flight! 🛫` }),
+    morningBriefing: (opts: {
+      code: string;
+      time: string;
+      origin: string;
+      dest: string;
+      statusLabel: string;
+      weatherIcon?: string;
+      tempC?: number;
+      connectionInfo?: string;
+      gate?: string;
+    }) => {
+      const parts: string[] = [];
+      parts.push(`${opts.origin}→${opts.dest}. ${opts.origin}: ${opts.statusLabel}.`);
+      if (opts.weatherIcon && opts.tempC !== undefined) {
+        parts.push(`${opts.weatherIcon} ${opts.tempC}°C in ${opts.origin}.`);
+      }
+      if (opts.connectionInfo) parts.push(opts.connectionInfo);
+      if (opts.gate) parts.push(`Gate ${opts.gate}`);
+      parts.push("Have a great flight! 🛫");
+      return {
+        title: `Good morning ☀️ Your flight ${opts.code} departs at ${opts.time}`,
+        body: parts.join(" "),
+      };
+    },
     checkin24h: (code: string, origin: string, dest: string, time: string) =>
       ({ title: "Did you check in? ✈️", body: `Your flight ${code} ${origin}→${dest} departs tomorrow at ${time}.` }),
     preflight3h: (code: string, origin: string, dest: string, time: string, label: string) =>

@@ -3,11 +3,21 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
 import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
-webpush.setVapidDetails(
-  "mailto:support@tripcopilot.app",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+export const dynamic = "force-dynamic";
+
+let vapidInitialized = false;
+function initVapid() {
+  if (vapidInitialized) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return;
+  webpush.setVapidDetails(
+    "mailto:support@tripcopilot.app",
+    publicKey,
+    privateKey,
+  );
+  vapidInitialized = true;
+}
 
 const MOCKS: Record<string, { title: string; body: string; tag: string }> = {
   flight_delay: {
@@ -48,6 +58,7 @@ const MOCKS: Record<string, { title: string; body: string; tag: string }> = {
 };
 
 export async function GET(request: Request) {
+  initVapid();
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type") ?? "morning_briefing";
 

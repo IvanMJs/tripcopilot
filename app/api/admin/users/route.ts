@@ -3,8 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { z } from "zod";
-
-const ADMIN_EMAIL = "ivanmeyer1991@gmail.com";
+import { isAdminEmail } from "@/lib/auth";
 
 async function getAdminClient() {
   return createClient(
@@ -27,7 +26,7 @@ async function checkAdmin(): Promise<boolean> {
     },
   );
   const { data: { user } } = await supabase.auth.getUser();
-  return user?.email === ADMIN_EMAIL;
+  return isAdminEmail(user?.email);
 }
 
 // GET /api/admin/users — paginated user list with optional search

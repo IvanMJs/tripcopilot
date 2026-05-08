@@ -76,6 +76,14 @@ export function useServiceWorker() {
    * Call after the user grants notification permission.
    */
   const subscribeToPush = useCallback(async (): Promise<boolean> => {
+    // On native platforms, skip web push — useNativePush handles it
+    if (typeof window !== 'undefined') {
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.isNativePlatform()) return false;
+      } catch {}
+    }
+
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!publicKey || !regRef.current) return false;
 

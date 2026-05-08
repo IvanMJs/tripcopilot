@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/utils/supabase/server";
 import { TripSocialProfile } from "@/components/TripSocialProfile";
 import { AIRPORTS } from "@/lib/airports";
 import type { PublicProfileData } from "@/lib/friends";
 
+// Keep force-dynamic so the viewer's session cookie is always read fresh.
+// The expensive public-profile DB queries are cached via unstable_cache below.
 export const dynamic = "force-dynamic";
 
 interface SocialSettings {
@@ -36,6 +39,115 @@ interface FlightRow {
   iso_date: string;
 }
 
+/** Cached public profile data — does not include viewer-specific fields. */
+interface PublicProfileCache {
+  profile: UserProfileRow & { _visitedPlacesCountries: string[] };
+  trips: TripRow[];
+  flights: FlightRow[];
+  followerCount: number;
+  followingCount: number;
+}
+
+/**
+ * Fetch public, non-viewer-specific profile data from Supabase.
+ * Cached for 5 minutes per username via unstable_cache to reduce DB load
+ * and limit the impact of bot scraping.
+ */
+function getPublicProfileData(username: string) {
+  return unstable_cache(
+    async (): Promise<PublicProfileCache | null> => {
+      const admin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      );
+
+      const { data: profileData, error: profileError } = await admin
+        .from("user_profiles")
+        .select("id, username, display_name, social_settings")
+        .ilike("username", username)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error(
+          "[/u/[username]] Supabase error:",
+          profileError.message,
+          "username:",
+          username,
+        );
+      }
+
+      if (!profileData) return null;
+
+      const profile = profileData as UserProfileRow;
+      const settings: SocialSettings = profile.social_settings ?? {};
+      const showStats = settings.showStats ?? true;
+      const showMap = settings.showMap ?? true;
+      const showTrips = settings.showTrips ?? true;
+
+      let trips: TripRow[] = [];
+      let flights: FlightRow[] = [];
+
+      if (showStats || showMap || showTrips) {
+        const { data: tripData } = await admin
+          .from("trips")
+          .select("id, name")
+          .eq("user_id", profile.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        trips = (tripData ?? []) as TripRow[];
+
+        if (trips.length > 0) {
+          const tripIds = trips.map((t) => t.id);
+          const { data: flightData } = await admin
+            .from("flights")
+            .select("trip_id, destination_code, origin_code, iso_date")
+            .in("trip_id", tripIds)
+            .order("iso_date", { ascending: true });
+
+          flights = (flightData ?? []) as FlightRow[];
+        }
+      }
+
+      // Supplement countries from visited_places table (needed for country counts)
+      let visitedPlacesCountries: string[] = [];
+      if (showMap || showStats) {
+        const { data: vpData } = await admin
+          .from("visited_places")
+          .select("country")
+          .eq("user_id", profile.id);
+        visitedPlacesCountries = (vpData ?? [])
+          .map((row) => (row as { country: string }).country)
+          .filter((c) => c && /^[A-Za-z]{2}$/.test(c))
+          .map((c) => c.toUpperCase());
+      }
+
+      // Follower / following counts — these are public and cheap to cache
+      const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+        admin
+          .from("follows")
+          .select("*", { count: "exact", head: true })
+          .eq("following_id", profile.id),
+        admin
+          .from("follows")
+          .select("*", { count: "exact", head: true })
+          .eq("follower_id", profile.id),
+      ]);
+
+      return {
+        profile: { ...profile, _visitedPlacesCountries: visitedPlacesCountries },
+        trips,
+        flights,
+        followerCount: followerCount ?? 0,
+        followingCount: followingCount ?? 0,
+      };
+    },
+    [`public-profile:${username.toLowerCase()}`],
+    { revalidate: 300 }, // 5-minute cache
+  )();
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -55,29 +167,15 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params;
 
-  const admin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
+  // Load cached public data (5-minute TTL, shared across all visitors)
+  const cached = await getPublicProfileData(username);
 
-  // Fetch user profile
-  const { data: profileData, error: profileError } = await admin
-    .from("user_profiles")
-    .select("id, username, display_name, social_settings")
-    .ilike("username", username)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error("[/u/[username]] Supabase error:", profileError.message, "username:", username);
-  }
-
-  if (!profileData) {
+  if (!cached) {
     console.error("[/u/[username]] Profile not found for username:", username);
     notFound();
   }
 
-  const profile = profileData as UserProfileRow;
+  const { trips, flights, followerCount, followingCount, profile } = cached;
   const settings: SocialSettings = profile.social_settings ?? {};
 
   if (settings.profileVisible === "nobody") {
@@ -87,31 +185,6 @@ export default async function PublicProfilePage({
   const showStats = settings.showStats ?? true;
   const showMap = settings.showMap ?? true;
   const showTrips = settings.showTrips ?? true;
-
-  let trips: TripRow[] = [];
-  let flights: FlightRow[] = [];
-
-  if (showStats || showMap || showTrips) {
-    const { data: tripData } = await admin
-      .from("trips")
-      .select("id, name")
-      .eq("user_id", profile.id)
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    trips = (tripData ?? []) as TripRow[];
-
-    if (trips.length > 0) {
-      const tripIds = trips.map((t) => t.id);
-      const { data: flightData } = await admin
-        .from("flights")
-        .select("trip_id, destination_code, origin_code, iso_date")
-        .in("trip_id", tripIds)
-        .order("iso_date", { ascending: true });
-
-      flights = (flightData ?? []) as FlightRow[];
-    }
-  }
 
   // Group flights by trip → last destination + first date per trip
   const flightsByTrip = new Map<string, FlightRow[]>();
@@ -137,19 +210,9 @@ export default async function PublicProfilePage({
     }
   }
 
-  // Supplement countries from visited_places table
-  if (showMap || showStats) {
-    const { data: vpData } = await admin
-      .from("visited_places")
-      .select("country")
-      .eq("user_id", profile.id);
-    for (const row of vpData ?? []) {
-      const c = (row as { country: string }).country;
-      // Only accept 2-letter ISO codes — visited_places may store full names
-      if (c && /^[A-Za-z]{2}$/.test(c)) {
-        countrySet.add(c.toUpperCase());
-      }
-    }
+  // Supplement countries from cached visited_places data
+  for (const c of profile._visitedPlacesCountries) {
+    countrySet.add(c);
   }
 
   const stats: PublicProfileData["stats"] | undefined = showStats
@@ -190,36 +253,36 @@ export default async function PublicProfilePage({
         })
     : undefined;
 
-  // Get current user (may be null for unauthenticated visitors)
+  // Get current user (may be null for unauthenticated visitors).
+  // This is always fresh — never cached — because it reads the session cookie.
   const supabase = await createServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Follower/following counts + viewer-follows check
-  const [{ count: followerCount }, { count: followingCount }, viewerFollowsResult] =
-    await Promise.all([
-      admin
-        .from("follows")
-        .select("*", { count: "exact", head: true })
-        .eq("following_id", profile.id),
-      admin
-        .from("follows")
-        .select("*", { count: "exact", head: true })
-        .eq("follower_id", profile.id),
-      user && user.id !== profile.id
-        ? admin
-            .from("follows")
-            .select("follower_id", { count: "exact", head: true })
-            .eq("follower_id", user.id)
-            .eq("following_id", profile.id)
-        : Promise.resolve({ count: null as number | null }),
-    ]);
-
-  // Check friendship and build friend-specific data
+  // Viewer-specific queries: these are uncached because they depend on the
+  // logged-in user's identity and must not leak across sessions.
+  let viewerFollows = false;
   let friendData: PublicProfileData["friendData"] | undefined;
+
   if (user && user.id !== profile.id) {
-    const { data: fs } = await admin
+    // Admin client used only for viewer-specific lookups (not cached).
+    const adminForViewer = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+
+    // Check whether the viewer follows this profile
+    const { count: viewerFollowsCount } = await adminForViewer
+      .from("follows")
+      .select("follower_id", { count: "exact", head: true })
+      .eq("follower_id", user.id)
+      .eq("following_id", profile.id);
+    viewerFollows = viewerFollowsCount != null && viewerFollowsCount > 0;
+
+    // Check friendship and build friend-specific data
+    const { data: fs } = await adminForViewer
       .from("friendships")
       .select("id")
       .or(
@@ -230,7 +293,7 @@ export default async function PublicProfilePage({
 
     if (fs) {
       // 1. Fetch viewer's trips
-      const { data: viewerTripData } = await admin
+      const { data: viewerTripData } = await adminForViewer
         .from("trips")
         .select("id")
         .eq("user_id", user.id);
@@ -239,7 +302,7 @@ export default async function PublicProfilePage({
       // 2. Fetch viewer's flights
       let viewerFlights: FlightRow[] = [];
       if (viewerTripIds.length > 0) {
-        const { data: vfData } = await admin
+        const { data: vfData } = await adminForViewer
           .from("flights")
           .select("trip_id, destination_code, origin_code, iso_date")
           .in("trip_id", viewerTripIds);
@@ -257,7 +320,7 @@ export default async function PublicProfilePage({
           if (isoCode) viewerCountrySet.add(isoCode);
         }
       }
-      const { data: viewerVP } = await admin
+      const { data: viewerVP } = await adminForViewer
         .from("visited_places")
         .select("country")
         .eq("user_id", user.id);
@@ -294,7 +357,7 @@ export default async function PublicProfilePage({
         isoDate: string;
       }> = [];
       if (profileTripIds.length > 0) {
-        const { data: upcomingData } = await admin
+        const { data: upcomingData } = await adminForViewer
           .from("flights")
           .select("destination_code, iso_date")
           .in("trip_id", profileTripIds)
@@ -314,7 +377,7 @@ export default async function PublicProfilePage({
       type TripReactionEntry = NonNullable<PublicProfileData["friendData"]>["tripReactions"][number];
       let tripReactions: TripReactionEntry[] = [];
       if (profileTripIds.length > 0) {
-        const { data: reactData } = await admin
+        const { data: reactData } = await adminForViewer
           .from("trip_social_reactions")
           .select("trip_id, emoji")
           .in("trip_id", profileTripIds);
@@ -344,9 +407,9 @@ export default async function PublicProfilePage({
     userId: profile.id,
     username: profile.username,
     displayName: profile.display_name,
-    followerCount: followerCount ?? 0,
-    followingCount: followingCount ?? 0,
-    viewerFollows: viewerFollowsResult.count != null && viewerFollowsResult.count > 0,
+    followerCount,
+    followingCount,
+    viewerFollows,
     social_settings: {
       profileVisible: settings.profileVisible ?? "friends",
       showMap: settings.showMap,

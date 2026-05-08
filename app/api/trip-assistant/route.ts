@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
 import { checkUserRateLimit, rateLimitResponse } from "@/lib/rateLimit";
@@ -168,7 +169,10 @@ export async function POST(req: NextRequest) {
               controller.enqueue(encoder.encode(event.delta.text));
             }
           }
-        } catch {
+        } catch (streamError) {
+          Sentry.captureException(streamError, {
+            tags: { route: "trip-assistant", phase: "stream-iteration" },
+          });
           controller.error(new Error("Stream error"));
         } finally {
           controller.close();
@@ -183,7 +187,10 @@ export async function POST(req: NextRequest) {
         "X-Accel-Buffering": "no",
       },
     });
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { route: "trip-assistant", phase: "stream-create" },
+    });
     return new Response(JSON.stringify({ error: "Failed to get AI response" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

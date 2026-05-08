@@ -6,8 +6,7 @@ import { FunnelChart } from "./components/FunnelChart";
 import { EventsTimeline } from "./components/EventsTimeline";
 import { UsersTable } from "./components/UsersTable";
 import { AdminUsersSection } from "./components/AdminUsersSection";
-
-const ADMIN_EMAIL = "ivanmeyer1991@gmail.com";
+import { isAdminEmail } from "@/lib/auth";
 
 const FUNNEL_EVENTS = [
   { key: "onboarding_tour_started",   label: "Tour iniciado" },
@@ -39,7 +38,7 @@ export default async function AdminPage() {
     },
   );
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.email !== ADMIN_EMAIL) redirect("/app");
+  if (!user || !isAdminEmail(user.email)) redirect("/app");
 
   const admin = await getAdminClient();
 

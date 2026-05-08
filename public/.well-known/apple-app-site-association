@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAM_ID.app.tripcopilot.mobile"],
+        "components": [
+          { "/": "/app*", "comment": "Main app" },
+          { "/": "/u/*", "comment": "Public profiles" },
+          { "/": "/share/*", "comment": "Shared trips" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAM_ID.app.tripcopilot.mobile"]
+  }
+}
