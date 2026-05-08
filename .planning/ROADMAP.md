@@ -63,12 +63,12 @@ Meta: App Store + Play Store con reviews reales
 
 ## Bloque D: Native Wrapper (Capacitor)
 
-- [ ] **D1** — Setup Capacitor + configs iOS/Android
-- [ ] **D2** — Native push notifications (FCM + APNs)
-- [ ] **D3** — Deep links / Universal Links
-- [ ] **D4** — Splash screen + app icons
-- [ ] **D5** — iOS Widget (WidgetKit + Swift)
-- [ ] **D6** — Android Widget (Kotlin)
-- [ ] **D7** — App Store screenshots + metadata + privacy policy
-- [ ] **D8** — TestFlight + Play Console testing
+- [x] **D1** — Setup Capacitor + configs iOS/Android
+- [x] **D2** — Native push notifications (FCM + APNs)
+- [x] **D3** — Deep links / Universal Links
+- [x] **D4** — Splash screen + app icons
+- [ ] **D5** — iOS Widget (WidgetKit + Swift) ← requiere Xcode
+- [ ] **D6** — Android Widget (Kotlin) ← requiere Android Studio
+- [x] **D7** — App Store screenshots + metadata + privacy policy
+- [ ] **D8** — TestFlight + Play Console testing ← requiere cuentas de developer
 - [ ] **D9** — Submit to review
