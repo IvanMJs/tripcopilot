@@ -70,8 +70,10 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
 
       - name: Upload to Play Store
-        if: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON != '' }}
+        if: env.HAS_PLAY_STORE_KEY == 'true'
         uses: r0adkll/upload-google-play@v1
+        env:
+          HAS_PLAY_STORE_KEY: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON != '' }}
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
           packageName: app.tripcopilot.mobile
