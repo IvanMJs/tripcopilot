@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: 'TripCopilot',
   webDir: 'out', // required placeholder — app loads via server.url in all environments
   server: {
-    url: 'https://tripcopilot.vercel.app',
+    url: 'https://tripcopilot.app',
     cleartext: false,
-    allowNavigation: ['tripcopilot.vercel.app'],
+    allowNavigation: ['tripcopilot.app'],
   },
   ios: {
     contentInset: 'automatic',
