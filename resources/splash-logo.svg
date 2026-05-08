@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#080810"/>
+  <g transform="translate(256,256)">
+    <path d="M-8,-180 L32,-120 L180,-40 L180,-8 L32,-56 L32,40 L80,80 L80,104 L0,80 L-80,104 L-80,80 L-32,40 L-32,-56 L-180,-8 L-180,-40 L-32,-120 Z" fill="#FFB800"/>
+  </g>
+  <text x="256" y="380" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="48" fill="#FFFFFF" opacity="0.9">TripCopilot</text>
+</svg>
