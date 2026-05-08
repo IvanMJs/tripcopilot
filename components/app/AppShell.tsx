@@ -28,6 +28,8 @@ import { TripTabBar } from "@/components/TripTabBar";
 import { useSmartAlerts } from "@/hooks/useSmartAlerts";
 import { useConnectionAlerts } from "@/hooks/useConnectionAlerts";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useDeepLinks } from "@/hooks/useDeepLinks";
+import { useNativePush } from "@/hooks/useNativePush";
 import { exportAllTripsJSON } from "@/lib/dataExport";
 import { DelayStatus } from "@/lib/types";
 import { TripAssistant } from "@/components/TripAssistant";
@@ -303,6 +305,9 @@ export function AppShell({
     },
     onHelp: () => setShowKbdHelp(!showKbdHelp),
   });
+
+  useDeepLinks();
+  useNativePush({ userId, enabled: notificationsEnabled });
 
   function handleGlobalImportWithNotif(flights: ParsedFlight[]) {
     handleGlobalImport(flights);

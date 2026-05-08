@@ -7,6 +7,7 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://tripcopilot.vercel.app',
     cleartext: false,
+    allowNavigation: ['tripcopilot.vercel.app'],
   },
   ios: {
     contentInset: 'automatic',
@@ -14,6 +15,9 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: false,
+  },
+  plugins: {
+    App: {},
   },
 };
 

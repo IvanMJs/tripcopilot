@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
+    "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.3.2",
     "@capacitor/push-notifications": "^8.0.4",
     "@ducanh2912/next-pwa": "^10.2.9",
