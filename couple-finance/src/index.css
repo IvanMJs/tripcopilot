@@ -1,0 +1,28 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #080810;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  background: #080810;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Spinner del estado de carga */
+@keyframes cf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
