@@ -201,7 +201,7 @@ export function TabContent({
                     {locale === "es" ? "Tablero" : "Board"}
                   </a>
                 </div>
-                {loading && Object.keys(statusMap).length === 0 ? (
+                {loading && sortedAirports.length === 0 ? (
                   <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {[...Array(4)].map((_, i) => (
                       <div key={i} className="rounded-2xl border border-white/[0.07] h-36 animate-pulse bg-white/[0.03]" />
