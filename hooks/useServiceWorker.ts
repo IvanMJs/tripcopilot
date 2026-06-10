@@ -13,13 +13,18 @@ export function useServiceWorker() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
-    // When a new SW takes control, reload once to get the latest assets
+    // Reload to pick up new assets only when an UPDATED service worker takes
+    // over a page that was already controlled. On the first visit there is no
+    // controller yet; because the SW uses skipWaiting + clientsClaim it claims
+    // the page immediately and fires `controllerchange` right away. Reloading on
+    // that initial claim restarts the page before it finishes loading, which on
+    // mobile (iOS Safari especially) turns into an infinite reload/flicker loop.
+    const hadController = Boolean(navigator.serviceWorker.controller);
     let reloading = false;
     navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (!reloading) {
-        reloading = true;
-        window.location.reload();
-      }
+      if (reloading || !hadController) return;
+      reloading = true;
+      window.location.reload();
     });
 
     navigator.serviceWorker.ready
