@@ -111,7 +111,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .eq("user_id", userId);
 
     if (error) {
-      void error;
+      console.error("[mp-webhook] Failed to update user plan:", error.message);
     }
   }
 
