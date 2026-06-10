@@ -30,6 +30,11 @@ export function useServiceWorker() {
     navigator.serviceWorker.ready
       .then((reg) => {
         regRef.current = reg;
+        // Actively check for a newer service worker on every load. Without this,
+        // a device can stay stuck on a stale cached build for a long time. When
+        // an update is found it activates (skipWaiting) and the guarded
+        // controllerchange handler above reloads once into the fresh version.
+        reg.update().catch(() => {});
         // Auto-subscribe if permission already granted (handles reinstalls)
         if ("Notification" in window && Notification.permission === "granted") {
           const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;

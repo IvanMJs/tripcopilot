@@ -536,8 +536,10 @@ export function AppShell({
         />
       )}
 
-      {mounted && (
-        <BottomNav
+      {/* Bottom nav renders unconditionally (not gated on `mounted`) so mobile
+          users always have navigation, even if the client is slow to hydrate.
+          Its own client-only state (banners, pickers) defaults safely on SSR. */}
+      <BottomNav
           locale={locale}
           activeTab={activeTab}
           userTrips={userTrips}
@@ -557,7 +559,6 @@ export function AppShell({
           unreadCount={unreadCount}
           onNotificationsOpen={() => setShowNotificationsHub(true)}
         />
-      )}
 
       {mounted && (
         <GlobalAlertBar
