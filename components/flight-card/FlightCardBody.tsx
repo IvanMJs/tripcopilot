@@ -152,6 +152,8 @@ export function FlightCardBody({
   showDeviceTz,
   onToggleDeviceTz,
 }: FlightCardBodyProps) {
+  const isGround = flight.segmentType !== undefined && flight.segmentType !== 'flight';
+
   const originStatus: AirportStatus | undefined = statusMap[flight.originCode];
   const weather = weatherMap[flight.originCode];
   const { forecast: originForecast } = useDestinationWeather(flight.originCode, flight.isoDate, locale);
@@ -209,7 +211,7 @@ export function FlightCardBody({
     >
 
       {/* ── Live flight position tracker (shown when flight is currently active) ── */}
-      {arrivalISO && (
+      {!isGround && arrivalISO && (
         <LiveFlightTracker
           originIata={flight.originCode}
           destIata={flight.destinationCode}
@@ -220,7 +222,7 @@ export function FlightCardBody({
       )}
 
       {/* ── SECTION: Operativo (exception-first, only when relevant) ─────────── */}
-      {hasOperativoContent && (
+      {!isGround && hasOperativoContent && (
         <div className="border-t border-white/5">
           <SectionHeader
             label={locale === "es" ? "Operativo" : "Operations"}
@@ -382,7 +384,7 @@ export function FlightCardBody({
             {/* Time details */}
             {flight.departureTime && (
               <div className="flex items-center gap-4 flex-wrap text-xs">
-                {(() => {
+                {!isGround && (() => {
                   const o = AIRPORTS[flight.originCode];
                   const d = AIRPORTS[flight.destinationCode];
                   if (o?.lat && o?.lng && d?.lat && d?.lng) {
@@ -433,7 +435,7 @@ export function FlightCardBody({
             )}
 
             {/* Driving estimate */}
-            {driving && (
+            {!isGround && driving && (
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${AIRPORTS[flight.originCode]?.lat},${AIRPORTS[flight.originCode]?.lng}&travelmode=driving`}
                 target="_blank"
@@ -530,7 +532,7 @@ export function FlightCardBody({
             </ModeGate>
 
             {/* Upgrade indicator */}
-            {wantsUpgrade && (
+            {!isGround && wantsUpgrade && (
               <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">⬆️</span>
@@ -556,6 +558,7 @@ export function FlightCardBody({
       </div>
 
       {/* ── SECTION: Aeropuerto (airport info) ───────────────────────────────── */}
+      {!isGround && (
       <div className="border-t border-white/5">
         <SectionHeader
           label={locale === "es" ? "Aeropuerto" : "Airport"}
@@ -622,6 +625,7 @@ export function FlightCardBody({
           </div>
         )}
       </div>
+      )}
 
       {/* ── SECTION: Ruta (route + destination) ──────────────────────────────── */}
       <div className="border-t border-white/5">
@@ -641,9 +645,11 @@ export function FlightCardBody({
                 <span className="text-gray-700">·</span>
                 <span className="text-gray-500 text-xs">{originName} → {destName}</span>
               </div>
-              <LinkButton href={routeUrl} variant="default">
-                {L.seeOtherFlights(flight.originCode, flight.destinationCode)}
-              </LinkButton>
+              {!isGround && (
+                <LinkButton href={routeUrl} variant="default">
+                  {L.seeOtherFlights(flight.originCode, flight.destinationCode)}
+                </LinkButton>
+              )}
             </div>
             {/* Destination weather */}
             <WeatherWidget

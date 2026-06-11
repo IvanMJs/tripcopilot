@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/passport-expiry",
-      "schedule": "0 10 1 * *"
+      "schedule": "0 10 * * 1"
     }
   ]
 }

@@ -22,7 +22,7 @@ export function GlobalStatusBar({ statusMap, watchedAirports }: GlobalStatusBarP
   if (problems.length === 0) {
     return (
       <div className="flex items-center gap-2 rounded-lg bg-green-900/30 border border-green-600/40 px-4 py-2.5 text-sm text-green-300 font-medium">
-        <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse shrink-0" />
+        <span className="h-2 w-2 rounded-full bg-green-400 animate-[pulse_3.5s_ease-in-out_infinite] shrink-0" />
         {t.noDelays}
       </div>
     );
@@ -41,8 +41,8 @@ export function GlobalStatusBar({ statusMap, watchedAirports }: GlobalStatusBarP
       }`}
     >
       <span
-        className={`h-2 w-2 rounded-full shrink-0 ${
-          hasCritical ? "bg-red-400 animate-pulse" : "bg-orange-400 animate-pulse"
+        className={`h-2 w-2 rounded-full shrink-0 animate-[pulse_3.5s_ease-in-out_infinite] ${
+          hasCritical ? "bg-red-400" : "bg-orange-400"
         }`}
       />
       {label}{" "}

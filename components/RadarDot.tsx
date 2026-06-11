@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 type Tone = "ok" | "warn" | "danger" | "neutral";
@@ -13,30 +16,27 @@ interface RadarDotProps {
   tone: Tone;
   size?: "sm" | "md";
   ringColor?: string;
-  animationDuration?: number; // Optional prop for customizing the pulse effect
 }
 
-export function RadarDot({ tone, size = "md", ringColor = "#080810", animationDuration = 2.2 }: RadarDotProps) {
+export function RadarDot({ tone, size = "md", ringColor = "#080810" }: RadarDotProps) {
+  const [syncDelay, setSyncDelay] = useState(0);
+
+  useEffect(() => {
+    setSyncDelay(-(Date.now() % 4000) / 1000);
+  }, []);
+
   const dim = size === "sm" ? "h-2 w-2" : "h-2.5 w-2.5";
-  const pulseAnimation = `radarPulse_${animationDuration}s_ease-out_infinite`;
-  
+
   return (
     <span className={cn("relative flex shrink-0", dim)} aria-label={`Radar dot with ${tone} tone`}>
-      {/* Outer expanding ring */}
+      {/* Single expanding ring — slow and calm */}
       <span
         aria-hidden
         className={cn(
-          "absolute inset-0 rounded-full animate-[radarPulse_2.2s_ease-out_infinite]",
+          "absolute inset-0 rounded-full animate-[radarPulse_4s_ease-out_infinite]",
           PULSE_COLOR[tone],
         )}
-      />
-      {/* Middle ring — offset phase */}
-      <span
-        aria-hidden
-        className={cn(
-          "absolute inset-0 rounded-full animate-[radarPulse_2.2s_ease-out_infinite] [animation-delay:1.1s]",
-          PULSE_COLOR[tone],
-        )}
+        style={{ animationDelay: `${syncDelay}s` }}
       />
       {/* Solid core */}
       <span
