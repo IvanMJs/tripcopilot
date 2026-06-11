@@ -38,17 +38,17 @@ const PILL: Record<DelayStatus, string> = {
 const PULSE_STATUSES   = new Set<DelayStatus>(["ok", "ground_stop", "delay_severe", "ground_delay"]);
 const URGENT_STATUSES  = new Set<DelayStatus>(["ground_stop", "delay_severe", "ground_delay"]);
 
-// Fast ring for urgent states; slow breathing for ok
+// Slightly faster ring for urgent states; slow breathing for ok
 function getPulseClass(status: DelayStatus): string {
-  if (URGENT_STATUSES.has(status)) return "animate-[radarPulse_2.4s_ease-out_infinite]";
-  if (status === "ok")             return "animate-[radarPulse_3.2s_ease-out_infinite] opacity-70";
+  if (URGENT_STATUSES.has(status)) return "animate-[radarPulse_3.5s_ease-out_infinite]";
+  if (status === "ok")             return "animate-[radarPulse_4.5s_ease-out_infinite] opacity-70";
   return "";
 }
 
 export function StatusBadge({ status, className, dense = false }: StatusBadgeProps) {
   const { t } = useLanguage();
   const [syncDelay, setSyncDelay] = useState(0);
-  useEffect(() => { setSyncDelay(-(Date.now() % 2400) / 1000); }, []);
+  useEffect(() => { setSyncDelay(-(Date.now() % 3500) / 1000); }, []);
 
   const label: Record<DelayStatus, string> = {
     ok:             t.statusOk,
@@ -93,9 +93,9 @@ export function StatusBadge({ status, className, dense = false }: StatusBadgePro
                 className={cn(
                   "absolute inset-0 rounded-full opacity-50 motion-reduce:animate-none",
                   dotColor,
-                  "animate-[radarPulse_3.2s_ease-out_infinite]",
+                  "animate-[radarPulse_4.5s_ease-out_infinite]",
                 )}
-                style={{ animationDelay: `${syncDelay + 1.6}s` }}
+                style={{ animationDelay: `${syncDelay + 2.25}s` }}
               />
             )}
           </>
