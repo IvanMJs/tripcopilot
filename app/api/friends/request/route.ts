@@ -236,6 +236,10 @@ async function sendFriendRequestPush(addresseeId: string, requester: User) {
   }
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function buildFriendRequestEmail({
   requesterName,
   connectUrl,
@@ -243,6 +247,8 @@ function buildFriendRequestEmail({
   requesterName: string;
   connectUrl: string;
 }) {
+  const safeName = escapeHtml(requesterName);
+  const safeUrl  = connectUrl.startsWith("https://") ? connectUrl : "#";
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -273,7 +279,7 @@ function buildFriendRequestEmail({
                 Tu amigo te invitó a conectar 🌍
               </p>
               <p style="margin:0 0 28px;font-size:15px;color:#9ca3af;line-height:1.5;">
-                <strong style="color:#e5e7eb;">${requesterName}</strong>
+                <strong style="color:#e5e7eb;">${safeName}</strong>
                 quiere conectar con vos en TripCopilot para compartir sus viajes.
               </p>
 
@@ -281,7 +287,7 @@ function buildFriendRequestEmail({
               <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                 <tr>
                   <td style="background:#7c3aed;border-radius:12px;">
-                    <a href="${connectUrl}"
+                    <a href="${safeUrl}"
                        style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.2px;">
                       Ver solicitud →
                     </a>
@@ -295,7 +301,7 @@ function buildFriendRequestEmail({
                 Si el botón no funciona, copiá este enlace:
               </p>
               <p style="margin:0;font-size:12px;">
-                <a href="${connectUrl}" style="color:#818cf8;word-break:break-all;">${connectUrl}</a>
+                <a href="${safeUrl}" style="color:#818cf8;word-break:break-all;">${safeUrl}</a>
               </p>
             </td>
           </tr>

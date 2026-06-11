@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
+const ALLOWED_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png":  "png",
+  "image/gif":  "gif",
+  "image/webp": "webp",
+};
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -13,7 +20,10 @@ export async function POST(req: NextRequest) {
   if (file.size > 2 * 1024 * 1024)
     return NextResponse.json({ error: "File too large (max 2 MB)" }, { status: 413 });
 
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const ext = ALLOWED_MIME[file.type];
+  if (!ext)
+    return NextResponse.json({ error: "Invalid file type. Allowed: JPEG, PNG, GIF, WEBP" }, { status: 415 });
+
   const path = `${user.id}/avatar.${ext}`;
   const bytes = await file.arrayBuffer();
 
