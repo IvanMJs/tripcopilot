@@ -478,6 +478,7 @@ export function FlightCardBody({
                     }
                   }}
                   placeholder={locale === "es" ? "Agregar nota…" : "Add note…"}
+                  aria-label={locale === "es" ? "Nota del vuelo" : "Flight note"}
                   rows={2}
                   className="w-full text-xs bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-gray-300 placeholder-gray-600 resize-none focus:outline-none focus:border-[rgba(255,184,0,0.25)]"
                   autoFocus

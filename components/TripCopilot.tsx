@@ -646,6 +646,7 @@ function ChatSection({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={locale === "es" ? "Preguntá algo sobre tu viaje…" : "Ask something about your trip…"}
+          aria-label={locale === "es" ? "Preguntá algo sobre tu viaje" : "Ask something about your trip"}
           disabled={loading}
           className="flex-1 min-w-0 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-purple-700/50 transition-colors disabled:opacity-50"
         />
@@ -764,7 +765,7 @@ export function TripCopilot({ flights, locale, tripName = "Mi viaje", statusMap,
                     refresh();
                   }}
                   className="p-1 rounded text-gray-600 hover:text-gray-400 transition-colors"
-                  title={locale === "es" ? "Actualizar análisis" : "Refresh analysis"}
+                  aria-label={locale === "es" ? "Actualizar análisis" : "Refresh analysis"}
                 >
                   <RefreshCw className="h-3 w-3" />
                 </button>

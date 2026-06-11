@@ -311,7 +311,7 @@ export function BottomNav({
               {/* Inicio */}
               <button
                 onClick={() => { haptics.impact(); setShowTripPicker(false); onNavigate("today"); }}
-                aria-label={locale === "es" ? "Inicio" : "Home"}
+                aria-label={`${locale === "es" ? "Inicio" : "Home"}${hasUpcomingFlight && activeTab !== "today" ? (locale === "es" ? " — vuelo próximo" : " — upcoming flight") : ""}`}
                 aria-current={activeTab === "today" ? "page" : undefined}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-scale transition-colors ${activeTab === "today" ? "text-[#FFB800]" : "text-gray-500"}`}
               >
@@ -323,7 +323,7 @@ export function BottomNav({
                     <Home className={`relative w-[22px] h-[22px] transition-colors ${activeTab === "today" ? "text-[#FFB800]" : "text-gray-500"}`} strokeWidth={activeTab === "today" ? 2.5 : 1.5} />
                   </motion.div>
                   {hasUpcomingFlight && activeTab !== "today" && (
-                    <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-[#FFB800] ring-2 ring-[#0a0a14]" aria-label={locale === "es" ? "Vuelo próximo" : "Upcoming flight"} />
+                    <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-[#FFB800] ring-2 ring-[#0a0a14]" aria-hidden="true" />
                   )}
                 </div>
                 <span className="text-[10px] font-semibold leading-none">{locale === "es" ? "Inicio" : "Home"}</span>
