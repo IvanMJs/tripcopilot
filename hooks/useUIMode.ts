@@ -15,7 +15,9 @@ interface UIModeResult {
 }
 
 export function useUIMode(): UIModeResult {
-  const [mode, setModeState] = useState<UIMode>("relax");
+  // Default to "pilot" (full-featured view). A saved preference or auth
+  // metadata overrides this in the effect below.
+  const [mode, setModeState] = useState<UIMode>("pilot");
 
   useEffect(() => {
     try {
