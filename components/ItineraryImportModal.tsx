@@ -18,7 +18,7 @@ import { haptics } from "@/lib/haptics";
 const LABELS = {
   es: {
     title:           "Importar itinerario",
-    aiPowered:       "Extracción automática con Claude IA",
+    aiPowered:       "Pegá tu reserva o sacá foto al ticket — detecta vuelos, trenes, buses y más.",
     tabPaste:        "Pegar texto",
     tabUpload:       "Subir imagen",
     tabCamera:       "Cámara",
@@ -61,7 +61,7 @@ Funciona con cualquier formato:
   },
   en: {
     title:           "Import itinerary",
-    aiPowered:       "Automatic extraction with Claude AI",
+    aiPowered:       "Paste your booking or take a photo — detects flights, trains, buses and more.",
     tabPaste:        "Paste text",
     tabUpload:       "Upload image",
     tabCamera:       "Camera",
