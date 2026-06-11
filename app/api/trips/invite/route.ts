@@ -107,6 +107,10 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ token: collaborator.invite_token }, { status: 201 });
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function buildInviteEmail({
   inviterName,
   tripName,
@@ -118,6 +122,9 @@ function buildInviteEmail({
   inviteUrl: string;
   roleLabel: string;
 }) {
+  const safeName = escapeHtml(inviterName);
+  const safeTrip = escapeHtml(tripName);
+  const safeUrl  = inviteUrl.startsWith("https://") ? inviteUrl : "#";
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -149,9 +156,9 @@ function buildInviteEmail({
                 Te invitaron a un viaje ✈️
               </p>
               <p style="margin:0 0 28px;font-size:15px;color:#9ca3af;line-height:1.5;">
-                <strong style="color:#e5e7eb;">${inviterName}</strong>
+                <strong style="color:#e5e7eb;">${safeName}</strong>
                 te invitó a ${roleLabel}
-                <strong style="color:#e5e7eb;">${tripName}</strong>
+                <strong style="color:#e5e7eb;">${safeTrip}</strong>
                 en TripCopilot.
               </p>
 
@@ -159,7 +166,7 @@ function buildInviteEmail({
               <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                 <tr>
                   <td style="background:#4f46e5;border-radius:12px;">
-                    <a href="${inviteUrl}"
+                    <a href="${safeUrl}"
                        style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.2px;">
                       Ver el viaje →
                     </a>
@@ -175,7 +182,7 @@ function buildInviteEmail({
                 Si el botón no funciona, copiá este enlace:
               </p>
               <p style="margin:0;font-size:12px;">
-                <a href="${inviteUrl}" style="color:#818cf8;word-break:break-all;">${inviteUrl}</a>
+                <a href="${safeUrl}" style="color:#818cf8;word-break:break-all;">${safeUrl}</a>
               </p>
             </td>
           </tr>

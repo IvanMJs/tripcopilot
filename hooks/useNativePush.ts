@@ -39,8 +39,8 @@ export function useNativePush({ userId, enabled }: UseNativePushOptions) {
         console.error("Native push registration failed:", err);
       });
 
-      PushNotifications.addListener("pushNotificationReceived", (notification) => {
-        console.log("Push received in foreground:", notification);
+      PushNotifications.addListener("pushNotificationReceived", () => {
+        // foreground push received — no-op, handled by the OS overlay
       });
 
       PushNotifications.addListener("pushNotificationActionPerformed", (action) => {

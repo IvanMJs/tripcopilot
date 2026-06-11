@@ -49,6 +49,7 @@ function HomePageInner() {
 
   const [showDeviceTz, setShowDeviceTz] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
+  const [showPlanSuccess, setShowPlanSuccess] = useState(false);
   const { deviceTz, tzChanged, clearTzChanged } = useDeviceTimezone();
 
   useEffect(() => {
@@ -57,6 +58,18 @@ function HomePageInner() {
       clearTzChanged();
     }
   }, [tzChanged, clearTzChanged]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("plan") === "success") {
+      setShowPlanSuccess(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("plan");
+      window.history.replaceState({}, "", url.toString());
+      const timer = setTimeout(() => setShowPlanSuccess(false), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -139,6 +152,11 @@ function HomePageInner() {
           locale={locale}
           t={t}
         />
+        {showPlanSuccess && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-2xl border border-[#FFB800]/30 bg-[#1a1608] px-5 py-3 text-sm font-medium text-[#FFB800] shadow-xl animate-fade-in-up">
+            🚀 {locale === "es" ? "¡Plan activado! Bienvenido a bordo." : "Plan activated! Welcome aboard."}
+          </div>
+        )}
       </TripManagementProvider>
     </NotificationSetupProvider>
   );
