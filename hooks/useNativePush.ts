@@ -35,8 +35,8 @@ export function useNativePush({ userId, enabled }: UseNativePushOptions) {
         registeredRef.current = true;
       });
 
-      PushNotifications.addListener("registrationError", (err) => {
-        console.error("Native push registration failed:", err);
+      PushNotifications.addListener("registrationError", () => {
+        // silent — push is an enhancement, registration failure is non-critical
       });
 
       PushNotifications.addListener("pushNotificationReceived", () => {
@@ -49,8 +49,8 @@ export function useNativePush({ userId, enabled }: UseNativePushOptions) {
           window.location.href = url;
         }
       });
-    } catch (err) {
-      console.error("Native push setup error:", err);
+    } catch {
+      // silent — push is an enhancement, setup failure is non-critical
     }
   }, [userId]);
 

@@ -37,8 +37,8 @@ export function MapFullscreenModal({ countries, open, onClose, locale }: MapFull
         a.download = "mi-mapa.png";
         a.click();
       }
-    } catch (e) {
-      console.error("Share failed", e);
+    } catch {
+      // share failure is silent — download fallback already attempted
     }
   }, [countries.length, es]);
 

@@ -606,7 +606,6 @@ export function useUserTrips() {
     // getUser() contacts Supabase server (unlike getSession() which is local-only)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (!user) {
-      console.error("[saveDraftTrip] No authenticated user:", authError?.message);
       return { error: "auth" };
     }
 
@@ -631,7 +630,6 @@ export function useUserTrips() {
     });
 
     if (error || !data) {
-      console.error("[saveDraftTrip] RPC error:", error?.message, "code:", error?.code);
       return { error: "rpc", message: error?.message };
     }
 
@@ -838,7 +836,6 @@ export function useUserTrips() {
       setTrips((prev) =>
         prev.map((t) => (t.id === tripId ? { ...t, passengers: prevPassengers } : t)),
       );
-      console.error("Error updating passengers:", error.message);
     }
   }, [trips]);
 
@@ -867,7 +864,6 @@ export function useUserTrips() {
           },
         ),
       );
-      console.error("Error updating upgrade wish:", error.message);
     }
   }, [trips]);
 

@@ -25,8 +25,8 @@ export function useDeepLinks() {
         cleanup = () => {
           listener.remove();
         };
-      } catch (err) {
-        console.error("Deep link setup error:", err);
+      } catch {
+        // silent — deep links are an enhancement, not critical
       }
     })();
 
