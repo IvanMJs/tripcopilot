@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, AlertTriangle, Sparkles } from "lucide-react";
-import { TripFlight } from "@/lib/types";
+import { Plus, Search, AlertTriangle, Sparkles, Plane, Train, Bus, Ship, Car, ArrowLeftRight, ChevronDown } from "lucide-react";
+import { TripFlight, SegmentType } from "@/lib/types";
 import { AIRLINES, parseFlightCode } from "@/lib/flightUtils";
 import { analytics } from "@/lib/analytics";
 import { AirportSearchInput } from "./AirportSearchInput";
@@ -66,6 +66,15 @@ const BLANK_FORM = {
   arrivalBuffer: 2 as number,
 };
 
+const SEGMENT_TYPES = [
+  { key: 'flight'     as const, icon: Plane,          label: 'Vuelo' },
+  { key: 'train'      as const, icon: Train,          label: 'Tren' },
+  { key: 'bus'        as const, icon: Bus,            label: 'Bus' },
+  { key: 'ferry'      as const, icon: Ship,           label: 'Ferry' },
+  { key: 'car_rental' as const, icon: Car,            label: 'Auto' },
+  { key: 'transfer'   as const, icon: ArrowLeftRight, label: 'Transfer' },
+] as const;
+
 function checkFlightConflicts(
   newFlight: TripFlight,
   existing: TripFlight[],
@@ -110,6 +119,7 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
   const [form, setForm] = useState(BLANK_FORM);
   const [error, setError] = useState("");
   const [pendingFlight, setPendingFlight] = useState<{ flight: TripFlight; message: string } | null>(null);
+  const [segmentType, setSegmentType] = useState<SegmentType>('flight');
 
   function update(field: keyof typeof BLANK_FORM, value: string | number) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -209,114 +219,143 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
         </button>
       </div>
 
-      {/* Auto-fill lookup */}
-      <FlightLookupInput locale={locale} onAutoFill={handleAutoFill} />
-
-      {/* Row 1: Flight code — full width */}
-      <div>
-        <label className={labelClass}>
-          {locale === "es" ? "Código de vuelo" : "Flight code"}
-        </label>
-        <div className="relative">
-          <Input
-            value={form.flightCode}
-            onChange={(e) => update("flightCode", e.target.value.toUpperCase())}
-            onKeyDown={handleKey}
-            placeholder={L.flightPlaceholder}
-          />
-          {showValidation && (
-            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ${isValidFlightCode ? "text-green-400" : "text-red-400"}`}>
-              {isValidFlightCode ? "✓" : "AA1234"}
-            </span>
-          )}
-        </div>
-        {airlinePreviewName && (
-          <p className="mt-1 text-xs text-[#FFB800]">{airlinePreviewName}</p>
-        )}
+      {/* Segment type picker */}
+      <div className="overflow-x-auto flex gap-2 pb-1">
+        {SEGMENT_TYPES.map(({ key, icon: Icon, label }) => (
+          <button
+            key={key}
+            onClick={() => { setSegmentType(key); setError(""); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap transition-colors ${
+              segmentType === key
+                ? "bg-white/10 text-white border-white/20"
+                : "text-gray-500 border-white/[0.08] hover:text-gray-300"
+            }`}
+          >
+            <Icon className="h-3 w-3" />
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Row 2: Origin · Destination · Date */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div>
-          <label className={labelClass}>
-            {locale === "es" ? "Origen" : "Origin"}
-          </label>
-          <AirportSearchInput
-            value={form.originCode}
-            onChange={(iata) => update("originCode", iata)}
-            placeholder={locale === "es" ? "Buenos Aires…" : "New York…"}
-            locale={locale}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>
-            {locale === "es" ? "Destino" : "Destination"}
-          </label>
-          <AirportSearchInput
-            value={form.destCode}
-            onChange={(iata) => update("destCode", iata)}
-            placeholder={locale === "es" ? "Miami…" : "Miami…"}
-            locale={locale}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>
-            {locale === "es" ? "Fecha" : "Date"}
-          </label>
-           <Input
-             type="date"
-             value={form.isoDate}
-             onChange={(e) => update("isoDate", e.target.value)}
-             onKeyDown={handleKey}
-           />
-        </div>
-      </div>
+      {segmentType === 'flight' ? (
+        <>
+          {/* Auto-fill lookup */}
+          <FlightLookupInput locale={locale} onAutoFill={handleAutoFill} />
 
-      {/* Row 3: Time (optional) · Buffer */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>
-            {locale === "es" ? "Hora de salida" : "Departure time"}
-            {" "}<span className="normal-case font-normal tracking-normal text-gray-700">
-              ({locale === "es" ? "opcional" : "optional"})
-            </span>
-          </label>
-           <Input
-             type="time"
-             value={form.departureTime}
-             onChange={(e) => update("departureTime", e.target.value)}
-             onKeyDown={handleKey}
-           />
-        </div>
-        {form.departureTime && (
+          {/* Row 1: Flight code — full width */}
           <div>
             <label className={labelClass}>
-              {locale === "es" ? "Llegar al aeropuerto" : "Arrive at airport"}
+              {locale === "es" ? "Código de vuelo" : "Flight code"}
             </label>
-            <select
-              value={form.arrivalBuffer}
-              onChange={(e) => update("arrivalBuffer", Number(e.target.value))}
-              className={inputClass}
-            >
-              {L.bufferOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <Input
+                value={form.flightCode}
+                onChange={(e) => update("flightCode", e.target.value.toUpperCase())}
+                onKeyDown={handleKey}
+                placeholder={L.flightPlaceholder}
+              />
+              {showValidation && (
+                <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ${isValidFlightCode ? "text-green-400" : "text-red-400"}`}>
+                  {isValidFlightCode ? "✓" : "AA1234"}
+                </span>
+              )}
+            </div>
+            {airlinePreviewName && (
+              <p className="mt-1 text-xs text-[#FFB800]">{airlinePreviewName}</p>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Error */}
-      {error && <p className="text-xs text-red-400">{error}</p>}
+          {/* Row 2: Origin · Destination · Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className={labelClass}>
+                {locale === "es" ? "Origen" : "Origin"}
+              </label>
+              <AirportSearchInput
+                value={form.originCode}
+                onChange={(iata) => update("originCode", iata)}
+                placeholder={locale === "es" ? "Buenos Aires…" : "New York…"}
+                locale={locale}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>
+                {locale === "es" ? "Destino" : "Destination"}
+              </label>
+              <AirportSearchInput
+                value={form.destCode}
+                onChange={(iata) => update("destCode", iata)}
+                placeholder={locale === "es" ? "Miami…" : "Miami…"}
+                locale={locale}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>
+                {locale === "es" ? "Fecha" : "Date"}
+              </label>
+               <Input
+                 type="date"
+                 value={form.isoDate}
+                 onChange={(e) => update("isoDate", e.target.value)}
+                 onKeyDown={handleKey}
+               />
+            </div>
+          </div>
 
-      {/* Add button — full width on mobile */}
-       <Button
-         onClick={handleAdd}
-         variant="primary"
-         icon={<Plus className="h-3.5 w-3.5" />}
-       >
-         {L.addBtn}
-       </Button>
+          {/* Row 3: Time (optional) · Buffer */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>
+                {locale === "es" ? "Hora de salida" : "Departure time"}
+                {" "}<span className="normal-case font-normal tracking-normal text-gray-700">
+                  ({locale === "es" ? "opcional" : "optional"})
+                </span>
+              </label>
+               <Input
+                 type="time"
+                 value={form.departureTime}
+                 onChange={(e) => update("departureTime", e.target.value)}
+                 onKeyDown={handleKey}
+               />
+            </div>
+            {form.departureTime && (
+              <div>
+                <label className={labelClass}>
+                  {locale === "es" ? "Llegar al aeropuerto" : "Arrive at airport"}
+                </label>
+                <select
+                  value={form.arrivalBuffer}
+                  onChange={(e) => update("arrivalBuffer", Number(e.target.value))}
+                  className={inputClass}
+                >
+                  {L.bufferOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Error */}
+          {error && <p className="text-xs text-red-400">{error}</p>}
+
+          {/* Add button — full width on mobile */}
+           <Button
+             onClick={handleAdd}
+             variant="primary"
+             icon={<Plus className="h-3.5 w-3.5" />}
+           >
+             {L.addBtn}
+           </Button>
+        </>
+      ) : (
+        <GroundTransportForm
+          segmentType={segmentType}
+          tripId={tripId}
+          onAdd={onAdd}
+          locale={locale}
+        />
+      )}
 
       {/* Soft-conflict confirmation modal */}
       {pendingFlight && (
@@ -352,6 +391,193 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ── GroundTransportForm ────────────────────────────────────────────────────────
+
+interface GroundFormProps {
+  segmentType: 'bus' | 'train' | 'car_rental' | 'ferry' | 'transfer';
+  tripId: string;
+  onAdd: (tripId: string, flight: TripFlight) => void;
+  locale: 'es' | 'en';
+}
+
+const BLANK_GROUND = {
+  origin:        "",
+  dest:          "",
+  date:          "",
+  departureTime: "",
+  arrivalTime:   "",
+  operator:      "",
+  serviceNumber: "",
+  seat:          "",
+};
+
+function GroundTransportForm({ segmentType, tripId, onAdd, locale }: GroundFormProps) {
+  const [form, setForm] = useState(BLANK_GROUND);
+  const [error, setError] = useState("");
+  const [showMore, setShowMore] = useState(false);
+
+  const labelClass =
+    "block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5";
+
+  function update(field: keyof typeof BLANK_GROUND, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setError("");
+  }
+
+  function handleSubmit() {
+    if (!form.origin.trim()) { setError(locale === 'es' ? "Ingresá el origen." : "Enter origin."); return; }
+    if (!form.dest.trim())   { setError(locale === 'es' ? "Ingresá el destino." : "Enter destination."); return; }
+    if (!form.date)          { setError(locale === 'es' ? "Seleccioná una fecha." : "Select a date."); return; }
+
+    const newSegment: TripFlight = {
+      id:              `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+      flightCode:      form.operator
+        ? form.operator.toUpperCase().slice(0, 8).replace(/\s/g, '')
+        : segmentType.replace('_', ' ').toUpperCase(),
+      airlineCode:     '',
+      airlineName:     form.operator || '',
+      airlineIcao:     '',
+      flightNumber:    form.serviceNumber || '',
+      originCode:      form.origin.trim(),
+      destinationCode: form.dest.trim(),
+      isoDate:         form.date,
+      departureTime:   form.departureTime,
+      arrivalTime:     form.arrivalTime || undefined,
+      arrivalBuffer:   0,
+      segmentType:     segmentType,
+      seatNumber:      form.seat || undefined,
+    };
+
+    onAdd(tripId, newSegment);
+    setForm(BLANK_GROUND);
+    setShowMore(false);
+  }
+
+  const submitLabel = (() => {
+    const found = SEGMENT_TYPES.find((s) => s.key === segmentType);
+    return locale === 'es'
+      ? `Agregar ${found?.label ?? segmentType}`
+      : `Add ${segmentType}`;
+  })();
+
+  return (
+    <div className="space-y-4">
+      {/* Origin / Dest */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>{locale === 'es' ? 'Desde' : 'From'}</label>
+          <input
+            value={form.origin}
+            onChange={(e) => update('origin', e.target.value)}
+            placeholder={locale === 'es' ? 'Ciudad o estación de origen' : 'Origin city or station'}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>{locale === 'es' ? 'Hasta' : 'To'}</label>
+          <input
+            value={form.dest}
+            onChange={(e) => update('dest', e.target.value)}
+            placeholder={locale === 'es' ? 'Ciudad o estación de destino' : 'Destination city or station'}
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      {/* Date / Departure time */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>{locale === 'es' ? 'Fecha' : 'Date'}</label>
+          <input
+            type="date"
+            value={form.date}
+            onChange={(e) => update('date', e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>
+            {locale === 'es' ? 'Hora de salida' : 'Departure time'}
+            {' '}<span className="normal-case font-normal tracking-normal text-gray-700">
+              ({locale === 'es' ? 'opcional' : 'optional'})
+            </span>
+          </label>
+          <input
+            type="time"
+            value={form.departureTime}
+            onChange={(e) => update('departureTime', e.target.value)}
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      {/* Collapsible extra details */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowMore((v) => !v)}
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${showMore ? 'rotate-180' : ''}`} />
+          {locale === 'es' ? 'Más detalles' : 'More details'}
+        </button>
+
+        {showMore && (
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>{locale === 'es' ? 'Hora de llegada' : 'Arrival time'}</label>
+              <input
+                type="time"
+                value={form.arrivalTime}
+                onChange={(e) => update('arrivalTime', e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>{locale === 'es' ? 'Operador' : 'Operator'}</label>
+              <input
+                value={form.operator}
+                onChange={(e) => update('operator', e.target.value)}
+                placeholder="Renfe, FlixBus, etc."
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>{locale === 'es' ? 'Nro de servicio' : 'Service number'}</label>
+              <input
+                value={form.serviceNumber}
+                onChange={(e) => update('serviceNumber', e.target.value)}
+                placeholder="AVE 02251, etc."
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>{locale === 'es' ? 'Asiento' : 'Seat'}</label>
+              <input
+                value={form.seat}
+                onChange={(e) => update('seat', e.target.value)}
+                placeholder="12A"
+                className={inputClass}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Error */}
+      {error && <p className="text-xs text-red-400">{error}</p>}
+
+      <Button
+        onClick={handleSubmit}
+        variant="primary"
+        icon={<Plus className="h-3.5 w-3.5" />}
+      >
+        {submitLabel}
+      </Button>
     </div>
   );
 }

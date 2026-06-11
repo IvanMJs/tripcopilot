@@ -130,6 +130,9 @@ export function FlightCardHeader({
   const liveEnabled = daysUntil === 0 || daysUntil === 1;
   const { liveData } = useFlightLiveStatus(flight.flightCode, flight.isoDate, liveEnabled);
 
+  // Ground transport (train/bus/ferry/car/transfer) has no flight-only affordances
+  const isGround = flight.segmentType !== undefined && flight.segmentType !== "flight";
+
   // Action row URLs
   const flightUrl    = `https://www.flightaware.com/live/flight/${flight.airlineIcao}${flight.flightNumber}`;
   const checkinUrl   = AIRLINE_CHECKIN_URLS[flight.airlineCode] ?? AIRLINE_APP_URLS[flight.airlineCode];
@@ -227,8 +230,8 @@ export function FlightCardHeader({
             {liveData && liveEnabled && (
               <LiveStatusPill liveData={liveData} locale={locale} />
             )}
-            {/* On-time punctuality estimate */}
-            {(() => {
+            {/* On-time punctuality estimate (flights only — n/a for ground transport) */}
+            {!isGround && (() => {
               const hour = parseInt(flight.departureTime?.split(":")[0] ?? "", 10);
               return !isNaN(hour) ? (
                 <FlightPunctualityBadge
@@ -400,14 +403,16 @@ export function FlightCardHeader({
             {airlineShort}
           </a>
         )}
-        <a
-          href={flightUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 py-1.5 text-gray-400 border border-white/10 bg-white/[0.03] hover:text-blue-300 hover:border-blue-700/40 transition-colors"
-        >
-          Tracking ↗
-        </a>
+        {!isGround && (
+          <a
+            href={flightUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 py-1.5 text-gray-400 border border-white/10 bg-white/[0.03] hover:text-blue-300 hover:border-blue-700/40 transition-colors"
+          >
+            Tracking ↗
+          </a>
+        )}
         {/* Upgrade toggle */}
         {daysUntil > 0 && onToggleUpgrade && (
           <button
