@@ -22,22 +22,18 @@ export function NotifCarousel({ screenshots }: Props) {
   }, [total]);
 
   function handleStart(x: number) {
-    console.log("[NotifCarousel] handleStart x=", x);
     startX.current = x;
   }
 
   function handleEnd(x: number) {
-    console.log("[NotifCarousel] handleEnd x=", x, "startX=", startX.current);
     if (startX.current === null) return;
     const d = x - startX.current;
     startX.current = null;
-    console.log("[NotifCarousel] delta=", d);
     if (Math.abs(d) > 50) advance(d < 0 ? "left" : "right");
     else advance("left");
   }
 
   function advance(dir: "left" | "right") {
-    console.log("[NotifCarousel] advance", dir);
     setIndex((i) => dir === "left" ? (i + 1) % total : (i - 1 + total) % total);
   }
 
