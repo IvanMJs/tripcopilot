@@ -64,7 +64,7 @@ const FC_STYLE: Record<FlightCategory, { pill: string; dot: string }> = {
   VFR:  { pill: "bg-emerald-950/70 text-emerald-300 border-emerald-700/30", dot: "bg-emerald-400" },
   MVFR: { pill: "bg-blue-950/70    text-blue-300    border-blue-700/30",    dot: "bg-blue-400"    },
   IFR:  { pill: "bg-orange-950/70  text-orange-300  border-orange-700/30",  dot: "bg-orange-400"  },
-  LIFR: { pill: "bg-red-950/70     text-red-300     border-red-700/30",     dot: "bg-red-400 animate-pulse" },
+  LIFR: { pill: "bg-red-950/70     text-red-300     border-red-700/30",     dot: "bg-red-400 animate-[radarPulse_2.4s_ease-out_infinite]" },
 };
 
 function formatWind(dirDeg: number, isVRB: boolean, speedKt: number, gustKt?: number): string {
