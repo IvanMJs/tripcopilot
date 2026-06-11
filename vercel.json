@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/flight-notifications",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/packing-notifications",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/passport-expiry",
+      "schedule": "0 10 1 * *"
     }
   ]
 }
