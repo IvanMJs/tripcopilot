@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
 import webpush from "web-push";
 import { AIRPORTS } from "@/lib/airports";
 import { CRON_LABELS, CronLocale } from "@/lib/cronUtils";
@@ -51,7 +52,12 @@ export async function POST(request: Request) {
     }
     // In development without a secret, skip verification
   } else {
-    if (token !== secret) {
+    const tokenBuf = Buffer.from(token ?? "", "utf8");
+    const secretBuf = Buffer.from(secret, "utf8");
+    const match =
+      tokenBuf.length === secretBuf.length &&
+      crypto.timingSafeEqual(tokenBuf, secretBuf);
+    if (!match) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
   }

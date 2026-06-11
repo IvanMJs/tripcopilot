@@ -18,13 +18,21 @@ import { AchievementBadges } from "@/components/AchievementBadges";
 import { countryFlag } from "@/lib/countryFlags";
 import { PlacesTab } from "@/components/PlacesTab";
 import { useVisitedCountries } from "@/lib/visited-countries";
-import { WorldMap } from "@/components/WorldMap";
-import { MapFullscreenModal } from "@/components/MapFullscreenModal";
 import dynamic from "next/dynamic";
 import { ModeGate } from "@/components/ModeGate";
 
 const PersonalRecords = dynamic(
   () => import("@/components/PersonalRecords").then((m) => ({ default: m.PersonalRecords })),
+  { ssr: false },
+);
+
+const WorldMap = dynamic(
+  () => import("@/components/WorldMap").then((m) => ({ default: m.WorldMap })),
+  { ssr: false, loading: () => <div className="w-full h-48 bg-white/5 rounded-xl animate-pulse" /> },
+);
+
+const MapFullscreenModal = dynamic(
+  () => import("@/components/MapFullscreenModal").then((m) => ({ default: m.MapFullscreenModal })),
   { ssr: false },
 );
 

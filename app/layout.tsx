@@ -18,6 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://tripcopilot.app"),
   title: { default: "TripCopilot", template: "%s | TripCopilot" },
   description:
     "Monitoreo de vuelos en tiempo real. Alertas de demoras FAA, importá tu boarding pass con IA, y gestioná todos tus viajes.",
