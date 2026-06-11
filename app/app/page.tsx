@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUIModeContext } from "@/contexts/UIModeContext";
 import { UserSessionProvider, useUserSessionContext } from "@/contexts/UserSessionContext";
@@ -52,7 +51,6 @@ function HomePageInner() {
   const [showBanner, setShowBanner] = useState(false);
   const [showPlanSuccess, setShowPlanSuccess] = useState(false);
   const { deviceTz, tzChanged, clearTzChanged } = useDeviceTimezone();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (tzChanged) {
@@ -62,16 +60,16 @@ function HomePageInner() {
   }, [tzChanged, clearTzChanged]);
 
   useEffect(() => {
-    if (searchParams.get("plan") === "success") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("plan") === "success") {
       setShowPlanSuccess(true);
-      // Clean the URL without triggering a navigation
       const url = new URL(window.location.href);
       url.searchParams.delete("plan");
       window.history.replaceState({}, "", url.toString());
       const timer = setTimeout(() => setShowPlanSuccess(false), 6000);
       return () => clearTimeout(timer);
     }
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
