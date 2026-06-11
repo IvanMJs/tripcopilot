@@ -7,7 +7,7 @@ import { PreApproval } from "mercadopago";
 export const dynamic = "force-dynamic";
 
 const BodySchema = z.object({
-  successUrl: z.string().url(),
+  successUrl: z.string().url().optional(),
   cancelUrl: z.string().url(),
   planId: z.enum(["explorer", "pilot"]).default("pilot"),
   annual: z.boolean().default(false),
@@ -38,6 +38,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const { successUrl, cancelUrl, planId, annual } = parsed.data;
+  // Use successUrl as the redirect target so users land on /app?plan=success
+  // after subscribing. Fall back to cancelUrl if successUrl is not provided.
+  const backUrl = successUrl ?? cancelUrl;
   const plan = PLANS[planId];
 
   // Annual billing: charge once every 12 months at the discounted annual price.
@@ -52,7 +55,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         reason: `TripCopilot ${PLANS[planId].name}${annual ? " (anual)" : ""}`,
         payer_email: user.email ?? "",
         external_reference: `${user.id}:${planId}`,
-        back_url: cancelUrl,
+        back_url: backUrl,
         auto_recurring: {
           frequency: billingFrequency,
           frequency_type: "months",
