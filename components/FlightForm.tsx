@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, AlertTriangle, Sparkles, Plane, Train, Bus, Ship, Car, ArrowLeftRight, ChevronDown } from "lucide-react";
+import { Plus, AlertTriangle, Sparkles, Plane, Train, Bus, Ship, Car, ArrowLeftRight, ChevronDown } from "lucide-react";
 import { TripFlight, SegmentType } from "@/lib/types";
 import { AIRLINES, parseFlightCode } from "@/lib/flightUtils";
 import { analytics } from "@/lib/analytics";
@@ -199,6 +199,15 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
   const labelClass =
     "block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5";
 
+  const activeSegment = SEGMENT_TYPES.find((s) => s.key === segmentType)!;
+  const ActiveIcon = activeSegment.icon;
+  const titleText =
+    segmentType === "flight"
+      ? L.addTitle
+      : locale === "es"
+        ? `Agregar ${activeSegment.label}`
+        : `Add ${activeSegment.label}`;
+
   return (
     <div
       className="rounded-xl border border-white/[0.08] p-4 space-y-4"
@@ -207,8 +216,8 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Search className="h-3.5 w-3.5 text-gray-500" />
-          <h3 className="text-sm font-semibold text-gray-300">{L.addTitle}</h3>
+          <ActiveIcon className="h-3.5 w-3.5 text-gray-500" />
+          <h3 className="text-sm font-semibold text-gray-300">{titleText}</h3>
         </div>
         <button
           onClick={onOpenImport}
@@ -220,18 +229,18 @@ export function AddFlightForm({ tripId, existingFlights, onAdd, onOpenImport, lo
       </div>
 
       {/* Segment type picker */}
-      <div className="overflow-x-auto flex gap-2 pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
         {SEGMENT_TYPES.map(({ key, icon: Icon, label }) => (
           <button
             key={key}
             onClick={() => { setSegmentType(key); setError(""); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap transition-colors ${
+            className={`flex shrink-0 items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold whitespace-nowrap transition-all ${
               segmentType === key
-                ? "bg-white/10 text-white border-white/20"
-                : "text-gray-500 border-white/[0.08] hover:text-gray-300"
+                ? "bg-[rgba(255,184,0,0.12)] text-[#FFB800] border-[rgba(255,184,0,0.3)]"
+                : "text-gray-500 border-white/[0.08] hover:text-gray-300 hover:border-white/20"
             }`}
           >
-            <Icon className="h-3 w-3" />
+            <Icon className="h-3.5 w-3.5" />
             {label}
           </button>
         ))}
@@ -489,7 +498,7 @@ function GroundTransportForm({ segmentType, tripId, onAdd, locale }: GroundFormP
       </div>
 
       {/* Date / Departure time */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>{locale === 'es' ? 'Fecha' : 'Date'}</label>
           <input

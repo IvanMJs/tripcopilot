@@ -22,30 +22,21 @@ export function RadarDot({ tone, size = "md", ringColor = "#080810" }: RadarDotP
   const [syncDelay, setSyncDelay] = useState(0);
 
   useEffect(() => {
-    setSyncDelay(-(Date.now() % 2800) / 1000);
+    setSyncDelay(-(Date.now() % 4000) / 1000);
   }, []);
 
   const dim = size === "sm" ? "h-2 w-2" : "h-2.5 w-2.5";
 
   return (
     <span className={cn("relative flex shrink-0", dim)} aria-label={`Radar dot with ${tone} tone`}>
-      {/* Outer expanding ring */}
+      {/* Single expanding ring — slow and calm */}
       <span
         aria-hidden
         className={cn(
-          "absolute inset-0 rounded-full animate-[radarPulse_2.8s_ease-out_infinite]",
+          "absolute inset-0 rounded-full animate-[radarPulse_4s_ease-out_infinite]",
           PULSE_COLOR[tone],
         )}
         style={{ animationDelay: `${syncDelay}s` }}
-      />
-      {/* Middle ring — offset phase */}
-      <span
-        aria-hidden
-        className={cn(
-          "absolute inset-0 rounded-full animate-[radarPulse_2.8s_ease-out_infinite]",
-          PULSE_COLOR[tone],
-        )}
-        style={{ animationDelay: `${syncDelay + 1.1}s` }}
       />
       {/* Solid core */}
       <span
