@@ -139,6 +139,7 @@ export default function LandingPage() {
   const [priceUSD, setPriceUSD] = useState<number | null>(null);
   const [lang, setLang] = useState<"es" | "en">("es");
   const [subscribeLoading, setSubscribeLoading] = useState<"explorer" | "pilot" | null>(null);
+  const [checkoutError, setCheckoutError] = useState("");
   const [showStickyCta, setShowStickyCta] = useState(false);
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
   const [pricingPeriod, setPricingPeriod] = useState<"annual" | "monthly">("annual");
@@ -208,14 +209,19 @@ export default function LandingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId,
+          annual: pricingPeriod === "annual",
           successUrl: `${location.origin}/app?plan=success`,
           cancelUrl: `${location.origin}/#planes`,
         }),
       });
-      const data = await res.json() as { url?: string };
-      if (data.url) window.location.href = data.url;
+      const data = await res.json() as { url?: string; error?: string };
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setCheckoutError(lang === "en" ? "Could not start checkout. Please try again." : "No se pudo iniciar el pago. Intentá de nuevo.");
+      }
     } catch {
-      // silent fail
+      setCheckoutError(lang === "en" ? "Could not start checkout. Please try again." : "No se pudo iniciar el pago. Intentá de nuevo.");
     } finally {
       setSubscribeLoading(null);
     }
@@ -1705,6 +1711,9 @@ export default function LandingPage() {
                 {lang === "en" ? "Subscribe Pilot" : "Suscribirse a Pilot"}
               </button>
             </div>
+          {checkoutError && (
+            <p className="text-sm text-red-400 text-center mt-4">{checkoutError}</p>
+          )}
           </div>
         </div>
       </section>

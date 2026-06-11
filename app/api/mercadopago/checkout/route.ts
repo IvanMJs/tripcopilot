@@ -10,6 +10,7 @@ const BodySchema = z.object({
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),
   planId: z.enum(["explorer", "pilot"]).default("pilot"),
+  annual: z.boolean().default(false),
 });
 
 // POST /api/mercadopago/checkout
@@ -36,21 +37,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { successUrl, cancelUrl, planId } = parsed.data;
+  const { successUrl, cancelUrl, planId, annual } = parsed.data;
   const plan = PLANS[planId];
+
+  // Annual billing: charge once every 12 months at the discounted annual price.
+  // Monthly billing: charge every month at the regular monthly price.
+  const transactionAmount = annual ? plan.mpAnnualAmount : plan.mpAmount;
+  const billingFrequency = annual ? 12 : 1;
 
   let preapproval;
   try {
     preapproval = await new PreApproval(getMP()).create({
       body: {
-        reason: `TripCopilot ${PLANS[planId].name}`,
+        reason: `TripCopilot ${PLANS[planId].name}${annual ? " (anual)" : ""}`,
         payer_email: user.email ?? "",
         external_reference: `${user.id}:${planId}`,
         back_url: cancelUrl,
         auto_recurring: {
-          frequency: 1,
+          frequency: billingFrequency,
           frequency_type: "months",
-          transaction_amount: plan.mpAmount,
+          transaction_amount: transactionAmount,
           currency_id: plan.mpCurrencyId,
         },
         status: "pending",
