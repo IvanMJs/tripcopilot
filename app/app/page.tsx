@@ -25,10 +25,11 @@ export default function HomePage() {
 function HomePageInner() {
   const { t, locale } = useLanguage();
   const { isRelax, setMode: setUIMode } = useUIModeContext();
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !localStorage.getItem("tripcopilot_onboarding_completed");
-  });
+  // Always start false so the server-rendered HTML and the first client render
+  // agree (reading localStorage here caused a hydration mismatch for users who
+  // had not completed onboarding). The mount effect below flips it on when
+  // onboarding is still pending.
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const [showKbdHelp, setShowKbdHelp] = useState(false);
